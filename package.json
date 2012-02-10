@@ -1,0 +1,27 @@
+{ "name": "ConstraintJS"
+, "description": "Constraints, not callbacks"
+, "version": "0.0.1"
+, "author": "Stephen Oney (Carnegie Mellon)"
+, "maintainers": [
+	{
+	"name": "Stephen Oney"
+	, "email": "soney@cs.cmu.edu"
+	, "web": "http://www.stephenoney.com/"
+	}
+]
+, "licenses": [
+	{
+	"type": "MIT"
+	, "url": "https://github.com/soney/ConstraintJS/blob/master/LICENSE"
+	}
+]
+, "private": false
+, "dependencies": {
+	"express": ">= 2.4.3"
+	, "ejs": ">= 0.4.3"
+	, "uglify-js": ">= 1.1.1"
+	, "dryice": ">= 0.2.5"
+	, "jslint": ">= 0.1.0"
+}
+, "engines": {"node": ">= 0.4.7"}
+}
