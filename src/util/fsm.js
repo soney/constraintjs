@@ -19,7 +19,8 @@ var Transition = function(from_state, to_state) {
 };
 (function(my) {
 	var proto = my.prototype;
-
+	proto.getFrom = function() { return this.from; };
+	proto.getTo = function() { return this.to; };
 }(Transition));
 
 var create_transition = function(from_state, to_state) {
@@ -27,6 +28,7 @@ var create_transition = function(from_state, to_state) {
 };
 
 var FSM = function() {
+	this.graph = cjs.create("graph");
 	this.states = [];
 	this.transitions = [];
 };
@@ -34,9 +36,16 @@ var FSM = function() {
 	var proto = my.prototype;
 	proto.add_state = function() {
 		var state = create_state.apply(this, arguments);
+		this.states.push(state);
 	};
 	proto.add_transition = function() {
 		var transition = create_transition.apply(this, arguments);
+		var from = transition.getFrom();
+		var to = transition.getTo();
+
+
+
+		this.transitions.push(transition);
 	};
 }(FSM));
 

@@ -9,9 +9,9 @@ var cjs_inc = require('./include_libs');
 
 var app = express.createServer();
 if(devel_mode) {
-	cjs_inc.core = cjs_inc.src;
+	cjs_inc.main = cjs_inc.main_src;
 } else {
-	cjs_inc.core = cjs_inc.build;
+	cjs_inc.main = cjs_inc.main_build;
 }
 var text_after = function(str, portion) {
 	var index = str.lastIndexOf(portion);

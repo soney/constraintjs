@@ -9,7 +9,8 @@
 var _ = cjs._;
 
 //Assume that nodes are part of at most one graph ever
-var Node = function() {
+var Node = function(data) {
+	this.data = data;
 	this.outgoingEdges = [];
 	this.incomingEdges = [];
 };
@@ -86,12 +87,7 @@ var Edge = function(fromNode, toNode) {
 	this.toNode = toNode;
 };
 
-var Graph = function() {};
-
-Graph.prototype.create_node = function() {
-	var node = new Node();
-	this.addNode(node);
-	return node;
+var Graph = function() {
 };
 
 Graph.prototype.hasEdge = function(arg0, arg1) {
@@ -147,7 +143,9 @@ Graph.prototype.hasNode = function(node) {
 	return node instanceof Node;
 };
 
-Graph.prototype.addNode = function() {};
+Graph.prototype.addNode = function(data) {
+	var node = new Node(data);
+};
 
 Graph.prototype.removeNode = function(node) {
 	node.destroy();

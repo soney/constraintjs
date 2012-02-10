@@ -28,6 +28,7 @@ exports.main_build = cp(build_path, ["cjs.js"]);
 exports.main_src = c(
 	cp(src, ["cjs_core.js"
 			, "vendor/underscore_cjs.js"
+			, "util/cjs_underscore_extensions.js"
 			, "util/graph.js"])
 );
 
