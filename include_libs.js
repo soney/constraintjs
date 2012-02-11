@@ -29,7 +29,10 @@ exports.main_src = c(
 	cp(src, ["cjs_core.js"
 			, "vendor/underscore_cjs.js"
 			, "util/cjs_underscore_extensions.js"
-			, "util/graph.js"])
+			, "util/graph.js"
+			, "util/constraint_solver.js"
+			, "util/fsm.js"
+			])
 );
 
 var core_tests_dir = cp(path, "test/core/unit_tests");

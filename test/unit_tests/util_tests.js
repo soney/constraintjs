@@ -58,3 +58,63 @@ test('Graph', function() {
 	ok(!graph.hasEdge(n2n3));
 	/**/
 });
+
+
+test('Constraint Solver', function() {
+	var equalSets = function (set1, set2) {
+		if(set1.length!=set2.length) return false;
+		for(var i = 0; i<set1.length; i++) {
+			if(!cjs._.contains(set2, set1[i])) return false;
+		}
+		return true;
+	}
+	
+	var constraintSolver = cjs._constraint_solver;
+	
+	var o1 = {name:'o1'};
+	var o2 = {name:'o2'};
+	var o3 = {name:'o3'};
+	var o4 = {name:'o4'};
+	var o5 = {name:'o5'};
+	var o6 = {name:'o6'};
+	
+	constraintSolver.addObject(o1);
+	constraintSolver.addObject(o2);
+	constraintSolver.addObject(o3);
+	constraintSolver.addObject(o4);
+	constraintSolver.addObject(o5);
+	constraintSolver.addObject(o6);
+	
+	constraintSolver.addDependency(o1, o2);
+	constraintSolver.addDependency(o4, o5);
+	
+	ok(equalSets(constraintSolver.immediatelyDependentOn(o1), [o2]));
+	constraintSolver.removeObject(o2);	
+	ok(equalSets(constraintSolver.immediatelyDependentOn(o1), []));
+	
+	constraintSolver.addObject(o2);
+	constraintSolver.addDependency(o1, o2);
+	constraintSolver.addDependency(o2, o3);
+	constraintSolver.addDependency(o2, o4);
+	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3, o4]));
+	constraintSolver.removeObject(o4);
+	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3]));
+	constraintSolver.addObject(o4);
+	constraintSolver.addDependency(o2,o4);
+	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3, o4]));
+	constraintSolver.removeDependency(o2,o4);
+	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3]));
+	
+	/**/
+});
+
+test('FSM', function() {
+	var fsm = cjs.create("fsm");
+	var state1 = fsm.add_state("state1");
+	var state2 = fsm.add_state("state2");
+
+	fsm.set_state("state1");
+
+
+	console.log(fsm, state1, state2);
+});

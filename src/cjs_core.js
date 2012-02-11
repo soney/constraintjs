@@ -14,7 +14,6 @@ var cjs = (function (root) {
 	};
 
 	var factories = {};
-
 	cjs.define = function(type, factory) {
 		factories[type] = factory;
 	};
@@ -25,6 +24,15 @@ var cjs = (function (root) {
 			return factory.apply(root, args);
 		} else {
 			return undefined;
+		}
+	};
+
+	var types = {};
+	cjs.type = function(type_name, value) {
+		if(arguments.length === 1) {
+			return types[type_name];
+		} else if(arguments.length > 1) {
+			types[type_name] = value;
 		}
 	};
 

@@ -9,8 +9,7 @@
 var _ = cjs._;
 
 //Assume that nodes are part of at most one graph ever
-var Node = function(data) {
-	this.data = data;
+var Node = function() {
 	this.outgoingEdges = [];
 	this.incomingEdges = [];
 };
@@ -90,69 +89,79 @@ var Edge = function(fromNode, toNode) {
 var Graph = function() {
 };
 
-Graph.prototype.hasEdge = function(arg0, arg1) {
-	var fromNode, toNode, edge;
-	if(arg0 instanceof Edge) {
-		edge = arg0;
-		fromNode = edge.fromNode;
-		toNode = edge.toNode;
-	}
-	else {
-		fromNode = arg0;
-		toNode = arg1;
-	}
-	return fromNode.hasEdgeTo(toNode);
-};
-Graph.prototype.getEdge = function(fromNode, toNode) {
-	return fromNode.getEdgeTo(toNode);
-};
-Graph.prototype.doAddEdge = function(edge) {
-	edge.fromNode.addOutgoingEdge(edge);
-	edge.toNode.addIncomingEdge(edge);
+(function(my) {
+	var proto = my.prototype;
+	proto.create_node = function() {
+		var node = new Node();
+		this.addNode(node);
+		return node;
+	};
 
-	return edge;
-};
-Graph.prototype.addEdge = function(arg0, arg1){
-	var fromNode, toNode, edge;
-	if(arg0 instanceof Edge) {
-		edge = arg0;
-		fromNode = edge.fromNode;
-		toNode = edge.toNode;
-	}
-	else {
-		fromNode = arg0;
-		toNode = arg1;
-		edge = new Edge(fromNode, toNode);
-	}
-	if(!this.hasEdge(fromNode, toNode)) {
-		return this.doAddEdge(edge);
-	}
-	return null;
-};
+	proto.hasEdge = function(arg0, arg1) {
+		var fromNode, toNode, edge;
+		if(arg0 instanceof Edge) {
+			edge = arg0;
+			fromNode = edge.fromNode;
+			toNode = edge.toNode;
+		}
+		else {
+			fromNode = arg0;
+			toNode = arg1;
+		}
+		return fromNode.hasEdgeTo(toNode);
+	};
+	proto.getEdge = function(fromNode, toNode) {
+		return fromNode.getEdgeTo(toNode);
+	};
+	proto.doAddEdge = function(edge) {
+		edge.fromNode.addOutgoingEdge(edge);
+		edge.toNode.addIncomingEdge(edge);
 
-Graph.prototype.removeEdge = function(fromNode, toNode) {
-	var edge = this.getEdge(fromNode, toNode);
-	if(edge!==null) {
-		fromNode.removeOutgoingEdge(edge);
-		toNode.removeIncomingEdge(edge);
-	}
-	return edge;
-};
+		return edge;
+	};
+	proto.addEdge = function(arg0, arg1){
+		var fromNode, toNode, edge;
+		if(arg0 instanceof Edge) {
+			edge = arg0;
+			fromNode = edge.fromNode;
+			toNode = edge.toNode;
+		}
+		else {
+			fromNode = arg0;
+			toNode = arg1;
+			edge = new Edge(fromNode, toNode);
+		}
+		if(!this.hasEdge(fromNode, toNode)) {
+			return this.doAddEdge(edge);
+		}
+		return null;
+	};
 
-Graph.prototype.hasNode = function(node) {
-	return node instanceof Node;
-};
+	proto.removeEdge = function(fromNode, toNode) {
+		var edge = this.getEdge(fromNode, toNode);
+		if(edge!==null) {
+			fromNode.removeOutgoingEdge(edge);
+			toNode.removeIncomingEdge(edge);
+		}
+		return edge;
+	};
 
-Graph.prototype.addNode = function(data) {
-	var node = new Node(data);
-};
+	proto.hasNode = function(node) {
+		return node instanceof Node;
+	};
 
-Graph.prototype.removeNode = function(node) {
-	node.destroy();
-};
+	proto.addNode = function() { };
+
+	proto.removeNode = function(node) {
+		node.destroy();
+	};
+}(Graph));
+
 
 cjs.define("graph", function() {
 	return new Graph();
 });
+cjs.type("node", Node);
+cjs.type("edge", Edge);
 
 }(cjs));
