@@ -1,4 +1,4 @@
-module("Util");
+module("CJS");
 
 test('Graph', function() {
 	var graph = cjs.create("graph");
@@ -104,17 +104,26 @@ test('Constraint Solver', function() {
 	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3, o4]));
 	constraintSolver.removeDependency(o2,o4);
 	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3]));
-	
-	/**/
+});
+
+test('Basic Constraints', function() {
+	var c1 = cjs.create("basic_constraint", 1);
+	var c2 = cjs.create("basic_constraint", 2);
+	var c3 = cjs.create("basic_constraint", function() { return c1.get() + c2.get(); });
+
+	equals(c3.get(), 3);
+	c1.set(4);
+	equals(c3.get(), 6);
 });
 
 test('FSM', function() {
-	var fsm = cjs.create("fsm");
-	var state1 = fsm.add_state("state1");
-	var state2 = fsm.add_state("state2");
+	var fsm = cjs	.fsm()
+					.add_state("idle")
+					.add_transition(function(do_transition) {
+						window.addEventListener("mousedown", do_transition);
+					}, "dragging")
+					.add_state("dragging")
+					.starts_at("dragging");
 
-	fsm.set_state("state1");
-
-
-	console.log(fsm, state1, state2);
+	ok(fsm.is("dragging"));
 });
