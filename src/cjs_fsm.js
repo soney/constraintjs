@@ -42,12 +42,49 @@ var MultiSelector = function(selectors) {
 
 (function(my) {
 	var proto = my.prototype;
-	proto.matches = function(state) {
+	proto.matches = function() {
+		var match_args = arguments;
 		return _.any(this.selectors, function(selector) {
-			return selector.matches(state);
+			return selector.matches.apply(selector, match_args);
 		});
 	};
 }(MultiSelector));
+
+var parse_single_state_spec = function(str) {
+	if(str === "*") {
+		return new AnyStateSelector();
+	} else {
+		return new StateSelector(str);
+	}
+};
+var parse_state_list_spec = function(str) {
+	var state_spec_strs = str.split(",");
+	var state_specs = _.map(state_spec_strs, function(state_spec_str) {
+		return parse_simple_state_spec(state_spec_str);
+	});
+	return new MultiSelector(
+};
+
+var parse_state_spec = function(str) {
+};
+
+var parse_simple_transiton_spec = function(left_str, transition_str, right_str) {
+	var left_state_spec = parse_state_spec(left_str);
+	var right_state_spec = parse_state_spec(right_str);
+
+	if(transition_str === "<->") {
+		var left_to_right_transition = new TransitionSelector(false, left_state_spec, right_state_spec);
+		var right_to_left_transition = new TransitionSelector(false, right_state_spec, left_state_spec);
+		return new MultiSelector(left_to_right_transition, right_to_left_transition);
+	} else if(transition_str === ">-<") {
+		var left_to_right_transition;
+		var right_to_left_transition;
+	} else if(transition_str === "->") {
+	} else if(transition_str === ">-") {
+	} else if(transition_str === "<-") {
+	} else if(transition_str === "-<") {
+	}
+};
 
 
 var state_listener_id = 0;
@@ -201,6 +238,5 @@ var create_fsm = function() {
 	return new FSM();
 };
 cjs.fsm = create_fsm;
-
 
 }(cjs));
