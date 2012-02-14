@@ -33,7 +33,7 @@
 				return undefined;
 			}
 		};
-		proto.set = function(value, literal) {
+		proto.set = function(value, literal, update_fn) {
 			var was_literal = this.literal;
 			var old_value = this.value;
 
@@ -42,26 +42,49 @@
 			} else {
 				this.literal = literal === true;
 			}
+
 			this.value = value;
 
 			
 			if(was_literal !== this.literal || old_value !== this.value) {
 				this.nullify();
 			}
+
+			if(_.isFunction(update_fn)) {
+				this.update(update_fn);
+			}
 		};
 		proto.get = function() {
 			return constraint_solver.getValue(this);
 		};
+		proto.update = function(arg0) {
+			if(arguments.length === 0) {
+				this.nullify();
+			} else {
+				var self = this;
+				var do_nullify = function() {
+					self.nulllify();
+				};
+				if(_.isFunction(arg0)) {
+					arg0(do_nullify);
+				}
+			}
+			return this;
+		};
 	}(Constraint));
 
-	var create_constraint = function(getter, literal) {
+	var create_constraint = function(arg0, arg1, arg2, arg3) {
 		var constraint;
 		if(arguments.length === 0) {
 			constraint = new Constraint(undefined);
 		} else if(arguments.length === 1) {
-			constraint = new Constraint(getter);
+			constraint = new Constraint(arg0);
 		} else {
-			constraint = new Constraint(getter, literal);
+			if(arguments.length === 2 && _.isBoolean(arg1)) {
+				constraint = new Constraint(arg0, arg1);
+			} else {
+				constraint = new Constraint(arg0, arg1, arg2, arg3);
+			}
 		}
 
 		return constraint;
