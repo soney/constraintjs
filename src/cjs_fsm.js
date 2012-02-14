@@ -1,6 +1,44 @@
 (function(cjs) {
 var _ = cjs._;
 
+
+
+
+var State = function(fsm, name) {
+	this._name = name;
+	this.fsm = fsm;
+	//var graph = this.fsm.get_graph();
+	//this.node = graph.create_node();
+};
+
+(function(my) {
+	var proto = my.prototype;
+	proto.get_name = function() { return this._name; };
+	proto.get_node = function() { return this.node; };
+}(State));
+
+var Transition = function(fsm, from_state, to_state, name) {
+	this.fsm = fsm;
+	this.from = from_state;
+	this.to = to_state;
+	this.name = name;
+
+	//var graph = this.fsm.get_graph();
+	//this.edge = graph.addEdge(this.get_from().get_node(), this.get_to().get_node());
+};
+(function(my) {
+	var proto = my.prototype;
+	proto.get_from = function() { return this.from; };
+	proto.get_to = function() { return this.to; };
+	proto.get_name = function() { return this.name; };
+	proto.run = function() {
+		var args = _.toArray(arguments);
+		args.unshift(this);
+		args.unshift(this.get_to());
+		this.fsm.set_state.apply(this.fsm, args);
+	};
+}(Transition));
+
 var StateSelector = function(state_name) {
 	this.state_name = state_name;
 };
@@ -11,12 +49,14 @@ var StateSelector = function(state_name) {
 			return this.state_name === state.get_name();
 		} else { return false; }
 	};
+	proto.is = function(str) { return str === "state"; };
 }(StateSelector));
 
 var AnyStateSelector = function() { };
 (function(my) {
 	var proto = my.prototype;
 	proto.matches = function(state) {return state instanceof State;};
+	proto.is = function(str) { return str === "*"; };
 }(AnyStateSelector));
 
 var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
@@ -35,6 +75,7 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 					this.is_pre === pre;
 		} else { return false; }
 	};
+	proto.is = function(str) { return str === "transition"; };
 }(TransitionSelector));
 
 var MultiSelector = function(selectors) {
@@ -49,6 +90,7 @@ var MultiSelector = function(selectors) {
 			return selector.matches.apply(selector, match_args);
 		});
 	};
+	proto.is = function(str) { return str === "multi"; };
 }(MultiSelector));
 
 var parse_single_state_spec = function(str) {
@@ -72,16 +114,17 @@ var parse_state_spec = function(str) {
 };
 
 var parse_transition_spec = function(left_str, transition_str, right_str) {
+	var left_to_right_transition, right_to_left_transition;
 	var left_state_spec = parse_state_spec(left_str);
 	var right_state_spec = parse_state_spec(right_str);
 
 	if(transition_str === "<->") {
-		var left_to_right_transition = new TransitionSelector(false, left_state_spec, right_state_spec);
-		var right_to_left_transition = new TransitionSelector(false, right_state_spec, left_state_spec);
+		left_to_right_transition = new TransitionSelector(false, left_state_spec, right_state_spec);
+		right_to_left_transition = new TransitionSelector(false, right_state_spec, left_state_spec);
 		return new MultiSelector(left_to_right_transition, right_to_left_transition);
 	} else if(transition_str === ">-<") {
-		var left_to_right_transition = new TransitionSelector(true, left_state_spec, right_state_spec);
-		var right_to_left_transition = new TransitionSelector(true, right_state_spec, left_state_spec);
+		left_to_right_transition = new TransitionSelector(true, left_state_spec, right_state_spec);
+		right_to_left_transition = new TransitionSelector(true, right_state_spec, left_state_spec);
 		return new MultiSelector(left_to_right_transition, right_to_left_transition);
 	} else if(transition_str === "->") {
 		return new TransitionSelector(false, left_state_spec, right_state_spec);
@@ -128,43 +171,6 @@ var StateListener = function(selector, callback) {
 		this.callback();
 	};
 }(StateListener));
-
-
-
-var State = function(fsm, name) {
-	this._name = name;
-	this.fsm = fsm;
-	//var graph = this.fsm.get_graph();
-	//this.node = graph.create_node();
-};
-
-(function(my) {
-	var proto = my.prototype;
-	proto.get_name = function() { return this._name; };
-	proto.get_node = function() { return this.node; };
-}(State));
-
-var Transition = function(fsm, from_state, to_state, name) {
-	this.fsm = fsm;
-	this.from = from_state;
-	this.to = to_state;
-	this.name = name;
-
-	//var graph = this.fsm.get_graph();
-	//this.edge = graph.addEdge(this.get_from().get_node(), this.get_to().get_node());
-};
-(function(my) {
-	var proto = my.prototype;
-	proto.get_from = function() { return this.from; };
-	proto.get_to = function() { return this.to; };
-	proto.get_name = function() { return this.name; };
-	proto.run = function() {
-		var args = _.toArray(arguments);
-		args.unshift(this);
-		args.unshift(this.get_to());
-		this.fsm.set_state.apply(this.fsm, args);
-	};
-}(Transition));
 
 var FSM = function() {
 	//this.graph = cjs.create("graph");
@@ -222,20 +228,20 @@ var FSM = function() {
 	proto.set_state = function(state, transition) {
 		var from_state = this.get_state();
 		var to_state = state;
-		did_transition = true;
+		this.did_transition = true;
 
 		_.forEach(this.listeners, function(listener) {
 			if(listener.interested_in(transition, true)) {
-				listener.run(transition);
+				listener.run(transition, to_state, from_state);
 			}
 		});
 		this.state = to_state;
 		_.forEach(this.listeners, function(listener) {
 			if(listener.interested_in(transition, false)) {
-				listener.run(transition);
+				listener.run(transition, to_state, from_state);
 			}
 			if(listener.interested_in(to_state)) {
-				listener.run(to_state);
+				listener.run(transition, to_state, from_state);
 			}
 		});
 	};
@@ -268,9 +274,11 @@ var FSM = function() {
 		}
 	};
 	proto.on = proto.addEventListener = function(spec_str, callback) {
-		var selector = parse_spec(spec_str);
-		if(selector === null) {
-			throw new Error("Unrecognized format for state/transition spec. Please see documentation.");
+		var selector;
+		if(_.isString(spec_str)) {
+			selector = this.parse_selector(spec_str);
+		} else {
+			selector = spec_str;
 		}
 		var listener = new StateListener(selector, callback);
 		this.listeners.push(listener);
@@ -282,11 +290,24 @@ var FSM = function() {
 		});
 		return this;
 	};
+	proto.parse_selector = function(spec_str) {
+		var selector = parse_spec(spec_str);
+		if(selector === null) {
+			throw new Error("Unrecognized format for state/transition spec. Please see documentation.");
+		}
+		return selector;
+	};
 }(FSM));
 
 var create_fsm = function() {
 	return new FSM();
 };
+cjs.define("fsm", create_fsm);
+cjs.fsm = function() {
+	var args = _.toArray(arguments);
+	args.unshift("fsm");
+	return cjs.create.apply(cjs, args);
+};
 cjs.fsm = create_fsm;
-
+cjs.type("FSM", FSM);
 }(cjs));

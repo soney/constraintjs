@@ -107,9 +107,9 @@ test('Constraint Solver', function() {
 });
 
 test('Basic Constraints', function() {
-	var c1 = cjs.create("basic_constraint", 1);
-	var c2 = cjs.create("basic_constraint", 2);
-	var c3 = cjs.create("basic_constraint", function() { return c1.get() + c2.get(); });
+	var c1 = cjs.create("simple_constraint", 1);
+	var c2 = cjs.create("simple_constraint", 2);
+	var c3 = cjs.create("simple_constraint", function() { return c1.get() + c2.get(); });
 
 	equals(c3.get(), 3);
 	c1.set(4);
@@ -185,4 +185,53 @@ test('FSM Event Listeners', function() {
 		ok(ran_post);
 	});
 	bd();
+});
+
+test('FSM Constraitns', function() {
+	var ab, bc, cd, bd, da;
+	var fsm = cjs	.fsm()
+					.add_state("A")
+					.add_transition(function(do_transition) {
+						ab = do_transition;
+					}, "B")
+					.add_state("B")
+					.add_transition(function(do_transition) {
+						bc = do_transition;
+					}, "C")
+					.add_transition(function(do_transition) {
+						bd = do_transition;
+					}, "D")
+					.add_state("C")
+					.add_transition(function(do_transition) {
+						cd = do_transition;
+					}, "D")
+					.add_state("D")
+					.add_transition(function(do_transition) {
+						da = do_transition;
+					}, "A")
+					.starts_at("B");
+	var c = cjs.create("fsm_constraint", fsm, {
+		"A": 1
+		, "B": 2
+		, "C": 3
+		, "D": 4
+	});
+
+	var c2 = cjs.create("fsm_constraint", fsm, {
+		"A,B": function() {
+			return c.get();
+		}
+		, "C,D": function() {
+			return 5;
+		}
+	});
+
+	equals(c.get(), 2);
+	equals(c2.get(), 2);
+	bd();
+	equals(c.get(), 4);
+	equals(c2.get(), 5);
+	da();
+	equals(c.get(), 1);
+	equals(c2.get(), 1);
 });

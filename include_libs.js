@@ -31,8 +31,11 @@ exports.main_src = c(
 			, "util/cjs_underscore_extensions.js"
 			, "util/graph.js"
 			, "util/constraint_solver.js"
-			, "cjs_constraint.js"
 			, "cjs_fsm.js"
+			, "cjs_simple_constraint.js"
+			, "cjs_conditional_constraint.js"
+			, "cjs_fsm_constraint.js"
+			, "cjs_constraint.js"
 			])
 );
 

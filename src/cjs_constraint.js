@@ -1,70 +1,50 @@
 (function(cjs) {
 	var _ = cjs._;
-	var constraint_solver = cjs._constraint_solver;
-
-	var Constraint = function() {
-		constraint_solver.addObject(this);
-		this.literal = false;
-		this.set.apply(this, arguments);
-	};
-
-	(function(my) {
-		var proto = my.prototype;
-		proto.nullify = function() {
-			constraint_solver.nullify(this);
-		};
-		proto.cs_eval = function() {
-			if(this.hasOwnProperty("value")) {
-				if(this.literal) {
-					return this.value;
-				} else {
-					return this.value();
-				}
-			} else {
-				return undefined;
+	var create_constraint = function(arg0, arg1) {
+		if(arguments.length === 0) {
+			return cjs.create("simple_constraint", undefined);
+		} else if(arguments.length === 1) {
+			return cjs.create("simple_constraint", arg0);
+		} else if(arguments.length === 2) {
+			if(arg0 instanceof cjs.type("FSM")) {
+				return cjs.create("fsm_constraint", arg0, arg1);
+			} else if(_.isBoolean(arg1)) {
+				return cjs.create("simple_constraint", arg0, arg1);
 			}
-		};
-		proto.set = function(value, literal) {
-			var was_literal = this.literal;
-			var old_value = this.value;
-
-			if(arguments.length < 2) {
-				this.literal = !_.isFunction(value);
-			} else {
-				this.literal = literal === true;
-			}
-			this.value = value;
-
-			
-			if(was_literal !== this.literal || old_value !== this.value) {
-				this.nullify();
-			}
-		};
-		proto.get = function() {
-			return constraint_solver.getValue(this);
-		};
-	}(Constraint));
-
-	var create_constraint = function(getter, literal) {
-		if(arguments.length === 1) {
-			return new Constraint(getter);
-		} else {
-			return new Constraint(getter, literal);
 		}
-	};
 
-	cjs.define("basic_constraint", create_constraint);
+		var args = _.toArray(arguments);
 
-
-	var is_constraint = function(obj) {
-		return obj instanceof Constraint;
-	};
-	cjs.is_constraint = is_constraint;
-	cjs.get = function(obj) {
-		if(is_constraint(obj)) {
-			return obj.get();
-		} else {
-			return obj;
+		if(_.all(arguments, function(arg) {
+				return arg.hasOwnProperty("condition") && arg.hasOwnProperty("value");
+			})) {
+			args.unshift("coditional_constraint");
+			return cjs.create.apply(cjs, args);
 		}
+		args.unshift("simple_constraint");
+		return cjs.create.apply(cjs, args);
 	};
+
+	var Constraint = cjs.type("simple_constraint");
+	create_constraint.fn = function(name, func) {
+		Constraint.prototype[name] = function() {
+			var args = _.toArray(arguments);
+			var self = this;
+			return cjs.create("simple_constraint", function() {
+				var val = cjs.get(self);
+				return func.apply(self, ([val]).concat(args));
+			});
+		};
+		create_constraint[name] = function(arg0) {
+			var args = _.toArray(arguments);
+			if(args.length === 0) { return cjs.create("simple_constraint"); }
+			else {
+				var initial_constraint = cjs.create("simple_constraint", arg0);
+				var other_args = _.rest(args, 1);
+				return initial_constraint[name].apply(initial_constraint, other_args);
+			}
+		};
+	};
+
+	cjs.$ = cjs.constraint = create_constraint;
 }(cjs));

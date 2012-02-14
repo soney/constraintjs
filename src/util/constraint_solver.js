@@ -168,6 +168,25 @@ ConstraintSolver.prototype.doNullify = function(obj) {
 	return rv;
 };
 
+ConstraintSolver.prototype.nullifyAndEval = function(obj) {
+	var rv = this.doNullify(obj);
+
+	return rv;
+};
+
+ConstraintSolver.prototype.doNullifyAndEval = function(obj) {
+	var node = this.getNode(obj);
+	var rv = this.nullifyAndEvalNode(node);
+
+	this.notify({
+		type: "root_nullify",
+		node: node
+	});
+
+	return rv;
+};
+
+
 ConstraintSolver.prototype.get_outgoing = function(obj, recursive) {
 	return this.get_node_outgoing(this.getNode(obj), recursive).map(function(x) {
 		return x.obj;
@@ -195,7 +214,6 @@ ConstraintSolver.prototype.get_node_incoming = function(node, recursive) {
 		return node.pointsAtMe();
 	}
 };
-
 
 ConstraintSolver.prototype.nullifyNode = function(node, reasonChain) {
 	var i, outgoingEdges;
@@ -229,6 +247,41 @@ ConstraintSolver.prototype.nullifyNode = function(node, reasonChain) {
 			this.nullifyNode(dependentNode, reasonChain.concat(node.obj));
 		}
 	}
+};
+
+ConstraintSolver.prototype.nullifyAndEvalNode = function(node, reasonChain) {
+	var i, outgoingEdges;
+	if(reasonChain === undefined) { reasonChain = []; }
+
+	node.nullify(reasonChain);
+
+	this.notify({
+		type: "nullify",
+		node: node,
+		reason: reasonChain
+	});
+
+	outgoingEdges = node.getOutgoing();
+	for(i = 0; i<outgoingEdges.length; i++) {
+		var outgoingEdge = outgoingEdges[i];
+		var dependentNode = outgoingEdge.toNode;
+
+		if(outgoingEdge.timestamp < dependentNode.timestamp) {
+			var toNode = outgoingEdge.toNode;
+			var fromNode = node;
+			if(fromNode.options.auto_add_outgoing_dependencies && toNode.options.auto_add_incoming_dependencies) {
+				this.removeNodeDependency(node, dependentNode);
+				i--;
+			}
+			else {
+				this.nullifyAndEvalNode(dependentNode, reasonChain.concat(node.obj));
+			}
+		}
+		else if(!dependentNode.ood) {
+			this.nullifyAndEvalNode(dependentNode, reasonChain.concat(node.obj));
+		}
+	}
+	this.getNodeValue(node);
 };
 
 ConstraintSolver.prototype.getValue = function(obj) {
