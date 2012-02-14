@@ -23,7 +23,7 @@ var build_path = cp(path, "build");
 var src = cp(path, "src");
 var vendor_src = cp(src, "vendor");
 
-exports.main_build = cp(build_path, ["cjs.js"]);
+exports.main_build = cp(build_path, ["cjs.min.js"]);
 
 exports.main_src = c(
 	cp(src, ["cjs_core.js"

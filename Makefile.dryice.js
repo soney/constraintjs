@@ -6,8 +6,12 @@ var cjs_inc = require('./include_libs');
 var do_build_main = function() {
 	copy({
 		source: cjs_inc.main_src
-		, dest: cjs_inc.main_build[0]
+		, dest: "build/cjs.min.js"
 		, filter: copy.filter.uglifyjs
+	});
+	copy({
+		source: cjs_inc.main_src
+		, dest: "build/cjs.js"
 	});
 };
 
