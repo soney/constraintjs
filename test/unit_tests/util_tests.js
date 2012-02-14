@@ -117,13 +117,72 @@ test('Basic Constraints', function() {
 });
 
 test('FSM', function() {
+	var ab, bc, cd, bd, da;
 	var fsm = cjs	.fsm()
-					.add_state("idle")
+					.add_state("A")
 					.add_transition(function(do_transition) {
-						window.addEventListener("mousedown", do_transition);
-					}, "dragging")
-					.add_state("dragging")
-					.starts_at("dragging");
+						ab = do_transition;
+					}, "B")
+					.add_state("B")
+					.add_transition(function(do_transition) {
+						bc = do_transition;
+					}, "C")
+					.add_transition(function(do_transition) {
+						bd = do_transition;
+					}, "D")
+					.add_state("C")
+					.add_transition(function(do_transition) {
+						cd = do_transition;
+					}, "D")
+					.add_state("D")
+					.add_transition(function(do_transition) {
+						da = do_transition;
+					}, "A")
+					.starts_at("B");
 
-	ok(fsm.is("dragging"));
+	ok(fsm.is("B"));
+	bd();
+	ok(fsm.is("D"));
+	bc(); //Not in B, so this transition doesn't run
+	ok(fsm.is("D"));
+});
+
+test('FSM Event Listeners', function() {
+	var ab, bc, cd, bd, da;
+	var fsm = cjs	.fsm()
+					.add_state("A")
+					.add_transition(function(do_transition) {
+						ab = do_transition;
+					}, "B")
+					.add_state("B")
+					.add_transition(function(do_transition) {
+						bc = do_transition;
+					}, "C")
+					.add_transition(function(do_transition) {
+						bd = do_transition;
+					}, "D")
+					.add_state("C")
+					.add_transition(function(do_transition) {
+						cd = do_transition;
+					}, "D")
+					.add_state("D")
+					.add_transition(function(do_transition) {
+						da = do_transition;
+					}, "A")
+					.starts_at("B");
+	
+	expect(3);
+
+	var ran_post = false;
+	fsm.on("B->D", function() {
+		ran_post = true;
+		ok(true);
+	});
+	fsm.on("B>-*", function() {
+		ok(!ran_post);
+	});
+	fsm.on("D", function() {
+		ok(ran_post);
+	});
+	bd();
 });
