@@ -32,10 +32,13 @@ exports.main_src = c(
 			, "util/graph.js"
 			, "util/constraint_solver.js"
 			, "cjs_fsm.js"
-			, "cjs_simple_constraint.js"
-			, "cjs_conditional_constraint.js"
-			, "cjs_fsm_constraint.js"
-			, "cjs_constraint.js"
+			, "constraints/cjs_simple_constraint.js"
+			, "constraints/cjs_conditional_constraint.js"
+			, "constraints/cjs_fsm_constraint.js"
+			, "constraints/cjs_constraint.js"
+			, "constraints/cjs_constraint_fn.js"
+			, "cjs_events.js"
+			, "cjs_widgets.js"
 			])
 );
 

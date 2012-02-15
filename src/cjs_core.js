@@ -4,14 +4,6 @@ var cjs = (function (root) {
 	var cjs = function () {
 		return cjs_call.apply(this, arguments);
 	};
-	cjs._debug = true;
-
-	var _old_cjs = root.cjs;
-	root.cjs = cjs;
-	cjs.noConflict = function () {
-		root.cjs = _old_cjs;
-		return cjs;
-	};
 
 	var factories = {};
 	cjs.define = function(type, factory) {
@@ -35,6 +27,26 @@ var cjs = (function (root) {
 			types[type_name] = value;
 		}
 	};
+
+
+	if (typeof exports !== 'undefined') {
+		cjs._is_node = true;
+		if (typeof module !== 'undefined' && module.exports) {
+			exports = module.exports = cjs;
+		}
+		exports.cjs = cjs;
+	} else {
+		cjs._is_node = false;
+		var _old_cjs = root.cjs;
+		root.cjs = cjs;
+		cjs.noConflict = function () {
+			root.cjs = _old_cjs;
+			return cjs;
+		};
+	}
+
+	cjs._debug = true;
+	cjs.version = "0.2";
 
 	return cjs;
 }(this));

@@ -1,9 +1,6 @@
 (function(cjs) {
 var _ = cjs._;
 
-
-
-
 var State = function(fsm, name) {
 	this._name = name;
 	this.fsm = fsm;

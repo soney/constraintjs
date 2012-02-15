@@ -49,7 +49,7 @@ var jslint_options = { //http://www.jslint.com/lint.html
 	, nomen: true // true if names should not be checked for initial or trailing underbars.
 	, white: true // true if strict whitespace rules should be ignored.
 	, plusplus: true // true if ++ and -- should be allowed.
-	, predef: ["cjs"]
+	, predef: ["cjs", "module", "exports"]
 };
 
 app.configure(function() {

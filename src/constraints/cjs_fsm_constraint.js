@@ -5,7 +5,8 @@
 			, selectors = _.map(state_spec_strs, function(state_spec_str) {
 				return fsm.parse_selector(state_spec_str);
 			})
-			, values = _.values(specs);
+			, values = _.values(specs)
+			, last_transition_value;
 
 		var getter = function() {
 			var i;
@@ -21,14 +22,14 @@
 					}
 				}
 			}
-			return undefined;
+			return last_transition_value;
 		};
 		var constraint = cjs.create("simple_constraint", getter);
 		
 		_.forEach(selectors, function(selector) {
 			if(selector.is("transition")) {
 				fsm.on(selector, function() {
-					constraint.nullifyAndEval();
+					last_transition_value = constraint.nullifyAndEval();
 				});
 			} else {
 				fsm.on(selector, function() {

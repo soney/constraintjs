@@ -281,7 +281,7 @@ ConstraintSolver.prototype.nullifyAndEvalNode = function(node, reasonChain) {
 			this.nullifyAndEvalNode(dependentNode, reasonChain.concat(node.obj));
 		}
 	}
-	this.getNodeValue(node);
+	return this.getNodeValue(node);
 };
 
 ConstraintSolver.prototype.getValue = function(obj) {

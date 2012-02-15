@@ -235,3 +235,24 @@ test('FSM Constraitns', function() {
 	equals(c.get(), 1);
 	equals(c2.get(), 1);
 });
+
+asyncTest('Constraint Event Listeners', function() {
+	start();
+	expect(4);
+	var $c = cjs.$(1);
+	equals($c.get(), 1);
+	$c.onChange(function(value) {
+		ok(value === 2);
+	});
+	$c.set(2);
+
+	var $d = cjs.$(2);
+	var $e = cjs.$(function() {
+		return $d.get() + 1;
+	});
+	equals($e.get(), 3);
+	$e.onChange(function(value) {
+		ok(value === 4);
+	});
+	$d.set(3);
+});
