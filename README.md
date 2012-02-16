@@ -12,6 +12,7 @@ The CJS Library will appear in the *build* directory.
 
 ### Viewing the examples
 After building from source, run:
+
 	node server
 
 And open your browser to localhost:8000
