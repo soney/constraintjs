@@ -39,7 +39,7 @@ exports.main_src = c(
 			, "constraints/cjs_constraint.js"
 			, "constraints/cjs_constraint_fn.js"
 			, "cjs_events.js"
-			, "cjs_widgets.js"
+			, "cjs_dom_widgets.js"
 			])
 );
 

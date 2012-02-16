@@ -239,27 +239,27 @@ test('FSM Constraitns', function() {
 asyncTest('Constraint Event Listeners', function() {
 	start();
 	expect(4);
-	var $c = cjs.$(1);
-	equals($c.get(), 1);
-	$c.onChange(function(value) {
+	var c = cjs(1);
+	equals(c.get(), 1);
+	c.onChange(function(value) {
 		ok(value === 2);
 	});
-	$c.set(2);
+	c.set(2);
 
-	var $d = cjs.$(2);
-	var $e = cjs.$(function() {
-		return $d.get() + 1;
+	var d = cjs(2);
+	var e = cjs(function() {
+		return d.get() + 1;
 	});
-	equals($e.get(), 3);
-	$e.onChange(function(value) {
+	equals(e.get(), 3);
+	e.onChange(function(value) {
 		ok(value === 4);
 	});
-	$d.set(3);
+	d.set(3);
 });
 
 asyncTest('Asyncronous Constraints', function() {
 	expect(1);
-	var c1 = cjs.$.async(function(success, failure) {
+	var c1 = cjs.async(function(success, failure) {
 		window.setTimeout(function() {
 			success(10);
 		}, 30);

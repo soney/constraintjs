@@ -1,5 +1,10 @@
+/*jslint unparam: true */
 (function(cjs) {
 	var _ = cjs._;
+	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/;
+	var fcamelCase = function(all, letter) {
+		return String(letter).toUpperCase();
+	};
 
 	_.mixin({
 		remove_index: function(arr, from, to) {
@@ -169,7 +174,7 @@
 			return {removed: removed, added: added, moved: moved};
 		}
 
-		,  proto_extend: function (subClass, superClass) {
+		, proto_extend: function (subClass, superClass) {
 				var F = function() {};
 				F.prototype = superClass.prototype;
 				subClass.prototype = new F();
@@ -179,6 +184,11 @@
 				if(superClass.prototype.constructor === Object.prototype.constructor) {
 					superClass.prototype.constructor = superClass;
 				}
+			}
+		// Convert dashed to camelCase; used by the css and data modules
+		// Microsoft forgot to hump their vendor prefix (#9572)
+		, camel_case: function(string) {
+				return string.replace( rmsPrefix, "ms-" ).replace(rdashAlpha, fcamelCase);
 			}
 
 	});

@@ -1,5 +1,6 @@
 var cjs = (function (root) {
 	var cjs_call = function () {
+		return cjs.constraint.apply(cjs, arguments);
 	};
 	var cjs = function () {
 		return cjs_call.apply(this, arguments);
@@ -46,7 +47,7 @@ var cjs = (function (root) {
 	}
 
 	cjs._debug = true;
-	cjs.version = "0.2";
+	cjs.version = "0.3";
 
 	return cjs;
 }(this));

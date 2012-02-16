@@ -1,11 +1,11 @@
 (function(cjs) {
 var _ = cjs._;
 
-cjs.$.fn("unit", function(val, unit_name) {
+cjs.constraint.fn("unit", function(val, unit_name) {
 	return parseFloat(val) + String(unit_name);
 });
 
-cjs.$.fn("add", function() {
+cjs.constraint.fn("add", function() {
 	var values = _.map(arguments, function(arg) {
 		return cjs.get(arg);
 	});
@@ -14,7 +14,7 @@ cjs.$.fn("add", function() {
 	}, 0);
 });
 
-cjs.$.fn("sub", function() {
+cjs.constraint.fn("sub", function() {
 	var values = _.map(arguments, function(arg) {
 		return cjs.get(arg);
 	});
@@ -25,7 +25,7 @@ cjs.$.fn("sub", function() {
 	}, first_val);
 });
 
-cjs.$.fn("mul", function() {
+cjs.constraint.fn("mul", function() {
 	var values = _.map(arguments, function(arg) {
 		return cjs.get(arg);
 	});
@@ -34,7 +34,7 @@ cjs.$.fn("mul", function() {
 	}, 1);
 });
 
-cjs.$.fn("div", function() {
+cjs.constraint.fn("div", function() {
 	var values = _.map(arguments, function(arg) {
 		return cjs.get(arg);
 	});
@@ -45,7 +45,7 @@ cjs.$.fn("div", function() {
 	}, first_val);
 });
 
-cjs.$.fn("map", function(arr, func) {
+cjs.constraint.fn("map", function(arr, func) {
 	return _.map(arr, function(val, key) {
 		return func(val, key);
 	});

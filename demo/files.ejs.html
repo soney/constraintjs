@@ -78,30 +78,30 @@
 	<script type="text/javascript">
 
 		window.onload = function() {
-			var $path = cjs.$("/");
-			var $files = cjs.$.async(function(on_success, on_fail) {
-						get_file($path.get(), on_success, on_fail);
+			var path = cjs("/");
+			var files = cjs.async(function(on_success, on_fail) {
+						get_file(path.get(), on_success, on_fail);
 					}, 3000); // After 3 seconds, auto-fail
 
 
 			var files_dom = document.getElementById("files");
 
-			var $rv = $files.map(function(file, filename) {
-				var $filetype = cjs.$.async(function(on_success, on_fail) {
-						get_file_type($path.get() + "/" + filename, on_success, on_fail);
+			var rv = files.map(function(file, filename) {
+				var filetype = cjs.async(function(on_success, on_fail) {
+						get_file_type(path.get() + "/" + filename, on_success, on_fail);
 					}, 3000);
 
 				var file_dom_element = document.createElement("div");
 				files_dom.appendChild(file_dom_element);
 
-				cjs.bind(file_dom_element, "innerText", cjs.$($filetype.state, {
+				cjs.text(file_dom_element, cjs(filetype.state, {
 								"pending": "..."
 								, "rejected": "Error"
 								, "resolved": function() {
-													return "("+$filetype.get()+") " + filename;
+													return "("+filetype.get()+") " + filename;
 											}
 							}));
-				cjs.bind(file_dom_element, "className", cjs.$($filetype.state, {
+				cjs.class(file_dom_element, cjs(filetype.state, {
 								"pending": "loading"
 								, "rejected": "error"
 								, "resolved": "resolved"
@@ -109,23 +109,24 @@
 
 				return {
 					name: filename
-					, type: $filetype
+					, type: filetype
 				};
 			});
 
-			cjs.bind(files_dom, "className", cjs.$($files.state, {
+			cjs.class(files_dom, cjs(files.state, {
 							"pending": "loading"
 							, "rejected": "error"
 							, "resolved": "resolved"
 						}));
-			cjs.bind(files_dom, "innerText", cjs.$($files.state, {
+
+			cjs.text(files_dom, cjs(files.state, {
 							"pending": "loading"
 							, "rejected": "Error"
 							, "resolved": ""
 						}));
 
 			window.setTimeout(function() {
-						$rv.get();
+						rv.get();
 					}, 3000);
 		};
 

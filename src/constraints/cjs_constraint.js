@@ -46,11 +46,11 @@
 		};
 	};
 
-	create_constraint.async = function() {
+	cjs.async = create_constraint.async = function() {
 		var args = _.toArray(arguments);
 		args.unshift("async_constraint");
 		return cjs.create.apply(cjs, args);
 	};
 
-	cjs.$ = cjs.constraint = create_constraint;
+	cjs.constraint = create_constraint;
 }(cjs));
