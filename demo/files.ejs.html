@@ -1,0 +1,138 @@
+<!DOCTYPE html> <html lang="en">
+  <head>
+    <title>cjs</title>
+	<script type="text/javascript">
+		var files = {
+			"file1.txt": ""
+			, "file2.txt": ""
+			, "dir1": {
+				"file1.txt": ""
+				, "file2.txt": ""
+			}
+			, "dir2": {
+				"file1.txt": ""
+				, "dir3": {}
+			}
+		};
+		var do_get_file = function(path) {
+			var folders = path.split("/");
+			var curr_dir = files;
+			for(var i = 0; i<folders.length; i++) {
+				var folder = folders[i];
+				if(folder === "." || folder === "") {
+					continue;
+				} else {
+					if(curr_dir.hasOwnProperty(folder)) {
+						curr_dir = curr_dir[folder];
+					} else {
+						return null;
+					}
+				}
+			}
+			return curr_dir;
+		};
+		var do_get_file_type = function(path) {
+			var file = do_get_file(path);
+			if(file === null) { return null; }
+			else if(typeof file === "string") { return "file"; }
+			else { return "directory"; }
+		};
+
+		var get_delay = function(minimum, variance) {
+			return minimum + Math.random() * variance;
+		};
+		var fail_with_probability = function(prob) {
+			return Math.random() < prob;
+		};
+
+		var get_file = function(path, on_success, on_fail) {
+			var delay = get_delay(700, 500);
+			window.setTimeout(function() {
+				if(fail_with_probability(0.1)) {
+					on_fail("Random error");
+				} else {
+					on_success(do_get_file(path));
+				}
+			}, delay);
+		};
+
+
+		var get_file_type = function(path, on_success, on_fail) {
+			var delay = get_delay(700, 500);
+			window.setTimeout(function() {
+				if(fail_with_probability(0.1)) {
+					on_fail("Random error");
+				} else {
+					on_success(do_get_file_type(path));
+				}
+			}, delay);
+		};
+	</script>
+	<%- include(cjs_inc.main) %>
+	<script type="text/javascript">
+
+		window.onload = function() {
+			var $path = cjs.$("/");
+			var $files = cjs.$.async(function(on_success, on_fail) {
+						get_file($path.get(), on_success, on_fail);
+					}, 3000); // After 3 seconds, auto-fail
+
+
+			var files_dom = document.getElementById("files");
+
+			var $rv = $files.map(function(file, filename) {
+				var $filetype = cjs.$.async(function(on_success, on_fail) {
+						get_file_type($path.get() + "/" + filename, on_success, on_fail);
+					}, 3000);
+
+				var file_dom_element = document.createElement("div");
+				files_dom.appendChild(file_dom_element);
+
+				cjs.bind(file_dom_element, "innerText", cjs.$($filetype.state, {
+								"pending": "..."
+								, "rejected": "Error"
+								, "resolved": filename
+							}));
+
+				return {
+					name: filename
+					, type: $filetype
+				};
+			});
+
+			cjs.bind(files_dom, "className", cjs.$($files.state, {
+							"pending": "loading"
+							, "rejected": "error"
+							, "resolved": ""
+						}));
+			cjs.bind(files_dom, "innerText", cjs.$($files.state, {
+							"pending": "loading"
+							, "rejected": "Error"
+							, "resolved": ""
+						}));
+
+			window.setTimeout(function() {
+						$rv.get();
+					}, 5000);
+		};
+
+	</script>
+	<style type="text/css">
+		#files {
+			background-color: green;
+			min-height: 130px;
+		}
+		#files.loading{
+			background-image: url('loading.gif');
+			background-repeat: no-repeat;
+			background-color: yellow;
+		}
+		#files.error {
+			background-color: red;
+		}
+	</style>
+  </head>
+  <body>
+	  <div id="files" />
+  </body>
+</html>

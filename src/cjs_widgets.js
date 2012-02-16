@@ -66,6 +66,11 @@ cjs.bind = function(obj, prop_name, constraint) {
 
 	update(constraint.get());
 	constraint.onChange(update);
+
+	return _.bind(cjs.unbind, cjs, constraint, update);
+};
+cjs.unbind = function(constraint, update) {
+	constraint.offChange(update);
 };
 
 }}(cjs, this));

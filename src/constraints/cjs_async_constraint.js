@@ -28,7 +28,9 @@
 						.add_transition(rejected_func, "rejected")
 						.add_transition(function(do_transition ) {
 							if(_.isNumber(timeout_interval)) {
-								root.setTimeout(do_transition, timeout_interval);
+								root.setTimeout(function() {
+									do_transition("timeout");
+								}, timeout_interval);
 							}
 						}, "rejected")
 						.add_state("resolved")
@@ -62,6 +64,8 @@
 		constraint.is_rejected = function() {
 			return constraint.$state.get() === "rejected";
 		};
+
+		constraint.state = async_fsm;
 
 
 		return constraint;

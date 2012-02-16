@@ -45,4 +45,10 @@ cjs.$.fn("div", function() {
 	}, first_val);
 });
 
+cjs.$.fn("map", function(arr, func) {
+	return _.map(arr, function(val, key) {
+		return func(val, key);
+	});
+});
+
 }(cjs));
