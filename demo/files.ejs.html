@@ -5,6 +5,12 @@
 		var files = {
 			"file1.txt": ""
 			, "file2.txt": ""
+			, "file3.txt": ""
+			, "file4.txt": ""
+			, "file5.txt": ""
+			, "file6.txt": ""
+			, "file7.txt": ""
+			, "file8.txt": ""
 			, "dir1": {
 				"file1.txt": ""
 				, "file2.txt": ""
@@ -60,7 +66,7 @@
 		var get_file_type = function(path, on_success, on_fail) {
 			var delay = get_delay(700, 500);
 			window.setTimeout(function() {
-				if(fail_with_probability(0.1)) {
+				if(fail_with_probability(0.2)) {
 					on_fail("Random error");
 				} else {
 					on_success(do_get_file_type(path));
@@ -91,7 +97,14 @@
 				cjs.bind(file_dom_element, "innerText", cjs.$($filetype.state, {
 								"pending": "..."
 								, "rejected": "Error"
-								, "resolved": filename
+								, "resolved": function() {
+													return "("+$filetype.get()+") " + filename;
+											}
+							}));
+				cjs.bind(file_dom_element, "className", cjs.$($filetype.state, {
+								"pending": "loading"
+								, "rejected": "error"
+								, "resolved": "resolved"
 							}));
 
 				return {
@@ -103,7 +116,7 @@
 			cjs.bind(files_dom, "className", cjs.$($files.state, {
 							"pending": "loading"
 							, "rejected": "error"
-							, "resolved": ""
+							, "resolved": "resolved"
 						}));
 			cjs.bind(files_dom, "innerText", cjs.$($files.state, {
 							"pending": "loading"
@@ -113,23 +126,30 @@
 
 			window.setTimeout(function() {
 						$rv.get();
-					}, 5000);
+					}, 3000);
 		};
 
 	</script>
 	<style type="text/css">
 		#files {
-			background-color: green;
 			min-height: 130px;
 		}
 		#files.loading{
 			background-image: url('loading.gif');
 			background-repeat: no-repeat;
+		}
+
+		.resolved {
+			background-color: green;
+		}
+
+		.loading {
 			background-color: yellow;
 		}
-		#files.error {
+		.error {
 			background-color: red;
 		}
+
 	</style>
   </head>
   <body>
