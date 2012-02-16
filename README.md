@@ -15,4 +15,4 @@ After building from source, run:
 
 	node server
 
-And open your browser to localhost:8000
+And point your browser to localhost:8000
