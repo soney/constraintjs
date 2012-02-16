@@ -35,6 +35,7 @@ exports.main_src = c(
 			, "constraints/cjs_simple_constraint.js"
 			, "constraints/cjs_conditional_constraint.js"
 			, "constraints/cjs_fsm_constraint.js"
+			, "constraints/cjs_async_constraint.js"
 			, "constraints/cjs_constraint.js"
 			, "constraints/cjs_constraint_fn.js"
 			, "cjs_events.js"

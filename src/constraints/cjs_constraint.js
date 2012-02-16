@@ -16,7 +16,7 @@
 		var args = _.toArray(arguments);
 
 		if(_.all(arguments, function(arg) {
-				return arg.hasOwnProperty("condition") && arg.hasOwnProperty("value");
+				return _.has(arg, "condition") && arg.hasOwnProperty("value");
 			})) {
 			args.unshift("coditional_constraint");
 			return cjs.create.apply(cjs, args);
@@ -44,6 +44,12 @@
 				return initial_constraint[name].apply(initial_constraint, other_args);
 			}
 		};
+	};
+
+	create_constraint.async = function() {
+		var args = _.toArray(arguments);
+		args.unshift("async_constraint");
+		return cjs.create.apply(cjs, args);
 	};
 
 	cjs.$ = cjs.constraint = create_constraint;

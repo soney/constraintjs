@@ -58,7 +58,7 @@
 		};
 		proto.cs_eval = function() {
 			var rv;
-			if(this.hasOwnProperty("value")) {
+			if(_.has(this, "value")) {
 				if(this.literal) {
 					rv = this.value;
 				} else if(_.isFunction(this.value)){
@@ -142,7 +142,7 @@
 					var event = {
 						value: value
 						, timestamp: get_time()
-						, constraint: this
+						//, constraint: this
 						, old_value: old_value
 						, old_timestamp: old_timestamp
 					};
@@ -167,6 +167,13 @@
 				constraint = new Constraint(arg0, arg1, arg2, arg3);
 			}
 		}
+
+		var rv = function() {
+			return constraint.get();
+		};
+		rv.get = _.bind(constraint.get, constraint);
+		rv.onChange = _.bind(constraint.onChange, constraint);
+		rv.offChange = _.bind(constraint.offChange, constraint);
 
 		return constraint;
 	};

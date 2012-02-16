@@ -177,6 +177,10 @@ var FSM = function() {
 	this.listeners = [];
 	this.chain_state = null;
 	this.did_transition = false;
+
+	this.$state = cjs.create("simple_constraint", _.bind(function() {
+		return this.state;
+	}, this));
 };
 (function(my) {
 	var proto = my.prototype;
@@ -233,6 +237,7 @@ var FSM = function() {
 			}
 		});
 		this.state = to_state;
+		this.$state.nullify();
 		_.forEach(this.listeners, function(listener) {
 			if(listener.interested_in(transition, false)) {
 				listener.run(transition, to_state, from_state);

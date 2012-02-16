@@ -1,5 +1,4 @@
 (function(cjs, root) {if(!cjs._is_node) {
-
 var _ = cjs._;
 
 var mouse = {
@@ -8,8 +7,8 @@ var mouse = {
 };
 
 root.addEventListener("mousemove", function(event) {
-	mouse.$x.set(event.clientX);
-	mouse.$y.set(event.clientY);
+	mouse.$x.set(event.pageX);
+	mouse.$y.set(event.pageY);
 });
 
 cjs.mouse = mouse;
@@ -57,5 +56,16 @@ cjs.keyboard = keyboard;
 cjs.$time = cjs.$(function() {
 	return (new Date()).getTime();
 });
+root.setInterval(_.bind(cjs.$time.nullify, cjs.$time), 10);
+
+
+cjs.bind = function(obj, prop_name, constraint) {
+	var update = function(value) {
+		obj[prop_name] = value;
+	};
+
+	update(constraint.get());
+	constraint.onChange(update);
+};
 
 }}(cjs, this));

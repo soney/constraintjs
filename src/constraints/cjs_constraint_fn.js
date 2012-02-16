@@ -2,7 +2,7 @@
 var _ = cjs._;
 
 cjs.$.fn("unit", function(val, unit_name) {
-	return parseFloat(val) + " " + unit_name;
+	return parseFloat(val) + String(unit_name);
 });
 
 cjs.$.fn("add", function() {

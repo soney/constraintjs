@@ -256,3 +256,16 @@ asyncTest('Constraint Event Listeners', function() {
 	});
 	$d.set(3);
 });
+
+asyncTest('Asyncronous Constraints', function() {
+	expect(1);
+	var c1 = cjs.$.async(function(success, failure) {
+		window.setTimeout(function() {
+			success(10);
+		}, 30);
+	});
+	window.setTimeout(function() {
+		start();
+		equals(c1.get(), 10);
+	}, 40);
+});
