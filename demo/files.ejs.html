@@ -92,7 +92,6 @@
 					}, 3000);
 
 				var file_dom_element = document.createElement("div");
-				files_dom.appendChild(file_dom_element);
 
 				cjs.text(file_dom_element, cjs(filetype.state, {
 								"pending": "..."
@@ -107,11 +106,12 @@
 								, "resolved": "resolved"
 							}));
 
-				return {
-					name: filename
-					, type: filetype
-				};
+				return file_dom_element;
 			});
+
+			cjs.children(files_dom, rv);
+
+
 
 			cjs.class(files_dom, cjs(files.state, {
 							"pending": "loading"
@@ -124,10 +124,6 @@
 							, "rejected": "Error"
 							, "resolved": ""
 						}));
-
-			window.setTimeout(function() {
-						rv.get();
-					}, 3000);
 		};
 
 	</script>

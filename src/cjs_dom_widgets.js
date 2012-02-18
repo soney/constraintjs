@@ -90,4 +90,67 @@ cjs['class'] = function(elem, constraint) {
 	return cjs.bind(elem, "className", constraint);
 };
 
+var insert_at = function(child_node, parent_node, index) {
+	var children = parent_node.childNodes;
+	if(children.length <= index) {
+		parent_node.appendChild(child_node);
+	} else {
+		var before_child = children[index];
+		parent_node.insertBefore(child_node, before_child);
+	}
+};
+var remove = function(child_node) {
+	var parentNode = child_node.parentNode;
+	if(parentNode !== null) {
+		parentNode.removeChild(child_node);
+	}
+};
+
+var move = function(child_node, to_index, from_index) {
+	var parent_node = child_node.parentNode;
+	if(parent_node) {
+		if(from_index < to_index) { //If it's less than the index we're inserting at...
+			to_index++; //Increase the index by 1, to make up for the fact that we're removing me at the beginning
+		}
+		insert_at(child_node, parent_node, to_index);
+	}
+};
+
+
+cjs.children = function(elem, constraint) {
+	//First clear the existing children of the element
+	_.times(elem.childNodes.length, function() {
+		elem.removeChild(elem.firstChild);
+	});
+
+	var value = cjs.get(constraint);
+	//Then get the current value of the constraint...
+	//and append all the children
+	_.forEach(value, function(child) {
+		elem.appendChild(child);
+	});
+
+	var _children = _.clone(value);
+
+	constraint.onChange(function(children) {
+		var diff = _.diff(_children, children)
+			, removed = diff.removed
+			, added = diff.added
+			, moved = diff.moved;
+
+
+		_.forEach(removed, function(x) {
+			remove(x.item);
+		});
+		_.forEach(added, function(x) {
+			insert_at(x.item, elem, x.index);
+		});
+		_.forEach(moved, function(x) {
+			move(x.item, x.to_index, x.from_index);
+		});
+	
+		_children = _.clone(children); //Value may be mutated, so clone it
+	});
+};
+
 }}(cjs, this));
