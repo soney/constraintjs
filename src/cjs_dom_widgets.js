@@ -87,6 +87,7 @@ cjs.attr = function(elem, prop_name, constraint) {
 };
 
 cjs.text = function(elem, constraint) {
+/*
 	var textnode = document.createTextNode();
 	var unbind_text_node = cjs.bind(textnode, "nodeValue", constraint);
 	var unbind_children_constraint = cjs.children(elem, [textnode], unbind_text_node);
@@ -95,6 +96,8 @@ cjs.text = function(elem, constraint) {
 		unbind_text_node();
 		unbind_children_constraint();
 	};
+	*/
+	return cjs.children(elem, constraint);
 };
 
 cjs['class'] = function(elem, constraint) {
@@ -117,13 +120,24 @@ var remove = function(child_node) {
 	}
 };
 
-var move = function(child_node, to_index, from_index) {
-	var parent_node = child_node.parentNode;
-	if(parent_node) {
-		if(from_index < to_index) { //If it's less than the index we're inserting at...
-			to_index++; //Increase the index by 1, to make up for the fact that we're removing me at the beginning
+var remove_index = function(parent_node, index) {
+	var children = parent_node.childNodes;
+	if(children.length > index) {
+		var child_node = children[index];
+		remove(child_node);
+	}
+};
+
+var move_child = function(parent_node, to_index, from_index) {
+	var children = parent_node.childNodes;
+	if(children.length > from_index) {
+		var child_node = children[from_index];
+		if(parent_node) {
+			if(from_index < to_index) { //If it's less than the index we're inserting at...
+				to_index++; //Increase the index by 1, to make up for the fact that we're removing me at the beginning
+			}
+			insert_at(child_node, parent_node, to_index);
 		}
-		insert_at(child_node, parent_node, to_index);
 	}
 };
 
@@ -166,6 +180,15 @@ var set_data = function(elem, key, value) {
 };
 
 
+var convert_item = function(item) {
+	if(_.isElement(item)) {
+		return item;
+	} else {
+		var node = document.createTextNode(item);
+		return node;
+	}
+};
+
 cjs.children = function(elem, constraint, on_unbind) {
 	var _children = [];
 
@@ -188,10 +211,15 @@ cjs.children = function(elem, constraint, on_unbind) {
 			elem.removeChild(elem.firstChild);
 		});
 
+		if(!_.isArray(value)) {
+			value = [value];
+		}
+
 		//Then get the current value of the constraint...
 		//and append all the children
 		_.forEach(value, function(child) {
-			elem.appendChild(child);
+			var item = convert_item(child);
+			elem.appendChild(item);
 		});
 
 		_children = _.clone(value);
@@ -199,6 +227,9 @@ cjs.children = function(elem, constraint, on_unbind) {
 
 		if(cjs.is_constraint(constraint)) {
 			constraint.onChange(function(children) {
+				if(!_.isArray(children)) {
+					children = [children];
+				}
 				var diff = _.diff(_children, children)
 					, removed = diff.removed
 					, added = diff.added
@@ -206,13 +237,14 @@ cjs.children = function(elem, constraint, on_unbind) {
 
 
 				_.forEach(removed, function(x) {
-					remove(x.item);
+					remove_index(elem, x.index);
 				});
 				_.forEach(added, function(x) {
-					insert_at(x.item, elem, x.index);
+					var item = convert_item(x.item);
+					insert_at(item, elem, x.index);
 				});
 				_.forEach(moved, function(x) {
-					move(x.item, x.to_index, x.from_index);
+					move_child(elem, x.to_index, x.from_index);
 				});
 			
 				_children = _.clone(children); //Value may be mutated, so clone it

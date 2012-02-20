@@ -120,12 +120,18 @@
 							, "resolved": "resolved"
 						}));
 
+						/*
 			cjs.text(files_dom, cjs(files.state, {
 							"pending": "loading"
 							, "rejected": "Error"
 						}));
+						*/
 						
-			cjs.children(files_dom, rv);
+			cjs.children(files_dom, cjs(files.state, {
+							"pending": "loading"
+							, "rejected": "error"
+							, "resolved": rv
+				}));
 		};
 
 	</script>
