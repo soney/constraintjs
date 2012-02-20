@@ -14,72 +14,92 @@ var Node = function() {
 	this.incomingEdges = [];
 };
 
-Node.prototype.addOutgoingEdge = function(edge) {
-	this.outgoingEdges.push(edge);
-};
-Node.prototype.addIncomingEdge = function(edge) {
-	this.incomingEdges.push(edge);
-};
+(function(my) {
+	var proto = my.prototype;
 
-Node.prototype.removeOutgoingEdge = function(edge) {
-	_.remove(this.outgoingEdges, edge);
-};
-Node.prototype.removeIncomingEdge = function(edge) {
-	_.remove(this.incomingEdges, edge);
-};
+	proto.addOutgoingEdge = function(edge) {
+		this.outgoingEdges.push(edge);
+	};
+	proto.addIncomingEdge = function(edge) {
+		this.incomingEdges.push(edge);
+	};
 
-Node.prototype.getOutgoing = function() {
-	return this.outgoingEdges;
-};
-Node.prototype.getIncoming = function() {
-	return this.incomingEdges;
-};
+	proto.removeOutgoingEdge = function(edge) {
+		_.remove(this.outgoingEdges, edge);
+	};
+	proto.removeIncomingEdge = function(edge) {
+		_.remove(this.incomingEdges, edge);
+	};
 
-Node.prototype.destroy = function() {
-	this.incomingEdges.forEach(function(edge) {
-		var fromNode = edge.fromNode;
-		fromNode.removeOutgoingEdge(edge);
-	});
-	_.clear(this.incomingEdges);
+	proto.getOutgoing = function() {
+		return this.outgoingEdges;
+	};
+	proto.getIncoming = function() {
+		return this.incomingEdges;
+	};
 
-	this.outgoingEdges.forEach(function(edge) {
-		var toNode = edge.toNode;
-		toNode.removeIncomingEdge(edge);
-	});
-	_.clear(this.outgoingEdges);
-};
+	proto.destroy = function() {
+		this.incomingEdges.forEach(function(edge) {
+			var fromNode = edge.fromNode;
+			fromNode.removeOutgoingEdge(edge);
+		});
+		_.clear(this.incomingEdges);
 
-Node.prototype.pointsAt = function() {
-	var rv = []
-		, i;
-	for(i = 0; i<this.outgoingEdges.length; i++) {
-		var outgoingEdge = this.outgoingEdges[i];
-		rv.push(outgoingEdge.toNode);
-	}
-	return rv;
-};
+		this.outgoingEdges.forEach(function(edge) {
+			var toNode = edge.toNode;
+			toNode.removeIncomingEdge(edge);
+		});
+		_.clear(this.outgoingEdges);
+	};
 
-Node.prototype.pointsAtMe = function() {
-	var rv = []
-		, i;
-	for(i = 0; i<this.incomingEdges.length; i++) {
-		var incomingEdge = this.incomingEdges[i];
-		rv.push(incomingEdge.fromNode);
-	}
-	return rv;
-};
+	proto.pointsAt = function(recursive) {
+		recursive = recursive === true;
+		var rv = []
+			, i;
+		for(i = 0; i<this.outgoingEdges.length; i++) {
+			var outgoingEdge = this.outgoingEdges[i];
+			var node = outgoingEdge.toNode;
 
-Node.prototype.getEdgeTo = function(toNode) {
-	var i;
-	for(i = 0; i<this.outgoingEdges.length; i++) {
-		var outgoingEdge = this.outgoingEdges[i];
-		if(outgoingEdge.fromNode === this && outgoingEdge.toNode === toNode) { return outgoingEdge; }
-	}
-	return null;
-};
-Node.prototype.hasEdgeTo = function(toNode) {
-	return this.getEdgeTo(toNode)!==null;
-};
+			if(!_.contains(rv, node)) {
+				rv.push(node);
+				if(recursive) {
+					rv = _.unique(rv, node.pointsAt(true));
+				}
+			}
+		}
+		return rv;
+	};
+
+	proto.pointsAtMe = function(recursive) {
+		recursive = recursive === true;
+		var rv = []
+			, i;
+		for(i = 0; i<this.incomingEdges.length; i++) {
+			var incomingEdge = this.incomingEdges[i];
+			var node = incomingEdge.fromNode;
+
+			if(!_.contains(rv, node)) {
+				rv.push(node);
+				if(recursive) {
+					rv = _.unique(rv, node.pointsAtMe(true));
+				}
+			}
+		}
+		return rv;
+	};
+
+	proto.getEdgeTo = function(toNode) {
+		var i;
+		for(i = 0; i<this.outgoingEdges.length; i++) {
+			var outgoingEdge = this.outgoingEdges[i];
+			if(outgoingEdge.fromNode === this && outgoingEdge.toNode === toNode) { return outgoingEdge; }
+		}
+		return null;
+	};
+	proto.hasEdgeTo = function(toNode) {
+		return this.getEdgeTo(toNode)!==null;
+	};
+}(Node));
 
 var Edge = function(fromNode, toNode) {
 	this.fromNode = fromNode;

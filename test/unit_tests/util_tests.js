@@ -88,22 +88,22 @@ test('Constraint Solver', function() {
 	constraintSolver.addDependency(o1, o2);
 	constraintSolver.addDependency(o4, o5);
 	
-	ok(equalSets(constraintSolver.immediatelyDependentOn(o1), [o2]));
+	ok(equalSets(constraintSolver.influences(o1), [o2]));
 	constraintSolver.removeObject(o2);	
-	ok(equalSets(constraintSolver.immediatelyDependentOn(o1), []));
+	ok(equalSets(constraintSolver.influences(o1), []));
 	
 	constraintSolver.addObject(o2);
 	constraintSolver.addDependency(o1, o2);
 	constraintSolver.addDependency(o2, o3);
 	constraintSolver.addDependency(o2, o4);
-	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3, o4]));
+	ok(equalSets(constraintSolver.influences(o2), [o3, o4]));
 	constraintSolver.removeObject(o4);
-	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3]));
+	ok(equalSets(constraintSolver.influences(o2), [o3]));
 	constraintSolver.addObject(o4);
 	constraintSolver.addDependency(o2,o4);
-	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3, o4]));
+	ok(equalSets(constraintSolver.influences(o2), [o3, o4]));
 	constraintSolver.removeDependency(o2,o4);
-	ok(equalSets(constraintSolver.immediatelyDependentOn(o2), [o3]));
+	ok(equalSets(constraintSolver.influences(o2), [o3]));
 });
 
 test('Basic Constraints', function() {

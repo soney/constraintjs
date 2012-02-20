@@ -21,7 +21,8 @@
 	}(Listener));
 
 	var Constraint = function() {
-		constraint_solver.addObject(this);
+		var node = constraint_solver.addObject(this);
+
 		this.literal = false;
 		this.set.apply(this, arguments);
 		this.listeners = [];
@@ -31,6 +32,7 @@
 			value: undefined
 			, time: undefined
 		};
+		this.id = "constraint_"+node.getId();
 	};
 
 	(function(my) {
@@ -112,13 +114,24 @@
 			}
 			return this;
 		};
+
+		proto._on = function(event_type, callback) {
+			var node = constraint_solver.getNode(this);
+			var listener_id = constraint_solver.add_listener(event_type, node, callback);
+			return _.bind(this._off, this, listener_id);
+		};
+		proto._off = function(listener_id) {
+			constraint_solver.remove_listener(listener_id);
+		};
+
 		proto.onChange = function(callback, context, name) {
 			var listener = new Listener(callback, context, name);
 
 			this.listeners.push(listener);
 			if(this.cs_listener_id === null) {
-				this.cs_listener_id = constraint_solver.add_listener("nullify", _.bind(this.on_nullified, this));
+				this.cs_listener_id = this._on("nullify", _.bind(this.update_on_change_listeners, this));
 			}
+			this.last_listener = listener;
 			return this;
 		};
 		proto.offChange = function(id) {
@@ -127,13 +140,13 @@
 			});
 			if(this.listeners.length === 0) {
 				if(this.cs_listener_id !== null) {
-					constraint_solver.removeEventListener(this.cs_listener_id);
+					this._off(this.cs_listener_id);
 					this.cs_listener_id = null;
 				}
 			}
 			return this;
 		};
-		proto.on_nullified = function() {
+		proto.update_on_change_listeners = function() {
 			_.defer(_.bind(function() {
 				var old_value = this.history.value;
 				var old_timestamp = this.history.timestamp;
@@ -151,6 +164,12 @@
 					});
 				}
 			}, this));
+		};
+		proto.influences = proto.depends_on_me = function(recursive) {
+			return constraint_solver.influences(this, recursive);
+		};
+		proto.depends_on = function(recursive) {
+			return constraint_solver.dependsOn(this, recursive);
 		};
 	}(Constraint));
 

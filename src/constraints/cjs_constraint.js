@@ -30,10 +30,15 @@
 		Constraint.prototype[name] = function() {
 			var args = _.toArray(arguments);
 			var self = this;
-			return cjs.create("simple_constraint", function() {
+			var rv = cjs.create("simple_constraint", function() {
 				var val = cjs.get(self);
-				return func.apply(self, ([val]).concat(args));
+				return func.apply(this, ([val]).concat(args));
 			});
+
+			rv.basis = this;
+			rv.basis_args = args;
+
+			return rv;
 		};
 		create_constraint[name] = function(arg0) {
 			var args = _.toArray(arguments);

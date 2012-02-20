@@ -47,10 +47,10 @@
 		var constraint = cjs.create("fsm_constraint", async_fsm, {
 			"pending": undefined
 			, "resolved": function() {
-				return resolved_value;
+				return cjs.get(resolved_value);
 			}
 			, "rejected": function() {
-				return rejected_value;
+				return cjs.get(rejected_value);
 			}
 		});
 
