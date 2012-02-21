@@ -52,7 +52,7 @@
 		};
 
 		var get_file = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 500);
+			var delay = get_delay(700, 5000);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.1)) {
 					on_fail("Random error");
@@ -64,7 +64,7 @@
 
 
 		var get_file_type = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 500);
+			var delay = get_delay(700, 5000);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.2)) {
 					on_fail("Random error");
@@ -81,7 +81,7 @@
 			var path = cjs("/");
 			var files = cjs.async(function(on_success, on_fail) {
 						get_file(path.get(), on_success, on_fail);
-					}, 3000); // After 3 seconds, auto-fail
+					}, 5000); // After 5 seconds, auto-fail
 
 			var files_dom = document.getElementById("files");
 
@@ -90,7 +90,7 @@
 			var rv = files.map(function(file, filename) {
 				var filetype = cjs.async(function(on_success, on_fail) {
 						get_file_type(path.get() + "/" + filename, on_success, on_fail);
-					}, 3000);
+					}, 5000);
 
 				var file_dom_element = document.createElement("div");
 
@@ -120,12 +120,6 @@
 							, "resolved": "resolved"
 						}));
 
-						/*
-			cjs.text(files_dom, cjs(files.state, {
-							"pending": "loading"
-							, "rejected": "Error"
-						}));
-						*/
 						
 			cjs.children(files_dom, cjs(files.state, {
 							"pending": "loading"
