@@ -45,7 +45,7 @@
 	var special = makeMap("script,style");
 
 	var HTMLParser = function( html, handler ) {
-		var index, chars, match, stack = [], last = html;
+		var index, hindex, tindex, chars, match, stack = [], last = html;
 		stack.last = function(){
 			return this[ this.length - 1 ];
 		};
@@ -104,7 +104,16 @@
 				}
 
 				if ( chars ) {
-					index = html.indexOf("<");
+					tindex = html.indexOf("<");
+					hindex = html.indexOf("{{");
+
+					if(tindex < 0) {
+						index = hindex;
+					} else if(hindex < 0) {
+						index = tindex;
+					} else {
+						index = Math.min(hindex, tindex);
+					}
 					
 					var text = index < 0 ? html : html.substring( 0, index );
 					html = index < 0 ? "" : html.substring( index );

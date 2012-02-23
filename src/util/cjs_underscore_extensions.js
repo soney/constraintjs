@@ -192,4 +192,7 @@
 			}
 
 	});
+	_.isTextElement = function(obj) {
+		return !!(obj && obj.nodeType === 3);
+	};
 }(cjs));

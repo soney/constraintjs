@@ -60,9 +60,14 @@ cjs.time = cjs.constraint(function() {
 root.setInterval(_.bind(cjs.time.nullify, cjs.time), 10);
 
 
-cjs.bind = function(obj, prop_name, constraint) {
+cjs.bind = function(obj, prop_name, constraint, setter) {
+	if(!_.isFunction(setter)) {
+		setter = function(o, pn, v) {
+			o[pn] = v;
+		};
+	} 
 	var update = function(value) {
-		obj[prop_name] = value;
+		setter(obj, prop_name, value);
 	};
 
 	_.defer(function() {
@@ -83,7 +88,9 @@ cjs.css = function(elem, prop_name, constraint) {
 };
 
 cjs.attr = function(elem, prop_name, constraint) {
-	return cjs.bind(elem, prop_name, constraint);
+	return cjs.bind(elem, prop_name, constraint, function(obj, name, value) {
+		obj.setAttribute(name, value);
+	});
 };
 
 cjs.text = function(elem, constraint) {
@@ -215,12 +222,18 @@ cjs.children = function(elem, constraint, on_unbind) {
 			value = [value];
 		}
 
-		//Then get the current value of the constraint...
-		//and append all the children
-		_.forEach(value, function(child) {
-			var item = convert_item(child);
-			elem.appendChild(item);
-		});
+		if(_.isElement(elem)) {
+			//Then get the current value of the constraint...
+			//and append all the children
+			_.forEach(value, function(child) {
+				var item = convert_item(child);
+				elem.appendChild(item);
+			});
+		} else if(_.isTextElement(elem)) {
+			elem.nodeValue = _.map(value, function(child) {
+				return String(child);
+			}).join("");
+		}
 
 		_children = _.clone(value);
 
@@ -230,24 +243,29 @@ cjs.children = function(elem, constraint, on_unbind) {
 				if(!_.isArray(children)) {
 					children = [children];
 				}
-				var diff = _.diff(_children, children)
-					, removed = diff.removed
-					, added = diff.added
-					, moved = diff.moved;
+				if(_.isElement(elem)) {
+					var diff = _.diff(_children, children)
+						, removed = diff.removed
+						, added = diff.added
+						, moved = diff.moved;
 
-
-				_.forEach(removed, function(x) {
-					remove_index(elem, x.index);
-				});
-				_.forEach(added, function(x) {
-					var item = convert_item(x.item);
-					insert_at(item, elem, x.index);
-				});
-				_.forEach(moved, function(x) {
-					move_child(elem, x.to_index, x.from_index);
-				});
-			
-				_children = _.clone(children); //Value may be mutated, so clone it
+					_.forEach(removed, function(x) {
+						remove_index(elem, x.index);
+					});
+					_.forEach(added, function(x) {
+						var item = convert_item(x.item);
+						insert_at(item, elem, x.index);
+					});
+					_.forEach(moved, function(x) {
+						move_child(elem, x.to_index, x.from_index);
+					});
+				
+					_children = _.clone(children); //Value may be mutated, so clone it
+				} else if(_.isTextElement(elem)) {
+					elem.nodeValue = _.map(children, function(child) {
+						return String(child);
+					}).join("");
+				}
 			});
 
 			var last_listener = constraint.last_listener;
