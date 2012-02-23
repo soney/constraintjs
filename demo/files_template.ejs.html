@@ -81,59 +81,32 @@
 			var path = cjs("/");
 			var files = cjs.async(function(on_success, on_fail) {
 						get_file(path.get(), on_success, on_fail);
-					}, 5000); // After 5 seconds, auto-fail
-
-
-
-
-			/*
-			var rv = files.map(function(file, filename) {
+					});
+			var filetypes = files.map(function(file, filename) {
 				var filetype = cjs.async(function(on_success, on_fail) {
 						get_file_type(path.get() + "/" + filename, on_success, on_fail);
-					}, 5000);
-
-				var file_dom_element = document.createElement("div");
-
-				cjs.text(file_dom_element, cjs(filetype.state, {
-								"pending": "..."
-								, "rejected": "Error"
-								, "resolved": function() {
-													return "("+filetype.get()+") " + filename;
-											}
-							}));
-				cjs.class(file_dom_element, cjs(filetype.state, {
-								"pending": "loading"
-								, "rejected": "error"
-								, "resolved": "resolved"
-							}));
-
-				return file_dom_element;
-			});
-			*/
-
-			var rv = cjs.create("template", "{{#each files filename}}"
-				+ "<div>{{filename}}</div>"
-				+ "{{/each}}"
-			, {files: files});
+					});
+				return filetype;
+				});
+			var rv = cjs.create("template", 
+				"<div>"
+				+ "{{#diagram files.state}}"
+					+ "{{#state pending}}"
+						+ "<div>loading...</div>"
+					+ "{{/state}}"
+					+ "{{#state resolved}}"
+						+ "{{#each filetypes filetype}}"
+							+ "<div>{{filetype}}</div>"
+						+ "{{/each}}"
+					+ "{{/state}}"
+					+ "{{#state rejected}}"
+						+ "<div>error</div>"
+					+ "{{/state}}"
+				+ "{{/diagram}}"
+				+ "</div>"
+			, {files: files, filetypes: filetypes});
 			var files_dom = document.getElementById("files");
 			files_dom.appendChild(rv);
-			/*
-
-
-
-			cjs.class(files_dom, cjs(files.state, {
-							"pending": "loading"
-							, "rejected": "error"
-							, "resolved": "resolved"
-						}));
-
-						
-			cjs.children(files_dom, cjs(files.state, {
-							"pending": "loading"
-							, "rejected": "error"
-							, "resolved": rv
-				}));
-			*/
 		};
 
 	</script>

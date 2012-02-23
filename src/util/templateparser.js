@@ -18,11 +18,12 @@
 (function(cjs){
 
 	// Regular Expressions for parsing tags and attributes
-	var startTag = /^<([-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/
-		, endTag = /^<\/([-A-Za-z0-9_]+)[^>]*>/
-		, attr = /([-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g
-		, startHandlebars = /^\{\{(#?)([\-A-Za-z0-9_$]+)((?:\s+\w+)*)\}\}/
-		, endHandlebars = /^\{\{\/?([\-A-Za-z0-9_$]+)\}\}/;
+	var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/
+		, endTag = /^<\/([\-A-Za-z0-9_]+)[^>]*>/
+		, attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g
+		, startHandlebars = /^\{\{(#?)([\-A-Za-z0-9_$\.]+)((?:\s+(?:\w|\.)+)*)\}\}/
+		, endHandlebars = /^\{\{\/?([\-A-Za-z0-9_$]+)\}\}/
+		, handlebarsAttr = /([\-A-Za-z0-9_\.]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 
 		
 	// Empty Elements - HTML 4.01
@@ -220,7 +221,7 @@
 
 			var attrs = [];
 
-			rest.replace(attr, function(match, name) {
+			rest.replace(handlebarsAttr, function(match, name) {
 				var value = arguments[2] ? arguments[2] :
 					arguments[3] ? arguments[3] :
 					arguments[4] ? arguments[4] :

@@ -1,6 +1,8 @@
 <!DOCTYPE html> <html lang="en">
   <head>
     <title>cjs</title>
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="jquery.jstree.js"></script>
 	<script type="text/javascript">
 		var files = {
 			"file1.txt": ""
@@ -78,54 +80,21 @@
 	<script type="text/javascript">
 
 		window.onload = function() {
-			var path = window.path = cjs("/");
+			var path = cjs("/");
 			var files = cjs.async(function(on_success, on_fail) {
 						get_file(path.get(), on_success, on_fail);
 					}, 5000); // After 5 seconds, auto-fail
-
-			var files_dom = document.getElementById("files");
-
-
-
-			var rv = files.map(function(file, filename) {
+			var filetypes = files.map(function(file, filename) {
 				var filetype = cjs.async(function(on_success, on_fail) {
 						get_file_type(path.get() + "/" + filename, on_success, on_fail);
 					}, 5000);
-
-				var file_dom_element = document.createElement("div");
-
-				cjs.text(file_dom_element, cjs(filetype.state, {
-								"pending": "..."
-								, "rejected": "Error"
-								, "resolved": function() {
-													return "("+filetype.get()+") " + filename;
-											}
-							}));
-				cjs.class(file_dom_element, cjs(filetype.state, {
-								"pending": "loading"
-								, "rejected": "error"
-								, "resolved": "resolved"
-							}));
-
-				return file_dom_element;
-			});
-
-
-			window.rv = rv;
-			window.f = files;
-
-			cjs.class(files_dom, cjs(files.state, {
-							"pending": "loading"
-							, "rejected": "error"
-							, "resolved": "resolved"
-						}));
-
-						
-			cjs.children(files_dom, cjs(files.state, {
-							"pending": "loading"
-							, "rejected": "error"
-							, "resolved": rv
-				}));
+				return filetype;
+				});
+			$("#files").jstree({
+						core : { /* core options go here */ },
+						plugins : [ "themes", "html_data", "some-other-plugin" ]
+					});
+			$("#files").jstree("create_node", -1, "last", { "data": "ABC"});
 		};
 
 	</script>

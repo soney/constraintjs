@@ -50,11 +50,12 @@
 				if(tag === "each") {
 					if(_.size(node.attrs)>=1) {
 						var collection_name = node.attrs[0].name;
-						var key_name = (_.size(node.attrs) >= 2) ? node.attrs[1].name : "key";
+						var val_name = (_.size(node.attrs) >= 2) ? node.attrs[1].name : "__v__";
+						var key_name = (_.size(node.attrs) >= 3) ? node.attrs[2].name : "__k__";
 						rv = "\n__n__ = "+collection_name;
-						rv += ".map(function(__v__, " + key_name + ") { // {{#each " + collection_name + "}}\n"
-							+ "var stack=[],__n__,__p__; // {{#each " + collection_name + "}}\n"
-							+ "with (__v__) { // {{#each " + collection_name + "}}\n\n";
+						rv += ".map(_.bind(function(stack, " + val_name + ", " + key_name + ") { // {{#each " + collection_name + "}}\n"
+							+ "var __n__,rv; // {{#each " + collection_name + "}}\n"
+							+ "with ("+val_name+") { // {{#each " + collection_name + "}}\n\n";
 
 						rv += _.map(node.children, function(child) {
 							return to_fn_str(child);
@@ -63,9 +64,28 @@
 						rv += "\n"
 							+ "return rv;\n"
 							+ "}"
-							+ "}); // {{/each}}\n";
+							+ "}, this, [_.last(stack)])); // {{/each}}\n";
 						rv += "cjs.children(_.last(stack), __n__); // {{/each}}\n\n";
 					}
+				} else if(tag === "diagram") {
+					var diagram_name = node.attrs[0].name;
+					rv = "\n__n__ = cjs("+diagram_name+", { // {{#diagram " + diagram_name + "}}\n\n";
+					_.forEach(node.children, function(child, index) {
+						if(child.type === "handlebar" && child.tag === "state") {
+							var state_name = child.attrs[0].name;
+							rv += (index > 0 ? ", " : "") + "'"+state_name+"': _.bind(function(stack) { // {{#state " + state_name + "}}\n"
+								+ "var __n__,rv;\n"
+
+							rv += _.map(child.children, function(c) {
+								return to_fn_str(c);
+							}).join("");
+
+							rv += "return rv; // {{/state}}\n"
+								+ "}, this, [_.last(stack)]) // {{/state}}\n\n";
+						}
+					});
+					rv += "\n}); // {{/diagram}}\n";
+					rv += "cjs.children(_.last(stack), __n__); // {{/diagram}}\n\n";
 				}
 			} else {
 				rv = "\n__n__ = document.createTextNode(''); // {{"+node.tag+"}}\n";
@@ -137,7 +157,7 @@
 				}
 			});
 
-		var fn_string = "var _ = cjs._, stack=[], __n__, __p__, rv;\n"
+		var fn_string = "var _ = cjs._, stack=[], __n__, rv;\n"
 						+ "with(obj) {\n//=================================\n\n"
 						+ to_fn_str(tree_root)
 						+ "\n//=================================\n}\n"
@@ -150,7 +170,7 @@
 			console.error(e);
 			console.log(fn_string);
 		}
-		console.log(fn);
+		console.log(tree_root, fn);
 
 		return _.isUndefined(data) ? fn : fn(data);
 	};
