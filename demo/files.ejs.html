@@ -86,7 +86,6 @@
 			var files_dom = document.getElementById("files");
 
 
-
 			var rv = files.map(function(file, filename) {
 				var filetype = cjs.async(function(on_success, on_fail) {
 						get_file_type(path.get() + "/" + filename, on_success, on_fail);
