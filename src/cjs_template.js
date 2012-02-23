@@ -3,28 +3,30 @@
 (function(cjs) {
 	var _ = cjs._;
 
-	var simple_handlebar_regex = /^{{([-A-Za-z0-9_$]+)}}/;
+	var simple_handlebar_regex = /^\{\{([\-A-Za-z0-9_$]+)\}\}/;
 
 	var to_fn_str = function(node) {
-		var rv = "elem = _.last(stack);";
+		var rv
+			, type = node.type;
 
-		var type = node.type;
+
 		if(type === "root") {
-			rv = String(rv);
-		} else if(type === "handlebar") {
-			if(node.block) {
-				console.log(node);
+			if(node.children.length === 1 && node.children[0].type === "html_tag") {
+				rv = to_fn_str(node.children[0]);
 			} else {
-				rv = rv
-					+ "__n__ = document.createTextNode('');"
-					+ "elem.appendChild(__n__);"
-					+ "cjs.text(__n__, " + node.tag + ");";
+				rv = "stack.push(document.createElement('span')); // (root)\n";
+				rv += _.map(node.children, function(child) {
+					return to_fn_str(child);
+				}).join("");
+				rv += "rv = stack.pop(); // (/root)\n";
 			}
+		} else if(type === "text") {
+			rv = "_.last(stack).appendChild(document.createTextNode('" + node.text + "')); // (text)\n";
+		} else if(type === "comment") {
+			rv = "_.last(stack).appendChild(document.createTextNode('" + node.text + "')); // (comment)\n";
 		} else if(type === "html_tag") {
-			rv = rv
-				+ "__n__ = document.createElement('" + node.tag + "');"
-				+ "if(elem){elem.appendChild(__n__);}"
-				+ "stack.push(__n__);";
+			rv = "__n__ = document.createElement('" + node.tag + "'); // (" + node.tag + " tag)\n";
+			rv += "stack.push(__n__);\n\n";
 			var match;
 			_.forEach(node.attrs, function(attr) {
 				var name = attr.name;
@@ -33,27 +35,43 @@
 				match = value.match(simple_handlebar_regex);
 
 				if(match) {
-					rv += "cjs.attr(__n__, '"+name+"',"+match[1]+");";
+					rv += "cjs.attr(__n__, '"+name+"',"+match[1]+");\n";
 				} else {
-					rv += "__n__.setAttribute('"+name+"', '"+value+"');";
+					rv += "__n__.setAttribute('"+name+"', '"+value+"');\n";
 				}
 			});
-		} else {
-			console.log(type);
-		}
-
-		if(_.has(node, "children")) {
-			rv = rv + _.map(node.children, function(child) {
+			rv += _.map(node.children, function(child) {
 				return to_fn_str(child);
-			}).join("\n");
-		}
-
-		if(type === "handlebar") {
+			}).join("");
+			rv += "\nrv = stack.pop(); // (/"+ node.tag +" tag)\n";
+		} else if(type === "handlebar") {
 			if(node.block) {
+				var tag = node.tag;
+				if(tag === "each") {
+					if(_.size(node.attrs)>=1) {
+						var collection_name = node.attrs[0].name;
+						var key_name = (_.size(node.attrs) >= 2) ? node.attrs[1].name : "key";
+						rv = "\n__n__ = "+collection_name;
+						rv += ".map(function(__v__, " + key_name + ") { // {{#each " + collection_name + "}}\n"
+							+ "var stack=[],__n__,__p__; // {{#each " + collection_name + "}}\n"
+							+ "with (__v__) { // {{#each " + collection_name + "}}\n\n";
+
+						rv += _.map(node.children, function(child) {
+							return to_fn_str(child);
+						}).join("");
+
+						rv += "\n"
+							+ "return rv;\n"
+							+ "}"
+							+ "}); // {{/each}}\n";
+						rv += "cjs.children(_.last(stack), __n__); // {{/each}}\n\n";
+					}
+				}
+			} else {
+				rv = "\n__n__ = document.createTextNode(''); // {{"+node.tag+"}}\n";
+				rv += "_.last(stack).appendChild(__n__); // {{"+node.tag+"}}\n";
+				rv += "cjs.text(__n__, " + node.tag + "); // {{"+node.tag+"}}\n\n";
 			}
-		} else if(type === "html_tag") {
-			rv = rv
-				+ "rv = stack.pop();";
 		}
 
 		return rv;
@@ -119,17 +137,20 @@
 				}
 			});
 
-		console.log(tree_root);
+		var fn_string = "var _ = cjs._, stack=[], __n__, __p__, rv;\n"
+						+ "with(obj) {\n//=================================\n\n"
+						+ to_fn_str(tree_root)
+						+ "\n//=================================\n}\n"
+						+ "return rv;";
 
-		var fn = new Function("obj",
-			"var _ = cjs._, __n__, stack, elem, rv;"
-			+ ((tree_root.children.length === 1 && tree_root.children[0].type === "html_tag") ? "stack = [];" : "__n__ = document.createElement('span'); stack = [__n__];")
-			+ "with(obj) {\n"
-			+ to_fn_str(tree_root)
-			+ "}\n"
-			+ ((tree_root.children.length === 1 && tree_root.children[0].type === "html_tag") ? "" : "rv = stack.pop();")
-			+ "return rv;"
-		);
+		var fn;
+		try {
+			fn = new Function("obj", fn_string);
+		} catch(e) {
+			console.error(e);
+			console.log(fn_string);
+		}
+		console.log(fn);
 
 		return _.isUndefined(data) ? fn : fn(data);
 	};
