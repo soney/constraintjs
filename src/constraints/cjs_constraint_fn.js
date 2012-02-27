@@ -46,8 +46,9 @@ cjs.constraint.fn("div", function() {
 });
 
 cjs.constraint.fn("map", function(arr, func) {
+	var index = 0;
 	var rv =  _.map(arr, function(val, key) {
-		return func.call(this, val, key);
+		return func.call(this, val, key, index++);
 	});
 	return rv;
 });
