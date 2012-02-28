@@ -117,6 +117,7 @@
 				+ "</div>"
 			, {files: files, filetypes: filetypes});
 				*/
+				/*
 			var rv = cjs.create("template", 
 				"<div>"
 					+ "{{#each files contents filename index}}"
@@ -129,66 +130,50 @@
 					+ "{{/each}}"
 				+ "</div>"
 			, {files: files, filetypes: filetypes});
-				/*
-				var rv = (function anonymous(obj) {
-						var _ = cjs._,
-						stack = [],
-						__n__,
-						rv;
-						with(obj) {
-							//=================================
-							__n__ = document.createElement('div');
-							// (div tag)
-							stack.push(__n__);
-
-
-							__n__ = files.map(_.bind(function(stack, contents, filename, index) {
-								// {{#each files}}
-								var __n__,
-								rv;
-								// {{#each files}}
-								__n__ = document.createElement('div');
-								// (div tag)
-								stack.push(__n__);
-
-
-								__n__ = document.createTextNode('');
-								// {{filename}}
-								rv = _.last(stack).appendChild(__n__);
-								// {{filename}}
-								cjs.text(__n__, filename);
-								// {{filename}}
-
-								console.log(filetypes);
-								with(filetypes[index]) {
-									// {{#with filetypes[index]}}
-									var filetype = filetypes[index];
-
-									__n__ = document.createTextNode('');
-									// {{filetype}}
-									rv = _.last(stack).appendChild(__n__);
-									// {{filetype}}
-									cjs.text(__n__, filetype);
-									// {{filetype}}
-
-								}
-								// {{/with}}
-								rv = stack.pop();
-								// (/div tag)
-								return rv;
-							},
-							this, [_.last(stack)]));
-							// {{/each}}
-							cjs.children(_.last(stack), __n__);
-							// {{/each}}
-
-							rv = stack.pop();
-							// (/div tag)
-							//=================================
-						}
-						return rv;
-					} ({files: files, filetypes: filetypes}));
 				*/
+				var rv = (function anonymous(obj) {
+								var _ = cjs._, stack=[], __n__, rv;
+								with(obj) {
+								//=================================
+
+									__n__ = document.createElement('div'); // (div tag)
+									stack.push(__n__);
+
+
+									__n__ = files.map(_.bind(function(stack, contents, filename, index) { // {{#each files}}
+										var __n__,rv; // {{#each files}}
+										__n__ = document.createElement('div'); // (div tag)
+										stack.push(__n__);
+
+
+										__n__ = document.createTextNode(''); // {{filename}}
+										rv = _.last(stack).appendChild(__n__); // {{filename}}
+										cjs.text(__n__, filename); // {{filename}}
+
+
+										with(cjs.get(filetypes)[cjs.get(index)]) { // {{#with filetypes[index]}}
+											var filetype = filetypes[index];
+											rv = _.last(stack).appendChild(document.createTextNode(' ')); // (text)
+
+											__n__ = document.createTextNode(''); // {{filetype}}
+											rv = _.last(stack).appendChild(__n__); // {{filetype}}
+											cjs.text(__n__, filetype); // {{filetype}}
+
+
+											} // {{/with}}
+										rv = stack.pop(); // (/div tag)
+
+										return rv;
+									}, this, [_.last(stack)])); // {{/each}}
+									cjs.children(_.last(stack), __n__); // {{/each}}
+
+
+									rv = stack.pop(); // (/div tag)
+
+								//=================================
+								}
+								return rv;
+					} ({files: files, filetypes: filetypes}));
 
 			var files_dom = document.getElementById("files");
 			files_dom.appendChild(rv);

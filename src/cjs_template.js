@@ -18,10 +18,7 @@
 				i++;
 				while(i<val_str.length) {
 					c = val_str[i];
-					if(c === ".") {
-						i--;
-						break;
-					} else if(c === "[") {
+					if(c === "[" || c === "]" || c==="." || c==="(" || c===")") {
 						i--;
 						break;
 					} else {
@@ -39,8 +36,6 @@
 		return rv;
 	};
 
-	window.convert_dots = convert_dots;
-
 
 	var parse_val = function(val_str) {
 		var i;
@@ -50,9 +45,10 @@
 		var rv = "cjs.get(";
 		for(i = 0; i<val_str.length; i++) {
 			var c = val_str[i];
-			if(c === "[")
+			if(c === "[") {
 				if(!hit_first_openbracket) {
 					rv += ")";
+					hit_first_openbracket = true;
 				}
 				rv += "[cjs.get(";
 			} else if(c === "]") {
@@ -149,9 +145,10 @@
 					rv += "cjs.children(_.last(stack), __n__); // {{/diagram}}\n\n";
 				} else if(tag === "with") {
 					if(_.size(node.attrs) >= 1) {
-						var with_obj = parse_val(node.attrs[0].name);
+						var with_obj = node.attrs[0].name;
+						var parsed_with_obj = parse_val(with_obj);
 
-						rv = "\nwith("+with_obj+") { // {{#with " + with_obj + "}}\n";
+						rv = "\nwith("+parsed_with_obj+") { // {{#with " + with_obj + "}}\n";
 						if(_.size(node.attrs) >= 2) {
 							rv += "var " + node.attrs[1].name + " = " + with_obj+";\n";
 						}
