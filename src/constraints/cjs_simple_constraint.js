@@ -211,5 +211,11 @@
 			return obj;
 		}
 	};
+	cjs.item = function(obj, index) {
+		var o = cjs.get(obj);
+		var i = cjs.get(index);
+
+		return o[i];
+	};
 	cjs.type("simple_constraint", Constraint);
 }(cjs, this));

@@ -38,27 +38,16 @@
 
 
 	var parse_val = function(val_str) {
-		var i;
 		val_str = convert_dots(val_str);
 
-		var hit_first_openbracket = false;
-		var rv = "cjs.get(";
-		for(i = 0; i<val_str.length; i++) {
-			var c = val_str[i];
-			if(c === "[") {
-				if(!hit_first_openbracket) {
-					rv += ")";
-					hit_first_openbracket = true;
-				}
-				rv += "[cjs.get(";
-			} else if(c === "]") {
-				rv += ")]";
-			} else {
-				rv += c;
-			}
-		}
-		if(!hit_first_openbracket) {
-			rv += ")";
+		var rv = val_str;
+		var first_open_bracket = val_str.indexOf("[");
+		var last_close_bracket = val_str.indexOf("]");
+
+		if(first_open_bracket >= 0) {
+			rv = "cjs.item(" + val_str.substring(0, first_open_bracket) + ", " + parse_val(val_str.substring(first_open_bracket+1, last_close_bracket)) + ")";
+		} else {
+			rv = "cjs.get("+val_str+")"
 		}
 		return rv;
 	};
@@ -150,7 +139,7 @@
 
 						rv = "\nwith("+parsed_with_obj+") { // {{#with " + with_obj + "}}\n";
 						if(_.size(node.attrs) >= 2) {
-							rv += "var " + node.attrs[1].name + " = " + with_obj+";\n";
+							rv += "var " + node.attrs[1].name + " = " + parsed_with_obj+";\n";
 						}
 						rv += _.map(node.children, function(c) {
 							return to_fn_str(c);

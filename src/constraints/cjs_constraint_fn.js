@@ -54,7 +54,7 @@ cjs.constraint.fn("map", function(arr, func) {
 });
 
 cjs.constraint.fn("item", function(arr, item) {
-	return arr[cjs.get(item)];
+	return cjs.item(arr, item);
 });
 
 }(cjs));
