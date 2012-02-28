@@ -88,7 +88,6 @@
 					});
 				return filetype;
 				});
-			/*
 			var rv = cjs.create("template", 
 				"<div>"
 				+ "{{#diagram files.state}}"
@@ -98,17 +97,16 @@
 					+ "{{#state resolved}}"
 						+ "{{#each files contents filename index}}"
 						+ "<div>"
-							+ "{{filename}}"
 							+ "{{#with filetypes[index] filetype}}"
 								+ "{{#diagram filetype.state}}"
 									+ "{{#state pending}}"
-										+ "..."
+										+ "<span>...</span>"
 									+ "{{/state}}"
 									+ "{{#state resolved}}"
-										+ " {{filetype}}"
+										+ "<span>{{filetype}}</span>"
 									+ "{{/state}}"
 									+ "{{#state error}}"
-										+ "error"
+										+ "<span>error</span>"
 									+ "{{/state}}"
 								+ "{{/diagram}}"
 							+ "{{/with}}"
@@ -135,6 +133,7 @@
 				+ "</div>"
 			, {files: files, filetypes: filetypes});
 			*/
+			/*
 				var rv = (
 					function anonymous(obj) {
 						var _ = cjs._, stack=[], __n__, rv;
@@ -170,6 +169,7 @@
 									__n__ = document.createTextNode(''); // {{filename}}
 									rv = _.last(stack).appendChild(__n__); // {{filename}}
 									cjs.text(__n__, filename); // {{filename}}
+									console.log(filename);
 
 
 									with(cjs.item(filetypes, cjs.get(index))) { // {{#with filetypes[index]}}
@@ -178,37 +178,36 @@
 										__n__ = cjs.create('fsm_constraint', filetype.state, { // {{#diagram filetype.state}}
 
 											'pending': _.bind(function(stack) { // {{#state pending}}
-											var __n__,rv;
-											rv = _.last(stack).appendChild(document.createTextNode('...')); // (text)
-											return rv; // {{/state}}
-										}, this, [_.last(stack)]) // {{/state}}
+												var __n__,rv;
+												rv = _.last(stack).appendChild(document.createTextNode('...')); // (text)
+												return rv; // {{/state}}
+											}, this, [_.last(stack)]) // {{/state}}
 
 										, 'resolved': _.bind(function(stack) { // {{#state resolved}}
-											var __n__,rv;
-											rv = _.last(stack).appendChild(document.createTextNode(' ')); // (text)
+												var __n__,rv;
+												rv = _.last(stack).appendChild(document.createTextNode(' ')); // (text)
 
-											__n__ = document.createTextNode(''); // {{filetype}}
-											rv = _.last(stack).appendChild(__n__); // {{filetype}}
-											cjs.text(__n__, filetype); // {{filetype}}
+												__n__ = document.createTextNode(''); // {{filetype}}
+												rv = _.last(stack).appendChild(__n__); // {{filetype}}
+												cjs.text(__n__, filetype); // {{filetype}}
 
-											return rv; // {{/state}}
-										}, this, [_.last(stack)]) // {{/state}}
+												return rv; // {{/state}}
+											}, this, [_.last(stack)]) // {{/state}}
 
 										, 'error': _.bind(function(stack) { // {{#state error}}
-											var __n__,rv;
-											rv = _.last(stack).appendChild(document.createTextNode('error')); // (text)
-											return rv; // {{/state}}
-										}, this, [_.last(stack)]) // {{/state}}
+												var __n__,rv;
+												rv = _.last(stack).appendChild(document.createTextNode('error')); // (text)
+												return rv; // {{/state}}
+											}, this, [_.last(stack)]) // {{/state}}
 
 
-									}); // {{/diagram}}
-									cjs.children(_.last(stack), __n__); // {{/diagram}}
-
-
+										}); // {{/diagram}}
+										cjs.children(_.last(stack), __n__); // {{/diagram}}
 									} // {{/with}}
-							rv = stack.pop(); // (/div tag)
 
-							return rv;
+								rv = stack.pop(); // (/div tag)
+
+								return rv;
 							}, this, [_.last(stack)])); // {{/each}}
 							cjs.children(_.last(stack), __n__); // {{/each}}
 
@@ -216,15 +215,15 @@
 							}, this, [_.last(stack)]) // {{/state}}
 
 							, 'rejected': _.bind(function(stack) { // {{#state rejected}}
-							var __n__,rv;
-							__n__ = document.createElement('div'); // (div tag)
-							stack.push(__n__);
+								var __n__,rv;
+								__n__ = document.createElement('div'); // (div tag)
+								stack.push(__n__);
 
-							rv = _.last(stack).appendChild(document.createTextNode('error')); // (text)
+								rv = _.last(stack).appendChild(document.createTextNode('error')); // (text)
 
-							rv = stack.pop(); // (/div tag)
-							return rv; // {{/state}}
-							}, this, [_.last(stack)]) // {{/state}}
+								rv = stack.pop(); // (/div tag)
+								return rv; // {{/state}}
+								}, this, [_.last(stack)]) // {{/state}}
 
 
 							}); // {{/diagram}}
@@ -237,8 +236,8 @@
 						}
 						return rv;
 						}
-					}
 					 ({files: files, filetypes: filetypes}));
+					 */
 
 			var files_dom = document.getElementById("files");
 			files_dom.appendChild(rv);
@@ -249,7 +248,7 @@
 		#files {
 			min-height: 130px;
 		}
-		#files.loading{
+		#files.loading {
 			background-image: url('loading.gif');
 			background-repeat: no-repeat;
 		}
