@@ -2,11 +2,94 @@
 <html lang="en">
 	<head>
 		<title>cjs</title>
+	<script type="text/javascript">
+		var files = {
+			"file1.txt": ""
+			, "file2.txt": ""
+			, "file3.txt": ""
+			, "file4.txt": ""
+			, "file5.txt": ""
+			, "file6.txt": ""
+			, "file7.txt": ""
+			, "file8.txt": ""
+			, "dir1": {
+				"file1.txt": ""
+				, "file2.txt": ""
+			}
+			, "dir2": {
+				"file1.txt": ""
+				, "dir3": {}
+			}
+		};
+		var do_get_file = function(path) {
+			var folders = path.split("/");
+			var curr_dir = files;
+			for(var i = 0; i<folders.length; i++) {
+				var folder = folders[i];
+				if(folder === "." || folder === "") {
+					continue;
+				} else {
+					if(curr_dir.hasOwnProperty(folder)) {
+						curr_dir = curr_dir[folder];
+					} else {
+						return null;
+					}
+				}
+			}
+			return curr_dir;
+		};
+		var do_get_file_type = function(path) {
+			var file = do_get_file(path);
+			if(file === null) { return null; }
+			else if(typeof file === "string") { return "file"; }
+			else { return "directory"; }
+		};
+
+		var get_delay = function(minimum, variance) {
+			return minimum + Math.random() * variance;
+		};
+		var fail_with_probability = function(prob) {
+			return Math.random() < prob;
+		};
+
+		var get_file = function(path, on_success, on_fail) {
+			var delay = get_delay(700, 500);
+			window.setTimeout(function() {
+				if(fail_with_probability(0.2)) {
+					on_fail("Random error");
+				} else {
+					on_success(do_get_file(path));
+				}
+			}, delay);
+		};
+
+
+		var get_file_type = function(path, on_success, on_fail) {
+			var delay = get_delay(700, 5000);
+			window.setTimeout(function() {
+				if(fail_with_probability(0.2)) {
+					on_fail("Random error");
+				} else {
+					on_success(do_get_file_type(path));
+				}
+			}, delay);
+		};
+	</script>
 		<%- include(cjs_inc.main) %>
 		<script type="text/javascript" src="../server/jquery-1.7.1.min.js"></script>
 		<script type="text/javascript">
 		var x = cjs(1);
 		var y = cjs(["A", "B", "C"]);
+		var path = cjs("/");
+		var filesc = cjs.async(function(on_success, on_fail) {
+					get_file(path.get(), on_success, on_fail);
+				});
+		var filetypes = filesc.map(function(file, filename) {
+			var filetype = cjs.async(function(on_success, on_fail) {
+					get_file_type(path.get() + "/" + filename, on_success, on_fail);
+				});
+			return filetype;
+			});
 		$.fn.template_test = function(test_text, context) {
 			if(!test_text) { test_text = ""; }
 			if(!context) { context = window; }

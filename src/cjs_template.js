@@ -117,8 +117,9 @@
 					}
 				} else if(tag === "diagram") {
 					var diagram_name = node.attrs[0].name;
-					rv = "\ncjs.create('fsm_constraint', " + diagram_name + " { // {{#diagram " + diagram_name + "}}\n\n";
-					_.forEach(node.children, function(child, index) {
+					rv = "\ncjs.create('fsm_constraint', " + diagram_name + ", { // {{#diagram " + diagram_name + "}}\n\n";
+					var index=0;
+					_.forEach(node.children, function(child) {
 						if(child.type === "handlebar" && child.tag === "state") {
 							var state_name = child.attrs[0].name;
 							if(index > 0) {
@@ -131,19 +132,20 @@
 									rv += ", ";
 								}
 								rv += to_fn_str(c);
-							}).join("");
+							});
 
-							rv += "\n]";
+							rv += "]";
+							index++;
 						}
 					});
-					rv += ") // {/diagram}\n";
+					rv += "}) // {/diagram}\n";
 				} else if(tag === "with") {
 					if(_.size(node.attrs) >= 1) {
 						var with_obj = node.attrs[0].name;
 						var parsed_with_obj = parse_val(with_obj);
 
 						rv = "(function() {";
-						rv += "with(" + parsed_with_obj + ") {";
+						rv += "with(" + parsed_with_obj + ") { // {{#with " + with_obj + "}}\n";
 						if(_.size(node.attrs) >= 2) {
 							rv += "var " + node.attrs[1].name + " = " + parsed_with_obj+";\n";
 						}
@@ -153,9 +155,9 @@
 								rv += ", ";
 							}
 							rv += to_fn_str(c);
-						}).join("");
+						});
 						rv += "];";
-						rv += "}())";
+						rv += "}}()) // {{/with}}\n";
 					}
 				} else if(tag === "if") {
 					var conditions = [node.attrs[0].name];
@@ -210,7 +212,29 @@
 		return rv;
 	};
 
+	var script_regex = /^#(\w+)$/;
 	var templ = function(str, data) {
+		var matches = str.match(script_regex);
+		if(!_.isNull(matches)) {
+			var script_id = matches[1];
+			var scripts = document.getElementsByTagName("script");
+			var template_script = null;
+			_.forEach(scripts, function(script) {
+				var type = script.getAttribute("type");
+				if(type === "cjs/template") {
+					var id = script.getAttribute("id");
+					if(id === script_id) {
+						template_script = script;
+					}
+				}
+			});
+			if(_.isNull(template_script)) {
+				str = "Could not find <script type='cjs/template' id='" + script_id + "'>(...)</script>";
+			} else {
+				str = template_script.innerText;
+			}
+		}
+		
 		var tree_root = {type: "root", children: []};
 		var curr_node = tree_root;
 		_.html_parser(str, {
@@ -270,9 +294,9 @@
 				}
 			});
 
-		var fn_string = "with(obj) {\n\n"
+		var fn_string = "with(obj) {\n"
 						+ to_fn_str(tree_root)
-						+ "\n}\n";
+						+ "\n}";
 
 		var fn;
 		try {
@@ -286,4 +310,10 @@
 	};
 
 	cjs.define("template", templ);
+
+	cjs.template = function() {
+		var args = _.toArray(arguments);
+		args.unshift("template");
+		return cjs.create.apply(cjs, args);
+	};
 }(cjs));

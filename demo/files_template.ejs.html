@@ -55,7 +55,7 @@
 		var get_file = function(path, on_success, on_fail) {
 			var delay = get_delay(700, 500);
 			window.setTimeout(function() {
-				if(fail_with_probability(0.0)) {
+				if(fail_with_probability(0.2)) {
 					on_fail("Random error");
 				} else {
 					on_success(do_get_file(path));
@@ -80,170 +80,20 @@
 
 		window.onload = function() {
 			var path = cjs("/");
-			var files = cjs.async(function(on_success, on_fail) {
+			var filesc = cjs.async(function(on_success, on_fail) {
 						get_file(path.get(), on_success, on_fail);
 					});
-			var filetypes = files.map(function(file, filename) {
-				var filetype = cjs.async(function(on_success, on_fail) {
-						get_file_type(path.get() + "/" + filename, on_success, on_fail);
-					});
-				return filetype;
+			var filetypes = filesc.map(function(file, filename) {
+					var filetype = cjs.async(function(on_success, on_fail) {
+							get_file_type(path.get() + "/" + filename, on_success, on_fail);
+						});
+					return filetype;
 				});
-			var rv = cjs.create("template", 
-				"<div>"
-				+ "{{#diagram files.state}}"
-					+ "{{#state pending}}"
-						+ "<div>loading...</div>"
-					+ "{{/state}}"
-					+ "{{#state resolved}}"
-						+ "{{#each files contents filename index}}"
-						+ "<div>"
-							+ "{{#with filetypes[index] filetype}}"
-								+ "{{#diagram filetype.state}}"
-									+ "{{#state pending}}"
-										+ "<span>...</span>"
-									+ "{{/state}}"
-									+ "{{#state resolved}}"
-										+ "<span>{{filetype}}</span>"
-									+ "{{/state}}"
-									+ "{{#state error}}"
-										+ "<span>error</span>"
-									+ "{{/state}}"
-								+ "{{/diagram}}"
-							+ "{{/with}}"
-						+ "</div>"
-						+ "{{/each}}"
-					+ "{{/state}}"
-					+ "{{#state rejected}}"
-						+ "<div>error</div>"
-					+ "{{/state}}"
-				+ "{{/diagram}}"
-				+ "</div>"
-			, {files: files, filetypes: filetypes});
-			/*
-			var rv = cjs.create("template", 
-				"<div>"
-					+ "{{#each files contents filename index}}"
-					+ "<div>"
-						+ "{{filename}}"
-						+ "{{#with filetypes[index] filetype}}"
-							+ " {{filetype}}"
-						+ "{{/with}}"
-					+ "</div>"
-					+ "{{/each}}"
-				+ "</div>"
-			, {files: files, filetypes: filetypes});
-			*/
-			/*
-				var rv = (
-					function anonymous(obj) {
-						var _ = cjs._, stack=[], __n__, rv;
-						with(obj) {
-							//=================================
-
-							__n__ = document.createElement('div'); // (div tag)
-							stack.push(__n__);
-
-
-							__n__ = cjs.create('fsm_constraint', files.state, { // {{#diagram files.state}}
-
-								'pending': _.bind(function(stack) { // {{#state pending}}
-									var __n__,rv;
-									__n__ = document.createElement('div'); // (div tag)
-									stack.push(__n__);
-
-									rv = _.last(stack).appendChild(document.createTextNode('loading...')); // (text)
-
-									rv = stack.pop(); // (/div tag)
-									return rv; // {{/state}}
-								}, this, [_.last(stack)]) // {{/state}}
-
-								, 'resolved': _.bind(function(stack) { // {{#state resolved}}
-									var __n__,rv;
-
-									__n__ = files.map(_.bind(function(stack, contents, filename, index) { // {{#each files}}
-									var __n__,rv; // {{#each files}}
-									__n__ = document.createElement('div'); // (div tag)
-									stack.push(__n__);
-
-
-									__n__ = document.createTextNode(''); // {{filename}}
-									rv = _.last(stack).appendChild(__n__); // {{filename}}
-									cjs.text(__n__, filename); // {{filename}}
-									console.log(filename);
-
-
-									with(cjs.item(filetypes, cjs.get(index))) { // {{#with filetypes[index]}}
-										var filetype = cjs.item(filetypes, cjs.get(index));
-
-										__n__ = cjs.create('fsm_constraint', filetype.state, { // {{#diagram filetype.state}}
-
-											'pending': _.bind(function(stack) { // {{#state pending}}
-												var __n__,rv;
-												rv = _.last(stack).appendChild(document.createTextNode('...')); // (text)
-												return rv; // {{/state}}
-											}, this, [_.last(stack)]) // {{/state}}
-
-										, 'resolved': _.bind(function(stack) { // {{#state resolved}}
-												var __n__,rv;
-												rv = _.last(stack).appendChild(document.createTextNode(' ')); // (text)
-
-												__n__ = document.createTextNode(''); // {{filetype}}
-												rv = _.last(stack).appendChild(__n__); // {{filetype}}
-												cjs.text(__n__, filetype); // {{filetype}}
-
-												return rv; // {{/state}}
-											}, this, [_.last(stack)]) // {{/state}}
-
-										, 'error': _.bind(function(stack) { // {{#state error}}
-												var __n__,rv;
-												rv = _.last(stack).appendChild(document.createTextNode('error')); // (text)
-												return rv; // {{/state}}
-											}, this, [_.last(stack)]) // {{/state}}
-
-
-										}); // {{/diagram}}
-										cjs.children(_.last(stack), __n__); // {{/diagram}}
-									} // {{/with}}
-
-								rv = stack.pop(); // (/div tag)
-
-								return rv;
-							}, this, [_.last(stack)])); // {{/each}}
-							cjs.children(_.last(stack), __n__); // {{/each}}
-
-							return rv; // {{/state}}
-							}, this, [_.last(stack)]) // {{/state}}
-
-							, 'rejected': _.bind(function(stack) { // {{#state rejected}}
-								var __n__,rv;
-								__n__ = document.createElement('div'); // (div tag)
-								stack.push(__n__);
-
-								rv = _.last(stack).appendChild(document.createTextNode('error')); // (text)
-
-								rv = stack.pop(); // (/div tag)
-								return rv; // {{/state}}
-								}, this, [_.last(stack)]) // {{/state}}
-
-
-							}); // {{/diagram}}
-							cjs.children(_.last(stack), __n__); // {{/diagram}}
-
-
-							rv = stack.pop(); // (/div tag)
-
-							//=================================
-						}
-						return rv;
-						}
-					 ({files: files, filetypes: filetypes}));
-					 */
+			var rv = cjs.template("#filelist", {files: filesc, filetypes: filetypes});
 
 			var files_dom = document.getElementById("files");
 			files_dom.appendChild(rv);
 		};
-
 	</script>
 	<style type="text/css">
 		#files {
@@ -266,6 +116,29 @@
 		}
 
 	</style>
+	<script id="filelist" type="cjs/template">
+	{{#diagram files.state}}
+		{{#state pending}}Loading{{/state}}
+		{{#state resolved}}
+			{{#each files contents filename index}}
+				{{#with filetypes[index] filetype}}
+					{{#diagram filetype.state}}
+						{{#state pending}}
+							<div class='loading'>...</div>
+						{{/state}}
+						{{#state resolved}}
+							<div class='resolved'>{{filename}} {{filetype}}</div>
+						{{/state}}
+						{{#state rejected}}
+							<div class='error'>error</div>
+						{{/state}}
+					{{/diagram}}
+				{{/with}}
+			{{/each}}
+		{{/state}}
+		{{#state rejected}}Error{{/state}}
+	{{/diagram}}
+	</script>
   </head>
   <body>
 	  <div id="files" />

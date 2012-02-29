@@ -200,15 +200,39 @@
 	cjs.define("simple_constraint", create_constraint);
 
 
-	var is_constraint = function(obj) {
-		return obj instanceof Constraint;
-	};
-	cjs.is_constraint = is_constraint;
-	cjs.get = function(obj) {
-		if(is_constraint(obj)) {
-			return obj.get();
+	cjs.is_constraint = function(obj, recursive) {
+		if(obj instanceof Constraint) {
+			return true;
 		} else {
-			return obj;
+			if(recursive === true) {
+				if(_.isArray(obj)) {
+					return _.any(obj, function(o) {
+						return cjs.is_constraint(o, recursive);
+					});
+				}
+				return false;
+			} else {
+				return false;
+			}
+		}
+	};
+	cjs.get = function(obj, recursive) {
+		var rv;
+		if(cjs.is_constraint(obj)) {
+			rv = obj.get();
+		} else {
+			rv = obj;
+		}
+
+		if(recursive === true) {
+			if(_.isArray(rv)) {
+				rv = _.map(rv, function(elem) {
+					return cjs.get(elem, recursive);
+				});
+			}
+			return rv;
+		} else {
+			return rv;
 		}
 	};
 	cjs.item = function(obj, index) {

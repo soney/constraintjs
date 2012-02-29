@@ -204,16 +204,21 @@ cjs.children = function(elem) {
 	var child_constraints = _.rest(arguments);
 
 	var children;
-	if(_.any(child_constraints, function(cc) { return cjs.is_constraint(cc); })) { //Is any child a constraint
+	if(cjs.is_constraint(child_constraints, true)) { //Is any child a constraint
 		children = cjs.create("simple_constraint", function() {
-			var c_constraints = _(child_constraints).chain()
-													.map(cjs.get)
-													.flatten() //Flatten on a single level
-													.value();
+				var dom_nodes = _.map(child_constraints, function(cc) {
+						return cjs.get(cc, true);
+					});
+				var c_constraints = _.flatten(dom_nodes);
+				/*
+				var c_constraints = _(child_constraints).chain()
+														.map(cjs.get)
+														.flatten() //Flatten on a single level
+														.value();
+														*/
 
-			return c_constraints;
-	});
-	
+				return c_constraints;
+		});
 	} else {
 		children = _.flatten(child_constraints);
 	}
@@ -231,7 +236,7 @@ cjs.children = function(elem) {
 			unbind_children_constraint();
 		}
 
-		var value = cjs.get(children);
+		var value = cjs.get(children, true);
 		//First clear the existing children of the element
 		_.times(elem.childNodes.length, function() {
 			elem.removeChild(elem.firstChild);
@@ -244,6 +249,7 @@ cjs.children = function(elem) {
 		if(_.isElement(elem)) {
 			//Then get the current value of the constraint...
 			//and append all the children
+			//console.log(value);
 			_.forEach(value, function(child) {
 				var item = convert_item(child);
 				elem.appendChild(item);
@@ -257,7 +263,7 @@ cjs.children = function(elem) {
 		var _children = _.clone(value);
 
 
-		if(cjs.is_constraint(children)) {
+		if(cjs.is_constraint(children, true)) {
 			children.onChange(function(value) {
 				if(!_.isArray(value)) {
 					value = [value];
@@ -318,10 +324,10 @@ cjs.define("dom_element", function(tag, attributes) {
 	var rv = document.createElement(tag);
 	var args = _.rest(arguments, 2);
 	args.unshift(rv);
-	cjs.children.apply(cjs, args);
 	_.forEach(attributes, function(value, key) {
 		cjs.attr(rv, key, value);
 	});
+	cjs.children.apply(cjs, args);
 	return rv;
 });
 
