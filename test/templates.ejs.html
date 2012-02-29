@@ -4,11 +4,6 @@
 		<title>cjs</title>
 		<%- include(cjs_inc.main) %>
 		<script type="text/javascript" src="../server/jquery-1.7.1.min.js"></script>
-		<script type="text/javascript" src="../server/syntaxhighlighter/scripts/shCore.js"></script>
-		<script type="text/javascript" src="../server/syntaxhighlighter/scripts/shBrushJScript.js"></script>
-		<script type="text/javascript" src="../server/syntaxhighlighter/scripts/shBrushXml.js"></script>
-		<link href="../server/syntaxhighlighter/styles/shCore.css" rel="stylesheet" type="text/css" />
-		<link href="../server/syntaxhighlighter/styles/shThemeDefault.css" rel="stylesheet" type="text/css" />
 		<script type="text/javascript">
 		var x = cjs(1);
 		var y = cjs(["A", "B", "C"]);
@@ -22,10 +17,10 @@
 													.appendTo($this)
 													.val(test_text);
 				$this.append($("<div />").addClass("header").text("Code"));
-				var code_out = $("<pre />")	.addClass("code out brush: js")
+				var code_out = $("<pre />")	.addClass("code out js")
 											.appendTo($this);
 				$this.append($("<div />").addClass("header").text("HTML"));
-				var html_out = $("<pre />")	.addClass("out brush: xml")
+				var html_out = $("<pre />")	.addClass("out html")
 											.appendTo($this);
 				$this.append($("<div />").addClass("header").text("Output"));
 
@@ -41,7 +36,6 @@
 											var el = template_fn(context);
 											window.setTimeout(function() {
 												html_out.text(el.outerHTML);
-												SyntaxHighlighter.all();
 											}, 10);
 											val_out.append(el);
 										})

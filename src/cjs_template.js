@@ -65,31 +65,36 @@
 				_.forEach(node.children, function(child) {
 					rv += ", " + to_fn_str(child);
 				});
-				rv += "\n);";
+				rv += "\n); // (/root)";
 			}
 		} else if(type === "text") {
 			var text = node.text.split("\n").join("\\n");
-			rv = "cjs.create('dom_text', '"+text+"') // (text)\n";
+			rv = "cjs.create('dom_text', '"+text+"') // (text /)\n";
 		} else if(type === "comment") {
 			var comment = node.text.split("\n").join("\\n");
-			rv = "cjs.create('dom_comment', '"+comment+"') // (comment)\n";
+			rv = "cjs.create('dom_comment', '"+comment+"') // (comment /)\n";
 		} else if(type === "html_tag") {
-			rv = "cjs.create('dom_element', '" + node.tag + "', { // <"+node.tag+">\n";
-			_.forEach(node.attrs, function(attr, index) {
-				var name = attr.name;
-				var value = attr.value;
-				rv += "\n";
-				if(index>0) {
-					rv += ", ";
-				}
-				rv += "'" + name + "': '" + value + "'";
-			});
-			rv += "} \n";
+			rv = "cjs.create('dom_element', '" + node.tag + "',";
+			if(_.size(node.attrs) === 0) {
+				rv += " {} // <" + node.tag + ">\n";
+			} else {
+				rv += " { // <"+node.tag+">\n";
+				_.forEach(node.attrs, function(attr, index) {
+					var name = attr.name;
+					var value = attr.value;
+					rv += "\n";
+					if(index>0) {
+						rv += ", ";
+					}
+					rv += "'" + name + "': '" + value + "'";
+				});
+				rv += "} \n";
+			}
 
 			_.forEach(node.children, function(child) {
 				rv += "\n, " + to_fn_str(child);
 			});
-			rv += "\n)";
+			rv += "\n) // </" + node.tag + ">\n";
 		} else if(type === "handlebar") {
 			if(node.block) {
 				var tag = node.tag;
@@ -99,50 +104,58 @@
 						var val_name = (_.size(node.attrs) >= 2) ? node.attrs[1].name : "value";
 						var key_name = (_.size(node.attrs) >= 3) ? node.attrs[2].name : "key";
 						var index_name = (_.size(node.attrs) >= 4) ? node.attrs[3].name : "index";
-						rv = collection_name + ".map(function(" + val_name + ", " + key_name + ", " + index_name + ") {\n";
-						rv += "return [";
+						rv = collection_name + ".map(function(" + val_name + ", " + key_name + ", " + index_name + ") { // {{#each " + collection_name + "}}\n";
+						rv += "return [ // {{#each}}\n";
 						_.forEach(node.children, function(child, index) {
 							if(index > 0) {
 								rv += ", ";
 							}
 							rv += to_fn_str(child);
 						});
-						rv += "];"
-						rv += "})";
+						rv += "];";
+						rv += "}) // {{/each}}\n";
 					}
-					/*
 				} else if(tag === "diagram") {
 					var diagram_name = node.attrs[0].name;
-					rv = "\n__n__ = cjs.create('fsm_constraint', "+diagram_name+", { // {{#diagram " + diagram_name + "}}\n\n";
+					rv = "\ncjs.create('fsm_constraint', " + diagram_name + " { // {{#diagram " + diagram_name + "}}\n\n";
 					_.forEach(node.children, function(child, index) {
 						if(child.type === "handlebar" && child.tag === "state") {
 							var state_name = child.attrs[0].name;
-							rv += (index > 0 ? ", " : "") + "'"+state_name+"': _.bind(function(stack) { // {{#state " + state_name + "}}\n"
-								+ "var __n__,rv;\n";
+							if(index > 0) {
+								rv += ", ";
+							}
+							rv += "'" + state_name + "': [\n";
 
-							rv += _.map(child.children, function(c) {
-								return to_fn_str(c);
+							_.forEach(child.children, function(c, i) {
+								if(i>0) {
+									rv += ", ";
+								}
+								rv += to_fn_str(c);
 							}).join("");
 
-							rv += "return rv; // {{/state}}\n"
-								+ "}, this, [_.last(stack)]) // {{/state}}\n\n";
+							rv += "\n]";
 						}
 					});
-					rv += "\n}); // {{/diagram}}\n";
-					rv += "cjs.children(_.last(stack), __n__); // {{/diagram}}\n\n";
+					rv += ") // {/diagram}\n";
 				} else if(tag === "with") {
 					if(_.size(node.attrs) >= 1) {
 						var with_obj = node.attrs[0].name;
 						var parsed_with_obj = parse_val(with_obj);
 
-						rv = "\nwith("+parsed_with_obj+") { // {{#with " + with_obj + "}}\n";
+						rv = "(function() {";
+						rv += "with(" + parsed_with_obj + ") {";
 						if(_.size(node.attrs) >= 2) {
 							rv += "var " + node.attrs[1].name + " = " + parsed_with_obj+";\n";
 						}
-						rv += _.map(node.children, function(c) {
-							return to_fn_str(c);
+						rv += "return [";
+						_.forEach(node.children, function(c, i) {
+							if(i>0) {
+								rv += ", ";
+							}
+							rv += to_fn_str(c);
 						}).join("");
-						rv += "\n} // {{/with}}";
+						rv += "];";
+						rv += "}())";
 					}
 				} else if(tag === "if") {
 					var conditions = [node.attrs[0].name];
@@ -160,7 +173,7 @@
 						}
 					});
 
-					rv = "\n__n__ = cjs.create('conditional_constraint', { // {{#if}}";
+					rv = "\ncjs.create('conditional_constraint', { // {{#if}}";
 					_.forEach(conditions, function(condition, index) {
 						var children = condition_children[index];
 						if(index>0) {
@@ -173,25 +186,24 @@
 							rv += "condition: " + condition;
 							rv += " // {{elif " + condition + "}}\n, ";
 						}
-						rv += "value: _.bind(function(stack) {";
-						rv += "\nvar __n__,rv;";
+						rv += "value: [_.bind(function(stack) {";
 
-						rv += _.map(children, function(child) {
-							return to_fn_str(child);
-						}).join("");
+						_.forEach(children, function(c, i) {
+							if(i>0) {
+								rv += ", ";
+							}
+							rv += to_fn_str(c);
+						});
 
-						rv += "\nreturn rv;";
-						rv += "\n}, this, [_.last(stack)])";
+						rv += "\n]";
 						rv += "\n} // {{/condition}}";
 					});
 					rv += "\n}); // {{/if}}\n";
-					rv += "cjs.children(_.last(stack), __n__); // {{/if}}\n\n";
 				} else if(tag === "unless") {
 					rv += "void(0);";
-			*/
 				}
 			} else {
-				rv = "cjs.create('dom_text', " + node.tag + ") // {{" + node.tag + "}}\n";
+				rv = "cjs.create('dom_text', " + node.tag + ") // {{" + node.tag + " /}}\n";
 			}
 		}
 
@@ -258,10 +270,9 @@
 				}
 			});
 
-		var fn_string = "var _ = cjs._;\n"
-						+ "with(obj) {\n//=================================\n\n"
+		var fn_string = "with(obj) {\n\n"
 						+ to_fn_str(tree_root)
-						+ "\n//=================================\n}\n"
+						+ "\n}\n";
 
 		var fn;
 		try {
