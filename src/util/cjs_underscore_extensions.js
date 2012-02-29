@@ -195,4 +195,7 @@
 	_.isTextElement = function(obj) {
 		return !!(obj && obj.nodeType === 3);
 	};
+	_.isCommentElement = function(obj) {
+		return !!(obj && obj.nodeType === 8);
+	};
 }(cjs));

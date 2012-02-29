@@ -151,11 +151,13 @@
 		function parseStartTag( tag, tagName, rest, unary ) {
 			tagName = tagName.toLowerCase();
 
+/*
 			if ( block[ tagName ] ) {
 				while ( stack.last() && inline[ stack.last() ] ) {
 					parseEndTag( "", stack.last() );
 				}
 			}
+			*/
 
 			if ( closeSelf[ tagName ] && stack.last() == tagName ) {
 				parseEndTag( "", tagName );

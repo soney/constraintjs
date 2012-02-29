@@ -88,9 +88,13 @@ cjs.css = function(elem, prop_name, constraint) {
 };
 
 cjs.attr = function(elem, prop_name, constraint) {
-	return cjs.bind(elem, prop_name, constraint, function(obj, name, value) {
-		obj.setAttribute(name, value);
-	});
+	if(cjs.is_constraint(constraint)) {
+		return cjs.bind(elem, prop_name, constraint, function(obj, name, value) {
+			obj.setAttribute(name, value);
+		});
+	} else {
+		elem.setAttribute(prop_name, constraint);
+	}
 };
 
 cjs.text = function(elem, constraint) {
@@ -188,7 +192,7 @@ var set_data = function(elem, key, value) {
 
 
 var convert_item = function(item) {
-	if(_.isElement(item)) {
+	if(_.isElement(item) || _.isTextElement(item) || _.isCommentElement(item)) {
 		return item;
 	} else {
 		var node = document.createTextNode(item);
@@ -199,17 +203,21 @@ var convert_item = function(item) {
 cjs.children = function(elem) {
 	var child_constraints = _.rest(arguments);
 
-	var constraint = cjs.create("simple_constraint", function() {
-		var c_constraints = _(child_constraints).chain()
-												.map(function(x) {
-													return cjs.get(x);
-												})
-												.flatten(true) //Flatten on a single level
-												.value();
-		return c_constraints;
-	});
+	var children;
+	if(_.any(child_constraints, function(cc) { return cjs.is_constraint(cc); })) { //Is any child a constraint
+		children = cjs.create("simple_constraint", function() {
+			var c_constraints = _(child_constraints).chain()
+													.map(cjs.get)
+													.flatten() //Flatten on a single level
+													.value();
 
-	var _children = [];
+			return c_constraints;
+	});
+	
+	} else {
+		children = _.flatten(child_constraints);
+	}
+
 
 	var do_unbind = function() { };
 	var unbind = function() {
@@ -223,7 +231,7 @@ cjs.children = function(elem) {
 			unbind_children_constraint();
 		}
 
-		var value = cjs.get(constraint);
+		var value = cjs.get(children);
 		//First clear the existing children of the element
 		_.times(elem.childNodes.length, function() {
 			elem.removeChild(elem.firstChild);
@@ -240,22 +248,22 @@ cjs.children = function(elem) {
 				var item = convert_item(child);
 				elem.appendChild(item);
 			});
-		} else if(_.isTextElement(elem)) {
+		} else if(_.isTextElement(elem) || _.isCommentElement(elem)) {
 			elem.nodeValue = _.map(value, function(child) {
 				return String(child);
 			}).join("");
 		}
 
-		_children = _.clone(value);
+		var _children = _.clone(value);
 
 
-		if(cjs.is_constraint(constraint)) {
-			constraint.onChange(function(children) {
-				if(!_.isArray(children)) {
-					children = [children];
+		if(cjs.is_constraint(children)) {
+			children.onChange(function(value) {
+				if(!_.isArray(value)) {
+					value = [value];
 				}
 				if(_.isElement(elem)) {
-					var diff = _.diff(_children, children)
+					var diff = _.diff(_children, value)
 						, removed = diff.removed
 						, added = diff.added
 						, moved = diff.moved;
@@ -271,17 +279,17 @@ cjs.children = function(elem) {
 						move_child(elem, x.to_index, x.from_index);
 					});
 				
-					_children = _.clone(children); //Value may be mutated, so clone it
-				} else if(_.isTextElement(elem)) {
-					elem.nodeValue = _.map(children, function(child) {
+					_children = _.clone(value); //Value may be mutated, so clone it
+				} else if(_.isTextElement(elem) || _.isCommentElement(elem)) {
+					elem.nodeValue = _.map(value, function(child) {
 						return String(child);
 					}).join("");
 				}
 			});
 
-			var last_listener = constraint.last_listener;
+			var last_listener = children.last_listener;
 			do_unbind = function() {
-				constraint.offChange(last_listener);
+				children.offChange(last_listener);
 			};
 		}
 	});
@@ -289,5 +297,32 @@ cjs.children = function(elem) {
 
 	return unbind;
 };
+
+cjs.define("dom_text", function() {
+	var rv = document.createTextNode('');
+	var args = _.toArray(arguments);
+	args.unshift(rv);
+	cjs.children.apply(cjs, args);
+	return rv;
+});
+
+cjs.define("dom_comment", function() {
+	var rv = document.createComment('');
+	var args = _.toArray(arguments);
+	args.unshift(rv);
+	cjs.children.apply(cjs, args);
+	return rv;
+});
+
+cjs.define("dom_element", function(tag, attributes) {
+	var rv = document.createElement(tag);
+	var args = _.rest(arguments, 2);
+	args.unshift(rv);
+	cjs.children.apply(cjs, args);
+	_.forEach(attributes, function(value, key) {
+		cjs.attr(rv, key, value);
+	});
+	return rv;
+});
 
 }}(cjs, this));
