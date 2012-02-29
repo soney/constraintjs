@@ -47,7 +47,7 @@
 		if(first_open_bracket >= 0) {
 			rv = "cjs.item(" + val_str.substring(0, first_open_bracket) + ", " + parse_val(val_str.substring(first_open_bracket+1, last_close_bracket)) + ")";
 		} else {
-			rv = "cjs.get("+val_str+")"
+			rv = "cjs.get("+val_str+")";
 		}
 		return rv;
 	};

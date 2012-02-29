@@ -29,7 +29,6 @@ var cjs = (function (root) {
 		}
 	};
 
-
 	if (typeof exports !== 'undefined') {
 		cjs._is_node = true;
 		if (typeof module !== 'undefined' && module.exports) {

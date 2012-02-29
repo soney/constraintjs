@@ -196,13 +196,24 @@ var convert_item = function(item) {
 	}
 };
 
-cjs.children = function(elem, constraint, on_unbind) {
+cjs.children = function(elem) {
+	var child_constraints = _.rest(arguments);
+
+	var constraint = cjs.create("simple_constraint", function() {
+		var c_constraints = _(child_constraints).chain()
+												.map(function(x) {
+													return cjs.get(x);
+												})
+												.flatten(true) //Flatten on a single level
+												.value();
+		return c_constraints;
+	});
+
 	var _children = [];
 
 	var do_unbind = function() { };
 	var unbind = function() {
 		do_unbind();
-		if(_.isFunction(on_unbind)) { on_unbind(); }
 	};
 
 	_.defer(function() {
