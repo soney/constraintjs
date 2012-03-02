@@ -173,13 +173,17 @@ var FSM = function() {
 	//this.graph = cjs.create("graph");
 	this.states = [];
 	this.transitions = [];
-	this.state = null;
+	this._state = null;
 	this.listeners = [];
 	this.chain_state = null;
 	this.did_transition = false;
 
-	this.$state = cjs.create("simple_constraint", _.bind(function() {
-		return this.state;
+	this.state = cjs.create("simple_constraint", _.bind(function() {
+		if(this._state) {
+			return this._state.get_name();
+		} else {
+			return null;
+		}
 	}, this));
 };
 (function(my) {
@@ -193,7 +197,7 @@ var FSM = function() {
 		var state = this.state_with_name(state_name);
 		if(state === null) {
 			state = this.create_state.apply(this, arguments);
-			if(this.state === null) { this.state = state; }
+			if(this.get_state() === null) { this._state = state; }
 		}
 
 		this.chain_state = state;
@@ -207,7 +211,7 @@ var FSM = function() {
 		else { return rv; }
 	};
 	proto.get_state = function() {
-		return this.state;
+		return this._state;
 	};
 	proto.add_transition = function(add_transition_fn, to_state_name) {
 		var from_state = this.chain_state;
@@ -216,11 +220,14 @@ var FSM = function() {
 
 		var transition = new Transition(this, from_state, to_state);
 		var self = this;
-		var do_transition = _.bind(function() {
+		var do_transition = function() {
 			if(self.is(from_state)) {
-				transition.run();
+				var args = _.toArray(arguments);
+				_.delay(function() {
+					transition.run.apply(transition, args);
+				});
 			}
-		}, transition);
+		};
 		add_transition_fn.call(this, do_transition, from_state, to_state, this);
 
 		this.transitions.push(transition);
@@ -236,8 +243,8 @@ var FSM = function() {
 				listener.run(transition, to_state, from_state);
 			}
 		});
-		this.state = to_state;
-		this.$state.nullify();
+		this._state = to_state;
+		this.state.nullify();
 		_.forEach(this.listeners, function(listener) {
 			if(listener.interested_in(transition, false)) {
 				listener.run(transition, to_state, from_state);
@@ -251,7 +258,7 @@ var FSM = function() {
 		//this.graph.destroy();
 		delete this.states;
 		delete this.transitions;
-		delete this.state;
+		delete this._state;
 		//delete this.graph;
 	};
 	proto.starts_at = function(state_name) {
@@ -260,7 +267,7 @@ var FSM = function() {
 			state = this.create_state(state_name);
 		}
 		if(!this.did_transition) {
-			this.state = state;
+			this._state = state;
 		}
 		return this;
 	};

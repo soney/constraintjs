@@ -171,6 +171,10 @@
 		proto.depends_on = function(recursive) {
 			return constraint_solver.dependsOn(this, recursive);
 		};
+		proto.length = function() {
+			var val = this.get();
+			return val.length;
+		};
 	}(Constraint));
 
 	var create_constraint = function(arg0, arg1, arg2, arg3) {

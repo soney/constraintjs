@@ -63,7 +63,7 @@ root.setInterval(_.bind(cjs.time.nullify, cjs.time), 10);
 cjs.bind = function(obj, prop_name, constraint, setter) {
 	if(!_.isFunction(setter)) {
 		setter = function(o, pn, v) {
-			o[pn] = v;
+			o[pn] = cjs.get(v);
 		};
 	} 
 	var update = function(value) {
