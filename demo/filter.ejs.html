@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>cjs</title>
+		<%- include(cjs_inc.main) %>
+		<script type="text/javascript">
+			window.onload = function() {
+				var num_squares = 3600;
+				var colors = (["#E83A25", "#FFE9A3", "#98CC96", "#004563", "#786137"]).map(function(color_code) {
+									var dom_elem = document.createElement("div");
+
+									var constraint = cjs(color_code);
+									var fsm = cjs	.fsm()
+													.add_state("idle")
+													.add_transition(cjs.on("mouseover", dom_elem), "hover")
+													.add_state("hover")
+													.add_transition(cjs.on("mouseout", dom_elem), "idle")
+													.add_transition(cjs.on("mousedown", dom_elem), "selected")
+													.add_state("selected")
+													.add_transition(cjs.on("mousedown", dom_elem), "hover");
+
+									dom_elem.style.backgroundColor = color_code;
+
+									constraint.state = fsm.state;
+									cjs.class(dom_elem, constraint.state);
+
+									constraint.element = dom_elem;
+									return constraint;
+								});
+
+
+				var filter_colors_dom = document.getElementById("colors");
+				var items_dom = document.getElementById("items");
+
+				for(var i = colors.length-1; i>=0; i--) {
+					var color = colors[i];
+					filter_colors_dom.appendChild(color.element);
+				}
+
+
+				for(var i = 0; i<num_squares; i++) {
+					var div_elem = document.createElement("div");
+					div_elem.className = "filterable_rect";
+
+					var random_index = Math.floor(Math.random() * colors.length);
+					var color = colors[random_index];
+					div_elem.style.backgroundColor = color.get();
+					cjs.class(div_elem, color.state);
+
+					items_dom.appendChild(div_elem);
+				}
+			};
+		</script>
+		<style type="text/css">
+			body {
+				background-color: #111;
+				margin-top: 50px;
+			}
+			div#container {
+				margin: auto;
+				width: 720px;
+				position: relative;
+				overflow: hidden;
+			}
+
+
+			div#items {
+				padding-top: 50px;
+				margin-top: 40px;
+				border-top: 1px solid #444;
+			}
+
+			div#items > div {
+				width: 100px;
+				height: 100px;
+				float: left;
+				margin-left: 10px;
+				margin-right: 10px;
+				margin-bottom: 20px;
+			}
+
+			div#items > div.idle {
+				opacity: 0.2;
+			}
+			div#items > div.hover {
+				opacity: 0.5;
+			}
+			div#items > div.selected {
+				opacity: 1.0;
+			}
+
+			span#colors > div {
+				width: 40px;
+				height: 40px;
+				margin-left: 10px;
+				float: right;
+			}
+			span#colors > div.idle {
+				opacity: 0.7;
+				border: 1px solid black;
+			}
+			span#colors > div.hover {
+				opacity: 0.9;
+				border: 1px solid black;
+			}
+			span#colors > div.selected {
+				opacity: 1.0;
+				border: 1px solid white;
+			}
+
+			div#filter {
+				color: white;
+				text-align: right;
+				font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+				font-weight: 200;
+				font-size: 1.7em;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="filter">Filter: <span id="colors"></span></div>
+			<div id="items"></div>
+		</div>
+	</body>
+</html>
