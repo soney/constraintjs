@@ -98,16 +98,6 @@ cjs.attr = function(elem, prop_name, constraint) {
 };
 
 cjs.text = function(elem, constraint) {
-/*
-	var textnode = document.createTextNode();
-	var unbind_text_node = cjs.bind(textnode, "nodeValue", constraint);
-	var unbind_children_constraint = cjs.children(elem, [textnode], unbind_text_node);
-
-	return function() {
-		unbind_text_node();
-		unbind_children_constraint();
-	};
-	*/
 	return cjs.children(elem, constraint);
 };
 

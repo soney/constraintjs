@@ -33,12 +33,21 @@
 			, time: undefined
 		};
 		this.id = "constraint_"+node.getId();
+		this.destroy_callbacks = [];
 	};
 
 	(function(my) {
 		my.prototype = cjs.fn;
 
 		var proto = my.prototype;
+		proto.destroy = function() {
+			this.destroy_callbacks.push.apply(this.destroy_callbacks, arguments);
+		};
+		proto.on_destroy = function() {
+			_.forEach(this.destroy_callbacks, function(callback) {
+				callback();
+			});
+		};
 		proto.nullify = function() {
 			constraint_solver.nullify(this);
 		};

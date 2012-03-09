@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>cjs</title>
+	<%- include(cjs_inc.main) %>
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript">
+		window.onload = function() {
+			var hello = document.getElementById("hello");
+			var goodbye = document.getElementById("goodbye");
+
+
+			var hello_val = cjs.create("input_constraint", hello);
+			cjs.text(goodbye, hello_val);
+		};
+	</script>
+	<style type="text/css">
+		body {
+		}
+	</style>
+	</head>
+	<body>
+		<input id="hello" type="text" />
+		<span id="goodbye"></span>
+	</body>
+</html>
