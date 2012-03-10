@@ -29,6 +29,24 @@ var cjs = (function (root) {
 		}
 	};
 
+	var constraints = [];
+	cjs.__add_constraint = function(constraint) {
+		constraints.push(constraint);
+	};
+	cjs.__remove_constraint = function(constraint) {
+		for(var i = 0; i<constraints.length; i++) {
+			if(constraints[i] === constraint) {
+				constraints.splice(i, 1);
+				i--;
+			}
+		}
+	};
+	cjs.__foreach_constraint = function(func) {
+		for(var i = 0; i<constraints.length; i++) {
+			func(constraints[i]);
+		}
+	};
+
 	if (typeof exports !== 'undefined') {
 		cjs._is_node = true;
 		if (typeof module !== 'undefined' && module.exports) {
@@ -46,7 +64,7 @@ var cjs = (function (root) {
 	}
 
 	cjs._debug = true;
-	cjs.version = "0.3";
+	cjs.version = "0.4";
 
 	return cjs;
 }(this));

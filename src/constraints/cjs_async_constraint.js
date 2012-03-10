@@ -23,19 +23,19 @@
 		invoke_callback(resolved, rejected);
 
 		var async_fsm = cjs	.fsm()
-						.add_state("pending")
-						.add_transition(resolved_func, "resolved")
-						.add_transition(rejected_func, "rejected")
-						.add_transition(function(do_transition ) {
-							if(_.isNumber(timeout_interval)) {
-								root.setTimeout(function() {
-									do_transition("timeout");
-								}, timeout_interval);
-							}
-						}, "rejected")
-						.add_state("resolved")
-						.add_state("rejected")
-						.starts_at("pending");
+							.add_state("pending")
+							.add_transition(resolved_func, "resolved")
+							.add_transition(rejected_func, "rejected")
+							.add_transition(function(do_transition ) {
+								if(_.isNumber(timeout_interval)) {
+									root.setTimeout(function() {
+										do_transition("timeout");
+									}, timeout_interval);
+								}
+							}, "rejected")
+							.add_state("resolved")
+							.add_state("rejected")
+							.starts_at("pending");
 
 
 		var $state = cjs.create("fsm_constraint", async_fsm, {

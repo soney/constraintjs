@@ -6,12 +6,8 @@
 	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript">
 		window.onload = function() {
-			var hello = document.getElementById("hello");
-			var goodbye = document.getElementById("goodbye");
-
-
-			var hello_val = cjs.create("input_constraint", hello);
-			cjs.text(goodbye, hello_val);
+			cjs.text(document.getElementById("o1"), cjs.create("input_constraint", document.getElementById("i1")));
+			cjs.text(document.getElementById("o2"), cjs.create("input_constraint", document.getElementById("i2")));
 		};
 	</script>
 	<style type="text/css">
@@ -20,7 +16,23 @@
 	</style>
 	</head>
 	<body>
-		<input id="hello" type="text" />
-		<span id="goodbye"></span>
+		<div>
+			<h2>Input</h2>
+			<input id="i1" type="text" />
+			<span id="o1"></span>
+		</div>
+		<div>
+			<h2>Textarea</h2>
+			<textarea id="i2"></textarea>
+			<span id="o2"></span>
+		</div>
+		<div>
+			<h2>Radio Button</h2>
+			<input type="radio" name="team" id="bulldogs" value="bulldogs" /><label for="bulldogs">Bulldogs</label>
+			<input type="radio" name="team" id="blue_devils" value="blue_devils" /><label for="blue_devils">Blue Devils</label>
+			<input type="radio" name="team" id="engineers" value="engineers" /><label for="engineers">Engineers</label>
+			<input type="radio" name="team" id="tartans" value="tartans" /><label for="tartans">Tartans</label>
+			<span id="o3"></span>
+		</div>
 	</body>
 </html>
