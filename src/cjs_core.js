@@ -37,9 +37,10 @@ var cjs = (function (root) {
 		for(var i = 0; i<constraints.length; i++) {
 			if(constraints[i] === constraint) {
 				constraints.splice(i, 1);
-				i--;
+				return true;
 			}
 		}
+		return false;
 	};
 	cjs.__foreach_constraint = function(func) {
 		for(var i = 0; i<constraints.length; i++) {

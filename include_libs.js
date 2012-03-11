@@ -39,8 +39,8 @@ exports.main_src = c(
 			, "constraints/cjs_constraint.js"
 			, "constraints/cjs_constraint_fn.js"
 			, "cjs_events.js"
-			, "cjs_dom_widgets.js"
-			, "cjs_form_widgets.js"
+			, "bindings/cjs_dom_widgets.js"
+			, "bindings/cjs_form_widgets.js"
 			, "util/templateparser.js"
 			, "cjs_template.js"
 			])

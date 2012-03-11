@@ -1,5 +1,6 @@
 /*global document:true */
 (function(cjs, root) {if(!cjs._is_node) {
+/*
 var _ = cjs._;
 
 var mouse = {
@@ -200,12 +201,6 @@ cjs.children = function(elem) {
 						return cjs.get(cc, true);
 					});
 				var c_constraints = _.flatten(dom_nodes);
-				/*
-				var c_constraints = _(child_constraints).chain()
-														.map(cjs.get)
-														.flatten() //Flatten on a single level
-														.value();
-														*/
 
 				return c_constraints;
 		});
@@ -320,5 +315,6 @@ cjs.define("dom_element", function(tag, attributes) {
 	cjs.children.apply(cjs, args);
 	return rv;
 });
+*/
 
 }}(cjs, this));

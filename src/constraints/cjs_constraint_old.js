@@ -1,46 +1,5 @@
 (function(cjs) {
 	var _ = cjs._;
-
-	var constraint_default_fns = {
-		update: function(){
-			return this.get.apply(this, arguments);
-		}
-		, destroy: function() {
-			return cjs.__remove_constraint(this);
-	   	}
-		, get: function() { }
-		, suspend: function() { }
-		, resume: function() { }
-	};
-	var user_fns = {};
-
-	var create_constraint = function(options) {
-		var constraint = function() {
-			return this.update.apply(this, arguments);
-		};
-		constraint.__options = options;
-
-		_.extend(constraint, constraint_default_fns, user_fns, constraint.__options);
-
-		cjs.__add_constraint(this);
-
-		return constraint;
-	};
-
-	cjs.fn = function(fn_name, fn_value) {
-		user_fns[fn_name] = fn_value;
-
-		cjs.__foreach_constraint(function(constraint) {
-			if(!_.has(constraint.__options, fn_name)) {
-				constraint[fn_name] = fn_value;
-			}
-		});
-	};
-
-	cjs.define("raw_constraint", create_constraint);
-
-
-	/*
 	var create_constraint = function(arg0, arg1) {
 		if(arguments.length === 0) {
 			return cjs.create("simple_constraint", undefined);
@@ -99,5 +58,4 @@
 	};
 
 	cjs.constraint = create_constraint;
-	*/
 }(cjs));
