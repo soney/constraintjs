@@ -54,6 +54,16 @@ cjs.constraint.mixin({
 		return rv;
 	}
 
+	, pluck: function(arr, prop_name) {
+		var rv =  _.pluck(arr, prop_name);
+		return rv;
+	}
+
+	, join: function(arr, str) {
+		var rv = arr.join(str);
+		return rv;
+	}
+
 	, item: function(arr, item) {
 		return cjs.item(arr, item);
 	}

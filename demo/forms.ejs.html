@@ -8,6 +8,7 @@
 		window.onload = function() {
 			cjs.binding.text(document.getElementById("o1"), cjs.create("input_value_constraint", document.getElementById("i1")));
 			cjs.binding.text(document.getElementById("o2"), cjs.create("input_value_constraint", document.getElementById("i2")));
+			cjs.binding.text(document.getElementById("o3"), cjs.create("checked_inputs", document.getElementsByName("team")).pluck("value").join(" "));
 		};
 	</script>
 	<style type="text/css">
@@ -28,10 +29,10 @@
 		</div>
 		<div>
 			<h2>Radio Button</h2>
-			<input type="radio" name="team" id="bulldogs" value="bulldogs" /><label for="bulldogs">Bulldogs</label>
-			<input type="radio" name="team" id="blue_devils" value="blue_devils" /><label for="blue_devils">Blue Devils</label>
-			<input type="radio" name="team" id="engineers" value="engineers" /><label for="engineers">Engineers</label>
-			<input type="radio" name="team" id="tartans" value="tartans" /><label for="tartans">Tartans</label>
+			<input type="checkbox" name="team" id="bulldogs" value="bulldogs" /><label for="bulldogs">Bulldogs</label>
+			<input type="checkbox" name="team" id="blue_devils" value="blue_devils" /><label for="blue_devils">Blue Devils</label>
+			<input type="checkbox" name="team" id="engineers" value="engineers" /><label for="engineers">Engineers</label>
+			<input type="checkbox" name="team" id="tartans" value="tartans" /><label for="tartans">Tartans</label>
 			<span id="o3"></span>
 		</div>
 	</body>

@@ -215,7 +215,7 @@
 			Constraint.prototype[propname] = function() {
 				var args = _.toArray(arguments);
 				var self = this;
-				var rv = cjs.create("simple_constraint", function() {
+				var rv = cjs.create("constraint", function() {
 					var val = cjs.get(self);
 					return propval.apply(this, ([val]).concat(args));
 				});
