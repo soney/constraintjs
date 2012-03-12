@@ -107,9 +107,9 @@ test('Constraint Solver', function() {
 });
 
 test('Basic Constraints', function() {
-	var c1 = cjs.create("simple_constraint", 1);
-	var c2 = cjs.create("simple_constraint", 2);
-	var c3 = cjs.create("simple_constraint", function() { return c1.get() + c2.get(); });
+	var c1 = cjs.constraint(1);
+	var c2 = cjs.constraint(2);
+	var c3 = cjs.constraint(function() { return c1.get() + c2.get(); });
 
 	equals(c3.get(), 3);
 	c1.set(4);
@@ -259,7 +259,7 @@ asyncTest('Constraint Event Listeners', function() {
 
 asyncTest('Asyncronous Constraints', function() {
 	expect(1);
-	var c1 = cjs.async(function(success, failure) {
+	var c1 = cjs.create("async_constraint", function(success, failure) {
 		window.setTimeout(function() {
 			success(10);
 		}, 30);

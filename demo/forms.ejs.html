@@ -6,8 +6,8 @@
 	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript">
 		window.onload = function() {
-			cjs.text(document.getElementById("o1"), cjs.create("input_constraint", document.getElementById("i1")));
-			cjs.text(document.getElementById("o2"), cjs.create("input_constraint", document.getElementById("i2")));
+			cjs.binding.text(document.getElementById("o1"), cjs.create("input_value_constraint", document.getElementById("i1")));
+			cjs.binding.text(document.getElementById("o2"), cjs.create("input_value_constraint", document.getElementById("i2")));
 		};
 	</script>
 	<style type="text/css">

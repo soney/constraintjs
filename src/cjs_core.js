@@ -29,25 +29,6 @@ var cjs = (function (root) {
 		}
 	};
 
-	var constraints = [];
-	cjs.__add_constraint = function(constraint) {
-		constraints.push(constraint);
-	};
-	cjs.__remove_constraint = function(constraint) {
-		for(var i = 0; i<constraints.length; i++) {
-			if(constraints[i] === constraint) {
-				constraints.splice(i, 1);
-				return true;
-			}
-		}
-		return false;
-	};
-	cjs.__foreach_constraint = function(func) {
-		for(var i = 0; i<constraints.length; i++) {
-			func(constraints[i]);
-		}
-	};
-
 	if (typeof exports !== 'undefined') {
 		cjs._is_node = true;
 		if (typeof module !== 'undefined' && module.exports) {

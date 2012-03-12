@@ -22,7 +22,7 @@
 
 		invoke_callback(resolved, rejected);
 
-		var async_fsm = cjs	.fsm()
+		var async_fsm = cjs	.create("fsm")
 							.add_state("pending")
 							.add_transition(resolved_func, "resolved")
 							.add_transition(rejected_func, "rejected")
@@ -71,4 +71,5 @@
 		return constraint;
 	};
 	cjs.define("async_constraint", create_async_constraint);
+	cjs.constraint.async = create_async_constraint;
 }(cjs, this));

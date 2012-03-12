@@ -3,8 +3,6 @@
 	var constraint_solver = cjs._constraint_solver;
 	var get_time = function() { return (new Date()).getTime(); };
 
-	cjs.fn = {};
-
 	var Listener = function(callback, context, name) {
 		this.context = context;
 		this.callback = callback;
@@ -37,8 +35,6 @@
 	};
 
 	(function(my) {
-		my.prototype = cjs.fn;
-
 		var proto = my.prototype;
 		proto.destroy = function() {
 			this.destroy_callbacks.push.apply(this.destroy_callbacks, arguments);
@@ -200,18 +196,46 @@
 			}
 		}
 
-		var rv = function() {
-			return constraint.get();
-		};
-		rv.get = _.bind(constraint.get, constraint);
-		rv.onChange = _.bind(constraint.onChange, constraint);
-		rv.offChange = _.bind(constraint.offChange, constraint);
-
 		return constraint;
 	};
 
-	cjs.define("simple_constraint", create_constraint);
+	cjs.constraint = create_constraint;
+	cjs.define("constraint", cjs.constraint);
 
+	cjs.constraint.mixin = function(arg0, arg1) {
+		var mixin_obj;
+		if(_.isString(arg0)) {
+			mixin_obj = {};
+			mixin_obj[arg0] = arg1;
+		} else {
+			mixin_obj = arg0;
+		}
+
+		_.forEach(mixin_obj, function(propval, propname) {
+			Constraint.prototype[propname] = function() {
+				var args = _.toArray(arguments);
+				var self = this;
+				var rv = cjs.create("simple_constraint", function() {
+					var val = cjs.get(self);
+					return propval.apply(this, ([val]).concat(args));
+				});
+
+				rv.basis = this;
+				rv.basis_args = args;
+
+				return rv;
+			};
+			cjs.constraint[propname] = function(arg0) {
+				var args = _.toArray(arguments);
+				if(args.length === 0) { return cjs.create("constraint"); }
+				else {
+					var initial_constraint = cjs.create("constraint", arg0);
+					var other_args = _.rest(args, 1);
+					return initial_constraint[propname].apply(initial_constraint, other_args);
+				}
+			};
+		});
+	};
 
 	cjs.is_constraint = function(obj, recursive) {
 		if(obj instanceof Constraint) {
@@ -248,11 +272,10 @@
 			return rv;
 		}
 	};
-	cjs.item = function(obj, index) {
+	cjs.get_item = function(obj, index) {
 		var o = cjs.get(obj);
 		var i = cjs.get(index);
 
 		return o[i];
 	};
-	cjs.type("simple_constraint", Constraint);
 }(cjs, this));

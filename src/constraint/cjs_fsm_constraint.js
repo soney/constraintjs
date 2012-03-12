@@ -24,7 +24,7 @@
 			}
 			return last_transition_value;
 		};
-		var constraint = cjs.create("simple_constraint", getter);
+		var constraint = cjs.create("constraint", getter);
 		
 		_.forEach(selectors, function(selector) {
 			if(selector.is("transition")) {

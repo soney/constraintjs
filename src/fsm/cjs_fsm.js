@@ -178,7 +178,7 @@ var FSM = function() {
 	this.chain_state = null;
 	this.did_transition = false;
 
-	this.state = cjs.create("simple_constraint", _.bind(function() {
+	this.state = cjs.create("constraint", _.bind(function() {
 		if(this._state) {
 			return this._state.get_name();
 		} else {
@@ -223,9 +223,9 @@ var FSM = function() {
 		var do_transition = function() {
 			if(self.is(from_state)) {
 				var args = _.toArray(arguments);
-				_.delay(function() {
-					transition.run.apply(transition, args);
-				});
+		//		_.delay(function() {
+				transition.run.apply(transition, args);
+		//		});
 			}
 		};
 		add_transition_fn.call(this, do_transition, from_state, to_state, this);
@@ -311,12 +311,6 @@ var FSM = function() {
 var create_fsm = function() {
 	return new FSM();
 };
-cjs.define("fsm", create_fsm);
-cjs.fsm = function() {
-	var args = _.toArray(arguments);
-	args.unshift("fsm");
-	return cjs.create.apply(cjs, args);
-};
 cjs.fsm = create_fsm;
-cjs.type("FSM", FSM);
+cjs.define("fsm", cjs.fsm);
 }(cjs));
