@@ -116,6 +116,20 @@ test('Basic Constraints', function() {
 	equals(c3.get(), 6);
 });
 
+test('Array Constraints', function() {
+	var c1 = cjs.constraint([1,2,3]);
+	c1	.onAdd(function() {
+			console.log("add", arguments);
+		})
+		.onRemove(function() {
+			console.log("remove", arguments);
+		})
+		.onMove(function() {
+			console.log("move", arguments);
+		});
+	c1.set([3,2,4]);
+});
+
 test('FSM', function() {
 	var ab, bc, cd, bd, da;
 	var fsm = cjs	.fsm()

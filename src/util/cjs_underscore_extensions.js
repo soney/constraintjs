@@ -20,6 +20,16 @@
 				_.remove_index(arr, objIndex);
 			}
 		}
+		, remove_all: function(arr, obj) {
+			var objIndex;
+			do {
+				objIndex = _.index_of(arr, obj);
+
+				if(objIndex>=0) {
+					_.remove_index(arr, objIndex);
+				}
+			} while(objIndex >= 0);
+		}
 		, index_of: function(arr, item, equality_check) {
 			if(equality_check === undefined) { equality_check = function(a,b) { return a === b; }; }
 			return _.index_where(arr, function(x) { return equality_check(item, x); });

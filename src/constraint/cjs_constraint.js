@@ -202,6 +202,18 @@
 	cjs.constraint = create_constraint;
 	cjs.define("constraint", cjs.constraint);
 
+	cjs.constraint.raw_mixin = function(propname, propval) {
+		Constraint.prototype[propname] = function() {
+			var args = _.toArray(arguments);
+			args.unshift(this);
+			return propval.apply(this, args);
+		};
+		cjs.constraint[propname] = function() {
+			var args = _.toArray(arguments);
+			return propval.apply(this, args);
+		};
+	};
+
 	cjs.constraint.mixin = function(arg0, arg1) {
 		var mixin_obj;
 		if(_.isString(arg0)) {
@@ -212,28 +224,13 @@
 		}
 
 		_.forEach(mixin_obj, function(propval, propname) {
-			Constraint.prototype[propname] = function() {
+			cjs.constraint.raw_mixin(propname, function() {
 				var args = _.toArray(arguments);
-				var self = this;
-				var rv = cjs.create("constraint", function() {
-					var val = cjs.get(self);
-					return propval.apply(this, ([val]).concat(args));
+				var val = cjs.get(_.first(args));
+				return cjs.create("constraint", function() {
+					return propval.apply(this, ([val]).concat(_.rest(args)));
 				});
-
-				rv.basis = this;
-				rv.basis_args = args;
-
-				return rv;
-			};
-			cjs.constraint[propname] = function(arg0) {
-				var args = _.toArray(arguments);
-				if(args.length === 0) { return cjs.create("constraint"); }
-				else {
-					var initial_constraint = cjs.create("constraint", arg0);
-					var other_args = _.rest(args, 1);
-					return initial_constraint[propname].apply(initial_constraint, other_args);
-				}
-			};
+			});
 		});
 	};
 

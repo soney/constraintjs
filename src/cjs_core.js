@@ -1,5 +1,5 @@
 var cjs = (function (root) {
-	var cjs_call = function(arg0, arg1) {
+	var cjs_call = function() {
 		return cjs.constraint.apply(cjs, arguments);
 	};
 	var cjs = function () {

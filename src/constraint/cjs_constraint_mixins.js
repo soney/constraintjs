@@ -1,6 +1,5 @@
 (function(cjs) {
 var _ = cjs._;
-
 cjs.constraint.mixin({
 	unit: function(val, unit_name) {
 		return parseFloat(val) + String(unit_name);
@@ -67,11 +66,12 @@ cjs.constraint.mixin({
 	, item: function(arr, item) {
 		return cjs.item(arr, item);
 	}
-	
-	, snapshot: function(value) {
-		return value;
-	}
 });
 
-
+cjs.constraint.raw_mixin("snapshot", function(constraint) {
+	var val = constraint.get();
+	var rv = cjs.create("constraint", val);
+	rv.basis = constraint;
+	return rv;
+});
 }(cjs));
