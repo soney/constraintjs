@@ -67,6 +67,10 @@ cjs.constraint.mixin({
 	, item: function(arr, item) {
 		return cjs.item(arr, item);
 	}
+	
+	, snapshot: function(value) {
+		return value;
+	}
 });
 
 

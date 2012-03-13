@@ -1,9 +1,21 @@
 var cjs = (function (root) {
-	var cjs_call = function () {
+	var cjs_call = function(arg0, arg1) {
 		return cjs.constraint.apply(cjs, arguments);
 	};
 	var cjs = function () {
 		return cjs_call.apply(this, arguments);
+	};
+
+	cjs.$ = function(arg0, arg1) {
+		var _ = cjs._;
+		if(_.isString(arg0)) { //Assume it's a selector, arg1 is the context
+			return cjs.create("selector_constraint", arg0, arg1);
+		} else {
+			var args = _.toArray(arguments);
+			return cjs.create("constraint", function() {
+				return args;
+			});
+		}
 	};
 
 	var factories = {};

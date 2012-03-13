@@ -51,4 +51,111 @@ cjs.define("checked_inputs", function(inps) {
 	return constraint;
 });
 
+cjs.define("selector_constraint", function(selector, context) {
+	var args = arguments;
+	var _oldval = [];
+	var constraint;
+
+	var nullify_fn = function() {
+		constraint.nullify();
+	};
+
+	var activate = function() {
+		document.addEventListener("DOMSubtreeModified", nullify_fn);
+	};
+	var deactivate = function() {
+		document.removeEventListener("DOMSubtreeModified", nullify_fn);
+		_.forEach(_oldval, function(elem) {
+			elem.removeEventListener("DOMAttrModified", nullify_fn);
+		});
+	};
+
+	constraint = cjs.create("constraint", function() {
+		var rv = cjs.Sizzle.call(cjs.Sizzle, cjs.get(selector), cjs.get(context, true));
+
+		_.forEach(_oldval, function(elem) {
+			elem.removeEventListener("DOMAttrModified", nullify_fn);
+		});
+		_.forEach(rv, function(elem) {
+			elem.addEventListener("DOMAttrModified", nullify_fn);
+		});
+
+		_oldval = rv;
+		return rv;
+	});
+
+	activate();
+
+	return constraint;
+});
+
+cjs.define("children_constraint", function(elem) {
+	var constraint;
+
+	var nullify_fn = function() {
+		constraint.nullify();
+	};
+
+	var activate = function() {
+		elem.addEventListener("DOMSubtreeModified", nullify_fn);
+	};
+	var deactivate = function() {
+		elem.removeEventListener("DOMSubtreeModified", nullify_fn);
+	};
+
+	constraint = cjs.create("constraint", function() {
+		return elem.childNodes;
+	});
+
+	activate();
+
+	return constraint;
+});
+
+cjs.define("text_constraint", function(elem) {
+	var constraint;
+
+	var nullify_fn = function() {
+		constraint.nullify();
+	};
+
+	var activate = function() {
+		elem.addEventListener("DOMSubtreeModified", nullify_fn);
+	};
+	var deactivate = function() {
+		elem.removeEventListener("DOMSubtreeModified", nullify_fn);
+	};
+
+	constraint = cjs.create("constraint", function() {
+		return elem.innerText;
+	});
+
+	activate();
+
+	return constraint;
+});
+
+cjs.define("html_constraint", function(elem) {
+	var constraint;
+
+	var nullify_fn = function() {
+		constraint.nullify();
+	};
+
+	var activate = function() {
+		elem.addEventListener("DOMSubtreeModified", nullify_fn);
+	};
+	var deactivate = function() {
+		elem.removeEventListener("DOMSubtreeModified", nullify_fn);
+	};
+
+	constraint = cjs.create("constraint", function() {
+		return elem.innerHTML;
+	});
+
+	activate();
+
+	return constraint;
+});
+
 }}(cjs));

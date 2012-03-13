@@ -66,7 +66,18 @@
 		}
 
 		_.forEach(mixin_obj, function(propval, propname) {
-			cjs.binding[propname] = propval;
+			cjs.binding[propname] = function(arg0) {
+				var elems;
+				if(_.isArray(arg0)) {
+					elems = arg0;
+				} else if(cjs.is_constraint(arg0)) {
+					
+				} else {
+					elems = [arg0];
+				}
+
+			};
+
 			BindingWrapper.prototype[propname] = function() {
 				var self = this;
 				var args = _.toArray(arguments);
