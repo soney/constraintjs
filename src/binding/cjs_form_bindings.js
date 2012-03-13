@@ -1,7 +1,8 @@
 /*global document:true */
-/*
-(function(cjs, root) {if(!cjs._is_node) {
-var _ = cjs._;
-
-}}(cjs, this));
-*/
+(function(cjs) {if(!cjs._is_node) {
+cjs.binding.mixin({
+	val: function(elem, constraint) {
+		return cjs.binding.bind(elem, "value", constraint);
+	}
+});
+}}(cjs));
