@@ -56,6 +56,22 @@
 		};
 	}(BindingWrapper));
 
+	cjs.binding.raw_mixin = function(propname, propval) {
+		cjs.binding[propname] = function() {
+			return propval.apply(this, arguments);
+		};
+
+		BindingWrapper.prototype[propname] = function() {
+			var self = this;
+			var args = _.toArray(arguments);
+			this.last_bindings = this.map(function(obj) {
+				this.last_binding = cjs.binding[propname].apply(self, ([obj]).concat(args));
+				return this.last_binding;
+			});
+			return this;
+		};
+	};
+
 	cjs.binding.mixin = function(arg0, arg1) {
 		var mixin_obj;
 		if(_.isString(arg0)) {
@@ -66,16 +82,19 @@
 		}
 
 		_.forEach(mixin_obj, function(propval, propname) {
+			cjs.binding.raw_mixin(propname, propval);
 			cjs.binding[propname] = function(arg0) {
 				var elems;
 				if(_.isArray(arg0)) {
 					elems = arg0;
 				} else if(cjs.is_constraint(arg0)) {
-					
+					arg0.forEach(function(obj) {
+
+					}, function(obj) {
+					});
 				} else {
 					elems = [arg0];
 				}
-
 			};
 
 			BindingWrapper.prototype[propname] = function() {
