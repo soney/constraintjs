@@ -37,12 +37,16 @@
 	(function(my) {
 		var proto = my.prototype;
 		proto.destroy = function() {
-			this.destroy_callbacks.push.apply(this.destroy_callbacks, arguments);
-		};
-		proto.on_destroy = function() {
 			_.forEach(this.destroy_callbacks, function(callback) {
 				callback();
 			});
+			constraint_solver.removeObject(this);
+		};
+		proto.on_destroy = function() {
+			this.destroy_callbacks.push.apply(this.destroy_callbacks, arguments);
+		};
+		proto.off_destroy = function(func) {
+			_.remove_all(this.destroy_callbacks, func);
 		};
 		proto.nullify = function() {
 			constraint_solver.nullify(this);

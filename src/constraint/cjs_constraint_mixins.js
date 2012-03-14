@@ -44,28 +44,6 @@ cjs.constraint.mixin({
 			return memo / val;
 		}, first_val);
 	}
-
-	, map: function(arr, func) {
-		var index = 0;
-		var rv =  _.map(arr, function(val, key) {
-			return func.call(this, val, key, index++);
-		});
-		return rv;
-	}
-
-	, pluck: function(arr, prop_name) {
-		var rv =  _.pluck(arr, prop_name);
-		return rv;
-	}
-
-	, join: function(arr, str) {
-		var rv = arr.join(str);
-		return rv;
-	}
-
-	, item: function(arr, item) {
-		return cjs.item(arr, item);
-	}
 });
 
 cjs.constraint.raw_mixin("snapshot", function(constraint) {

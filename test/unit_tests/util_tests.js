@@ -117,6 +117,7 @@ test('Basic Constraints', function() {
 });
 
 test('Array Constraints', function() {
+/*
 	var c1 = cjs.constraint([1,2,3]);
 	c1	.onAdd(function() {
 			console.log("add", arguments);
@@ -128,6 +129,7 @@ test('Array Constraints', function() {
 			console.log("move", arguments);
 		});
 	c1.set([3,2,4]);
+	*/
 });
 
 test('FSM', function() {
