@@ -6,7 +6,10 @@ cjs.binding.mixin({
 			//Return a constraint whose value is my val
 			return cjs.create("input_value_constraint", _.first(elems));
 		} else {
-			return cjs.binding.bind(elem, "value", constraint);
+			var setter = function(obj, val, constraint) {
+				obj.value = val;
+			};
+			return cjs.binding.bind(elem, constraint, setter);
 		}
 	}
 });

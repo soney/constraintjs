@@ -163,7 +163,7 @@
 				});
 			});
 			window.x = cjs("yellow");
-			window.y = cjs.binding.bind(cjs.$("div"),  window.x, function(obj, cval) { obj.style.backgroundColor = cval; });
+			window.y = cjs.binding.css(cjs.$("div"), "background-color", window.x);
 			window.y.destroy();
 			window.x.set("green");
 		});

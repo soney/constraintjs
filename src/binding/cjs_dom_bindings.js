@@ -3,17 +3,24 @@
 var _ = cjs._;
 
 cjs.binding.mixin({
-	css: function(elem, prop_name, constraint) {
+	css: function(objs, prop_name, constraint) {
 		var name = _.camel_case(prop_name);
-		return cjs.binding.bind(elem.style, name, constraint);
+		var setter = function(obj, val, constraint) {
+			obj.style[name] = val;
+		};
+		return cjs.binding.bind(objs, constraint, setter);
 	}
 	, attr: function(elem, prop_name, constraint) {
-		return cjs.binding.bind(elem, prop_name, constraint, function(obj, name, value) {
-			obj.setAttribute(name, value);
-		});
+		var setter = function(obj, val, constraint) {
+			obj.setAttribute(prop_name, val);
+		};
+		return cjs.binding.bind(objs, constraint, setter);
 	}
 	, "class": function(elem, constraint) {
-		return cjs.binding.bind(elem, "className", constraint);
+		var setter = function(obj, val, constraint) {
+			obj.className = val;
+		};
+		return cjs.binding.bind(objs, constraint, setter);
 	}
 });
 

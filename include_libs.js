@@ -46,8 +46,8 @@ exports.main_src = c(
 			*/
 			, "binding/cjs_binding.js"
 			, "binding/cjs_dom_bindings.js"
-			/*
 			, "binding/cjs_form_bindings.js"
+			/*
 			, "util/templateparser.js"
 			, "cjs_template.js"
 			*/
