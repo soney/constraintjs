@@ -223,9 +223,7 @@ var FSM = function() {
 		var do_transition = function() {
 			if(self.is(from_state)) {
 				var args = _.toArray(arguments);
-		//		_.delay(function() {
 				transition.run.apply(transition, args);
-		//		});
 			}
 		};
 		add_transition_fn.call(this, do_transition, from_state, to_state, this);

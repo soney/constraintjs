@@ -22,7 +22,7 @@
 									dom_elem.style.backgroundColor = color_code;
 
 									constraint.state = fsm.state;
-									cjs.class(dom_elem, constraint.state);
+									cjs.binding.class(dom_elem, constraint.state);
 
 									constraint.element = dom_elem;
 									return constraint;
@@ -45,7 +45,7 @@
 					var random_index = Math.floor(Math.random() * colors.length);
 					var color = colors[random_index];
 					div_elem.style.backgroundColor = color.get();
-					cjs.class(div_elem, color.state);
+					cjs.binding.class(div_elem, color.state);
 
 					items_dom.appendChild(div_elem);
 				}

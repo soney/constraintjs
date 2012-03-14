@@ -16,8 +16,8 @@
 							.add_transition(cjs.on("mouseout", elem), "idle");
 			};
 			
-			cjs.class(r1, get_hover_fsm(r2).state);
-			cjs.class(r2, get_hover_fsm(r1).state);
+			cjs.binding.class(r1, get_hover_fsm(r2).state);
+			cjs.binding.class(r2, get_hover_fsm(r1).state);
 		};
 	</script>
 	<style type="text/css">
