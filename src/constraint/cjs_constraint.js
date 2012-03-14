@@ -7,6 +7,7 @@
 		this.context = context;
 		this.callback = callback;
 		this.name = name;
+		//if(context === undefined) debugger;
 	};
 	(function(my) {
 		var proto = my.prototype;
@@ -145,7 +146,7 @@
 		};
 		proto.offChange = function(id) {
 			this.listeners = _.reject(this.listeners, function(listener) {
-				return listener === id || listener.get_name() === id;
+				return listener === id || listener.callback === id || listener.get_name() === id;
 			});
 			if(this.listeners.length === 0) {
 				if(this.cs_listener_id !== null) {

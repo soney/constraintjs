@@ -34,19 +34,23 @@ exports.main_src = c(
 			, "util/constraint_solver.js"
 			, "fsm/cjs_fsm.js"
 			, "constraint/cjs_constraint.js"
-			, "constraint/cjs_fsm_constraint.js"
-			, "constraint/cjs_async_constraint.js"
-			, "constraint/cjs_conditional_constraint.js"
 			, "constraint/cjs_constraint_mixins.js"
 			, "constraint/cjs_array_constraint_mixins.js"
 			, "constraint/cjs_dom_constraints.js"
+			/*
+			, "constraint/cjs_fsm_constraint.js"
+			, "constraint/cjs_async_constraint.js"
+			, "constraint/cjs_conditional_constraint.js"
 			, "constraint/cjs_input_widgets.js"
 			, "fsm/cjs_events.js"
+			*/
 			, "binding/cjs_binding.js"
 			, "binding/cjs_dom_bindings.js"
+			/*
 			, "binding/cjs_form_bindings.js"
 			, "util/templateparser.js"
 			, "cjs_template.js"
+			*/
 			])
 );
 

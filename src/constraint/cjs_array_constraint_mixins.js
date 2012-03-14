@@ -61,14 +61,14 @@ cjs.constraint.mixin({
 	}
 
 	, item: function(arr, item) {
-		return cjs.item(arr, item);
+		return cjs.get_item(arr, item);
 	}
 
 	, first: function(arr) {
-		return cjs.item(arr, 0);
+		return cjs.get_item(arr, 0);
 	}
 	, last: function(arr) {
-		return cjs.item(arr, _.size(arr)-1);
+		return cjs.get_item(arr, _.size(arr)-1);
 	}
 });
 

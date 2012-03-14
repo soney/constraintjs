@@ -58,7 +58,7 @@ var cjs = (function (root) {
 	}
 
 	cjs._debug = true;
-	cjs.version = "0.4";
+	cjs.version = "0.5";
 
 	return cjs;
 }(this));

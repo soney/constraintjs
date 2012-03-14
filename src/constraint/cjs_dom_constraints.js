@@ -52,7 +52,6 @@ cjs.define("checked_inputs", function(inps) {
 });
 
 cjs.define("selector_constraint", function(selector, context) {
-	var args = arguments;
 	var _oldval = [];
 	var constraint;
 
@@ -84,6 +83,7 @@ cjs.define("selector_constraint", function(selector, context) {
 		return rv;
 	});
 
+	constraint.on_destroy(deactivate);
 	activate();
 
 	return constraint;
@@ -107,6 +107,7 @@ cjs.define("children_constraint", function(elem) {
 		return elem.childNodes;
 	});
 
+	constraint.on_destroy(deactivate);
 	activate();
 
 	return constraint;
@@ -130,6 +131,7 @@ cjs.define("text_constraint", function(elem) {
 		return elem.innerText;
 	});
 
+	constraint.on_destroy(deactivate);
 	activate();
 
 	return constraint;
@@ -153,6 +155,7 @@ cjs.define("html_constraint", function(elem) {
 		return elem.innerHTML;
 	});
 
+	constraint.on_destroy(deactivate);
 	activate();
 
 	return constraint;
