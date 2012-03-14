@@ -5,19 +5,19 @@ var _ = cjs._;
 cjs.binding.mixin({
 	css: function(objs, prop_name, constraint) {
 		var name = _.camel_case(prop_name);
-		var setter = function(obj, val, constraint) {
+		var setter = function(obj, val) {
 			obj.style[name] = val;
 		};
 		return cjs.binding.bind(objs, constraint, setter);
 	}
-	, attr: function(elem, prop_name, constraint) {
-		var setter = function(obj, val, constraint) {
+	, attr: function(objs, prop_name, constraint) {
+		var setter = function(obj, val) {
 			obj.setAttribute(prop_name, val);
 		};
 		return cjs.binding.bind(objs, constraint, setter);
 	}
-	, "class": function(elem, constraint) {
-		var setter = function(obj, val, constraint) {
+	, "class": function(objs, constraint) {
+		var setter = function(obj, val) {
 			obj.className = val;
 		};
 		return cjs.binding.bind(objs, constraint, setter);
