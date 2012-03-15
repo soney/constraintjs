@@ -174,26 +174,11 @@ cjs.constraint.raw_mixin("offMove", function(constraint, func) {
 	return constraint;
 });
 
-/*
-cjs.constraint.raw_mixin("forEach", function(constraint, func) {
-	var val = constraint.get();
-	_.forEach(val, func);
-	return constraint;
-});
 
 cjs.constraint.mixin({
-	map: function(arr, func) {
-		var index = 0;
-		var rv =  _.map(arr, function(val, key) {
-			return func.call(this, val, key, index++);
-		});
-		return rv;
-	}
-
-	, pluck: function(arr, prop_name) {
+	pluck: function(arr, prop_name) {
 		var rv =  _.pluck(arr, prop_name);
 		return rv;
 	}
 });
-*/
 }(cjs));

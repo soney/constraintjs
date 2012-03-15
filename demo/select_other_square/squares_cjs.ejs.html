@@ -13,6 +13,10 @@
 							.add_state("idle")
 							.add_transition(cjs.on("mouseover", elem), "hover")
 							.add_state("hover")
+							.add_transition(cjs.on("mouseout", elem), "idle")
+							.add_transition(cjs.on("mousedown", elem), "pressed")
+							.add_state("pressed")
+							.add_transition(cjs.on("mouseup", elem), "hover")
 							.add_transition(cjs.on("mouseout", elem), "idle");
 			};
 			
@@ -46,6 +50,9 @@
 		#rect1.hover, #rect2.hover {
 			background-color: #FEB41C;
 		}
+		#rect1.pressed, #rect2.pressed {
+			background-color: red;
+		}
 		#code {
 			color: white;
 			font-size: 1.1em;
@@ -57,21 +64,21 @@
 	</head>
 	<body>
 		<div id="container">
-			<pre id="code">
-var r1 = document.getElementById("rect1");
+			<pre id="code"
+>var r1 = document.getElementById("rect1");
 var r2 = document.getElementById("rect2");
 
 function get_hover_fsm(elem) {
 	return cjs	.fsm()
-			.add_state("idle")
-			.add_transition(cjs.on("mouseover", elem), "hover")
-			.add_state("hover")
+			.add_transition(cjs.on("mouseout", elem), "idle")
+			.add_transition(cjs.on("mousedown", elem), "pressed")
+			.add_state("pressed")
+			.add_transition(cjs.on("mouseup", elem), "hover")
 			.add_transition(cjs.on("mouseout", elem), "idle");
 };
 
-cjs.class(r1, get_hover_fsm(r2).state);
-cjs.class(r2, get_hover_fsm(r1).state);
-			</pre>
+cjs.binding.class(r1, get_hover_fsm(r2).state);
+cjs.binding.class(r2, get_hover_fsm(r1).state);</pre>
 			<div id="rect1"></div>
 			<div id="rect2"></div>
 		</div>
