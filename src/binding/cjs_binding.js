@@ -78,7 +78,7 @@
 					return [val];
 				}
 			};
-			var binding_objs = _.map(get_objs, function(obj) {
+			var binding_objs = _.map(get_objs(), function(obj) {
 				var rv = cjs.create("binding", {
 					activate: _.bind(activate_fn, obj, obj)
 					, deactivate: _.bind(deactivate_fn, obj, obj)
@@ -92,7 +92,7 @@
 			});
 
 
-			var cached_val = _.clone(get_objs);
+			var cached_val = _.clone(get_objs());
 			var on_change = function() {
 				var val = get_objs();
 				var diff = _.diff(cached_val, val);
