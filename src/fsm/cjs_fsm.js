@@ -177,6 +177,7 @@ var FSM = function() {
 	this.listeners = [];
 	this.chain_state = null;
 	this.did_transition = false;
+	this.blocked = false;
 
 	this.state = cjs.create("constraint", _.bind(function() {
 		if(this._state) {
@@ -221,11 +222,11 @@ var FSM = function() {
 		var transition = new Transition(this, from_state, to_state);
 		var self = this;
 		var do_transition = function() {
-			if(self.is(from_state)) {
+			if(self.is(from_state) && ! self.is_blocked()) {
+				self.block();
 				var args = _.toArray(arguments);
-				_.delay(function() {
-					transition.run.apply(transition, args);
-				});
+				transition.run.apply(transition, args);
+				_.delay(_.bind(self.unblock, self));
 			}
 		};
 		add_transition_fn.call(this, do_transition, from_state, to_state, this);
@@ -305,6 +306,15 @@ var FSM = function() {
 			throw new Error("Unrecognized format for state/transition spec. Please see documentation.");
 		}
 		return selector;
+	};
+	proto.block = function() {
+		this.blocked = true;
+	};
+	proto.unblock = function() {
+		this.blocked = false;
+	};
+	proto.is_blocked = function() {
+		return this.blocked === true;
 	};
 }(FSM));
 

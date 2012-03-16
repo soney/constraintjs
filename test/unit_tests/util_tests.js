@@ -203,7 +203,7 @@ test('FSM Event Listeners', function() {
 	bd();
 });
 
-test('FSM Constraitns', function() {
+test('FSM Constraints', function() {
 	var ab, bc, cd, bd, da;
 	var fsm = cjs	.fsm()
 					.add_state("A")
