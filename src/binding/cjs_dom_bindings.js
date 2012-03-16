@@ -22,6 +22,18 @@ cjs.binding.mixin({
 		};
 		return cjs.binding.bind(objs, constraint, setter);
 	}
+	, html: function(objs, constraint) {
+		var setter = function(obj, val) {
+			obj.innerHTML = val;
+		};
+		return cjs.binding.bind(objs, constraint, setter);
+	}
+	, val: function(objs, constraint) {
+		var setter = function(obj, val) {
+			obj.val = val;
+		};
+		return cjs.binding.bind(objs, constraint, setter);
+	}
 });
 
 

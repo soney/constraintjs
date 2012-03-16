@@ -161,22 +161,50 @@ cjs.define("html_constraint", function(elem) {
 	return constraint;
 });
 
-cjs.define("css_constraint", function(elem, propname) {
+cjs.define("attr_constraint", function(elem, propname) {
 	var constraint;
 
-	var nullify_fn = function() {
+	var nullify_fn = function(e) {
 		constraint.nullify();
 	};
 
 	var activate = function() {
-		elem.addEventListener("DOMSubtreeModified", nullify_fn);
+		elem.addEventListener("DOMAttrModified", nullify_fn);
 	};
 	var deactivate = function() {
-		elem.removeEventListener("DOMSubtreeModified", nullify_fn);
+		elem.removeEventListener("DOMAttrModified", nullify_fn);
 	};
 
+	var name = _.camel_case(prop_name);
 	constraint = cjs.create("constraint", function() {
-		return elem.innerHTML;
+		return elem.style[name];
+	});
+
+	constraint.on_destroy(deactivate);
+	activate();
+
+	return constraint;
+});
+
+cjs.define("css_constraint", function(elem, propname) {
+	var constraint;
+
+	var nullify_fn = function(e) {
+		if(e.attrName === "style") {
+			constraint.nullify();
+		}
+	};
+
+	var activate = function() {
+		elem.addEventListener("DOMAttrModified", nullify_fn);
+	};
+	var deactivate = function() {
+		elem.removeEventListener("DOMAttrModified", nullify_fn);
+	};
+
+	var name = _.camel_case(prop_name);
+	constraint = cjs.create("constraint", function() {
+		return elem.style[name];
 	});
 
 	constraint.on_destroy(deactivate);

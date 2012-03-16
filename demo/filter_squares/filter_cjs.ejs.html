@@ -9,7 +9,7 @@
 				var colors = (["#E83A25", "#FFE9A3", "#98CC96", "#004563", "#786137"]).map(function(color_code) {
 									var dom_elem = document.createElement("div");
 
-									var constraint = cjs(color_code);
+									var constraint = cjs(color_code, true);
 									var fsm = cjs	.fsm()
 													.add_state("idle")
 													.add_transition(cjs.on("mouseover", dom_elem), "hover")

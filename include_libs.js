@@ -37,6 +37,7 @@ exports.main_src = c(
 			, "constraint/cjs_constraint_mixins.js"
 			, "constraint/cjs_array_constraint_mixins.js"
 			, "constraint/cjs_dom_constraints.js"
+			, "constraint/cjs_dom_mixins.js"
 			, "constraint/cjs_fsm_constraint.js"
 			, "constraint/cjs_async_constraint.js"
 			, "constraint/cjs_conditional_constraint.js"
