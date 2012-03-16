@@ -161,10 +161,10 @@ cjs.define("html_constraint", function(elem) {
 	return constraint;
 });
 
-cjs.define("attr_constraint", function(elem, propname) {
+cjs.define("attr_constraint", function(elem, prop_name) {
 	var constraint;
 
-	var nullify_fn = function(e) {
+	var nullify_fn = function() {
 		constraint.nullify();
 	};
 
@@ -175,9 +175,8 @@ cjs.define("attr_constraint", function(elem, propname) {
 		elem.removeEventListener("DOMAttrModified", nullify_fn);
 	};
 
-	var name = _.camel_case(prop_name);
 	constraint = cjs.create("constraint", function() {
-		return elem.style[name];
+		return elem.style[prop_name];
 	});
 
 	constraint.on_destroy(deactivate);
@@ -186,7 +185,7 @@ cjs.define("attr_constraint", function(elem, propname) {
 	return constraint;
 });
 
-cjs.define("css_constraint", function(elem, propname) {
+cjs.define("css_constraint", function(elem, prop_name) {
 	var constraint;
 
 	var nullify_fn = function(e) {

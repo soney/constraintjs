@@ -33,6 +33,7 @@
 		};
 		this.id = "constraint_"+node.getId();
 		this.destroy_callbacks = [];
+		this.bindings = [];
 	};
 
 	(function(my) {
@@ -40,6 +41,9 @@
 		proto.destroy = function() {
 			_.forEach(this.destroy_callbacks, function(callback) {
 				callback();
+			});
+			_.forEach(this.bindings, function(binding) {
+				binding.destroy();
 			});
 			constraint_solver.removeObject(this);
 		};
@@ -184,6 +188,9 @@
 		proto.length = function() {
 			var val = this.get();
 			return val.length;
+		};
+		proto.push_binding = function(binding) {
+			this.bindings.push(binding);
 		};
 	}(Constraint));
 
