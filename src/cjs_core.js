@@ -1,5 +1,15 @@
 var cjs = (function (root) {
-	var cjs_call = function() {
+	var cjs_call = function(arg0) {
+		var _ = cjs._;
+		if(_.isString(arg0)) { //Assume it's a selector, arg1 is the context
+			return cjs.$.apply(cjs, arguments);
+		} else {
+			var args = _.toArray(arguments);
+			return cjs.create("constraint", function() {
+				return args;
+			});
+		}
+		
 		return cjs.constraint.apply(cjs, arguments);
 	};
 	var cjs = function () {
@@ -11,10 +21,6 @@ var cjs = (function (root) {
 		if(_.isString(arg0)) { //Assume it's a selector, arg1 is the context
 			return cjs.create("selector_constraint", arg0, arg1);
 		} else {
-			var args = _.toArray(arguments);
-			return cjs.create("constraint", function() {
-				return args;
-			});
 		}
 	};
 

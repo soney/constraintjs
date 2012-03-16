@@ -54,6 +54,7 @@ cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn)
 	return rv;
 });
 
+
 cjs.constraint.mixin({
 	join: function(arr, str) {
 		var rv = arr.join(str);

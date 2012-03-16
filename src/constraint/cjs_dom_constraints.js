@@ -161,4 +161,28 @@ cjs.define("html_constraint", function(elem) {
 	return constraint;
 });
 
+cjs.define("css_constraint", function(elem, propname) {
+	var constraint;
+
+	var nullify_fn = function() {
+		constraint.nullify();
+	};
+
+	var activate = function() {
+		elem.addEventListener("DOMSubtreeModified", nullify_fn);
+	};
+	var deactivate = function() {
+		elem.removeEventListener("DOMSubtreeModified", nullify_fn);
+	};
+
+	constraint = cjs.create("constraint", function() {
+		return elem.innerHTML;
+	});
+
+	constraint.on_destroy(deactivate);
+	activate();
+
+	return constraint;
+});
+
 }}(cjs));
