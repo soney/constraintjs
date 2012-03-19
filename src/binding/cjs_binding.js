@@ -272,7 +272,7 @@
 		});
 	};
 
-	cjs.binding.mixin("bind", function(objs, constraint, setter) {
+	cjs.binding.mixin("bind", function(objs, constraint, setter, do_activate) {
 		var update_fn = function(obj) {
 			var val = cjs.get(constraint);
 			setter(obj, val, constraint);
@@ -291,7 +291,9 @@
 				constraint.offChange(rv.update);
 			}
 		}, false);
-		rv.activate();
+		if(do_activate !== false) {
+			rv.activate();
+		}
 		return rv;
 	});
 }(cjs));

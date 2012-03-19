@@ -300,6 +300,14 @@ var FSM = function() {
 		});
 		return this;
 	};
+	proto.last_callback = function() {
+		var last_listener = _.last(this.listeners);
+		if(last_listener) {
+			return last_listener.callback;
+		} else {
+			return null;
+		}
+	};
 	proto.parse_selector = function(spec_str) {
 		var selector = parse_spec(spec_str);
 		if(selector === null) {
@@ -323,4 +331,7 @@ var create_fsm = function() {
 };
 cjs.fsm = create_fsm;
 cjs.define("fsm", cjs.fsm);
+cjs.is_fsm = function(obj) {
+	return typeof obj === FSM;
+};
 }(cjs));
