@@ -133,28 +133,17 @@ test('Array Constraints', function() {
 });
 
 test('FSM', function() {
-	var ab, bc, cd, bd, da;
 	var fsm = cjs	.fsm()
 					.add_state("A")
-					.add_transition(function(do_transition) {
-						ab = do_transition;
-					}, "B")
 					.add_state("B")
-					.add_transition(function(do_transition) {
-						bc = do_transition;
-					}, "C")
-					.add_transition(function(do_transition) {
-						bd = do_transition;
-					}, "D")
 					.add_state("C")
-					.add_transition(function(do_transition) {
-						cd = do_transition;
-					}, "D")
 					.add_state("D")
-					.add_transition(function(do_transition) {
-						da = do_transition;
-					}, "A")
 					.starts_at("B");
+	var ab = fsm.get_transition("A", "B", false);
+	var bc = fsm.get_transition("B", "C", false);
+	var cd = fsm.get_transition("C", "D", false);
+	var bd = fsm.get_transition("B", "D", false);
+	var da = fsm.get_transition("D", "A", false);
 
 	ok(fsm.is("B"));
 	bd();
@@ -164,28 +153,17 @@ test('FSM', function() {
 });
 
 test('FSM Event Listeners', function() {
-	var ab, bc, cd, bd, da;
 	var fsm = cjs	.fsm()
 					.add_state("A")
-					.add_transition(function(do_transition) {
-						ab = do_transition;
-					}, "B")
 					.add_state("B")
-					.add_transition(function(do_transition) {
-						bc = do_transition;
-					}, "C")
-					.add_transition(function(do_transition) {
-						bd = do_transition;
-					}, "D")
 					.add_state("C")
-					.add_transition(function(do_transition) {
-						cd = do_transition;
-					}, "D")
 					.add_state("D")
-					.add_transition(function(do_transition) {
-						da = do_transition;
-					}, "A")
 					.starts_at("B");
+	var ab = fsm.get_transition("A", "B", false);
+	var bc = fsm.get_transition("B", "C", false);
+	var cd = fsm.get_transition("C", "D", false);
+	var bd = fsm.get_transition("B", "D", false);
+	var da = fsm.get_transition("D", "A", false);
 	
 	expect(3);
 
@@ -204,28 +182,18 @@ test('FSM Event Listeners', function() {
 });
 
 test('FSM Constraints', function() {
-	var ab, bc, cd, bd, da;
 	var fsm = cjs	.fsm()
 					.add_state("A")
-					.add_transition(function(do_transition) {
-						ab = do_transition;
-					}, "B")
 					.add_state("B")
-					.add_transition(function(do_transition) {
-						bc = do_transition;
-					}, "C")
-					.add_transition(function(do_transition) {
-						bd = do_transition;
-					}, "D")
 					.add_state("C")
-					.add_transition(function(do_transition) {
-						cd = do_transition;
-					}, "D")
 					.add_state("D")
-					.add_transition(function(do_transition) {
-						da = do_transition;
-					}, "A")
 					.starts_at("B");
+	var ab = fsm.get_transition("A", "B", false);
+	var bc = fsm.get_transition("B", "C", false);
+	var cd = fsm.get_transition("C", "D", false);
+	var bd = fsm.get_transition("B", "D", false);
+	var da = fsm.get_transition("D", "A", false);
+
 	var c = cjs.create("fsm_constraint", fsm, {
 		"A": 1
 		, "B": 2
