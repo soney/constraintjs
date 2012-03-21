@@ -17,7 +17,7 @@
 					cursor_y.set(event.offsetY);
 				});
 
-				var max_bubble_select_distance = cjs(990); // negative for no limit
+				var max_bubble_select_distance = cjs(100); // negative for no limit
 
 				var create_bubble = function() {
 					var margin = 30;
@@ -129,10 +129,10 @@
 					});
 					target.x.onChange(function(val) {
 						circle.attr("cx", val);
-					});
+					}, 5);
 					target.y.onChange(function(val) {
 						circle.attr("cy", val);
-					});
+					}, 5);
 					return circle;
 				}, function(target, index, circle) {
 					circle.remove();
@@ -164,7 +164,7 @@
 					if(old_val !== null) {
 						old_val.state.set_state("idle");
 					}
-				});
+				}, 5);
 				cursor_x.get();
 				cursor_y.get();
 				select_cursor_radius.get();
