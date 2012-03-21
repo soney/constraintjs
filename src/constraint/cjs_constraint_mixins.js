@@ -44,6 +44,10 @@ cjs.constraint.mixin({
 			return memo / val;
 		}, first_val);
 	}
+
+	, clone: function(val) {
+		return val;
+	}
 });
 
 cjs.constraint.raw_mixin("snapshot", function(constraint) {

@@ -3,19 +3,47 @@
 	var constraint_solver = cjs._constraint_solver;
 	var get_time = function() { return (new Date()).getTime(); };
 
-	var Listener = function(callback, context, name) {
+	var Listener = function(constraint, callback, update_interval, context) {
 		this.context = context;
+		this.update_interval = update_interval;
+		this.last_update = 0;
+
+		this.update_timeout = null;
+
 		this.callback = callback;
-		this.name = name;
+		this.constraint = constraint;
 		//if(context === undefined) debugger;
+		this.last_val = null;
 	};
 	(function(my) {
 		var proto = my.prototype;
-		proto.get_name = function() { return this.name; };
 		proto.run = function() {
 			var context = this.context || root;
-
-			this.callback.apply(context, arguments);
+			this.last_update = get_time();
+			var val = this.constraint.get();
+			if(this.last_val !== val) {
+				this.callback.call(context, val, this.last_val);
+				this.last_val = val;
+			}
+		};
+		proto.on_change = function() {
+			if(_.isNumber(this.update_interval) && this.update_interval >= 0) {
+				var curr_time = get_time();
+				if(curr_time - this.last_update < this.update_interval) {
+					this.__callback_args = arguments;
+					if(!_.has(this, "__callback_timeout")) {
+						this.__callback_timeout = _.delay(_.bind(function() {
+							this.run.apply(this, this.__callback_args);
+							delete this.__callback_timeout;
+							delete this.__callback_args;
+						}, this), this.last_update + this.update_interval - curr_time);
+					}
+				} else {
+					this.run.apply(this, arguments);
+				}
+			} else {
+				this.run.apply(this, arguments);
+			}
 		};
 	}(Listener));
 
@@ -138,8 +166,9 @@
 			constraint_solver.remove_listener(listener_id);
 		};
 
-		proto.onChange = function(callback, context, name) {
-			var listener = new Listener(callback, context, name);
+		proto.onChange = function(callback, update_interval, context) {
+			context = context || this;
+			var listener = new Listener(this, callback, update_interval, context);
 
 			this.listeners.push(listener);
 			if(this.cs_listener_id === null) {
@@ -150,7 +179,7 @@
 		};
 		proto.offChange = function(id) {
 			this.listeners = _.reject(this.listeners, function(listener) {
-				return listener === id || listener.callback === id || listener.get_name() === id;
+				return listener === id || listener.callback === id;
 			});
 			if(this.listeners.length === 0) {
 				if(this.cs_listener_id !== null) {
@@ -162,6 +191,7 @@
 		};
 		proto.update_on_change_listeners = function() {
 			_.defer(_.bind(function() {
+				/*
 				var old_value = this.history.value;
 				var old_timestamp = this.history.timestamp;
 				var value = this.get();
@@ -173,10 +203,13 @@
 						, old_value: old_value
 						, old_timestamp: old_timestamp
 					};
+					*/
 					_.forEach(this.listeners, function(listener) {
-						listener.run(value, event);
+						listener.on_change();
 					});
+					/*
 				}
+				*/
 			}, this));
 		};
 		proto.influences = proto.depends_on_me = function(recursive) {

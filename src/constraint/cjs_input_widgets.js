@@ -53,11 +53,9 @@ root.addEventListener("keyup", function(event) {
 });
 
 cjs.keyboard = keyboard;
-/*
 
 cjs.time = cjs.constraint(function() {
 	return (new Date()).getTime();
 });
 root.setInterval(_.bind(cjs.time.nullify, cjs.time), 10);
-*/
 }}(cjs, this));

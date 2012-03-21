@@ -22,6 +22,7 @@
 				do_rejected_transition("timeout");
 			}, timeout_interval);
 		}
+		var resolved_value, rejected_value;
 		var resolved = function(value) {
 			resolved_value = value;
 			do_resolved_transition(value);

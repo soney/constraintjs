@@ -5,7 +5,8 @@ var cjs = (function (root) {
 			if(arg1 === true) {
 				return cjs.create("constraint", arg0);
 			} else {
-				return cjs.$.apply(cjs, arguments);
+				return cjs.create("constraint", arg0);
+				//return cjs.$.apply(cjs, arguments);
 			}
 		} else if(_.isFunction(arg0)) {
 			if(arg1 === true) {
@@ -22,7 +23,7 @@ var cjs = (function (root) {
 		return cjs_call.apply(this, arguments);
 	};
 
-	cjs.$ = function(arg0, arg1) {
+	cjs.$ = cjs.query = function(arg0, arg1) {
 		var _ = cjs._;
 		if(_.isString(arg0)) { //Assume it's a selector, arg1 is the context
 			return cjs.create("selector_constraint", arg0, arg1);

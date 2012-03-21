@@ -216,25 +216,27 @@ var FSM = function() {
 	};
 	proto.add_transition = function(add_transition_fn, to_state_name, deferred) {
 		var from_state = this.chain_state;
-		var to_state = this.state_with_name(to_state_name);
-		var do_transition = this.get_transition(from_state, to_state, deferred);
+		var do_transition = this.get_transition(from_state, to_state_name, deferred);
 
-		add_transition_fn.call(this, do_transition, from_state, to_state, this);
+
+		add_transition_fn.call(this, do_transition, this);
 
 		return this;
 	};
 	proto.get_transition = function(from_state, to_state, deferred) {
-		if(_.isString(from_state)) {
-			from_state = this.state_with_name(from_state);
+		var from_state_name = from_state;
+		var to_state_name = to_state;
+		if(!_.isString(from_state)) {
+			from_state_name = from_state.get_name();
 		}
-		if(_.isString(to_state)) {
-			to_state = this.state_with_name(to_state);
+		if(!_.isString(to_state)) {
+			to_state_name = to_state.get_name();
 		}
 		
-		var transition = new Transition(this, from_state, to_state);
+		var transition = new Transition(this, from_state_name, to_state_name);
 		var self = this;
 		var do_transition = function() {
-			if(self.is(from_state) && ! self.is_blocked()) {
+			if(self.is(from_state_name) && ! self.is_blocked()) {
 				var args = _.toArray(arguments);
 				//self.block();
 				if(deferred === false) {
@@ -252,7 +254,7 @@ var FSM = function() {
 	};
 	proto.set_state = function(state, transition) {
 		var from_state = this.get_state();
-		var to_state = state;
+		var to_state = _.isString(state) ? this.state_with_name(state) : state;
 		this.did_transition = true;
 
 		_.forEach(this.listeners, function(listener) {

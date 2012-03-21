@@ -1,6 +1,14 @@
 (function(cjs) {
 var _ = cjs._;
 
+cjs.constraint.raw_mixin("push", function(constraint) {
+	var my_val = constraint.get();
+	my_val.push.apply(my_val, _.rest(arguments));
+	my_val.nullify();
+
+	return constraint;
+});
+
 cjs.constraint.raw_mixin("forEach", function(constraint, add_fn, remove_fn, move_fn) {
 	if(_.isFunction(add_fn)) {
 		var val = constraint.get();
@@ -33,8 +41,9 @@ cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn)
 			_.insert_at(my_val, mapped_val, x.index);
 		});
 		_.forEach(diff.removed, function(x) {
+			var mapped_val = my_val[x.index];
 			if(_.isFunction(remove_fn)) {
-				remove_fn(x.item, x.index);
+				remove_fn(x.item, x.index, mapped_val);
 			}
 			_.remove_index(my_val, x.index);
 		});
