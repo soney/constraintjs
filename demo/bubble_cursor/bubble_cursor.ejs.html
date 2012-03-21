@@ -105,7 +105,7 @@
 						var dx = cursor_x.get() - ct.x.get();
 						var dy = cursor_y.get() - ct.y.get();
 						var distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-						return Math.max(0, distance - ct.r.get());
+						return Math.max(0.001, distance - ct.r.get());
 					}
 				});
 
@@ -152,7 +152,13 @@
 					cursor.attr("cy", val);
 				}, 5);
 				select_cursor_radius.onChange(function(val) {
-					select_cursor.attr("r", val);
+					if(val === 0) {
+						select_cursor.attr("stroke", "#777");
+						select_cursor.attr("r", max_bubble_select_distance.get());
+					} else {
+						select_cursor.attr("stroke", "#FFF");
+						select_cursor.attr("r", val);
+					}
 				}, 5);
 				closest_target.onChange(function(val, old_val) {
 					if(val !== null) {
@@ -173,11 +179,12 @@
 				background: #333;
 				color: #fff;
 				font: 300 100.1% "Helvetica Neue", Helvetica, "Arial Unicode MS", Arial, sans-serif;
-				margin: 0px;
+				margin: 100px;
 			}
 			#canvas {
 				width: 640px;
 				margin: auto;
+				border: 1px solid black;
 			}
 		</style>
 	</head>
