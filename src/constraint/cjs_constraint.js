@@ -171,6 +171,9 @@
 			var listener = new Listener(this, callback, update_interval, context);
 
 			this.listeners.push(listener);
+			if(this.is_ood) {
+				_.defer(_.bind(this.update_on_change_listeners, this));
+			}
 			if(this.cs_listener_id === null) {
 				this.cs_listener_id = this._on("nullify", _.bind(this.update_on_change_listeners, this));
 			}
@@ -188,6 +191,10 @@
 				}
 			}
 			return this;
+		};
+		proto.is_ood = function() {
+			var node = cjs._constraint_solver.getNode(this);
+			return node.isOOD();
 		};
 		proto.update_on_change_listeners = function() {
 			_.defer(_.bind(function() {

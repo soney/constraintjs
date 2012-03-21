@@ -186,7 +186,7 @@ var ConstraintSolver = function() {
 	};
 
 	proto.nullifyAndEval = function(obj) {
-		var rv = this.doNullify(obj);
+		var rv = this.doNullifyAndEval(obj);
 
 		return rv;
 	};
