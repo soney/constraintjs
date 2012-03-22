@@ -3,122 +3,214 @@
   <head>
     <title>cjs</title>
 	<script type="text/javascript" src="jquery.js"></script>
-	<script type="text/javascript" src="jquery.jstree.js"></script>
+	<script type="text/javascript" src="underscore-min.js"></script>
 	<script type="text/javascript">
-		var files = {
-			"file1.txt": ""
-			, "file2.txt": ""
-			, "file3.txt": ""
-			, "file4.txt": ""
-			, "file5.txt": ""
-			, "file6.txt": ""
-			, "file7.txt": ""
-			, "file8.txt": ""
-			, "dir1": {
-				"file1.txt": ""
-				, "file2.txt": ""
-			}
-			, "dir2": {
-				"file1.txt": ""
-				, "dir3": {}
-			}
-		};
-		var do_get_file = function(path) {
-			var folders = path.split("/");
-			var curr_dir = files;
-			for(var i = 0; i<folders.length; i++) {
-				var folder = folders[i];
-				if(folder === "." || folder === "") {
-					continue;
-				} else {
-					if(curr_dir.hasOwnProperty(folder)) {
-						curr_dir = curr_dir[folder];
+		var get_files = function(path, on_success, on_fail) {
+			$.ajax({
+				url: "list_files"
+				, data: {
+					path: path
+				}
+				, success: function(data) {
+					data = JSON.parse(data);
+					if(data.errno) {
+						on_fail(data);
 					} else {
-						return null;
+						on_success(data);
 					}
 				}
-			}
-			return curr_dir;
-		};
-		var do_get_file_type = function(path) {
-			var file = do_get_file(path);
-			if(file === null) { return null; }
-			else if(typeof file === "string") { return "file"; }
-			else { return "directory"; }
-		};
-
-		var get_delay = function(minimum, variance) {
-			return minimum + Math.random() * variance;
-		};
-		var fail_with_probability = function(prob) {
-			return Math.random() < prob;
-		};
-
-		var get_file = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 5000);
-			window.setTimeout(function() {
-				if(fail_with_probability(0.1)) {
-					on_fail("Random error");
-				} else {
-					on_success(do_get_file(path));
+				, error: function(err) {
+					on_fail(err);
 				}
-			}, delay);
+			});
 		};
-
-
 		var get_file_type = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 5000);
-			window.setTimeout(function() {
-				if(fail_with_probability(0.2)) {
-					on_fail("Random error");
-				} else {
-					on_success(do_get_file_type(path));
+			$.ajax({
+				url: "file_type"
+				, data: {
+					path: path
 				}
-			}, delay);
+				, success: function(data) {
+					if(data.errno) {
+						on_fail(data);
+					} else {
+						on_success(data);
+					}
+				}
+				, error: function(err) {
+					on_fail(err);
+				}
+			});
 		};
 	</script>
 	<%- include(cjs_inc.main) %>
 	<script type="text/javascript">
+		var timeout = 2000;
+		var read_files = function (path, successCallback, errorCallback) {
+			var rootPath = path;
+			get_files(rootPath, function (files) {
+				var i, entries = [], d, deferreds = [];
 
-		window.onload = function() {
-			var path = cjs("/");
-			var files = cjs.async(function(on_success, on_fail) {
-						get_file(path.get(), on_success, on_fail);
-					}, 5000); // After 5 seconds, auto-fail
-			var filetypes = files.map(function(file, filename) {
-				var filetype = cjs.async(function(on_success, on_fail) {
-						get_file_type(path.get() + "/" + filename, on_success, on_fail);
-					}, 5000);
-				return filetype;
-				});
-			$("#files").jstree({
-						core : { /* core options go here */ },
-						plugins : [ "themes", "html_data", "some-other-plugin" ]
+				// This function is used to create individual functions for each deferred. 
+				// These generated functions will add the async result to the right place 
+				// in the entries array.
+				var genAddToEntriesArrayFunction = function (index) {
+					return function (value) { entries[index] = value; };
+				};
+
+				// This function is called to initiate the stat on individual entires.
+				// Takes the item's full path and the deferred to resolve with.
+				var statEntry = function (itemFullPath, filename, deferred) {
+					get_file_type(itemFullPath, function (type) {
+						if (type === "directory") {
+							deferred.resolve({type:"directory", path:itemFullPath, name: filename});
+						} else if (type === "file") {
+							deferred.resolve({type:"file", path:itemFullPath, name: filename});
+						} else { // Whatever was returned is neither a file nor a dir, so don't include it.
+							deferred.resolve(null);
+						}
+					}, function(err) {
+						deferred.reject({errno: 1});
 					});
-			$("#files").jstree("create_node", -1, "last", { "data": "ABC"});
+				};
+				
+				// Create all the deferreds, and start the work executing!
+				for (i = 0; i < files.length; i++) {
+					d = new $.Deferred();
+					d.done(genAddToEntriesArrayFunction(i));
+					deferreds.push(d);
+					statEntry(rootPath + "/" + files[i], files[i], d);
+				}
+
+				// FIXME: (joelrbrandt or pflynn) -- once we have an async library, it would be good
+				// to replace the code below with a library call.
+				
+				// Get a Promise that depennds on all the individual deferreds finishing.
+				var masterPromise = $.when.apply(this, deferreds);
+				
+				// We want the error callback to get called after some timeout (in case some deferreds don't return).
+				// So, we need to wrap masterPromise in another deferred that has this timeout functionality    
+				var timeoutWrapper = new $.Deferred();
+
+				var timer = setTimeout(function () {
+					// SECURITY_ERR is the HTML5 File catch-all error, and there isn't anything
+					// more fitting for a timeout.
+					timeoutWrapper.reject({errno: 2});
+				}, timeout);
+
+				masterPromise.always(function () {
+					clearTimeout(timer); // clear timeout if the masterPromise finishes (with success or error)
+				});
+				
+				// When masterPromise finishes, we want the result to bubble up to timeoutWrapper
+				masterPromise.pipe(timeoutWrapper.resolve, timeoutWrapper.reject);
+				
+				// Add the callbacks to the top-level Promise. The top-level Promise is timeoutWrapper,
+				// which wraps masterPromise, which in turn wraps all the individual deferred objects.
+				timeoutWrapper.then(
+					function () { // success
+						// The entries array may have null values if stat returned things that were
+						// neither a file nor a dir. So, we need to clean those out.
+						var cleanedEntries = [], i;
+						for (i = 0; i < entries.length; i++) {
+							if (entries[i]) {
+								cleanedEntries.push(entries[i]);
+							}
+						}
+						successCallback(cleanedEntries);
+					},
+					function (err) { // error
+						if (errorCallback) {
+							errorCallback(err);
+						}
+					}
+				);
+			}, function(err) {
+				errorCallback(err);
+			});
 		};
+
+		$(function() {
+			var append_files = function(parent_el, path) {
+				read_files(path, function(files) {
+					var children = _.map(files, function(file) {
+						var list_item = $("<li />");
+						var list_link = $("<a />")	.attr("href", "javascript:void(0)")
+													.text(file.name)
+													.appendTo(list_item);
+						if(file.type === "file") {
+							var span = $("<span />").html("&nbsp;").addClass("expansion").prependTo(list_item);
+							list_item.addClass("file");
+						} else {
+							var span = $("<span />").addClass("expansion").text("+").prependTo(list_item);
+							list_item.addClass("collapsed");
+							var children = $("<ul />").appendTo(list_item);
+							list_link.click(function() {
+								if(list_item.is(".collapsed")) {
+									list_item.addClass("expanded")
+											.removeClass("collapsed");
+									span.text("-");
+									append_files(children, file.path);
+								} else {
+									list_item.removeClass("expanded")
+											.addClass("collapsed");
+									children.children().remove();
+									span.text("+");
+								}
+							});
+							list_item.addClass("directory");
+						}
+						return list_item;
+					});
+					_.forEach(children, function(child) {
+						parent_el.append(child);
+					});
+				}, function(err) {
+					var child = $("<li />").text("Error").addClass("error");
+					parent_el.append(child);
+				});
+			};
+			append_files($("div#files"), "/");
+		});
 
 	</script>
 	<style type="text/css">
-		#files {
-			min-height: 130px;
+		body {
+			font-family: "Futura", "helvetica", "Arial", "verdana", sans-serif;
+			font-weight: lighter;
 		}
-		#files.loading{
-			background-image: url('loading.gif');
-			background-repeat: no-repeat;
+		ul {
+			margin: 0px;
 		}
-
-		.resolved {
-			background-color: green;
+		li {
+			list-style-type: none;
 		}
-
-		.loading {
-			background-color: yellow;
+		li.error {
+			color: red;
 		}
-		.error {
-			background-color: red;
+		a {
+			text-decoration: none;
+			color: #444;
 		}
-
+		a:hover {
+			color: #222;
+			text-decoration: underline;
+		}
+		span.expansion {
+			width: 17px;
+			float: left;
+			color: #AAA;
+			text-align: center;
+		}
+		body {
+			background-color: #EEE;
+		}
+		div#files {
+			background-color: #FFF;
+			border: 1px solid black;
+			border-radius: 5px;
+			padding: 20px;
+		}
 	</style>
   </head>
   <body>

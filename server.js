@@ -57,6 +57,51 @@ app.configure(function() {
 	app.use(express.static(__dirname));
 
 
+	app.get("*/list_files*", function(req, res, next) {
+		var path = req.query.path;
+		fs.readdir(path, function(err, files) {
+			if(err) {
+				var files_str = JSON.stringify({errno: err.errno});
+				res.writeHead(200, {
+					  'Content-Type': 'text/plain'
+					, 'Content-Length': files_str.length
+				});
+				res.end(files_str);
+			} else {
+				var files_str = JSON.stringify(files);
+				res.writeHead(200, {
+					  'Content-Type': 'text/plain'
+					, 'Content-Length': files_str.length
+				});
+				res.end(files_str);
+			}
+		});
+	});
+	app.get("*/file_type*", function(req, res, next) {
+		var path = req.query.path;
+		fs.stat(path, function(err, stats) {
+			if(err) {
+				var files_str = JSON.stringify({errno: err.errno});
+				res.writeHead(200, {
+					  'Content-Type': 'text/plain'
+					, 'Content-Length': files_str.length
+				});
+				res.end(files_str);
+			} else {
+				var type_str;
+				if(stats.isDirectory()) {
+					type_str = "directory";
+				} else  {
+					type_str = "file";
+				}
+				res.writeHead(200, {
+					  'Content-Type': 'text/plain'
+					, 'Content-Length': type_str.length
+				});
+				res.end(type_str);
+			}
+		});
+	});
 	app.get("*/command/*", function(req, res, next) {
 		var command = text_after(req.originalUrl, "/command/");
 		var do_confirm = function() {

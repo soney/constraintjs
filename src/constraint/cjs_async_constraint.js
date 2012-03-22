@@ -62,5 +62,5 @@
 		return constraint;
 	};
 	cjs.define("async_constraint", create_async_constraint);
-	cjs.constraint.async = create_async_constraint;
+	cjs.async = cjs.constraint.async = create_async_constraint;
 }(cjs, this));

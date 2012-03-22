@@ -73,8 +73,8 @@
 					var min_distance_index = -1;
 					var min_distance = false;
 					for(var i = 0; i<distances.length; i++) {
-						var distance = distances[i];
-						if(min_distance === false || distance < min_distance) {
+						var distance = Math.max(0, distances[i]);
+						if(min_distance === false || distance <= min_distance) {
 							min_distance_index = i;
 							min_distance = distance;
 						}
@@ -105,7 +105,7 @@
 						var dx = cursor_x.get() - ct.x.get();
 						var dy = cursor_y.get() - ct.y.get();
 						var distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-						return Math.max(0.001, distance - ct.r.get());
+						return Math.abs(distance - ct.r.get());
 					}
 				});
 
@@ -167,7 +167,7 @@
 					if(old_val !== null) {
 						old_val.state.set_state("idle");
 					}
-				}, 5);
+				});
 			});
 		</script>
 		<style type="text/css">
