@@ -97,16 +97,24 @@
 					return targets.get()[cti];
 				});
 
-				var select_cursor_radius = cjs(function() {
-					var ct = closest_target.get();
-					if(ct === null) {
-						return 0;
-					} else {
-						var dx = cursor_x.get() - ct.x.get();
-						var dy = cursor_y.get() - ct.y.get();
-						var distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-						return Math.abs(distance - ct.r.get());
-					}
+				var select_cursor_radius = cjs({
+						condition: closest_target.isNull()
+						, value: 0
+					}, {
+						value: function() {
+							var ct = closest_target.get();
+							var dx = cursor_x.get() - ct.x.get();
+							var dy = cursor_y.get() - ct.y.get();
+							var distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+							return Math.abs(distance - ct.r.get());
+						}
+					});
+
+				cjs.binding.mixin("raphael_attr", function(context, attr_name, attr_val, update_interval) {
+					var setter = function(obj, val) {
+						obj.attr(attr_name, cjs.get(attr_val));
+					};
+					return cjs.binding.bind(context, attr_val, setter, update_interval);
 				});
 
 				var target_displays = targets.map(function(target) {
@@ -115,21 +123,19 @@
 					circle.attr("stroke", "#777");
 					target.circle = circle;
 
-					target.state.on("idle", function() {
-						circle.attr("fill", "#222");
+					cjs(circle).raphael_attr("fill", cjs(target.state, {
+								idle: "#222"
+								, closest: "#FFF"
+								, pressed: "#0F0"
+							}))
+							.raphael_attr("cx", target.x, 5)
+							.raphael_attr("cy", target.y, 5);
+					var target_state_constraint = cjs(target.state, {
+						idle: "#222"
+						, closest: "#FFF"
+						, pressed: "#0F0"
 					});
-					target.state.on("closest", function() {
-						circle.attr("fill", "#FFF");
-					});
-					target.state.on("pressed", function() {
-						circle.attr("fill", "#0F0");
-					});
-					target.x.onChange(function(val) {
-						circle.attr("cx", val);
-					}, 5);
-					target.y.onChange(function(val) {
-						circle.attr("cy", val);
-					}, 5);
+
 					return circle;
 				}, function(target, index, circle) {
 					circle.remove();
@@ -137,29 +143,25 @@
 
 				var cursor = paper.circle(0, 0, 10);
 				var select_cursor = paper.circle(0, 0, 0);
-
 				cursor.attr("fill", "#f00");
 				select_cursor.attr("stroke", "#FFF");
 				select_cursor.attr("stroke-dasharray", "- ");
 
+				cjs([cursor, select_cursor]).raphael_attr("cx", cursor_x, 5)
+											.raphael_attr("cy", cursor_y, 5);
+				cjs(select_cursor)	.raphael_attr("stroke", cjs({
+											condition: closest_target.isNull()
+											, value: "#777"
+										}, {
+											value: "#FFF"
+										}), 5)
+									.raphael_attr("r", cjs({
+											condition: closest_target.isNull()
+											, value: max_bubble_select_distance
+										}, {
+											value: select_cursor_radius
+									}), 5);
 
-				cursor_x.onChange(function(val) {
-					select_cursor.attr("cx", val);
-					cursor.attr("cx", val);
-				}, 5);
-				cursor_y.onChange(function(val) {
-					select_cursor.attr("cy", val);
-					cursor.attr("cy", val);
-				}, 5);
-				select_cursor_radius.onChange(function(val) {
-					if(val === 0) {
-						select_cursor.attr("stroke", "#777");
-						select_cursor.attr("r", max_bubble_select_distance.get());
-					} else {
-						select_cursor.attr("stroke", "#FFF");
-						select_cursor.attr("r", val);
-					}
-				}, 5);
 				closest_target.onChange(function(val, old_val) {
 					if(val !== null) {
 						val.state.set_state("closest");

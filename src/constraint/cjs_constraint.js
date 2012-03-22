@@ -278,8 +278,8 @@
 		_.forEach(mixin_obj, function(propval, propname) {
 			cjs.constraint.raw_mixin(propname, function() {
 				var args = _.toArray(arguments);
-				var val = cjs.get(_.first(args));
 				return cjs.create("constraint", function() {
+					var val = cjs.get(_.first(args));
 					return propval.apply(this, ([val]).concat(_.rest(args)));
 				});
 			});

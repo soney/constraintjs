@@ -350,6 +350,6 @@ var create_fsm = function() {
 cjs.fsm = create_fsm;
 cjs.define("fsm", cjs.fsm);
 cjs.is_fsm = function(obj) {
-	return typeof obj === FSM;
+	return obj instanceof FSM;
 };
 }(cjs));

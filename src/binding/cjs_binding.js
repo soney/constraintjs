@@ -129,7 +129,7 @@
 				_.forEach(binding_objs, function(x) {
 					x.activate();
 				});
-				objs.onChange(on_change);
+				objs.onChange(on_change, options.update_interval);
 			};
 
 			deactivate = function() {
@@ -262,17 +262,18 @@
 		}
 
 		_.forEach(mixin_obj, function(propval, propname) {
-			cjs.binding[propname] = propval;
-
-			BindingWrapper.prototype[propname] = function() {
-				var args = _.toArray(arguments);
-				this.last_binding = cjs.binding[propname].apply(this, ([this.context]).concat(args));
-				return this;
-			};
+			cjs.binding.raw_mixin(propname, propval);
+			if(!_.has(cjs.constraint, propname)) {
+				cjs.constraint.raw_mixin(propname, function(elems) {
+					var binding = cjs.binding[propname].apply(cjs.binding, arguments);
+					elems.push_binding(binding);
+					return elems;
+				});
+			}
 		});
 	};
 
-	cjs.binding.mixin("bind", function(objs, constraint, setter, do_activate) {
+	cjs.binding.mixin("bind", function(objs, constraint, setter, update_interval, do_activate) {
 		var update_fn = function(obj) {
 			var val = cjs.get(constraint);
 			setter(obj, val, constraint);
@@ -285,16 +286,36 @@
 			, update_fn: update_fn
 			, activate: function() {
 				//this refers to the group binding object
-				constraint.onChange(rv.update);
+				if(cjs.is_constraint(constraint)) {
+					constraint.onChange(rv.update);
+				}
 			}
 			, deactivate: function() {
-				constraint.offChange(rv.update);
+				if(cjs.is_constraint(constraint)) {
+					constraint.offChange(rv.update);
+				}
 			}
+			, update_interval: update_interval
 		}, false);
 		if(do_activate !== false) {
 			rv.activate();
 		}
 		return rv;
 	});
+
+	cjs.binding.define = function(arg0, arg1) {
+		var mixin_obj;
+		if(_.isString(arg0)) {
+			mixin_obj = {};
+			mixin_obj[arg0] = arg1;
+		} else {
+			mixin_obj = arg0;
+		}
+		_.forEach(mixin_obj, function(setter, propname) {
+			cjs.binding.mixin(propname, function(objs) {
+				return cjs.binding.bind(objs, constraint, setter);
+			});
+		});
+	};
 }(cjs));
 //Binding: constraint -> DOM element

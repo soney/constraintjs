@@ -48,6 +48,19 @@ cjs.constraint.mixin({
 	, clone: function(val) {
 		return val;
 	}
+	
+	, isNull: function(val) {
+		return val === null;
+	}
+	, isUndefined: function(val) {
+		return val === undefined;
+	}
+	, eq: function(val, to_val) {
+		return val == to_val;
+	}
+	, eqeq: function(val, to_val) {
+		return val === to_val;
+	}
 });
 
 cjs.constraint.raw_mixin("snapshot", function(constraint) {
