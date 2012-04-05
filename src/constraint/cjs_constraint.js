@@ -321,10 +321,17 @@
 			return rv;
 		}
 	};
-	cjs.get_item = function(obj, index) {
+	cjs.get_item = function(obj, index, recurse) {
+		recurse = recurse !==false;
 		var o = cjs.get(obj);
 		var i = cjs.get(index);
 
-		return o[i];
+		var rv = o[i];
+		if(recurse) {
+			while(cjs.is_constraint(rv)) {
+				rv = cjs.get(rv);
+			}
+		}
+		return rv;
 	};
 }(cjs, this));
