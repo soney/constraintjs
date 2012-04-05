@@ -92,45 +92,34 @@
 			var files_dom = document.getElementById("files");
 
 
-			var rv = filenames.map(function(filename) {
+			var filetypes = filenames.map(function(filename) {
+				console.log("HI");
 				var filetype = cjs.async(function(on_success, on_fail) {
 						get_file_type(path.get() + "/" + filename, on_success, on_fail);
 					}, 5000);
-
-				var file_dom_element = document.createElement("div");
-
-				cjs.binding.text(file_dom_element, cjs(filetype.state, {
-								"pending": "..."
-								, "rejected": "Error"
-								, "resolved": function() {
-													return "("+filetype.get()+") " + filename;
-											}
-							}));
-				cjs.binding.class(file_dom_element, cjs(filetype.state, {
-								"pending": "loading"
-								, "rejected": "error"
-								, "resolved": "resolved"
-							}));
-
-				return file_dom_element;
+				return filetype;
 			});
 
-
-			window.rv = rv;
-			window.f = files;
-
-			cjs.binding.class(files_dom, cjs(filenames.state, {
-							"pending": "loading"
-							, "rejected": "error"
-							, "resolved": "resolved"
-						}));
-
-						
+			window.filetypes = filetypes;
+			console.log(filetypes);
 			cjs.binding.children(files_dom, cjs(filenames.state, {
-							"pending": "loading"
-							, "rejected": "error"
-							, "resolved": rv
-				}));
+						pending: "Loading files..."
+						, resolved: filenames.map(function(filename, i) {
+										//var filetype = filetypes.item(i, false);
+										var filetype = cjs(function() {
+											var ft = filetypes.get();
+											if(ft.length && ft.length > i) {
+												console.log(ft[i], ft[i].get());
+												return ft[i];
+											} return "";
+										});
+										console.log(filetype);
+										return cjs.create("dom_element", "span", {}
+															, filetype);
+										return filetype;
+									})
+						, rejected: "Error loading files!"
+						}));
 		};
 
 	</script>
