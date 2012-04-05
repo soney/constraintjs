@@ -27,9 +27,15 @@ cjs.constraint.raw_mixin("forEach", function(constraint, add_fn, remove_fn, move
 cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn) {
 	var cached_constraint_val = constraint.get();
 	var cached_my_val = _.map(cached_constraint_val, add_fn);
+	if(!_.isArray(cached_constraint_val)) {
+		cached_constraint_val = [cached_constraint_val];
+	}
 
 	var rv = cjs.create("constraint", function() {
 		var constraint_val = constraint.get();
+		if(!_.isArray(constraint_val)) {
+			constraint_val = [constraint_val];
+		}
 		var diff = _.diff(cached_constraint_val, constraint_val);
 		var my_val = _.clone(cached_my_val);
 

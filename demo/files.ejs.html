@@ -36,7 +36,12 @@
 					}
 				}
 			}
-			return curr_dir;
+
+			var rv = [];
+			cjs._.forEach(curr_dir, function(file, filename) {
+				rv.push(filename);
+			});
+			return rv;
 		};
 		var do_get_file_type = function(path) {
 			var file = do_get_file(path);
@@ -53,7 +58,7 @@
 		};
 
 		var get_file = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 5000);
+			var delay = get_delay(700, 500);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.1)) {
 					on_fail("Random error");
@@ -65,7 +70,7 @@
 
 
 		var get_file_type = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 5000);
+			var delay = get_delay(700, 500);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.2)) {
 					on_fail("Random error");
@@ -80,28 +85,28 @@
 
 		window.onload = function() {
 			var path = window.path = cjs("/");
-			var files = cjs.async(function(on_success, on_fail) {
+			var filenames = cjs.async(function(on_success, on_fail) {
 						get_file(path.get(), on_success, on_fail);
 					}, 5000); // After 5 seconds, auto-fail
 
 			var files_dom = document.getElementById("files");
 
 
-			var rv = files.map(function(file, filename) {
+			var rv = filenames.map(function(filename) {
 				var filetype = cjs.async(function(on_success, on_fail) {
 						get_file_type(path.get() + "/" + filename, on_success, on_fail);
 					}, 5000);
 
 				var file_dom_element = document.createElement("div");
 
-				cjs.text(file_dom_element, cjs(filetype.state, {
+				cjs.binding.text(file_dom_element, cjs(filetype.state, {
 								"pending": "..."
 								, "rejected": "Error"
 								, "resolved": function() {
 													return "("+filetype.get()+") " + filename;
 											}
 							}));
-				cjs.class(file_dom_element, cjs(filetype.state, {
+				cjs.binding.class(file_dom_element, cjs(filetype.state, {
 								"pending": "loading"
 								, "rejected": "error"
 								, "resolved": "resolved"
@@ -114,14 +119,14 @@
 			window.rv = rv;
 			window.f = files;
 
-			cjs.class(files_dom, cjs(files.state, {
+			cjs.binding.class(files_dom, cjs(filenames.state, {
 							"pending": "loading"
 							, "rejected": "error"
 							, "resolved": "resolved"
 						}));
 
 						
-			cjs.children(files_dom, cjs(files.state, {
+			cjs.binding.children(files_dom, cjs(filenames.state, {
 							"pending": "loading"
 							, "rejected": "error"
 							, "resolved": rv
