@@ -56,7 +56,6 @@
 		var rv
 			, type = node.type;
 
-
 		if(type === "root") {
 			if(node.children.length === 1 && node.children[0].type === "html_tag") {
 				rv = "return " + to_fn_str(node.children[0]) + ";";

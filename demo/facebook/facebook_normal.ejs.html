@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"
+      xmlns:fb="https://www.facebook.com/2008/fbml">
   <head>
     <title>cjs</title>
 	<style type="text/css">
@@ -16,6 +17,9 @@
 					FB.api('/me', function(response) {
 						console.log('Good to see you, ' + response.name + '.');
 					});
+					FB.api('/4771/picture', function(response) {
+						console.log(response);
+					});
 				} else {
 					console.log('User cancelled login or did not fully authorize.');
 				}
@@ -26,13 +30,12 @@
 		window.fbAsyncInit = function() {
 			FB.init({
 				appId      : '221206604653657', // App ID
-				channelUrl : 'channel.html', // Channel File
+				channelUrl : '//cjs.from.so/channel.html', // Channel File
 				status     : true, // check login status
 				cookie     : true, // enable cookies to allow the server to access the session
 				xfbml      : true  // parse XFBML
 			});
 
-			// Additional initialization code here
 			on_fb_ready();
 		};
 

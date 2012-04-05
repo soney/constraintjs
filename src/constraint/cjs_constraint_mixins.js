@@ -1,3 +1,4 @@
+/*jslint eqeq: true*/
 (function(cjs) {
 var _ = cjs._;
 cjs.constraint.mixin({

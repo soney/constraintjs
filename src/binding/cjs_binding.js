@@ -302,6 +302,7 @@
 		}
 		return rv;
 	});
+	/*
 
 	cjs.binding.define = function(arg0, arg1) {
 		var mixin_obj;
@@ -317,5 +318,6 @@
 			});
 		});
 	};
+	*/
 }(cjs));
 //Binding: constraint -> DOM element
