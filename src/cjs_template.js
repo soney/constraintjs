@@ -300,6 +300,7 @@
 		var fn;
 		try {
 			fn = new Function("obj", fn_string);
+			console.log(fn_string);
 		} catch(e) {
 			console.error(e);
 			console.log(fn_string);

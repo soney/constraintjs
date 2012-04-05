@@ -36,7 +36,12 @@
 					}
 				}
 			}
-			return curr_dir;
+
+			var rv = [];
+			cjs._.forEach(curr_dir, function(file, filename) {
+				rv.push(filename);
+			});
+			return rv;
 		};
 		var do_get_file_type = function(path) {
 			var file = do_get_file(path);
@@ -55,7 +60,7 @@
 		var get_file = function(path, on_success, on_fail) {
 			var delay = get_delay(700, 500);
 			window.setTimeout(function() {
-				if(fail_with_probability(0.2)) {
+				if(fail_with_probability(0.1)) {
 					on_fail("Random error");
 				} else {
 					on_success(do_get_file(path));
@@ -65,7 +70,7 @@
 
 
 		var get_file_type = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 5000);
+			var delay = get_delay(700, 500);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.2)) {
 					on_fail("Random error");
@@ -80,16 +85,20 @@
 
 		window.onload = function() {
 			var path = cjs("/");
-			var filesc = cjs.async(function(on_success, on_fail) {
+			var filenames = cjs.async(function(on_success, on_fail) {
 						get_file(path.get(), on_success, on_fail);
 					});
-			var filetypes = filesc.map(function(file, filename) {
+			filenames = cjs(["file1.txt", "file2.txt"]);
+			filenames.state = cjs.fsm().add_state("resolved");
+			var filetypes = filenames.map(function(filename) {
 					var filetype = cjs.async(function(on_success, on_fail) {
 							get_file_type(path.get() + "/" + filename, on_success, on_fail);
 						});
 					return filetype;
 				});
-			var rv = cjs.template("#filelist", {files: filesc, filetypes: filetypes});
+			window.filenames = filenames;
+			window.filetypes = filetypes;
+			var rv = cjs.template("#filelistsimp", {files: filenames, filetypes: filetypes});
 
 			var files_dom = document.getElementById("files");
 			files_dom.appendChild(rv);
@@ -118,25 +127,22 @@
 	</style>
 	<script id="filelist" type="cjs/template">
 	{{#diagram files.state}}
-		{{#state pending}}Loading{{/state}}
+		{{#state pending}}Loading...{{/state}}
 		{{#state resolved}}
-			{{#each files contents filename index}}
-				{{#with filetypes[index] filetype}}
-					{{#diagram filetype.state}}
-						{{#state pending}}
-							<div class='loading'>...</div>
-						{{/state}}
-						{{#state resolved}}
-							<div class='resolved'>{{filename}} {{filetype}}</div>
-						{{/state}}
-						{{#state rejected}}
-							<div class='error'>error</div>
-						{{/state}}
-					{{/diagram}}
-				{{/with}}
+			{{#each files filename}}
+				<span>{{filename}}</span>
 			{{/each}}
 		{{/state}}
 		{{#state rejected}}Error{{/state}}
+	{{/diagram}}
+	</script>
+	<script id="filelistsimp" type="cjs/template">
+	{{#diagram files.state}}
+		{{#state resolved}}
+			{{#each files filename}}
+				<span>{{filename}}</span>
+			{{/each}}
+		{{/state}}
 	{{/diagram}}
 	</script>
   </head>

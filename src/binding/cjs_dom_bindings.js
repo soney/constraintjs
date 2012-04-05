@@ -207,7 +207,7 @@ cjs.define("dom_element", function(tag, attributes) {
 	var args = _.rest(arguments, 2);
 	args.unshift(rv);
 	_.forEach(attributes, function(value, key) {
-		cjs.attr(rv, key, value);
+		cjs.binding.attr(rv, key, value);
 	});
 	cjs.binding.children.apply(cjs, args);
 	return rv;
