@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-US"
+      xmlns:fb="https://www.facebook.com/2008/fbml">
+  <head>
+    <title>cjs</title>
+	<style type="text/css">
+		.profile img {
+			margin-left: 10px;
+		}
+		.profile {
+			margin: 10px;
+			border: 1px solid black;
+			height: 50px;
+			display: inline-block;
+			padding: 10px;
+			background-color: #F7F7F7;
+			border-radius: 3px;
+			vertical-align: middle;
+			font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+			font-weight: 300;
+		}
+	</style>
+	<script id="friendslist" type="cjs/template">
+	{{#diagram friends.state}}
+		{{#state pending}}Loading friends...{{/state}}
+		{{#state resolved}}
+			{{#each friends friend i}}
+				<span class="profile">{{friend.name}} <img src="{{pics[i]}}" /></span>
+			{{/each}}
+		{{/state}}
+		{{#state rejected}}Error{{/state}}
+	{{/diagram}}
+	</script>
+
+  </head>
+  <body>
+   	<div id="fb-friends"></div>
+
+	<%- include(cjs_inc.main) %>
+	<div id="fb-root"></div>
+	<script type="text/javascript">
+		window.on_fb_ready = function() {
+			var fb_request = function(path) {
+				return function(on_success, on_error) {
+					FB.api(path, function(response) {
+						if(response.error) {
+							on_error(response.error);
+						} else {
+							if(response.data) {
+								on_success(response.data);
+							} else {
+								on_success(response);
+							}
+						}
+					});
+				};
+			};
+			
+			FB.login(function(response) {
+				if (response.authResponse) {
+					var friends = cjs.async(fb_request('/me/friends'));
+					var pics = friends.map(function(friend) {
+						return cjs.async(fb_request('/' + friend.id + '/picture'));
+					});
+					window.friends = friends;
+					window.pics = pics;
+
+					var fr_friends_list = document.getElementById("fb-friends");
+					cjs.binding.children(fr_friends_list, cjs(friends.state, {
+						pending: "Loading friends..."
+						, resolved: friends.map(function(friend, friend_index) {
+										return cjs.create("dom_element", "span", {class: "profile"}
+															, cjs.create("dom_element", "img", {src:
+																	cjs.constraint.fsm(pics.item(friend_index, "state"), {
+																		pending: "loading.gif"
+																		, resolved: pics.item(friend_index)
+																		, rejected: "error.png"
+																	})
+																})
+															, friend.name
+															);
+									})
+						, rejected: "Error loading friends!"
+						}));
+				} else {
+					console.log('User cancelled login or did not fully authorize.');
+				}
+			});
+		};
+	</script>
+	<script type="text/javascript">
+		window.fbAsyncInit = function() {
+			FB.init({
+				appId      : '221206604653657', // App ID
+				channelUrl : '//cjs.from.so/facebook_demo/channel.html', // Channel File
+				status     : true, // check login status
+				cookie     : true, // enable cookies to allow the server to access the session
+				xfbml      : true  // parse XFBML
+			});
+
+			on_fb_ready();
+		};
+
+			// Load the SDK Asynchronously
+		(function(d){
+			var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+			if (d.getElementById(id)) {return;}
+			js = d.createElement('script'); js.id = id; js.async = true;
+			js.src = "//connect.facebook.net/en_US/all.js";
+			ref.parentNode.insertBefore(js, ref);
+		}(document));
+	</script>
+  </body>
+</html>

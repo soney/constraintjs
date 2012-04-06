@@ -26,10 +26,12 @@ cjs.constraint.raw_mixin("forEach", function(constraint, add_fn, remove_fn, move
 
 cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn) {
 	var cached_constraint_val = constraint.get();
-	var cached_my_val = _.map(cached_constraint_val, add_fn);
-	if(!_.isArray(cached_constraint_val)) {
+	if(_.isUndefined(cached_constraint_val)) {
+		cached_constraint_val = [];
+	} else if(!_.isArray(cached_constraint_val)) {
 		cached_constraint_val = [cached_constraint_val];
 	}
+	var cached_my_val = _.map(cached_constraint_val, add_fn);
 
 	var rv = cjs.create("constraint", function() {
 		var constraint_val = constraint.get();
@@ -39,13 +41,6 @@ cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn)
 		var diff = _.diff(cached_constraint_val, constraint_val);
 		var my_val = _.clone(cached_my_val);
 
-		_.forEach(diff.added, function(x) {
-			var mapped_val;
-			if(_.isFunction(add_fn)) {
-				mapped_val = add_fn(x.item, x.index);
-			}
-			_.insert_at(my_val, mapped_val, x.index);
-		});
 		_.forEach(diff.removed, function(x) {
 			var mapped_val = my_val[x.index];
 			if(_.isFunction(remove_fn)) {
@@ -53,9 +48,16 @@ cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn)
 			}
 			_.remove_index(my_val, x.index);
 		});
+		_.forEach(diff.added, function(x) {
+			var mapped_val;
+			if(_.isFunction(add_fn)) {
+				mapped_val = add_fn(x.item, x.index);
+			}
+			_.insert_at(my_val, mapped_val, x.index);
+		});
 		_.forEach(diff.moved, function(x) {
 			if(_.isFunction(move_fn)) {
-				remove_fn(x.item, x.to_index, x.from_index);
+				move_fn(x.item, x.to_index, x.from_index);
 			}
 			_.set_index(my_val, x.from_index, x.to_index);
 		});
@@ -76,16 +78,23 @@ cjs.constraint.mixin({
 		return rv;
 	}
 
-	, item: function(arr, item) {
-		return cjs.get_item(arr, item);
-	}
-
 	, first: function(arr) {
 		return cjs.get_item(arr, 0);
 	}
 	, last: function(arr) {
 		return cjs.get_item(arr, _.size(arr)-1);
 	}
+});
+cjs.constraint.raw_mixin("item", function(constraint) {
+	var prop_names = _.rest(arguments);
+	return cjs.create("constraint", function() {
+		var val = cjs.get(constraint);
+		_.forEach(prop_names, function(prop_name) {
+			var pn = cjs.get(prop_name);
+			val = val[pn];
+		});
+		return cjs.get(val);
+	});
 });
 
 

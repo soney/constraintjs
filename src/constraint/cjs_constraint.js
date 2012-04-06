@@ -302,24 +302,12 @@
 			}
 		}
 	};
-	cjs.get = function(obj, recursive) {
-		var rv;
-		if(cjs.is_constraint(obj)) {
-			rv = obj.get();
-		} else {
-			rv = obj;
+	cjs.get = function(obj) {
+		var rv = obj;
+		while(cjs.is_constraint(rv)) {
+			rv = rv.get();
 		}
-
-		if(recursive === true) {
-			if(_.isArray(rv)) {
-				rv = _.map(rv, function(elem) {
-					return cjs.get(elem, recursive);
-				});
-			}
-			return rv;
-		} else {
-			return rv;
-		}
+		return rv;
 	};
 	cjs.get_item = function(obj, index, recurse) {
 		recurse = recurse !==false;
