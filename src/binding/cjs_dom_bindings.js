@@ -142,6 +142,7 @@ cjs.binding.mixin("children", function(elem) {
 		if(!_.isArray(value)) {
 			value = [value];
 		}
+		value = _.flatten(value);
 
 		if(_.isElement(elem)) {
 			var diff = _.diff(cached_value, value)
@@ -210,7 +211,6 @@ cjs.define("dom_element", function(tag, attributes) {
 		cjs.binding.attr(rv, key, value);
 	});
 	cjs.binding.children.apply(cjs, args);
-	console.log(args);
 	return rv;
 });
 

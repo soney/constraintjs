@@ -92,8 +92,6 @@
 			var filenames = cjs.async(function(on_success, on_fail) {
 						list_files(path.get(), on_success, on_fail);
 					});
-			filenames = cjs(["file1.txt", "file2.txt"]);
-			filenames.state = cjs.fsm().add_state("resolved");
 			var filetypes = filenames.map(function(filename) {
 					var filetype = cjs.async(function(on_success, on_fail) {
 							get_file_type(path.get() + "/" + filename, on_success, on_fail);
@@ -103,11 +101,11 @@
 			window.filenames = filenames;
 			window.filetypes = filetypes;
 			var template;
-			//template = cjs.template("#filelistsimp");
+			template = cjs.template("#filelist");
+			/*
 			template = function (obj) {
 							with(obj) {
-								return cjs.create('dom_element', 'span', {} // (root)
-										,cjs.create('fsm_constraint', files.state, { // {{#diagram files.state}}
+								var x = cjs.create('fsm_constraint', files.state, { // {{#diagram files.state}}
 											'resolved': [
 											files.map(function(filename, key, index) { // {{#each files}}
 												return [ // {{#each}}
@@ -116,8 +114,11 @@
 																) // </span>
 														];
 											}) // {{/each}}
-											]}) // {/diagram}
+											]}); // {/diagram}
+								var rv = cjs.create('dom_element', 'span', {} // (root)
+										, x
 										); // (/root)
+								return rv;
 							}
 						};
 			//console.log(template);
@@ -151,8 +152,10 @@
 	{{#diagram files.state}}
 		{{#state pending}}Loading...{{/state}}
 		{{#state resolved}}
-			{{#each files filename}}
-				<span>{{filename}}</span>
+			{{#each files filename index}}
+				{{#with filetypes[index] filetype}}
+					<div>{{filename}}</div>
+				{{/with}}
 			{{/each}}
 		{{/state}}
 		{{#state rejected}}Error{{/state}}
