@@ -92,12 +92,20 @@
 			var filenames = cjs.async(function(on_success, on_fail) {
 						list_files(path.get(), on_success, on_fail);
 					});
+			filenames = cjs(["file1.txt"]);
+			filenames.state = cjs.fsm().add_state("resolved");
 			var filetypes = filenames.map(function(filename) {
 					var filetype = cjs.async(function(on_success, on_fail) {
 							get_file_type(path.get() + "/" + filename, on_success, on_fail);
 						});
 					return filetype;
 				});
+			ft1 = cjs("file");
+			ft1.state = cjs.fsm().add_state("resolved");
+
+			filetypes = cjs([ft1]);
+
+
 			window.filenames = filenames;
 			window.filetypes = filetypes;
 			var template;
@@ -105,24 +113,46 @@
 			/*
 			template = function (obj) {
 							with(obj) {
-								var x = cjs.create('fsm_constraint', files.state, { // {{#diagram files.state}}
-											'resolved': [
-											files.map(function(filename, key, index) { // {{#each files}}
-												return [ // {{#each}}
-															cjs.create('dom_element', 'span', {} // <span>
-																, cjs.create('dom_text', filename) // {{filename /}}
-																) // </span>
-														];
-											}) // {{/each}}
-											]}); // {/diagram}
-								var rv = cjs.create('dom_element', 'span', {} // (root)
-										, x
-										); // (/root)
-								return rv;
+							return cjs.create('dom_element', 'span', {} // (root)
+							, cjs.create('fsm_constraint', files.state, { // {{#diagram files.state}}
+
+							'pending': [
+								cjs.create('dom_text', 'Loading...') // (text /)
+							], 'resolved': [
+							files.map(function(filename, index) { // {{#each files}}
+							return [ // {{#each}}
+								(function() {
+									with(cjs.constraint.item(filetypes, cjs.get(index))) { // {{#with filetypes[index]}}
+										var filetype = cjs.constraint.item(filetypes, cjs.get(index));
+										var state = cjs.constraint.item(filetypes, cjs.get(index), "state");
+										console.log(filetype, filetype.get(), state, state.get());
+										return [
+											cjs.create('fsm_constraint', cjs.constraint.item(filetype, "state"), { // {{#diagram filetype.state}}
+
+											'pending': [
+												cjs.create('dom_element', 'div', {'class': 'loading'}, cjs.create('dom_text', '...'))
+											], 'resolved': [
+												cjs.create('dom_element', 'div', {'class': 'resolved'} 
+													, cjs.create('dom_text', filename) // {{filename /}}
+													, cjs.create('dom_text', ' ') // (text /)
+													, cjs.create('dom_text', filetype) // {{filetype /}}
+													) // </div>
+											], 'rejected': [
+												cjs.create('dom_element', 'div', { 'class': 'error'}, cjs.create('dom_text', 'error')) // </div>
+											]}) // {/diagram}
+											];
+									}
+								}()) // {{/with}}
+								];}) // {{/each}}
+								]
+							, 'rejected': [
+								cjs.create('dom_text', 'Error') // (text /)
+							]}) // {/diagram}
+							); // (/root)
 							}
-						};
-			//console.log(template);
+							};
 			/**/
+			console.log(template);
 			var files_dom = document.getElementById("files");
 			files_dom.appendChild(template({files: filenames, filetypes: filetypes}));
 		};
@@ -153,21 +183,20 @@
 		{{#state pending}}Loading...{{/state}}
 		{{#state resolved}}
 			{{#each files filename index}}
-				{{#with filetypes[index] filetype}}
-					<div>{{filename}}</div>
-				{{/with}}
+				{{#diagram filetypes[index].state}}
+					{{#state pending}}
+						<div class='loading'>...</div>
+					{{/state}}
+					{{#state resolved}}
+						<div class='resolved'>{{filename}} {{filetypes[index]}}</div>
+					{{/state}}
+					{{#state rejected}}
+						<div class='error'>error</div>
+					{{/state}}
+				{{/diagram}}
 			{{/each}}
 		{{/state}}
 		{{#state rejected}}Error{{/state}}
-	{{/diagram}}
-	</script>
-	<script id="filelistsimp" type="cjs/template">
-	{{#diagram files.state}}
-		{{#state resolved}}
-			{{#each files filename}}
-				<span>{{filename}}</span>
-			{{/each}}
-		{{/state}}
 	{{/diagram}}
 	</script>
   </head>

@@ -102,8 +102,7 @@
 						var collection_name = node.attrs[0].name;
 						var val_name = (_.size(node.attrs) >= 2) ? node.attrs[1].name : "value";
 						var key_name = (_.size(node.attrs) >= 3) ? node.attrs[2].name : "key";
-						var index_name = (_.size(node.attrs) >= 4) ? node.attrs[3].name : "index";
-						rv = collection_name + ".map(function(" + val_name + ", " + key_name + ", " + index_name + ") { // {{#each " + collection_name + "}}\n";
+						rv = collection_name + ".map(function(" + val_name + ", " + key_name + ") { // {{#each " + collection_name + "}}\n";
 						rv += "return [ // {{#each}}\n";
 						_.forEach(node.children, function(child, index) {
 							if(index > 0) {

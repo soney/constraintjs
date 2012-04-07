@@ -9,6 +9,9 @@
 		var getter = function() {
 			var i;
 			var fsm_got = cjs.get(fsm);
+			if(!cjs.is_fsm(fsm_got)) {
+				return undefined;
+			}
 			var state = fsm_got.get_state();
 			for(i = 0; i<selectors.length; i++) {
 				var selector = selectors[i];

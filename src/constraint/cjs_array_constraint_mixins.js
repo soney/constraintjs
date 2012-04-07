@@ -91,7 +91,9 @@ cjs.constraint.raw_mixin("item", function(constraint) {
 		var val = cjs.get(constraint);
 		_.forEach(prop_names, function(prop_name) {
 			var pn = cjs.get(prop_name);
-			val = val[pn];
+			if(!_.isUndefined(val) && _.has(val, pn)) {
+				val = val[pn];
+			}
 		});
 		return cjs.get(val);
 	});
