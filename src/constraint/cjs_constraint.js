@@ -308,7 +308,11 @@
 			rv = rv.get();
 		}
 		if(recursive === true) {
-			console.log("recursive");
+			if(_.isArray(rv)) {
+				rv = _.map(rv, function(elem) {
+					return cjs.get(elem, recursive);
+				});
+			}
 		}
 		return rv;
 	};
