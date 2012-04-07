@@ -26,8 +26,6 @@
 
 		var constraint = cjs.create("constraint", getter);
 
-
-
 		var uninstall_listeners = function(){};
 		var install_listeners = function(fsm) {
 			var uninstall_funcs = [];

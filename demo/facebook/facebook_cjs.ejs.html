@@ -25,13 +25,12 @@
 		{{#state pending}}Loading friends...{{/state}}
 		{{#state resolved}}
 			{{#each friends friend i}}
-				<span class="profile">{{friend.name}} <img src="{{pics[i]}}" /></span>
+				<span class="profile">{{friend.name}}</span>
 			{{/each}}
 		{{/state}}
 		{{#state rejected}}Error{{/state}}
 	{{/diagram}}
 	</script>
-
   </head>
   <body>
    	<div id="fb-friends"></div>
@@ -39,6 +38,7 @@
 	<%- include(cjs_inc.main) %>
 	<div id="fb-root"></div>
 	<script type="text/javascript">
+		var _ = cjs._;
 		window.on_fb_ready = function() {
 			var fb_request = function(path) {
 				return function(on_success, on_error) {
@@ -47,7 +47,7 @@
 							on_error(response.error);
 						} else {
 							if(response.data) {
-								on_success(response.data);
+								on_success(_.first(response.data, 1));
 							} else {
 								on_success(response);
 							}
@@ -64,6 +64,40 @@
 					});
 					window.friends = friends;
 					window.pics = pics;
+					//var template = cjs.template("#friendslist");
+					var template = function anonymous(obj) {
+							with(obj) {
+								return cjs.create('dom_element', 'span', {} // (root)
+									, cjs.create('dom_text', '\n	') // (text /)
+									, 
+									cjs.create('fsm_constraint', friends.state, { // {{#diagram friends.state}}
+
+									'pending': [
+										cjs.create('dom_text', 'Loading friends...') // (text /)
+									], 'resolved': [
+										friends.map(function(friend, i, index) { // {{#each friends}}
+										return [ // {{#each}}
+												cjs.create('dom_element', 'span', { // <span>
+
+												'class': 'profile'} 
+
+												, cjs.create('dom_text', friend.name) // {{friend.name /}}
+
+												) // </span>
+												];}) // {{/each}}
+										, cjs.create('dom_text', '\n		') // (text /)
+									], 'rejected': [
+										cjs.create('dom_text', 'Error') // (text /)
+									]}) // {/diagram}
+									, cjs.create('dom_text', '\n	') // (text /)
+
+								); // (/root)
+							}
+						};
+					var fr_friends_list = document.getElementById("fb-friends");
+					fr_friends_list.appendChild(template({friends: friends, pics: pics}));
+					/*
+					console.log(template);
 
 					var fr_friends_list = document.getElementById("fb-friends");
 					cjs.binding.children(fr_friends_list, cjs(friends.state, {
@@ -82,6 +116,7 @@
 									})
 						, rejected: "Error loading friends!"
 						}));
+					*/
 				} else {
 					console.log('User cancelled login or did not fully authorize.');
 				}

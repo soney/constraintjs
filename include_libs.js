@@ -47,7 +47,7 @@ exports.main_src = c(
 			, "fsm/cjs_fsm_binding.js"
 			, "constraint/cjs_async_constraint.js"
 			, "constraint/cjs_conditional_constraint.js"
-			, "template/templateparser.js"
+			, "template/html_template_parser.js"
 			, "template/cjs_template.js"
 			])
 );
