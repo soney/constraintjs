@@ -210,6 +210,7 @@ cjs.define("dom_element", function(tag, attributes) {
 		cjs.binding.attr(rv, key, value);
 	});
 	cjs.binding.children.apply(cjs, args);
+	console.log(args);
 	return rv;
 });
 

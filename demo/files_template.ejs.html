@@ -103,27 +103,23 @@
 			window.filenames = filenames;
 			window.filetypes = filetypes;
 			var template;
-			template = cjs.template("#filelistsimp");
-			/*
-			template = function anonymous(obj) {
+			//template = cjs.template("#filelistsimp");
+			template = function (obj) {
 							with(obj) {
 								return cjs.create('dom_element', 'span', {} // (root)
-										, cjs.create('dom_text', '\n	') // (text /)
-										, 
-										cjs.create('fsm_constraint', files.state, { // {{#diagram files.state}}
-
-										'resolved': [
+										,cjs.create('fsm_constraint', files.state, { // {{#diagram files.state}}
+											'resolved': [
 											files.map(function(filename, key, index) { // {{#each files}}
 												return [ // {{#each}}
-													cjs.create('dom_element', 'span', {} // <span>
-													, cjs.create('dom_text', filename) // {{filename /}}
-												) // </span>
-											];
+															cjs.create('dom_element', 'span', {} // <span>
+																, cjs.create('dom_text', filename) // {{filename /}}
+																) // </span>
+														];
 											}) // {{/each}}
-										]}) // {/diagram}
+											]}) // {/diagram}
 										); // (/root)
-								}
-							};
+							}
+						};
 			//console.log(template);
 			/**/
 			var files_dom = document.getElementById("files");
