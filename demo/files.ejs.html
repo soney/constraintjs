@@ -36,6 +36,10 @@
 					}
 				}
 			}
+			return curr_dir;
+		};
+		var do_list_files = function(path) {
+			var curr_dir = do_get_file(path);
 
 			var rv = [];
 			cjs._.forEach(curr_dir, function(file, filename) {
@@ -57,13 +61,13 @@
 			return Math.random() < prob;
 		};
 
-		var get_file = function(path, on_success, on_fail) {
+		var list_files = function(path, on_success, on_fail) {
 			var delay = get_delay(700, 500);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.1)) {
 					on_fail("Random error");
 				} else {
-					on_success(do_get_file(path));
+					on_success(do_list_files(path));
 				}
 			}, delay);
 		};
@@ -86,14 +90,13 @@
 		window.onload = function() {
 			var path = window.path = cjs("/");
 			var filenames = cjs.async(function(on_success, on_fail) {
-						get_file(path.get(), on_success, on_fail);
+						list_files(path.get(), on_success, on_fail);
 					}, 5000); // After 5 seconds, auto-fail
 
 			var files_dom = document.getElementById("files");
 
 
 			var filetypes = filenames.map(function(filename) {
-				console.log("HI");
 				var filetype = cjs.async(function(on_success, on_fail) {
 						get_file_type(path.get() + "/" + filename, on_success, on_fail);
 					}, 5000);
@@ -101,7 +104,6 @@
 			});
 
 			window.filetypes = filetypes;
-			console.log(filetypes);
 			cjs.binding.children(files_dom, cjs(filenames.state, {
 						pending: "Loading files..."
 						, resolved: filenames.map(function(filename, i) {
@@ -109,11 +111,9 @@
 										var filetype = cjs(function() {
 											var ft = filetypes.get();
 											if(ft.length && ft.length > i) {
-												console.log(ft[i], ft[i].get());
 												return ft[i];
 											} return "";
 										});
-										console.log(filetype);
 										return cjs.create("dom_element", "span", {}
 															, filetype);
 										return filetype;

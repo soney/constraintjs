@@ -302,10 +302,13 @@
 			}
 		}
 	};
-	cjs.get = function(obj) {
+	cjs.get = function(obj, recursive) {
 		var rv = obj;
 		while(cjs.is_constraint(rv)) {
 			rv = rv.get();
+		}
+		if(recursive === true) {
+			console.log("recursive");
 		}
 		return rv;
 	};
