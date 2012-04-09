@@ -62,6 +62,7 @@
 		this.id = "constraint_"+node.getId();
 		this.destroy_callbacks = [];
 		this.bindings = [];
+		this.invalidate = _.bind(this.nullify, this);
 	};
 
 	(function(my) {
