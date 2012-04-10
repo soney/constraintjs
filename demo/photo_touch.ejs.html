@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>cjs</title>
+	<meta name="viewport" content="width = device-width, user-scalable=no">
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="underscore-min.js"></script>
+	<%- include(cjs_inc.main) %>
+	<script type="text/javascript">
+		$.fn.touchmove = function() {
+			$.each(this, function() {
+				var fsm = cjs	.fsm()
+								.add_state("moving")
+								.add_state("dragging");
+				var $img = $(this);
+
+				$img	.on("touchstart", function(event) {
+													var e = event.originalEvent;
+													console.log(e.touches.length);
+
+													event.preventDefault();
+													event.stopPropagation();
+												})
+						.on("touchmove", function(event) {
+													var e = event.originalEvent;
+													console.log(e.touches.length);
+
+													event.preventDefault();
+													event.stopPropagation();
+												})
+						.on("touchend", function(event) {
+													var e = event.originalEvent;
+													console.log(e.touches.length);
+
+													event.preventDefault();
+													event.stopPropagation();
+												});
+				console.log(this);
+			});
+		};
+		$(function() {
+			$("#photo1").touchmove();
+		});
+	</script>
+	<style type="text/css">
+		body {
+			margin: 0px;
+			overflow: hidden;
+		}
+	</style>
+  </head>
+  <body>
+	  <img id="photo1" src="color_photo.jpeg" />
+  </body>
+</html>
