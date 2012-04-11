@@ -6,10 +6,115 @@
 	<script type="text/javascript" src="../underscore-min.js"></script>
 	<%- include(cjs_inc.main) %>
 	<script type="text/javascript">
+		$.get_dot = function(datum) {
+			var dot = $("<div class='dot' />").css("left", datum.x+"px")
+											  .css("bottom", datum.y+"px");
+			return dot;
+		};
+		$.get_axis = function(from, to) {
+			from = from || 0;
+			to = to || 100;
+			var axis = $("<div class='axis' />");
+			var from = $("<span class='range range_from' />").appendTo(axis).text(from);
+			var to = $("<span class='range range_to' />").appendTo(axis).text(to);
+			return axis;
+		};
+		$.get_x_axis = function(from, to) {
+			return $.get_axis().addClass("x_axis");
+		};
+		$.get_y_axis = function(from, to) {
+			return $.get_axis().addClass("y_axis");
+		};
+		$.get_plot = function(data) {
+			var dots = _.map(data, $.get_dot);
+			var x_axis = $.get_x_axis();
+			var y_axis = $.get_y_axis();
+
+			var plot = $("<div class='plot' />");
+			plot.append(x_axis);
+			plot.append(y_axis);
+			_.forEach(dots, function(dot) {
+				plot.append(dot);
+			});
+			return plot;
+		};
+		var data = [{x:50, y: 50}, {x: 20, y: 10}];
 		$(function() {
+			var plot = $.get_plot(data);
+			$(document.body).append(plot);
 		});
 	</script>
 	<style type="text/css">
+		body {
+			font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+			font-weight: 300;
+		}
+		.plot {
+			position: relative;
+			width: 200px;
+			height: 200px;
+			margin: auto;
+			margin-top: 100px;
+		}
+		.x_axis {
+			height: 4px;
+			width: 100%;
+			position: absolute;
+			top: 100%;
+			pointer: default;
+		}
+		.x_axis .range_from {
+			position: relative;
+			top: 5px;
+			left: 5px;
+		}
+		.x_axis .range_to {
+			float: right;
+			position: relative;
+			top: 5px;
+			left: 0px;
+		}
+		.y_axis {
+			width: 4px;
+			height: 100%;
+			pointer: default;
+		}
+		.y_axis .range_from {
+			vertical-align: bottom;
+			position: absolute;
+			bottom: 0px;
+			left: -50px;
+			width: 45px;
+			text-align: right;
+		}
+		.y_axis .range_to {
+			position: absolute;
+			left: -50px;
+			width: 45px;
+			text-align: right;
+		}
+
+		.range {
+			font-size: 1.1em;
+			color: #333;
+			text-shadow: 0px 0px 2px; #333;
+		}
+
+		.axis {
+			background-color: #333;
+			position: absolute;
+			box-shadow: 0px 0px 2px #999;
+		}
+
+		.dot {
+			width: 10px;
+			height: 10px;
+			border-radius: 100px;
+			border: 2px solid black;
+			position: absolute;
+			box-shadow: 0px 0px 5px #333;
+			background-color: #EEE;
+		}
 	</style>
   </head>
   <body>
