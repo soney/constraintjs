@@ -6,26 +6,35 @@
 	<script type="text/javascript" src="../underscore-min.js"></script>
 	<%- include(cjs_inc.main) %>
 	<script type="text/javascript">
-		$.get_dot = function(datum) {
-			var dot = $("<div class='dot' />").css("left", datum.x+"px")
-											  .css("bottom", datum.y+"px");
-			return dot;
-		};
-		$.get_axis = function(from, to) {
-			from = from || 0;
-			to = to || 100;
-			var axis = $("<div class='axis' />");
-			var from = $("<span class='range range_from' />").appendTo(axis).text(from);
-			var to = $("<span class='range range_to' />").appendTo(axis).text(to);
-			return axis;
-		};
-		$.get_x_axis = function(from, to) {
-			return $.get_axis().addClass("x_axis");
-		};
-		$.get_y_axis = function(from, to) {
-			return $.get_axis().addClass("y_axis");
-		};
 		$.get_plot = function(data) {
+			$.get_dot = function(datum) {
+				var x_position = cjs(datum.x).unit("px");
+				var y_position = cjs(datum.x).unit("px");
+				var dot = $("<div class='dot' />").css("left", x_position.get())
+												  .css("bottom", y_position.get());
+				var fsm = cjs	.fsm()
+								.add_state("idle")
+								.add_transition(cjs.on("mousedown", dot[0]), "dragging")
+								.add_state("dragging")
+								.add_transition(cjs.on("mouseup", window), "idle");
+				
+				return dot;
+			};
+			$.get_axis = function(from, to) {
+				from = from || 0;
+				to = to || 100;
+				var axis = $("<div class='axis' />");
+				var from = $("<span class='range range_from' />").appendTo(axis).text(from);
+				var to = $("<span class='range range_to' />").appendTo(axis).text(to);
+				return axis;
+			};
+			$.get_x_axis = function(from, to) {
+				return $.get_axis().addClass("x_axis");
+			};
+			$.get_y_axis = function(from, to) {
+				return $.get_axis().addClass("y_axis");
+			};
+
 			var dots = _.map(data, $.get_dot);
 			var x_axis = $.get_x_axis();
 			var y_axis = $.get_y_axis();
@@ -38,7 +47,7 @@
 			});
 			return plot;
 		};
-		var data = [{x:50, y: 50}, {x: 20, y: 10}];
+		var data = [{x:cjs(50), y: cjs(50)}, {x: cjs(20), y: cjs(10)}];
 		$(function() {
 			var plot = $.get_plot(data);
 			$(document.body).append(plot);

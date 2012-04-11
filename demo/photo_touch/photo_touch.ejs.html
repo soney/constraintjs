@@ -60,13 +60,8 @@
 					$slider.css("top", (1-manip.opacity)*100 + "%");
 				};
 
-				var update_position = get_updater(do_update_position, 5);
-				var update_manip = get_updater(do_update_manip, 5);
-
-
-				var max_update_interval = 5;
-				var up_timeout;
-
+				var update_position = get_updater(do_update_position, 0);
+				var update_manip = get_updater(do_update_manip, 50);
 
 				var position = {
 					scale: 1
@@ -115,7 +110,7 @@
 				};
 
 				$img.on("touchstart", function(event) {
-					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
+					var e = event.originalEvent; e.preventDefault(); e.stopPropagation();
 					$div.parent().append($div);
 
 					state.touches = _.compact(_.map(e.touches, function(t) {
@@ -126,14 +121,15 @@
 					state.manip = _.clone(manip);
 
 					update_position();
-					if(e.touches.length < 2) {
+
+					if(state.touches.length < 2) {
 						$slider.hide();
 					} else {
 						$slider.show();
 					}
 				});
 				$img.on("touchend", function(event) {
-					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
+					var e = event.originalEvent; e.preventDefault(); e.stopPropagation();
 
 					state.touches = _.compact(_.map(e.touches, function(t) {
 														if(t.target !== $img[0]) { return false; }
@@ -143,7 +139,7 @@
 					state.manip = _.clone(manip);
 					
 					update_position();
-					if(e.touches.length < 2) {
+					if(state.touches.length < 2) {
 						$slider.hide();
 					} else {
 						$slider.show();
@@ -152,7 +148,7 @@
 
 
 				$img.on("touchmove", function(event) {
-					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
+					var e = event.originalEvent; e.preventDefault(); e.stopPropagation();
 
 					var touches = _.compact(_.map(e.touches, function(touch) {
 														var orig_touch = get_touch_with_id(touch.identifier);
@@ -204,14 +200,14 @@
 							$slider.show();
 						}
 					}
-					if(e.touches.length < 2) {
+					if(state.touches.length < 2) {
 						$slider.hide();
 					} else {
 						$slider.show();
 					}
-					});
-					update_position();
-					update_manip();
+				});
+				update_position();
+				update_manip();
 			});
 		};
 		$(function() {
@@ -237,6 +233,7 @@
 			-webkit-transition: all 0.05s ease-out;
 		}
 		div.img {
+			-webkit-transition: all 0.05s ease-out;
 		}
 		div#container {
 			width: 100%;
@@ -256,9 +253,9 @@
 			opacity: 0.8;
 			pointer-events: none;
 			-webkit-transform: translate(-35px, -20px);
-			-webkit-transition: all 0.05s ease-out;
 			border: 1px solid red;
 			box-shadow: 0 0 25px rgba(255, 0, 0, 1);
+			-webkit-transition: all 0.05s ease-out;
 		}
 	</style>
   </head>
