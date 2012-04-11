@@ -9,7 +9,7 @@
 		$.get_plot = function(data) {
 			$.get_dot = function(datum) {
 				var x_position = cjs(datum.x).unit("px");
-				var y_position = cjs(datum.x).unit("px");
+				var y_position = cjs(datum.y).unit("px");
 				var dot = $("<div class='dot' />").css("left", x_position.get())
 												  .css("bottom", y_position.get());
 				var fsm = cjs	.fsm()
@@ -17,6 +17,29 @@
 								.add_transition(cjs.on("mousedown", dot[0]), "dragging")
 								.add_state("dragging")
 								.add_transition(cjs.on("mouseup", window), "idle");
+				dot.on("mousedown", function(e){e.preventDefault();e.stopPropagation();});
+
+				var offset;
+				window.setInterval(function() {
+					offset = dot.parent().offset();
+				}, 500);
+
+				cjs.binding.css(dot[0], "left", cjs(fsm, {
+					"idle": x_position
+					, "dragging": cjs(function() {
+										return cjs.mouse.x.get() - offset.left - 5;
+									}).unit("px")
+				}));
+				cjs.binding.css(dot[0], "bottom", cjs(fsm, {
+					"idle": y_position
+					, "dragging": ""
+				}));
+				cjs.binding.css(dot[0], "top", cjs(fsm, {
+					"idle": ""
+					, "dragging": cjs(function() {
+										return cjs.mouse.y.get() - offset.top - 5;
+									}).unit("px")
+				}));
 				
 				return dot;
 			};
@@ -35,9 +58,11 @@
 				return $.get_axis().addClass("y_axis");
 			};
 
-			var dots = _.map(data, $.get_dot);
 			var x_axis = $.get_x_axis();
 			var y_axis = $.get_y_axis();
+			var dots = _.map(data, function() {
+					$.get_dot(datum, x_axis, y_axis);
+				});
 
 			var plot = $("<div class='plot' />");
 			plot.append(x_axis);
@@ -47,7 +72,7 @@
 			});
 			return plot;
 		};
-		var data = [{x:cjs(50), y: cjs(50)}, {x: cjs(20), y: cjs(10)}];
+		var data = [{x:50, y: 50}, {x: 20, y: 70}];
 		$(function() {
 			var plot = $.get_plot(data);
 			$(document.body).append(plot);
