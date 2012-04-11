@@ -2,54 +2,190 @@
 <html lang="en">
   <head>
     <title>cjs</title>
-	<meta name="viewport" content="width = device-width, user-scalable=no">
+	<meta name="viewport" content="width = device-width, user-scalable=no, initial-scale=1">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	
 	<script type="text/javascript" src="jquery.js"></script>
 	<script type="text/javascript" src="underscore-min.js"></script>
 	<%- include(cjs_inc.main) %>
 	<script type="text/javascript">
 		$.fn.touchmove = function() {
 			$.each(this, function() {
-				var fsm = cjs	.fsm()
-								.add_state("moving")
-								.add_state("dragging");
+
 				var $img = $(this);
 
-				$img	.on("touchstart", function(event) {
-													var e = event.originalEvent;
-													console.log(e.touches.length);
+				$img.css("position", "absolute");
+				var my_touches = cjs.touches.filter(function(touch) {
+					return touch.target === $img[0];
+				});
+				var touch_state = cjs(function() {
+					var len = my_touches.length();
+					if(len === 0) { return "idle"; }
+					else if(len === 1) { return "drag"; }
+					else if(len === 2) { return "resize"; }
+					else if(len === 3) { return "pivot"; }
+					else { return "idle"; }
+				});
 
-													event.preventDefault();
-													event.stopPropagation();
-												})
-						.on("touchmove", function(event) {
-													var e = event.originalEvent;
-													console.log(e.touches.length);
 
-													event.preventDefault();
-													event.stopPropagation();
-												})
-						.on("touchend", function(event) {
-													var e = event.originalEvent;
-													console.log(e.touches.length);
+				var do_update_position = function() {
+					$img.css("-webkit-transform"
+						, 
+						""
+						+ " translate("+position.translatex+"px,"+position.translatey+"px)"
+						+ " scale("+position.scalex+","+position.scaley+")"
+						+ " rotate("+position.rotation+"rad)"
+					);
+				};
 
-													event.preventDefault();
-													event.stopPropagation();
-												});
-				console.log(this);
+				var max_update_interval = 10;
+				var up_timeout;
+				var update_position = function() {
+					if(_.isUndefined(up_timeout)) {
+						up_timeout = window.setTimeout(function() {
+							up_timeout = undefined;
+							do_update_position();
+						}, max_update_interval);
+					}
+				};
+
+
+				var position = {
+					scalex: 1
+					, scaley: 1
+					, rotation: 0
+					, translatex: 0
+					, translatey: 0
+				};
+
+				var state = {
+					touches: []
+					, start_position: _.clone(position)
+				};
+
+				var my_touches = [];
+
+				var get_touch_with_id = function(id) {
+					for(var i = 0; i<state.touches.length; i++) {
+						var touch = state.touches[i];
+						if(touch.identifier === id) {
+							return touch;
+						}
+					}
+					return null;
+				};
+				var get_touch_distance = function(t1, t2) {
+					var t1x = t1.clientX, t1y = t1.clientY
+						, t2x = t2.clientX, t2y = t2.clientY;
+					return Math.sqrt(Math.pow(t1x-t2x, 2) + Math.pow(t1y-t2y, 2));
+				};
+				var get_touch_center = function(t1, t2) {
+					var t1x = t1.clientX, t1y = t1.clientY
+						, t2x = t2.clientX, t2y = t2.clientY;
+					return {x: (t1x+t2x)/2.0, y: (t1y, t2y)/2.0};
+				};
+				var get_touch_angle = function(t1, t2) {
+					var t1x = t1.clientX, t1y = t1.clientY
+						, t2x = t2.clientX, t2y = t2.clientY;
+					var dx = t2x - t1x, dy = t2y - t2x;
+					return Math.atan2(dy, dx);
+				};
+
+				$img.on("touchstart", function(event) {
+					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
+					$img.parent().append($img);
+
+					state.touches = _.map(e.touches, function(t) { return _.clone(t); });
+					state.start_position = _.clone(position);
+
+					update_position();
+				});
+				$img.on("touchend", function(event) {
+					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
+
+					state.touches = _.map(e.touches, function(t) { return _.clone(t); });
+					state.start_position = _.clone(position);
+					
+					update_position();
+				});
+				$img.on("touchmove", function(event) {
+					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
+
+					var touches = _.compact(_.map(e.touches, function(touch) {
+														var orig_touch = get_touch_with_id(touch.identifier);
+														if(orig_touch) {
+															return {from: orig_touch, to: touch};
+														} else { return false; }
+													}));
+
+					if(touches.length === 1) {
+						var touch = touches[0];
+						var dx = touch.to.clientX - touch.from.clientX;
+						var dy = touch.to.clientY - touch.from.clientY;
+
+						position.translatex = state.start_position.translatex + dx;
+						position.translatey = state.start_position.translatey + dy;
+						update_position();
+					} else if(touches.length === 2) {
+						var from_distance = get_touch_distance(touches[0].from, touches[1].from);
+						var to_distance = get_touch_distance(touches[0].to, touches[1].to);
+						var from_angle = get_touch_angle(touches[0].from, touches[1].from);
+						var to_angle = get_touch_angle(touches[0].to, touches[1].to);
+						var from_pos = get_touch_center(touches[0].from, touches[1].from);
+						var to_pos = get_touch_center(touches[0].to, touches[1].to);
+
+						var scale_diff = to_distance / from_distance;
+						var angle_distance = (to_angle - from_angle)%360;
+
+						position.scalex = position.scaley = state.start_position.scalex  * scale_diff;
+						position.rotation = (state.start_position.rotation + angle_distance)%360;
+						position.translatex = state.start_position.translatex + to_pos.x - from_pos.x;
+						position.translatey = state.start_position.translatey + to_pos.y - from_pos.y;
+						console.log(to_pos.x - from_pos.x);
+						console.log(to_pos.y - from_pos.y);
+
+						update_position();
+					}
+				});
 			});
 		};
 		$(function() {
-			$("#photo1").touchmove();
+			$("#pic1,#pic2,#pic3").touchmove();
+//			$("#container").touchmove();
 		});
 	</script>
 	<style type="text/css">
+		html {
+			width: 100%;
+			height: 100%;
+		}
 		body {
 			margin: 0px;
 			overflow: hidden;
+			width: 100%;
+			height: 100%;
+		}
+		img {
+			border: 1px solid #333;
+			border-radius: 3px;
+			box-shadow: 0px 0px 15px #333;
+		}
+		div#container {
+			width: 100%;
+			height: 100%;
+			background-image: url('noise.png');
+			background-image: -webkit-gradient(linear, left top, right bottom, color-stop(0, #FFF), color-stop(1, #777));
 		}
 	</style>
   </head>
   <body>
-	  <img id="photo1" src="color_photo.jpeg" />
+	  <div id="container">
+		  <img width="500px" id="pic1" src="pic1.jpeg" />
+		  <!--
+		  <img width="500px" id="pic2" src="pic2.jpeg" />
+		  <img width="500px" id="pic3" src="pic3.jpeg" />
+		  -->
+	  </div>
   </body>
 </html>

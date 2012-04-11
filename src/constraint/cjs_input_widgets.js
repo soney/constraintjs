@@ -58,4 +58,16 @@ cjs.time = cjs.constraint(function() {
 	return (new Date()).getTime();
 });
 root.setInterval(_.bind(cjs.time.nullify, cjs.time), 10);
+
+cjs.touches = cjs([]);
+root.addEventListener("touchstart", function(event) {
+	cjs.touches.set(event.touches);
+});
+root.addEventListener("touchmove", function(event) {
+	cjs.touches.set(event.touches);
+});
+root.addEventListener("touchend", function(event) {
+	cjs.touches.set(event.touches);
+});
+
 }}(cjs, this));

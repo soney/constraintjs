@@ -208,4 +208,10 @@ cjs.constraint.mixin({
 		return rv;
 	}
 });
+cjs.constraint.mixin({
+	filter: function(arr, func) {
+		var rv = _.filter(arr, func);
+		return rv;
+	}});
+
 }(cjs));
