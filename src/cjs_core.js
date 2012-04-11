@@ -1,7 +1,9 @@
 var cjs = (function (root) {
 	var cjs_call = function(arg0, arg1) {
 		var _ = cjs._;
-		if(_.isString(arg0)) { //Assume it's a selector, arg1 is the context
+		if(arguments.length === 0) {
+			return cjs.create("constraint", undefined);
+		} else if(_.isString(arg0)) { //Assume it's a selector, arg1 is the context
 			if(arg1 === true) {
 				return cjs.create("constraint", arg0);
 			} else {

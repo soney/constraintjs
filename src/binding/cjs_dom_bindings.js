@@ -16,7 +16,13 @@ cjs.binding.mixin({
 		};
 		return cjs.binding.bind(objs, constraint, setter);
 	}
-	, "class": function(objs, constraint) {
+	, "class": function(objs) {
+		var vals = _.rest(arguments);
+		var constraint = cjs(function() {
+			return _.map(vals, function(val) {
+				return cjs.get(val);
+			}).join(" ");
+		});
 		var setter = function(obj, val) {
 			obj.className = val;
 		};

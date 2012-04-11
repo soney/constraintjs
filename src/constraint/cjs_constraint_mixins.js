@@ -62,6 +62,9 @@ cjs.constraint.mixin({
 	, eqeq: function(val, to_val) {
 		return val === to_val;
 	}
+	, round: function(val) {
+		return Math.round(val);
+	}
 });
 
 cjs.constraint.raw_mixin("snapshot", function(constraint) {
