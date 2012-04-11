@@ -70,10 +70,10 @@
 								.add_transition(cjs.on("mouseup", window), "idle");
 				var cy = cjs(fsm, {
 					"init": function() {
-						return f * scale_y.get();
+						return -100;
 					}
 					, "dragging": function() {
-						return offset.top - cjs.mouse.y.get() + 50;
+						return offset.top - cjs.mouse.y.get();
 					}
 					, "dragging>-idle": function() { return cy.get(); }
 				});
@@ -82,7 +82,7 @@
 						return "";
 					}
 					, "dragging": function() {
-						return cjs.mouse.x.get() - offset.left;
+						return cjs.mouse.x.get() - offset.left-50;
 					}
 					, "dragging>-idle": function() { return cx.get(); }
 				});
@@ -113,7 +113,7 @@
 								.add_transition(cjs.on("mouseup", window), "idle");
 				var cy = cjs(fsm, {
 					"init": function() {
-						return f * scale_y.get();
+						return f;
 					}
 					, "dragging": function() {
 						return offset.top - cjs.mouse.y.get() + 50;
