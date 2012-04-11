@@ -264,7 +264,7 @@ var ConstraintSolver = function() {
 
 	proto.nullifyAndEvalNode = function(node, reasonChain) {
 		if(reasonChain === undefined) { reasonChain = []; }
-		this.doNullifyNode(node, reasonChain, this.nullifyAndeEvalNode);
+		this.doNullifyNode(node, reasonChain, this.nullifyAndEvalNode);
 		return this.getNodeValue(node);
 	};
 

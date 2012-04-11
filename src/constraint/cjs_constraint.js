@@ -97,7 +97,7 @@
 			this.history.time = history.time;
 
 			// And act as if we were just nullified...
-			this.on_nullified();
+			//this.on_nullified();
 
 			return new_value;
 		};

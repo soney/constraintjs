@@ -50,7 +50,8 @@
 					uninstall_funcs.push(_.bind(fsm.off, fsm, fsm.last_callback()));
 				} else {
 					fsm.on(selector, function() {
-						constraint.nullify();
+					//	constraint.nullify();
+						last_transition_value = constraint.nullifyAndEval();
 					});
 					uninstall_funcs.push(_.bind(fsm.off, fsm, fsm.last_callback()));
 				}

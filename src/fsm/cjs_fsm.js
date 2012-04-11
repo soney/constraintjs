@@ -44,6 +44,8 @@ var StateSelector = function(state_name) {
 	proto.matches = function(state) {
 		if(state instanceof State) {
 			return this.state_name === state.get_name();
+		} else if(_.isString(state)) {
+			return this.state_name === state;
 		} else { return false; }
 	};
 	proto.is = function(str) { return str === "state"; };

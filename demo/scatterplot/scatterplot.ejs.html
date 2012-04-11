@@ -7,38 +7,46 @@
 	<%- include(cjs_inc.main) %>
 	<script type="text/javascript">
 		$.get_plot = function(data) {
-			$.get_dot = function(datum) {
-				var x_position = cjs(datum.x).unit("px");
-				var y_position = cjs(datum.y).unit("px");
-				var dot = $("<div class='dot' />").css("left", x_position.get())
-												  .css("bottom", y_position.get());
+			var scale_x = cjs(1);
+			var scale_y = cjs(1);
+			window.scale_x = scale_x;
+			window.scale_y = scale_y;
+			var offset;
+
+			$.get_dot = function(datum, x_axis, y_axis) {
+				var dot = $("<div class='dot' />").css("left", datum.x)
+												  .css("bottom", datum.y);
 				var fsm = cjs	.fsm()
+								.add_state("init")
+								.add_transition(cjs.on("mousedown", dot[0]), "dragging")
 								.add_state("idle")
 								.add_transition(cjs.on("mousedown", dot[0]), "dragging")
 								.add_state("dragging")
 								.add_transition(cjs.on("mouseup", window), "idle");
 				dot.on("mousedown", function(e){e.preventDefault();e.stopPropagation();});
 
-				var offset;
-				window.setInterval(function() {
-					offset = dot.parent().offset();
-				}, 500);
 
-				cjs.binding.css(dot[0], "left", cjs(fsm, {
-					"idle": x_position
-					, "dragging": cjs(function() {
+				var c = cjs(function() {
 										return cjs.mouse.x.get() - offset.left - 5;
-									}).unit("px")
+									}).unit("px");
+				cjs.binding.css(dot[0], "left", cjs(fsm, {
+					"init": datum.x+"px"
+					, "dragging": c
+					, "dragging>-idle": function(){return c.get();}
+
 				}));
 				cjs.binding.css(dot[0], "bottom", cjs(fsm, {
-					"idle": y_position
+					"init": datum.y+"px"
+					, "idle": ""
 					, "dragging": ""
 				}));
-				cjs.binding.css(dot[0], "top", cjs(fsm, {
-					"idle": ""
-					, "dragging": cjs(function() {
+				c = cjs(function() {
 										return cjs.mouse.y.get() - offset.top - 5;
-									}).unit("px")
+									}).unit("px");
+				cjs.binding.css(dot[0], "top", cjs(fsm, {
+					"init": ""
+					, "dragging": c
+					, "dragging>-idle": function(){return c.get();}
 				}));
 				
 				return dot;
@@ -51,20 +59,127 @@
 				var to = $("<span class='range range_to' />").appendTo(axis).text(to);
 				return axis;
 			};
-			$.get_x_axis = function(from, to) {
-				return $.get_axis().addClass("x_axis");
-			};
-			$.get_y_axis = function(from, to) {
-				return $.get_axis().addClass("y_axis");
-			};
-
-			var x_axis = $.get_x_axis();
-			var y_axis = $.get_y_axis();
-			var dots = _.map(data, function() {
-					$.get_dot(datum, x_axis, y_axis);
+			$.get_x_axis = function(f, t) {
+				var axis = $.get_axis(f, t).addClass("x_axis");
+				var fsm = cjs	.fsm()
+								.add_state("init")
+								.add_transition(cjs.on("mousedown", axis[0]), "dragging")
+								.add_state("idle")
+								.add_transition(cjs.on("mousedown", axis[0]), "dragging")
+								.add_state("dragging")
+								.add_transition(cjs.on("mouseup", window), "idle");
+				cjs.binding.css(axis[0], "left", cjs(fsm, {
+					"init": ""
+					, "dragging": cjs(function() {
+										return cjs.mouse.x.get() - offset.left - 50;
+									}).unit("px")
+				}));
+				cjs.binding.css(axis[0], "bottom", cjs(fsm, {
+					"init": ""
+					, "dragging": ""
+				}));
+				cjs.binding.css(axis[0], "top", cjs(fsm, {
+					"init": ""
+					, "dragging": cjs(function() {
+										return cjs.mouse.y.get() - offset.top - 1;
+									}).unit("px")
+				}));
+				axis.on("mousedown", function(e){e.preventDefault();e.stopPropagation();});
+				var from = cjs(fsm, {
+					"init": function() {
+						return f * scale_x.get();
+					}
+					, "dragging": function() {
+						return scale_x.get() * (cjs.mouse.x.get() - offset.left-50);
+					}
+				});
+				var to = cjs(fsm, {
+					"init": function() {
+						return t * scale_x.get();
+					}
+					, "dragging": function() {
+						return scale_x.get() * (cjs.mouse.x.get() - offset.left+50);
+					}
 				});
 
+				cjs.binding.text($("span.range_from", axis)[0], from);
+				cjs.binding.text($("span.range_to", axis)[0], to);
+
+				return axis;
+			};
+			$.get_y_axis = function(f, t) {
+				var axis = $.get_axis(f, t).addClass("y_axis");
+				var fsm = cjs	.fsm()
+								.add_state("init")
+								.add_transition(cjs.on("mousedown", axis[0]), "dragging")
+								.add_state("idle")
+								.add_transition(cjs.on("mousedown", axis[0]), "dragging")
+								.add_state("dragging")
+								.add_transition(cjs.on("mouseup", window), "idle");
+				var cy = cjs(fsm, {
+					"init": function() {
+						return f * scale_y.get();
+					}
+					, "dragging": function() {
+						return offset.top - cjs.mouse.y.get() + 50;
+					}
+					, "dragging>-idle": function() { return cy.get(); }
+				});
+				cjs.binding.text($("span.range_to", axis)[0], cy);
+
+				var c1 = cjs(function() {
+									return cjs.mouse.x.get() - offset.left - 1;
+								}).unit("px");
+				cjs.binding.css(axis[0], "left", cjs(fsm, {
+					"init": ""
+					, "dragging": c1
+					, "dragging>-idle": function(){return c1.get();}
+				}));
+				var c2 = cjs(function() {
+										return scale_y.get() * ( - cy.get());
+									}).unit("px");
+
+				cjs.binding.css(axis[0], "top", cjs(fsm, {
+					"init": ""
+					, "dragging": c2
+					, "dragging>-idle": function(){return c2.get();}
+				}));
+				axis.on("mousedown", function(e){e.preventDefault();e.stopPropagation();});
+				var from = cjs(fsm, {
+					"init": function() {
+						return f * scale_y.get();
+					}
+					, "dragging": function() {
+						return scale_y.get() * (cy.get());
+					}
+					, "dragging>-idle": function() { return from.get(); }
+				});
+				var to = cjs(fsm, {
+					"init": function() {
+						return t * scale_y.get();
+					}
+					, "dragging": function() {
+						return scale_y.get() * (cy.get()+100);
+					}
+					, "dragging>-idle": function() { return to.get(); }
+				});
+
+				cjs.binding.text($("span.range_from", axis)[0], from);
+				cjs.binding.text($("span.range_to", axis)[0], to);
+				return axis;
+			};
+
+
 			var plot = $("<div class='plot' />");
+			window.setInterval(function() {
+				offset = plot.offset();
+			}, 500);
+
+			var x_axis = $.get_x_axis(0,100);
+			var y_axis = $.get_y_axis(0,100);
+			var dots = _.map(data, function(datum) {
+					return $.get_dot(datum, x_axis, y_axis);
+				});
 			plot.append(x_axis);
 			plot.append(y_axis);
 			_.forEach(dots, function(dot) {
@@ -85,16 +200,16 @@
 		}
 		.plot {
 			position: relative;
-			width: 200px;
-			height: 200px;
+			width: 100px;
+			height: 100px;
 			margin: auto;
 			margin-top: 100px;
 		}
 		.x_axis {
-			height: 4px;
+			height: 2px;
 			width: 100%;
 			position: absolute;
-			top: 100%;
+			bottom: 0%;
 			pointer: default;
 		}
 		.x_axis .range_from {
@@ -109,7 +224,7 @@
 			left: 0px;
 		}
 		.y_axis {
-			width: 4px;
+			width: 2px;
 			height: 100%;
 			pointer: default;
 		}
@@ -129,7 +244,7 @@
 		}
 
 		.range {
-			font-size: 1.1em;
+			font-size: 0.9em;
 			color: #333;
 			text-shadow: 0px 0px 2px; #333;
 		}
@@ -141,10 +256,10 @@
 		}
 
 		.dot {
-			width: 10px;
-			height: 10px;
+			width: 5px;
+			height: 5px;
 			border-radius: 100px;
-			border: 2px solid black;
+			border: 1px solid black;
 			position: absolute;
 			box-shadow: 0px 0px 5px #333;
 			background-color: #EEE;
