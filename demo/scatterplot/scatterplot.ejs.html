@@ -68,43 +68,38 @@
 								.add_transition(cjs.on("mousedown", axis[0]), "dragging")
 								.add_state("dragging")
 								.add_transition(cjs.on("mouseup", window), "idle");
-				cjs.binding.css(axis[0], "left", cjs(fsm, {
-					"init": ""
-					, "dragging": cjs(function() {
-										return cjs.mouse.x.get() - offset.left - 50;
-									}).unit("px")
-				}));
-				cjs.binding.css(axis[0], "bottom", cjs(fsm, {
-					"init": ""
-					, "dragging": ""
-				}));
-				cjs.binding.css(axis[0], "top", cjs(fsm, {
-					"init": ""
-					, "dragging": cjs(function() {
-										return cjs.mouse.y.get() - offset.top - 1;
-									}).unit("px")
-				}));
-				axis.on("mousedown", function(e){e.preventDefault();e.stopPropagation();});
-				var from = cjs(fsm, {
+				var cy = cjs(fsm, {
 					"init": function() {
-						return f * scale_x.get();
+						return f * scale_y.get();
 					}
 					, "dragging": function() {
-						return scale_x.get() * (cjs.mouse.x.get() - offset.left-50);
+						return offset.top - cjs.mouse.y.get() + 50;
 					}
+					, "dragging>-idle": function() { return cy.get(); }
 				});
-				var to = cjs(fsm, {
+				var cx = cjs(fsm, {
 					"init": function() {
-						return t * scale_x.get();
+						return "";
 					}
 					, "dragging": function() {
-						return scale_x.get() * (cjs.mouse.x.get() - offset.left+50);
+						return cjs.mouse.x.get() - offset.left;
 					}
+					, "dragging>-idle": function() { return cx.get(); }
 				});
 
+
+				cjs.binding.css(axis[0], "left", cx.unit("px"));
+				cjs.binding.css(axis[0], "top", cy.mul(-1).unit("px"));
+				axis.on("mousedown", function(e){e.preventDefault();e.stopPropagation();});
+
+				var from = cjs(function() {
+					return scale_x.get() * cx.get();
+				});
+				var to = cjs(function() {
+					return scale_x.get() * (100+cx.get());
+				});
 				cjs.binding.text($("span.range_from", axis)[0], from);
 				cjs.binding.text($("span.range_to", axis)[0], to);
-
 				return axis;
 			};
 			$.get_y_axis = function(f, t) {
@@ -125,45 +120,27 @@
 					}
 					, "dragging>-idle": function() { return cy.get(); }
 				});
-				cjs.binding.text($("span.range_to", axis)[0], cy);
+				var cx = cjs(fsm, {
+					"init": function() {
+						return "";
+					}
+					, "dragging": function() {
+						return cjs.mouse.x.get() - offset.left;
+					}
+					, "dragging>-idle": function() { return cx.get(); }
+				});
 
-				var c1 = cjs(function() {
-									return cjs.mouse.x.get() - offset.left - 1;
-								}).unit("px");
-				cjs.binding.css(axis[0], "left", cjs(fsm, {
-					"init": ""
-					, "dragging": c1
-					, "dragging>-idle": function(){return c1.get();}
-				}));
-				var c2 = cjs(function() {
-										return scale_y.get() * ( - cy.get());
-									}).unit("px");
 
-				cjs.binding.css(axis[0], "top", cjs(fsm, {
-					"init": ""
-					, "dragging": c2
-					, "dragging>-idle": function(){return c2.get();}
-				}));
+				cjs.binding.css(axis[0], "left", cx.unit("px"));
+				cjs.binding.css(axis[0], "top", cy.mul(-1).unit("px"));
 				axis.on("mousedown", function(e){e.preventDefault();e.stopPropagation();});
-				var from = cjs(fsm, {
-					"init": function() {
-						return f * scale_y.get();
-					}
-					, "dragging": function() {
-						return scale_y.get() * (cy.get());
-					}
-					, "dragging>-idle": function() { return from.get(); }
-				});
-				var to = cjs(fsm, {
-					"init": function() {
-						return t * scale_y.get();
-					}
-					, "dragging": function() {
-						return scale_y.get() * (cy.get()+100);
-					}
-					, "dragging>-idle": function() { return to.get(); }
-				});
 
+				var from = cjs(function() {
+					return scale_y.get() * cy.get();
+				});
+				var to = cjs(function() {
+					return scale_y.get() * (100+cy.get());
+				});
 				cjs.binding.text($("span.range_from", axis)[0], from);
 				cjs.binding.text($("span.range_to", axis)[0], to);
 				return axis;
