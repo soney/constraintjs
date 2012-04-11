@@ -10,12 +10,28 @@
 	<script type="text/javascript" src="underscore-min.js"></script>
 	<%- include(cjs_inc.main) %>
 	<script type="text/javascript">
+		var get_updater = function(do_update, update_interval) {
+			update_interval = update_interval || 20;
+			var up_timeout;
+			var updater = function() {
+				if(_.isUndefined(up_timeout)) {
+					up_timeout = window.setTimeout(function() {
+						up_timeout = undefined;
+						do_update.apply(this, arguments);
+					}, update_interval);
+				}
+			};
+			return updater;
+		};
+
 		$.fn.touchmove = function() {
 			$.each(this, function() {
 
 				var $img = $(this);
+				var $div = $img.wrap("<div class='img' />").parent();
+				var $slider = $("<div class='slider' />").appendTo($div).hide();
 
-				$img.css("position", "absolute");
+				$div.css("position", "absolute");
 				var my_touches = cjs.touches.filter(function(touch) {
 					return touch.target === $img[0];
 				});
@@ -30,38 +46,44 @@
 
 
 				var do_update_position = function() {
-					$img.css("-webkit-transform"
+					$div.css("-webkit-transform-origin", position.originx + "px " + position.originy + "px");
+					$div.css("-webkit-transform"
 						, 
 						""
 						+ " translate("+position.translatex+"px,"+position.translatey+"px)"
-						+ " scale("+position.scalex+","+position.scaley+")"
 						+ " rotate("+position.rotation+"rad)"
+						+ " scale("+position.scale+")"
 					);
 				};
-
-				var max_update_interval = 10;
-				var up_timeout;
-				var update_position = function() {
-					if(_.isUndefined(up_timeout)) {
-						up_timeout = window.setTimeout(function() {
-							up_timeout = undefined;
-							do_update_position();
-						}, max_update_interval);
-					}
+				var do_update_manip = function() {
+					$div.css("opacity", manip.opacity);
+					$slider.css("top", (1-manip.opacity)*100 + "%");
 				};
+
+				var update_position = get_updater(do_update_position, 5);
+				var update_manip = get_updater(do_update_manip, 5);
+
+
+				var max_update_interval = 5;
+				var up_timeout;
 
 
 				var position = {
-					scalex: 1
-					, scaley: 1
+					scale: 1
 					, rotation: 0
 					, translatex: 0
 					, translatey: 0
+					, originx: 0
+					, originy: 0
+				};
+				var manip = {
+					opacity: 1
 				};
 
 				var state = {
 					touches: []
 					, start_position: _.clone(position)
+					, manip: _.clone(manip)
 				};
 
 				var my_touches = [];
@@ -83,32 +105,52 @@
 				var get_touch_center = function(t1, t2) {
 					var t1x = t1.clientX, t1y = t1.clientY
 						, t2x = t2.clientX, t2y = t2.clientY;
-					return {x: (t1x+t2x)/2.0, y: (t1y, t2y)/2.0};
+					return {x: (t1x+t2x)/2.0, y: (t1y+ t2y)/2.0};
 				};
 				var get_touch_angle = function(t1, t2) {
 					var t1x = t1.clientX, t1y = t1.clientY
 						, t2x = t2.clientX, t2y = t2.clientY;
-					var dx = t2x - t1x, dy = t2y - t2x;
+					var dx = t2x - t1x, dy = t2y - t1y;
 					return Math.atan2(dy, dx);
 				};
 
 				$img.on("touchstart", function(event) {
 					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
-					$img.parent().append($img);
+					$div.parent().append($div);
 
-					state.touches = _.map(e.touches, function(t) { return _.clone(t); });
+					state.touches = _.compact(_.map(e.touches, function(t) {
+														if(t.target !== $img[0]) { return false; }
+														else { return _.clone(t); }
+													}));
 					state.start_position = _.clone(position);
+					state.manip = _.clone(manip);
 
 					update_position();
+					if(e.touches.length < 2) {
+						$slider.hide();
+					} else {
+						$slider.show();
+					}
 				});
 				$img.on("touchend", function(event) {
 					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
 
-					state.touches = _.map(e.touches, function(t) { return _.clone(t); });
+					state.touches = _.compact(_.map(e.touches, function(t) {
+														if(t.target !== $img[0]) { return false; }
+														else { return _.clone(t); }
+													}));
 					state.start_position = _.clone(position);
+					state.manip = _.clone(manip);
 					
 					update_position();
+					if(e.touches.length < 2) {
+						$slider.hide();
+					} else {
+						$slider.show();
+					}
 				});
+
+
 				$img.on("touchmove", function(event) {
 					var e = event.originalEvent; event.preventDefault(); event.stopPropagation();
 
@@ -127,7 +169,7 @@
 						position.translatex = state.start_position.translatex + dx;
 						position.translatey = state.start_position.translatey + dy;
 						update_position();
-					} else if(touches.length === 2) {
+					} else if(touches.length >= 2) {
 						var from_distance = get_touch_distance(touches[0].from, touches[1].from);
 						var to_distance = get_touch_distance(touches[0].to, touches[1].to);
 						var from_angle = get_touch_angle(touches[0].from, touches[1].from);
@@ -136,23 +178,44 @@
 						var to_pos = get_touch_center(touches[0].to, touches[1].to);
 
 						var scale_diff = to_distance / from_distance;
-						var angle_distance = (to_angle - from_angle)%360;
+						var angle_distance = (to_angle - from_angle);
 
-						position.scalex = position.scaley = state.start_position.scalex  * scale_diff;
-						position.rotation = (state.start_position.rotation + angle_distance)%360;
+						position.scale = state.start_position.scale  * scale_diff;
+						position.rotation = (state.start_position.rotation + angle_distance);
 						position.translatex = state.start_position.translatex + to_pos.x - from_pos.x;
 						position.translatey = state.start_position.translatey + to_pos.y - from_pos.y;
-						console.log(to_pos.x - from_pos.x);
-						console.log(to_pos.y - from_pos.y);
+
+						position.originx = to_pos.x - position.translatex;
+						position.originy = to_pos.y - position.translatey;
 
 						update_position();
+
+						if(touches.length === 3) {
+							var angle = get_touch_angle(touches[2].to, touches[2].from);
+							var distance = get_touch_distance(touches[2].to, touches[2].from);
+							var pic_angle = position.rotation;
+							var multiplier = Math.sin(angle - pic_angle);
+							var actual_distance = distance * multiplier;
+							var scaled_slider_size = $img.height() * position.scale;
+							var percentage_diff = (actual_distance / scaled_slider_size) + state.manip.opacity;
+							percentage_diff = Math.max(0.1, Math.min(1, percentage_diff));
+							manip.opacity = percentage_diff;
+							update_manip();
+							$slider.show();
+						}
 					}
-				});
+					if(e.touches.length < 2) {
+						$slider.hide();
+					} else {
+						$slider.show();
+					}
+					});
+					update_position();
+					update_manip();
 			});
 		};
 		$(function() {
-			$("#pic1,#pic2,#pic3").touchmove();
-//			$("#container").touchmove();
+			$(".pic").touchmove();
 		});
 	</script>
 	<style type="text/css">
@@ -169,7 +232,11 @@
 		img {
 			border: 1px solid #333;
 			border-radius: 3px;
-			box-shadow: 0px 0px 15px #333;
+			box-shadow: 0px 0px 25px #333;
+			box-sizing: border-box;
+			-webkit-transition: all 0.05s ease-out;
+		}
+		div.img {
 		}
 		div#container {
 			width: 100%;
@@ -177,14 +244,33 @@
 			background-image: url('noise.png');
 			background-image: -webkit-gradient(linear, left top, right bottom, color-stop(0, #FFF), color-stop(1, #777));
 		}
+		div.slider {
+			width: 40px;
+			height: 40px;
+			background-color: #777;
+			position: absolute;
+			left: 100%;
+			top: 100%;
+			border-radius: 30px;
+			border: 1px solid black;
+			opacity: 0.8;
+			pointer-events: none;
+			-webkit-transform: translate(-35px, -20px);
+			-webkit-transition: all 0.05s ease-out;
+			border: 1px solid red;
+			box-shadow: 0 0 25px rgba(255, 0, 0, 1);
+		}
 	</style>
   </head>
   <body>
 	  <div id="container">
-		  <img width="500px" id="pic1" src="pic1.jpeg" />
+		  <img width="500px" class="pic" src="pic1.jpeg" />
 		  <!--
-		  <img width="500px" id="pic2" src="pic2.jpeg" />
-		  <img width="500px" id="pic3" src="pic3.jpeg" />
+		  <img width="500px" class="pic" src="pic2.jpeg" />
+		  <img width="500px" class="pic" src="pic3.jpeg" />
+		  <img width="500px" class="pic" src="pic4.jpeg" />
+		  <img width="500px" class="pic" src="pic5.jpeg" />
+		  <img width="500px" class="pic filter-blur" src="pic6.jpeg" data-pb-blur-amount="2.5" />
 		  -->
 	  </div>
   </body>
