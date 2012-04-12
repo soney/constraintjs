@@ -5,6 +5,7 @@
  *  More information: http://sizzlejs.com/
  */
 (function(){
+if(cjs._is_node){return;}
 
 var chunker = /((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[^\[\]]*\]|['"][^'"]*['"]|[^\[\]'"]+)+\]|\\.|[^ >+~,(\[\\]+)+|[>+~])(\s*,\s*)?((?:.|\r|\n)*)/g,
 	expando = "sizcache" + (Math.random() + '').replace('.', ''),
