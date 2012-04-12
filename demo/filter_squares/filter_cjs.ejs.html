@@ -45,7 +45,7 @@
 					var random_index = Math.floor(Math.random() * colors.length);
 					var color = colors[random_index];
 					div_elem.style.backgroundColor = color.get();
-					cjs.binding.class(div_elem, color.state);
+					cjs.binding.class(div_elem, color.state, 5);
 
 					items_dom.appendChild(div_elem);
 				}
