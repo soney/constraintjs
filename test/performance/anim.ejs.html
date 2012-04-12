@@ -5,50 +5,46 @@
 		<%- include(cjs_inc.main) %>
 		<script type="text/javascript">
 			window.onload = function() {
-				var num_squares = 960;
-				var colors = (["#E83A25", "#FFE9A3", "#98CC96", "#004563", "#786137"]).map(function(color_code) {
-									var dom_elem = document.createElement("div");
+				function decimalToHexString(number) {
+					var rv = number.toString(16).toUpperCase();
+					if(rv.length < 2) {
+						rv = "0"+rv;
+					}
+					return rv;
+				}
+				var random_num = function(min, max) {
+					var range = max-min;
+					return min + Math.random() * range;
+				};
+				var num_squares = 2;
 
-									var constraint = cjs(color_code, true);
-									var fsm = cjs	.fsm()
-													.add_state("idle")
-													.add_transition(cjs.on("mouseover", dom_elem), "hover")
-													.add_state("hover")
-													.add_transition(cjs.on("mouseout", dom_elem), "idle")
-													.add_transition(cjs.on("mousedown", dom_elem), "selected")
-													.add_state("selected")
-													.add_transition(cjs.on("mousedown", dom_elem), "hover");
-
-									dom_elem.style.backgroundColor = color_code;
-
-									constraint.state = fsm.state;
-									cjs.binding.class(dom_elem, constraint.state);
-
-									constraint.element = dom_elem;
-									return constraint;
-								});
-
-
-				var filter_colors_dom = document.getElementById("colors");
 				var items_dom = document.getElementById("items");
 
-				for(var i = colors.length-1; i>=0; i--) {
-					var color = colors[i];
-					filter_colors_dom.appendChild(color.element);
-				}
+				var get_color_constraint = function() {
+					var start = random_num(85, 170);
+					var variance = random_num(-85, 85);
+					var speed_mul = 1/1000;
+					return cjs(function() {
+						//return decimalToHexString(Math.round(start + variance * Math.sin(speed_mul * cjs.time.get())));
+						return Math.floor(start + variance * Math.sin(speed_mul * cjs.time.get()));
+					});
+				};
 
-
-				for(var i = 0; i<num_squares; i++) {
+				cjs._.times(num_squares, function() {
 					var div_elem = document.createElement("div");
 					div_elem.className = "filterable_rect";
 
-					var random_index = Math.floor(Math.random() * colors.length);
-					var color = colors[random_index];
-					div_elem.style.backgroundColor = color.get();
-					cjs.binding.class(div_elem, color.state, 5);
+					var r = get_color_constraint();
+					var g = get_color_constraint();
+					var b = get_color_constraint();
 
+					var hex = cjs(function() {
+						return "rgb("+r.get()+","+g.get()+","+b.get()+")";
+					});
+
+					cjs.binding.css(div_elem, "background-color", hex, 30);
 					items_dom.appendChild(div_elem);
-				}
+				});
 			};
 		</script>
 		<style type="text/css">
@@ -66,8 +62,6 @@
 
 			div#items {
 				padding-top: 50px;
-				margin-top: 40px;
-				border-top: 1px solid #444;
 			}
 
 			div#items > div {
@@ -119,7 +113,6 @@
 	</head>
 	<body>
 		<div id="container">
-			<div id="filter">Filter: <span id="colors"></span></div>
 			<div id="items"></div>
 		</div>
 	</body>
