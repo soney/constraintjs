@@ -80,7 +80,7 @@ var cjs = (function (root) {
 	}
 
 	cjs._debug = true;
-	cjs.version = "0.5";
+	cjs.version = "0.6";
 
 	return cjs;
 }(this));
