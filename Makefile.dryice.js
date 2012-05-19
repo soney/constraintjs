@@ -5,7 +5,12 @@ var create_parser = require('./src/parsers/create_parser').create_parser;
 
 
 var do_build_parsers = function() {
-	create_parser(true);
+	create_parser({
+		file: "src/parsers/handlebars/handlebars.yy"
+		, lexfile: "src/parsers/handlebars/handlebars.l"
+		, outfile: "src/parsers/handlebars_parser.js"
+		, moduleName: "cjs._handlebars_parser"
+	});
 };
 
 var do_build_main = function() {

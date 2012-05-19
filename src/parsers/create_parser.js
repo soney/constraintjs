@@ -1,4 +1,6 @@
-var fs = require("fs");
+var fs = require('fs');
+var basename = require('path').basename;
+var jison = require('jison');
 
 var read_file = function (fname) {
     return fs.readFileSync(fname, "utf8");
@@ -19,24 +21,25 @@ exports.create_parser = function(opts) {
 		opts.outfile = false;
 	}
 	if(!opts.hasOwnProperty("module_type")) {
-		opts.module_type = "commonjs";
+		opts.module_type = "js";
 	}
 
 	if(opts.file) {
 		var raw = read_file(opts.file)
+            , name = basename((opts.outfile||opts.file)).replace(/\..*$/g,'')
 			, lex;
         raw = raw.replace(/\r\n/g, '\n');
 		if(opts.lexfile) {
-			lex = read_file(opts.lex_file);
+			lex = read_file(opts.lexfile);
 		}
 
 		if(opts.outfile) {
-			write_file(processGrammar(raw, lex, opts.outfile));
+			write_file(opts.outfile, processGrammar(raw, lex, name, opts));
 		}
 	}
 };
 
-function processGrammar(rawGrammar, lex, name) {
+function processGrammar(rawGrammar, lex, name, opts) {
     var grammar;
     try {
         grammar = require("jison/lib/jison/bnf").parse(rawGrammar);
@@ -47,12 +50,9 @@ function processGrammar(rawGrammar, lex, name) {
             throw e;
         }
     }
-    var opt = grammar.options || {};
     if (lex) grammar.lex = require("jison/lib/jison/jisonlex").parse(lex);
-    opt.debug = args.debug;
-    if (!opt.moduleType) opt.moduleType = args.moduleType;
-    if (!opt.moduleName && name) opt.moduleName = name.replace(/-\w/g, function (match){ return match.charAt(1).toUpperCase(); });
+    if (!opts.moduleName && name) opts.moduleName = name.replace(/-\w/g, function (match){ return match.charAt(1).toUpperCase(); });
 
-    var generator = new JISON.Generator(grammar, opt);
-    return generator.generate(opt);
+    var generator = new jison.Generator(grammar, opts);
+    return generator.generateModule(opts);
 }
