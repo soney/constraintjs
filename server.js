@@ -214,11 +214,14 @@ app.configure(function() {
 	});
 });
 
-app.listen(8000);
-console.log("Interactive times at http://localhost:8000/");
-process.on('SIGINT', function () {
-	console.log("iao...");
-	process.exit(0);
+var makefile = require("./Makefile.dryice");
+makefile.build(function() {
+	app.listen(8000);
+	console.log("Interactive times at http://localhost:8000/");
+	process.on('SIGINT', function () {
+		console.log("iao...");
+		process.exit(0);
+	});
 });
 
 var render_files = function(res, files) {

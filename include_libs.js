@@ -29,6 +29,8 @@ exports.main_src = c(
 	cp(src, ["cjs_core.js"
 			, "vendor/underscore_cjs.js"
 			, "vendor/sizzle_cjs.js"
+			, "parsers/handlebars_parser.js"
+			, "parsers/handlebars/ast.js"
 			, "util/cjs_underscore_extensions.js"
 			, "util/graph.js"
 			, "util/constraint_solver.js"
