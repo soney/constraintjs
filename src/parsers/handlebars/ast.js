@@ -96,5 +96,5 @@
     this.comment = comment;
   };
 
-})(cjs._handlebars_parser);
+})(cjs.__parsers.handlebars);
 // END(BROWSER)

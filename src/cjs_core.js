@@ -82,5 +82,7 @@ var cjs = (function (root) {
 	cjs._debug = true;
 	cjs.version = "0.6";
 
+	cjs.__parsers = {};
+
 	return cjs;
 }(this));

@@ -9,7 +9,7 @@ var do_build_parsers = function() {
 		file: "src/parsers/handlebars/handlebars.yy"
 		, lexfile: "src/parsers/handlebars/handlebars.l"
 		, outfile: "src/parsers/handlebars_parser.js"
-		, moduleName: "cjs._handlebars_parser"
+		, moduleName: "cjs.__parsers.handlebars"
 	});
 };
 
