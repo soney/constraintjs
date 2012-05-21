@@ -19,6 +19,8 @@ statements
 
 statement
   : openInverse program closeBlock { $$ = new yy.InverseNode($1, $2, $3); }
+  | openSingularBlock program openSingularBlock { $$ = new yy.SingularBlockNode($1, $2); }
+  | openSingularBlock program closeBlock { $$ = new yy.SingularBlockNode($1, $2, $3); }
   | openBlock program closeBlock { $$ = new yy.BlockNode($1, $2, $3); }
   | mustache { $$ = $1; }
   | partial { $$ = $1; }
@@ -32,6 +34,10 @@ openBlock
 
 openInverse
   : OPEN_INVERSE inMustache CLOSE { $$ = new yy.MustacheNode($2[0], $2[1]); }
+  ;
+
+openSingularBlock
+  : OPEN_SBLOCK inMustache CLOSE { $$ = new yy.MustacheNode($2[0], $2[1]); }
   ;
 
 closeBlock

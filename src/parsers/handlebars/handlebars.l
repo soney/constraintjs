@@ -14,14 +14,17 @@
 <emu>[^\x00]{2,}?/("{{")         { this.popState(); return 'CONTENT'; }
 
 <mu>"{{>"                        { return 'OPEN_PARTIAL'; }
+<mu>"{{#state"					 { return 'OPEN_SBLOCK'; }
+<mu>"{{#elif"					 { return 'OPEN_SBLOCK'; }
+<mu>"{{#else"					 { return 'OPEN_SBLOCK'; }
 <mu>"{{#"                        { return 'OPEN_BLOCK'; }
 <mu>"{{/"                        { return 'OPEN_ENDBLOCK'; }
 <mu>"{{^"                        { return 'OPEN_INVERSE'; }
-<mu>"{{"\s*"else"                { return 'OPEN_INVERSE'; }
 <mu>"{{{"                        { return 'OPEN_UNESCAPED'; }
 <mu>"{{&"                        { return 'OPEN_UNESCAPED'; }
 <mu>"{{!"[\s\S]*?"}}"            { yytext = yytext.substr(3,yyleng-5); this.popState(); return 'COMMENT'; }
 <mu>"{{"                         { return 'OPEN'; }
+
 
 <mu>"="                          { return 'EQUALS'; }
 <mu>"."/[} ]                     { return 'ID'; }

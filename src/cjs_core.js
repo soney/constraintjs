@@ -79,6 +79,17 @@ var cjs = (function (root) {
 		};
 	}
 
+	cjs.Exception = function(message) {
+			var tmp = Error.prototype.constructor.apply(this, arguments);
+
+			for (var p in tmp) {
+				if (tmp.hasOwnProperty(p)) { this[p] = tmp[p]; }
+			}
+
+			this.message = tmp.message;
+		};
+	cjs.Exception.prototype = new Error();
+
 	cjs._debug = true;
 	cjs.version = "0.6";
 
