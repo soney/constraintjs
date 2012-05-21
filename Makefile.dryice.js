@@ -1,17 +1,6 @@
 #!/usr/bin/env node
 
 var cjs_inc = require('./include_libs');
-var create_parser = require('./src/parsers/create_parser').create_parser;
-
-
-var do_build_parsers = function() {
-	create_parser({
-		file: "src/parsers/handlebars/handlebars.yy"
-		, lexfile: "src/parsers/handlebars/handlebars.l"
-		, outfile: "src/parsers/handlebars_parser.js"
-		, moduleName: "cjs.__parsers.handlebars"
-	});
-};
 
 var do_build_main = function() {
 	copy({
@@ -26,7 +15,6 @@ var do_build_main = function() {
 };
 
 var do_build = function() {
-	do_build_parsers();
 	do_build_main();
 };
 

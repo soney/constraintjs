@@ -1,11 +1,11 @@
 module("Handlebars Templates");
 
 test('Basic', function() {
-	var parse = cjs._.bind(cjs.__parsers.handlebars.parse, cjs.__parsers.handlebars);
+	var parse = cjs._.bind(cjs.__parsers.handlebars, cjs.__parsers);
 	console.log(parse(
-			"{{#diagram friends.state}}"
-		+		"{{#state pending}}A"
+			"{{#diagram a}}"
 		/*
+		+		"{{#state pending}}A{{/state}}"
 		+		"{{#state rejected}}B"
 		+		"{{#state resolved}}C"
 		+			"{{#each friends friend i}}"
