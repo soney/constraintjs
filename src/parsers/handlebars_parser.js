@@ -1,6 +1,33 @@
 (function(cjs) {
-//Based on Mu's parser: https://github.com/raycmorgan/Mu
+var _ = cjs._;
+var unclosed_nodes = {
+	"diagram": {
+		sub_nodes: ["state"]
+	}
+	, "if": {
+		sub_nodes: ["elif", "else"]
+	}
+};
 
+var parent_rules = {
+	"state": {
+		parent: "diagram"
+		, direct: true
+	}
+};
+
+var sibling_rules = {
+	"elif": {
+		follows: ["if", "elif"]
+		, direct: true
+	}
+	, "else": {
+		follows: ["if", "elif"]
+		, direct: true
+	}
+};
+
+//Based on Mu's parser: https://github.com/raycmorgan/Mu
 var carriage = '__CJS_CARRIAGE__'
 	, carriageRegExp = new RegExp(carriage, 'g')
 	, newline = '__CJS_NEWLINE__'
@@ -33,7 +60,7 @@ Parser.prototype = {
 			this.state === 'static' ? this.scanText() : this.scanTag();
 		}
 
-		if (this.sections.length) {
+		if (this.sections.length > 0) {
 			throw new Error('Encountered an unclosed section.');
 		}
 
@@ -41,9 +68,10 @@ Parser.prototype = {
 	}
 
 	, appendMultiContent: function (content) {
-		for (var i = 0, len = this.sections.length; i < len; i++) {
-			var multi = this.sections[i][1];
-			multi = multi[multi.length - 1][3] += content;
+		var i, len, multi;
+		for (i = 0, len = this.sections.length; i < len; i++) {
+			multi = this.sections[i][1];
+			multi = multi[multi.length - 1][4] += content;
 		}
 	}
 
@@ -77,22 +105,23 @@ Parser.prototype = {
 	}
 
 	, scanTag: function () {
-		var ctag    = this.ctag,
-		matcher = 
-				"^" +
-				"\\s*" +                           // Skip any whitespace
+		var ctag = this.ctag
+			, matcher = 
+					"^" +
+					"\\s*" +                           // Skip any whitespace
 
-				"(#|\\^|/|=|!|<|>|&|\\{)?" +       // Check for a tag type and capture it
-				"\\s*" +                           // Skip any whitespace
-				"([^(?:\\}?" + e(ctag) + ")]+)" +  // Capture the text inside of the tag
-				"\\s*" +                           // Skip any whitespace
+					"(#|\\^|/|=|!|<|>|&|\\{)?" +       // Check for a tag type and capture it
+					"\\s*" +                           // Skip any whitespace
+					"([^(?:\\}?" + e(ctag) + ")]+)" +  // Capture the text inside of the tag
+					"\\s*" +                           // Skip any whitespace
 
 
-				"\\}?" +                           // Skip balancing '}' if it exists
-				e(ctag) +                          // Find the close of the tag
+					"\\}?" +                           // Skip balancing '}' if it exists
+					e(ctag) +                          // Find the close of the tag
 
-				"(.*)$"                            // Capture the rest of the string
-				;
+					"(.*)$"                            // Capture the rest of the string
+					;
+
 		matcher = new RegExp(matcher);
 
 		var match = this.buffer.match(matcher);
@@ -101,12 +130,12 @@ Parser.prototype = {
 			throw new Error('Encountered an unclosed tag: "' + this.otag + this.buffer + '"');
 		}
 
-		var sigil     = match[1],
-		content   = match[2].trim(),
-		remainder = match[3],
-		tagText   = this.otag + this.buffer.substring(0, this.buffer.length - remainder.length);
-		var tag_name = content_until(content, " ");
+		var sigil = match[1]
+			, content = match[2].trim()
+			, remainder = match[3]
+			, tagText = this.otag + this.buffer.substring(0, this.buffer.length - remainder.length);
 
+		var tag_name = content_until(content, " ");
 
 		switch (sigil) {
 			case undefined:
@@ -141,25 +170,63 @@ Parser.prototype = {
 			case '^':
 				this.appendMultiContent(tagText);
 				var type = sigil === '#' ? 'section' : 'inverted_section';
+
+
+				if(_.has(parent_rules, tag_name)) {
+					var parent_rule = parent_rules[tag_name];
+					if(parent_rule.direct === true) {
+						var last_section = _.last(this.sections);
+						var parent_tag_name = last_section[0];
+						if(parent_tag_name !== parent_rule.parent) {
+							throw new Error(tag_name + ' must be a direct child of ' + parent);
+						}
+					} else {
+						var found = false;
+						for(var i = this.sections.length-1; i>=0; i--) {
+							var section = this.sections[i];
+							if(section[0] === parent_rule.parent) {
+								found = true;
+								break;
+							}
+						}
+						if(!found) {
+							throw new Error(tag_name + ' must be a child of ' + parent);
+						}
+					}
+				}
+
 				block = ['multi'];
 
 				this.tokens.push(['mustache', type, tag_name, content, '', block]);
-				this.sections.push([content, this.tokens]);
+				this.sections.push([tag_name, this.tokens]);
 				this.tokens = block;
 				break;
 
 			case '/':
-				var res    = this.sections.pop() || [],
-				name   = res[0],
-				tokens = res[1];
-				console.log(res)
+				var res = _.last(this.sections) || []
+					, name = res[0]
+					, tokens = res[1];
 
 				this.tokens = tokens;
 				if (!name) {
 					throw new Error('Closing unopened ' + name);
-				} else if (name !== content) {
-					throw new Error("Unclosed section " + name);
+				} else if (name !== tag_name) {
+					var auto_close = false;
+					if(_.has(unclosed_nodes, tag_name)) {
+						var unclosed_children = unclosed_nodes[tag_name].sub_nodes;
+						if(_.indexOf(unclosed_children, name) >= 0) {
+							auto_close = true;
+						}
+					}
+					if(auto_close) {
+						this.sections.pop();
+						this.appendMultiContent(tagText);
+					} else {
+						throw new Error("Unclosed section " + name);
+					}
 				}
+
+				this.sections.pop();
 				this.appendMultiContent(tagText);
 				break;
 		}
@@ -177,12 +244,10 @@ function e(text) {
 	// thank you Simon Willison
 	if(!arguments.callee.sRE) {
 		var specials = [
-		'/', '.', '*', '+', '?', '|',
-		'(', ')', '[', ']', '{', '}', '\\'
+			'/', '.', '*', '+', '?', '|',
+			'(', ')', '[', ']', '{', '}', '\\'
 		];
-		arguments.callee.sRE = new RegExp(
-		'(\\' + specials.join('|\\') + ')', 'g'
-		);
+		arguments.callee.sRE = new RegExp('(\\' + specials.join('|\\') + ')', 'g');
 	}
 
 	return text.replace(arguments.callee.sRE, '\\$1');
