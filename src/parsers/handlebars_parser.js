@@ -171,6 +171,25 @@ Parser.prototype = {
 				this.appendMultiContent(tagText);
 				var type = sigil === '#' ? 'section' : 'inverted_section';
 
+				var res = _.last(this.sections) || []
+					, name = res[0]
+					, tokens = res[1];
+				var unclosed_sub_nodes = _.pluck(unclosed_nodes, "sub_nodes");
+				var auto_close = false;
+				for(var i = 0, len = unclosed_sub_nodes.length; i<len; i++) {
+					var unclosed_sub_node = unclosed_sub_nodes[i];
+					if(_.indexOf(unclosed_sub_nodes[i], name) >= 0 && _.indexOf(unclosed_sub_nodes[i], tag_name) >= 0) {
+						auto_close = true;
+						break;
+					}
+				}
+
+				if(auto_close) {
+					debugger;
+					this.tokens = tokens;
+					this.sections.pop();
+					this.appendMultiContent("{{/" + name + "}}");
+				}
 
 				if(_.has(parent_rules, tag_name)) {
 					var parent_rule = parent_rules[tag_name];
@@ -207,7 +226,6 @@ Parser.prototype = {
 					, name = res[0]
 					, tokens = res[1];
 
-				this.tokens = tokens;
 				if (!name) {
 					throw new Error('Closing unopened ' + name);
 				} else if (name !== tag_name) {
@@ -220,12 +238,17 @@ Parser.prototype = {
 					}
 					if(auto_close) {
 						this.sections.pop();
-						this.appendMultiContent(tagText);
+						this.appendMultiContent("{{/" + name + "}}");
+
+						res = _.last(this.sections) || [];
+						name = res[0];
+						tokens = res[1];
 					} else {
 						throw new Error("Unclosed section " + name);
 					}
 				}
-
+				
+				this.tokens = tokens;
 				this.sections.pop();
 				this.appendMultiContent(tagText);
 				break;
