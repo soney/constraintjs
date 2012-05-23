@@ -1,5 +1,15 @@
 (function(cjs) {
+//Based on Mu's parser: https://github.com/raycmorgan/Mu
 var _ = cjs._;
+
+//These are nodes that don't have to be closed.
+// For instance: 
+// {{#diagram d}}
+//	{{#state A}} a
+//	{{#state B}} b
+// {{/diagram}}
+//
+// doesn't require closing {{#state}}
 var unclosed_nodes = {
 	"diagram": {
 		sub_nodes: ["state"]
@@ -9,6 +19,7 @@ var unclosed_nodes = {
 	}
 };
 
+// Dictates what parents children must have; state must be a direct descendent of diagram
 var parent_rules = {
 	"state": {
 		parent: "diagram"
@@ -16,32 +27,35 @@ var parent_rules = {
 	}
 };
 
+// elsif and else must come after either if or elsif
 var sibling_rules = {
 	"elif": {
-		follows: ["if", "elif"]
-		, direct: true
+		follows: ["if", "elif"] //what it may follow
+		, direct: true //that it must directly follow
+		, or_parent: ["if"] //or the parent can be 'if'
 	}
 	, "else": {
 		follows: ["if", "elif"]
 		, direct: true
+		, or_parent: ["if"]
 	}
 };
 
-//Based on Mu's parser: https://github.com/raycmorgan/Mu
-var carriage = '__CJS_CARRIAGE__'
-	, carriageRegExp = new RegExp(carriage, 'g')
-	, newline = '__CJS_NEWLINE__'
-	, newlineRegExp = new RegExp(newline, 'g');
 
 cjs.__parsers.handlebars = function (template, options) {
 	var parser = new Parser(template, options);
 	return parser.tokenize();
 };
 
+var carriage = '__MU_CARRIAGE__'
+	, carriageRegExp = new RegExp(carriage, 'g')
+	, newline = '__MU_NEWLINE__'
+	, newlineRegExp = new RegExp(newline, 'g');
+
+
 
 function Parser(template, options) {
-	this.template = template.replace(/\r\n/g, carriage)
-							.replace(/\n/g, newline);
+	this.template = template;
 	this.options  = options || {};
 
 	this.sections = [];
@@ -49,7 +63,7 @@ function Parser(template, options) {
 	this.partials = [];
 	this.buffer   = this.template;
 	this.state    = 'static'; // 'static' or 'tag'
-	this.currentLine = '';
+	//this.currentLine = '';
 
 	this.setTag(['{{', '}}']);
 }
@@ -81,25 +95,22 @@ Parser.prototype = {
 	}
 
 	, scanText: function () {
+		// Eat up everything up to the {{
+		// if there is anything, then push a new 
+		
 		var index = this.buffer.indexOf(this.otag);
 
 		if (index === -1) {
 			index = this.buffer.length;
 		}
 
-		var content = this.buffer.substring(0, index)
-								.replace(carriageRegExp, '\r\n')
-								.replace(newlineRegExp, '\n');
+		var content = this.buffer.substring(0, index);
 
 		if (content !== '') {
 			this.appendMultiContent(content);
 			this.tokens.push(['static', content]);
 		}
 
-		var line = this.currentLine + content;
-
-		this.currentLine = line.substring(line.lastIndexOf('\n') + 1, line.length);
-		// console.log('line:', this.buffer.lastIndexOf(newline) + newline.length, index, '>', this.currentLine, '/end');
 		this.buffer = this.buffer.substring(index + this.otag.length);
 		this.state  = 'tag';
 	}
@@ -125,6 +136,7 @@ Parser.prototype = {
 		matcher = new RegExp(matcher);
 
 		var match = this.buffer.match(matcher);
+		console.log(this.buffer, matcher, match);
 
 		if (!match) {
 			throw new Error('Encountered an unclosed tag: "' + this.otag + this.buffer + '"');
@@ -161,15 +173,14 @@ Parser.prototype = {
 				break;
 
 			case '=':
-				console.log("Changing tag: " + content)
 				this.setTag(content.split(' '));
 				this.appendMultiContent(tagText);
 				break;
 
 			case '#':
 			case '^':
-				this.appendMultiContent(tagText);
 				var type = sigil === '#' ? 'section' : 'inverted_section';
+
 
 				var res = _.last(this.sections) || []
 					, name = res[0]
@@ -177,7 +188,6 @@ Parser.prototype = {
 				var unclosed_sub_nodes = _.pluck(unclosed_nodes, "sub_nodes");
 				var auto_close = false;
 				for(var i = 0, len = unclosed_sub_nodes.length; i<len; i++) {
-					var unclosed_sub_node = unclosed_sub_nodes[i];
 					if(_.indexOf(unclosed_sub_nodes[i], name) >= 0 && _.indexOf(unclosed_sub_nodes[i], tag_name) >= 0) {
 						auto_close = true;
 						break;
@@ -185,11 +195,11 @@ Parser.prototype = {
 				}
 
 				if(auto_close) {
-					debugger;
 					this.tokens = tokens;
 					this.sections.pop();
-					this.appendMultiContent("{{/" + name + "}}");
 				}
+
+				this.appendMultiContent(tagText);
 
 				if(_.has(parent_rules, tag_name)) {
 					var parent_rule = parent_rules[tag_name];
@@ -214,6 +224,36 @@ Parser.prototype = {
 					}
 				}
 
+
+				if(_.has(sibling_rules, tag_name)) {
+					var sibling = _.last(this.tokens);
+					var sibling_tag_name = sibling[2];
+					
+					var sibling_tag_rules = sibling_rules[tag_name];
+
+					if(sibling_tag_rules.direct) {
+						if(_.indexOf(sibling_tag_rules.follows, sibling_tag_name) < 0) {
+							var last_section = _.last(this.sections) || [];
+							var parent_tag_name = last_section[0];
+							if(_.indexOf(sibling_tag_rules.or_parent, parent_tag_name) < 0) {
+								var follows_options = _.clone(sibling_tag_rules.follows);
+								if(follows_options.length > 1) {
+									follows_options[follows_options.length-1] =  "or " + _.last(follows_options);
+								}
+								var follows_options_str;
+
+								if(follows_options.length > 2) {
+									follows_options_str = follows_options.join(", ");
+								} else {
+									follows_options_str = follows_options.join(" ");
+								}
+
+								throw new Error(tag_name + ' must follow ' + follows_options_str);
+							}
+						}
+					}
+				}
+
 				block = ['multi'];
 
 				this.tokens.push(['mustache', type, tag_name, content, '', block]);
@@ -227,7 +267,7 @@ Parser.prototype = {
 					, tokens = res[1];
 
 				if (!name) {
-					throw new Error('Closing unopened ' + name);
+					throw new Error('Closing unopened ' + tag_name);
 				} else if (name !== tag_name) {
 					var auto_close = false;
 					if(_.has(unclosed_nodes, tag_name)) {
@@ -238,7 +278,6 @@ Parser.prototype = {
 					}
 					if(auto_close) {
 						this.sections.pop();
-						this.appendMultiContent("{{/" + name + "}}");
 
 						res = _.last(this.sections) || [];
 						name = res[0];

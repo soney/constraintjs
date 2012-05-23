@@ -2,22 +2,57 @@ module("Handlebars Templates");
 
 test('Basic', function() {
 	var parse = cjs._.bind(cjs.__parsers.handlebars, cjs.__parsers);
-	console.log(parse(
-			"{{#diagram a}}"
-		+		"{{#state pending}}A"
-		+		"{{#state rejected}}B"
-		/*
-		+		"{{#state rejected}}B"
-		+		"{{#state resolved}}C"
-		+			"{{#each friends friend i}}"
-		+				"{{#diagram pics.state}}"
-		+					"{{#state pending}}Loading friends..."
-		+					"{{#state rejected}}Error"
-		+					"{{#state resolved}}"
-		+				"{{/diagram}}"
-		+				"{{friend.name}}"
-		+			"{{/each}}"
-		*/
-		+	"{{/diagram}}"
-		));
+	var test_parser = function(inp, out) {
+		return deepEqual(parse(inp), out);
+	};
+	test_parser(
+		"ABC"
+		, {
+			partials: []
+			, tokens: [
+				"multi"
+				, [
+					"static"
+					, "ABC"
+				]
+			]
+		}
+	);
+
+	test_parser(
+		"{{abc x}}"
+		, {
+			partials: []
+			, tokens: [
+				"multi"
+				, [
+					"mustache"
+					, "etag"
+					, "abc"
+					, "abc x"
+				]
+			]
+		}
+	);
+
+	test_parser(
+		"{{abc x}}"
+		+ "\ndef"
+		, {
+			partials: []
+			, tokens: [
+				"multi"
+				, [
+					"mustache"
+					, "etag"
+					, "abc"
+					, "abc x"
+				]
+				, [
+					"static"
+					, "def"
+				]
+			]
+		}
+	);
 });
