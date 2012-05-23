@@ -29,7 +29,6 @@ exports.main_src = c(
 	cp(src, ["cjs_core.js"
 			, "vendor/underscore_cjs.js"
 			, "vendor/sizzle_cjs.js"
-			, "parsers/handlebars_parser.js"
 			, "util/cjs_underscore_extensions.js"
 			, "util/graph.js"
 			, "util/constraint_solver.js"
@@ -48,8 +47,9 @@ exports.main_src = c(
 			, "fsm/cjs_fsm_binding.js"
 			, "constraint/cjs_async_constraint.js"
 			, "constraint/cjs_conditional_constraint.js"
-			, "template/html_template_parser.js"
 			, "template/cjs_template.js"
+			, "template/parsers/handlebars_parser.js"
+			, "template/handlebars_template.js"
 			])
 );
 

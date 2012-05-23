@@ -47,15 +47,16 @@ cjs.__parsers.handlebars = function (template, options) {
 	return parser.tokenize();
 };
 
-var carriage = '__MU_CARRIAGE__'
+var carriage = '__CJS_CARRIAGE__'
 	, carriageRegExp = new RegExp(carriage, 'g')
-	, newline = '__MU_NEWLINE__'
+	, newline = '__CJS_NEWLINE__'
 	, newlineRegExp = new RegExp(newline, 'g');
 
 
 
 function Parser(template, options) {
-	this.template = template;
+	this.template = template	.replace(/\r\n/g, carriage)
+								.replace(/\n/g, newline);;
 	this.options  = options || {};
 
 	this.sections = [];
@@ -104,7 +105,9 @@ Parser.prototype = {
 			index = this.buffer.length;
 		}
 
-		var content = this.buffer.substring(0, index);
+		var content = this.buffer.substring(0, index)
+									.replace(carriageRegExp, '\r\n')
+									.replace(newlineRegExp, '\n');;
 
 		if (content !== '') {
 			this.appendMultiContent(content);
@@ -136,7 +139,6 @@ Parser.prototype = {
 		matcher = new RegExp(matcher);
 
 		var match = this.buffer.match(matcher);
-		console.log(this.buffer, matcher, match);
 
 		if (!match) {
 			throw new Error('Encountered an unclosed tag: "' + this.otag + this.buffer + '"');

@@ -50,7 +50,7 @@ test('Basic', function() {
 				]
 				, [
 					"static"
-					, "def"
+					, "\ndef"
 				]
 			]
 		}
