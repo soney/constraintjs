@@ -191,10 +191,12 @@ test('Handlebars Intermediate Rep', function() {
 		return deepEqual(build_ir(parse(inp)), out);
 	};
 
+/*
 	test_ir("ABC" 
 		, {
 			type: "text"
 			, value: "ABC"
 		}
 	);
+	*/
 });

@@ -1,26 +1,5 @@
 (function(cjs) {
 var _ = cjs._;
-var less, tree;
-
-if (typeof environment === "object" && ({}).toString.call(environment) === "[object Environment]") {
-    // Rhino
-    // Details on how to detect Rhino: https://github.com/ringo/ringojs/issues/88
-    if (typeof(window) === 'undefined') { less = {} }
-    else                                { less = window.less = {} }
-    tree = less.tree = {};
-    less.mode = 'rhino';
-} else if (typeof(window) === 'undefined') {
-    // Node.js
-    less = exports,
-    tree = require('./tree');
-    less.mode = 'node';
-} else {
-    // Browser
-    if (typeof(window.less) === 'undefined') { window.less = {} }
-    less = window.less,
-    tree = window.less.tree = {};
-    less.mode = 'browser';
-}
 //
 // less.js - parser
 //
@@ -54,7 +33,13 @@ if (typeof environment === "object" && ({}).toString.call(environment) === "[obj
 //    It also takes care of moving all the indices forwards.
 //
 //
-less.Parser = function Parser(env) {
+cjs.__parsers.less = function(text, env) {
+	var parser = new Parser(env);
+	return parser.parse(text);
+};
+var tree = cjs.__parsers.less.tree = {};
+function Parser(env) {
+
     var input,       // LeSS input string
         i,           // current index in `input`
         j,           // current chunk
@@ -342,12 +327,14 @@ less.Parser = function Parser(env) {
             // The whole syntax tree is held under a Ruleset node,
             // with the `root` property set to true, so no `{}` are
             // output. The callback is called when the input is parsed.
-            try {
+            //try {
                 root = new(tree.Ruleset)([], $(this.parsers.primary));
                 root.root = true;
+				/*
             } catch (e) {
-                return callback(new(LessError)(e, env));
+                return callback(new(Error)(e, env));
             }
+			*/
 
             root.toCSS = (function (evaluate) {
                 var line, lines, column;
@@ -441,6 +428,10 @@ less.Parser = function Parser(env) {
             } else {
                 callback(error, root);
             }
+			return {
+				error: error
+				, root: root
+			};
         },
 
         //
@@ -1312,27 +1303,5 @@ less.Parser = function Parser(env) {
         }
     };
 };
-
-if (less.mode === 'browser' || less.mode === 'rhino') {
-    //
-    // Used by `@import` directives
-    //
-    less.Parser.importer = function (path, paths, callback, env) {
-        if (!/^([a-z]+:)?\//.test(path) && paths.length > 0) {
-            path = paths[0] + path;
-        }
-        // We pass `true` as 3rd argument, to force the reload of the import.
-        // This is so we can get the syntax tree as opposed to just the CSS output,
-        // as we need this to evaluate the current stylesheet.
-        loadStyleSheet({ href: path, title: path, type: env.mime }, function (e) {
-            if (e && typeof(env.errback) === "function") {
-                env.errback.call(null, path, paths, callback, env);
-            } else {
-                callback.apply(null, arguments);
-            }
-        }, true);
-    };
-}
-
 
 }(cjs));

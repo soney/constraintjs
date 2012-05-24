@@ -52,6 +52,9 @@ exports.main_src = c(
 			, "template/ir_builders/handlebars_ir.js"
 			, "template/handlebars_template.js"
 			, "template/parsers/less_parser.js"
+			, "template/parsers/less/colors.js"
+			, "template/parsers/less/functions.js"
+			, "template/parsers/less/tree.js"
 			, "template/ir_builders/less_ir.js"
 			, "template/less_template.js"
 			])
