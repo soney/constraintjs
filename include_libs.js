@@ -56,7 +56,6 @@ exports.main_src = c(
 			, "template/parsers/less/functions.js"
 			, "template/parsers/less/tree.js"
 			, "template/ir_builders/less_ir.js"
-			, "template/less_template.js"
 			])
 );
 
