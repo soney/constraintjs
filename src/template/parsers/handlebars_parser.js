@@ -79,7 +79,10 @@ Parser.prototype = {
 			throw new Error('Encountered an unclosed section.');
 		}
 
-		return {partials: this.partials, tokens: this.tokens};
+		var template = this.template.replace(carriageRegExp, '\r\n')
+									.replace(newlineRegExp, '\n');
+
+		return {partials: this.partials, tokens: this.tokens, content: template};
 	}
 
 	, appendMultiContent: function (content) {
@@ -107,7 +110,7 @@ Parser.prototype = {
 
 		var content = this.buffer.substring(0, index)
 									.replace(carriageRegExp, '\r\n')
-									.replace(newlineRegExp, '\n');;
+									.replace(newlineRegExp, '\n');
 
 		if (content !== '') {
 			this.appendMultiContent(content);

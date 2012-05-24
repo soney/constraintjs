@@ -8,7 +8,8 @@ test('Handlebars Parser', function() {
 	test_parser(
 		"ABC"
 		, {
-			partials: []
+			content: "ABC"
+			, partials: []
 			, tokens: [
 				"multi"
 				, [
@@ -22,7 +23,8 @@ test('Handlebars Parser', function() {
 	test_parser(
 		"{{abc x}}"
 		, {
-			partials: []
+			content: "{{abc x}}"
+			, partials: []
 			, tokens: [
 				"multi"
 				, [
@@ -39,7 +41,9 @@ test('Handlebars Parser', function() {
 		"{{abc x}}"
 		+ "\ndef"
 		, {
-			partials: []
+			content: "{{abc x}}"
+					+ "\ndef"
+			, partials: []
 			, tokens: [
 				"multi"
 				, [
@@ -67,7 +71,16 @@ test('Handlebars Parser', function() {
 		+	"{{/blockc}}"
 		+ "{{/blockb}}"
 		, {
-			partials: []
+			"content":  "{{#blocka a b c}}"
+						+	"d e f"
+						+ "{{/blocka}}"
+						+ "{{#blockb g h i}}"
+						+	"j k l"
+						+	"{{#blockc m n o}}"
+						+		"p q r"
+						+	"{{/blockc}}"
+						+ "{{/blockb}}"
+			, "partials": []
 			, tokens: [
 				"multi"
 				, [
@@ -123,7 +136,12 @@ test('Handlebars Parser', function() {
 		+ "{{#state c}}C"
 		+ "{{/diagram}}"
 		, {
-			"partials": []
+			"content":  "{{#diagram x}}"
+						+ "{{#state a}}A"
+						+ "{{#state b}}B"
+						+ "{{#state c}}C"
+						+ "{{/diagram}}"
+			, "partials": []
 			, "tokens": [
 				"multi"
 				, [
@@ -188,15 +206,25 @@ test('Handlebars Intermediate Rep', function() {
 	var parse = cjs._.bind(cjs.__parsers.handlebars, cjs.__parsers);
 	var build_ir = cjs._.bind(cjs.__ir_builders.handlebars, cjs.__ir_builders);
 	var test_ir = function(inp, out) {
-		return deepEqual(build_ir(parse(inp)), out);
+		console.log(build_ir(parse(inp)));
+		//return deepEqual(build_ir(parse(inp)), out);
 	};
 
-/*
-	test_ir("ABC" 
-		, {
-			type: "text"
-			, value: "ABC"
-		}
-	);
-	*/
+	/*test_ir("ABC");
+	test_ir("{{abc def}}");
+	test_ir( "{{#blocka a b c}}"
+				+	"d e f"
+				+ "{{/blocka}}"
+				+ "{{#blockb g h i}}"
+				+	"j k l"
+				+	"{{#blockc m n o}}"
+				+		"p q r"
+				+	"{{/blockc}}"
+				+ "{{/blockb}}");
+				*/
+	test_ir("{{#if a}}A"
+			+ "{{#elif b}}B"
+			+ "{{#else}}C"
+			+ "{{/if}}"
+	)
 });
