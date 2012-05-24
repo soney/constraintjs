@@ -165,7 +165,7 @@ test('FSM Event Listeners', function() {
 	var bd = fsm.get_transition("B", "D", false);
 	var da = fsm.get_transition("D", "A", false);
 	
-	expect(3);
+	expect(2);
 
 	var ran_post = false;
 	fsm.on("B->D", function() {
