@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>cjs</title>
+	</head>
+	<body>
+		<script type="cjs/html">
+			{{#each people person}}
+				{{#diagram d}}
+					{{#state idle}} 
+				{{/diagram}}
+				<div {{action "clicked" on="click"}}>{{person}}</div>
+			{{/each}}
+		</script>
+	</body>
+</html>
