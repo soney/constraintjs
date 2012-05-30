@@ -9,18 +9,48 @@ var IRNode = function(type_str, text_content) {
 	this.text = text_content;
 	this.value = null;
 	this.children = [];
+	this.parent = null;
 };
 
 (function(my) {
 	var proto = my.prototype;
 	proto.push_child = function(child) {
 		this.children.push(child);
+		if(child instanceof my) {
+			child.set_parent(this);
+		}
+	};
+	proto.insert_child_at = function(child, index) {
+		_.insert_at(this.children, child, index);
+		
+		if(child instanceof my) {
+			child.set_parent(this);
+		}
 	};
 	proto.set_children = function(children) {
 		this.children = children;
+		var self = this;
+		_.forEach(this.children, function(child) {
+			if(child instanceof my) {
+				child.set_parent(self);
+			}
+		});
+	};
+	proto.child_index = function(child) {
+		return _.index_of(this.children, child);
 	};
 	proto.set_value = function(value) {
 		this.value = value;
+	};
+	proto.set_parent = function(parent) {
+		this.parent = parent;
+	};
+	proto.remove_child = function(child) {
+		_.remove(this.children, child);
+		if(child.parent === this) {
+			child.set_parent(null);
+		}
+		return child;
 	};
 }(IRNode));
 
@@ -76,14 +106,34 @@ var build_ir = function(parse_tree_root, ir_root) {
 	}
 };
 
+var is_tag = function(ir_root, tag_name) {
+	return ir_root.type === "mustache" && ir_root.subtype === "section" && ir_root.value && ir_root.value.tag === tag_name;
+};
 var extract_elses = function(ir_root) {
-	if(ir_root.type === "mustache" && ir_root.subtype === "section") {
-		console.log(ir_root);
-	} else {
-		_.forEach(ir_root.children, function(child) {
-			extract_elses(child);
+	if(is_tag(ir_root, "if")) {
+		var i, len;
+
+		var children_to_elevate = [];
+		for(i = 0, len=ir_root.children.length; i<len; i++) {
+			var child = ir_root.children[i];
+			if(is_tag(child, "if")) {
+				break;
+			} else if(is_tag(child, "elif") || is_tag(child, "else")) { // encountered before another if
+				children_to_elevate.push(child);
+			}
+		}
+		var if_parent = ir_root.parent;
+		var curr_index = if_parent.child_index(ir_root) + 1;
+		_.forEach(children_to_elevate, function(child) {
+			ir_root.remove_child(child);
+			if_parent.insert_child_at(child, curr_index);
+			curr_index+=1;
 		});
 	}
+
+	_.forEach(ir_root.children, function(child) {
+		extract_elses(child);
+	});
 };
 
 var do_extract_elses = function(parent_node, if_node) {
