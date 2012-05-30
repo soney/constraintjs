@@ -8,6 +8,11 @@
 			{{#each people person}}
 				{{#diagram d}}
 					{{#state idle}} 
+						{{on clicked state="active"}}
+					{{/state}}
+					{{#state active}}
+						{{on clicked state="idle"}}
+					{{/state}}
 				{{/diagram}}
 				<div {{action "clicked" on="click"}}>{{person}}</div>
 			{{/each}}
