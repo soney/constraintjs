@@ -11,6 +11,8 @@
 
 	cjs.define("template", templ);
 
+	
+
 	cjs.template = function() {
 		var args = _.toArray(arguments);
 		args.unshift("template");

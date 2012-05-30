@@ -48,14 +48,11 @@ exports.main_src = c(
 			, "constraint/cjs_async_constraint.js"
 			, "constraint/cjs_conditional_constraint.js"
 			, "template/cjs_template.js"
+			, "template/parsers/expression_parser.js"
+			, "template/ir_builders/expression_ir.js"
 			, "template/parsers/handlebars_parser.js"
 			, "template/ir_builders/handlebars_ir.js"
 			, "template/handlebars_template.js"
-			, "template/parsers/less_parser.js"
-			, "template/parsers/less/colors.js"
-			, "template/parsers/less/functions.js"
-			, "template/parsers/less/tree.js"
-			, "template/ir_builders/less_ir.js"
 			])
 );
 
