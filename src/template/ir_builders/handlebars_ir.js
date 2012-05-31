@@ -136,13 +136,15 @@ var extract_elses = function(ir_root) {
 	});
 };
 
-var do_extract_elses = function(parent_node, if_node) {
+var integrate_expressions = function(ir_root) {
 };
+
 
 cjs.__ir_builders.handlebars = function (parse_tree, options) {
 	var root = new IRNode("root", parse_tree.content);
 	build_ir(parse_tree.tokens, root);
 	extract_elses(root);
+	integrate_expressions(root);
 	return root;
 };
 
