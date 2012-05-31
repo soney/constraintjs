@@ -1,5 +1,8 @@
 
 (function() {
+var narrowed_comparison = function(larger, smaller) {
+};
+
 var parse = cjs._.bind(cjs.__parsers.expression, cjs.__parsers);
 var test_parser = function(inp, out) {
 	var actual_out = {};

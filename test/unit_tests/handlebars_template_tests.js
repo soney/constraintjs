@@ -201,30 +201,3 @@ test('Handlebars Parser', function() {
 	);
 
 });
-
-test('Handlebars Intermediate Rep', function() {
-	var parse = cjs._.bind(cjs.__parsers.handlebars, cjs.__parsers);
-	var build_ir = cjs._.bind(cjs.__ir_builders.handlebars, cjs.__ir_builders);
-	var test_ir = function(inp, out) {
-		console.log(build_ir(parse(inp)));
-		//return deepEqual(build_ir(parse(inp)), out);
-	};
-
-	/*test_ir("ABC");
-	test_ir("{{abc def}}");
-	test_ir( "{{#blocka a b c}}"
-				+	"d e f"
-				+ "{{/blocka}}"
-				+ "{{#blockb g h i}}"
-				+	"j k l"
-				+	"{{#blockc m n o}}"
-				+		"p q r"
-				+	"{{/blockc}}"
-				+ "{{/blockb}}");
-				*/
-	test_ir("{{#if a}}A"
-			+ "{{#elif b}}B"
-			+ "{{#else}}C"
-			+ "{{/if}}"
-	)
-});
