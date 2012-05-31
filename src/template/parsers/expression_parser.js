@@ -29,7 +29,6 @@ var Parser = function(expr, options) {
 				throw new Error("Unexpected " + this.buffer);
 			}
 			rv.push(this.curr_node);
-			console.log(this.curr_node);
 		}
 		if(rv.length === 1) {
 			return rv[0]
@@ -42,6 +41,8 @@ var Parser = function(expr, options) {
 	};
 
 	proto.gobble_expression = function() {
+		this.curr_node = null;
+		
 		var node;
 
 		do  {
@@ -256,6 +257,7 @@ var Parser = function(expr, options) {
 				return node;
 			}
 		}
+		return false;
 	};
 	proto.parse_binary_op = function() {
 		if(this.curr_node !== null) {
