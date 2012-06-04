@@ -1,10 +1,36 @@
+(function() {
+var filter_props = function(larger, smaller) {
+
+	var rv = {};
+	if(smaller instanceof Array) { rv = []; }
+	var prop_val;
+	for(var prop_name in smaller) {
+		prop_val  = smaller[prop_name];
+		if(typeof prop_val === 'string' || typeof prop_val === 'number') {
+			rv[prop_name] = larger[prop_name];
+		} else {
+			rv[prop_name] = filter_props(larger[prop_name], prop_val);
+		}
+	}
+	return rv;
+};
+
+var parse = cjs._.bind(cjs.__parsers.handlebars, cjs.__parsers);
+var test_parser = function(inp, out) {
+	return deepEqual(filter_props(parse(inp), out), out);
+};
+var ir_build = function(inp, options) {
+	var parse_tree = parse(inp, options);
+	var ir = cjs.__ir_builders.handlebars(parse_tree);
+	return ir;
+};
+var test_ir_builder = function(inp, out) {
+	return deepEqual(filter_props(ir_build(inp), out), out);
+};
+
 module("Handlebars Templates");
 
 test('Handlebars Parser', function() {
-	var parse = cjs._.bind(cjs.__parsers.handlebars, cjs.__parsers);
-	var test_parser = function(inp, out) {
-		return deepEqual(parse(inp), out);
-	};
 	test_parser(
 		"ABC"
 		, {
@@ -201,3 +227,15 @@ test('Handlebars Parser', function() {
 	);
 
 });
+
+test('Handlebars Parser', function() {
+	test_ir_builder("<div>" +
+					"{{#if a}}" +
+					"<div class={{b}}>abc {{c}}</div>" +
+					"{{#else}}" +
+					"<span>Something</span>" +
+					"{{/if}}" +
+					"</div>", {});
+});
+
+}());
