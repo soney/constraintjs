@@ -327,7 +327,6 @@ var integrate_html = function(ir_root) {
 			parent.push_child(new_node);
 		}
 	});
-	console.log(root_node);
 };
 
 

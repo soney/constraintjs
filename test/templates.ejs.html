@@ -31,7 +31,7 @@
 										.text(">>")
 										.click(function() {
 											val_out.html("");
-											var template_fn = cjs.create("template", text_input.val());
+											var template_fn = cjs.template(text_input.val());
 											code_out.text(String(template_fn));
 											var el = template_fn(context);
 											window.setTimeout(function() {

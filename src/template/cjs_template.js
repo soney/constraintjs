@@ -11,7 +11,7 @@
 	cjs.template = function(a,b,c,d) {
 		var template_type = "handlebars"
 			, str
-			, data = {}
+			, data = undefined
 			, options = {};
 		if(arguments.length === 1) {
 			str = a;
