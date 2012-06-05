@@ -214,4 +214,14 @@ cjs.constraint.mixin({
 		return rv;
 	}});
 
+cjs.concat = function() {
+	var args = _.toArray(arguments);
+	var rv = cjs.create("constraint", function() {
+		return _.map(args, function(arg) {
+			return cjs.get(arg);
+		}).join("");
+	});
+	return rv;
+};
+
 }(cjs));

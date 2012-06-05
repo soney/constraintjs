@@ -251,9 +251,9 @@ var integrate_html = function(ir_root) {
 		}
 	};
 
-	var root_node = new IRNode("root");
-	var stack = [root_node];
+	var stack = [ir_root];
 	var str = ir_root.to_str(transformer);
+	ir_root.set_children([]);
 	cjs.__parsers.html(str, {
 		start: function(tag_name, attrs, unary) {
 			var parent = _.last(stack);
@@ -267,27 +267,30 @@ var integrate_html = function(ir_root) {
 			parent.push_child(node);
 
 			var new_node;
-			var attrs = _.map(attrs, function(attr) {
+			node.attrs = [];
+			_.forEach(attrs, function(attr, attr_name) {
 				var attr_name = attr.name;
 				var attr_value = _.map(extract_handlebars(attr.value), function(child) {
 					if(_.isString(child)) {
-						return child
+						return child;
 					} else {
 						new_node = handlebars_map[child.handlebar_id];
 						if(child.modifier === "#") {
+							//throw new Error("Cannot handle expressions in attributes yet");
 							return new_node;
-							//throw new Error("Cannot handle expressions in attributes yet");
 						} else if(child.modifier === "/") {
-							return false;
 							//throw new Error("Cannot handle expressions in attributes yet");
+							return false;
 						} else {
 							return new_node;
 						}
 					}
 				});
+				node.attrs.push({
+					name: attr_name
+					, value: _.compact(attr_value)
+				});
 			});
-
-			node.attrs = _.compact(attrs);
 		}
 		, end: function(tag_name) {
 			var node = stack.pop();
@@ -299,9 +302,8 @@ var integrate_html = function(ir_root) {
 			var new_node;
 			_.forEach(extract_handlebars(text), function(child) {
 				if(_.isString(child)) {
-					new_node = new IRNode("html/text", child);
 					var parent = _.last(stack);
-					parent.push_child(new_node);
+					parent.push_child(child);
 				} else {
 					new_node = handlebars_map[child.handlebar_id];
 					if(child.modifier === "#") {
