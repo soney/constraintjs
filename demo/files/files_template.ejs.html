@@ -62,7 +62,7 @@
 		};
 
 		var list_files = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 500);
+			var delay = get_delay(1000, 2000);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.1)) {
 					on_fail("Random error");
@@ -74,7 +74,7 @@
 
 
 		var get_file_type = function(path, on_success, on_fail) {
-			var delay = get_delay(700, 500);
+			var delay = get_delay(1000, 2000);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.2)) {
 					on_fail("Random error");
@@ -110,7 +110,6 @@
 			window.filetypes = filetypes;
 			var template;
 			template = cjs.template("#filelist");
-			/*
 			template = function (obj) {
 							with(obj) {
 							return cjs.create('dom_element', 'span', {} // (root)
@@ -119,6 +118,8 @@
 							'pending': [
 								cjs.create('dom_text', 'Loading...') // (text /)
 							], 'resolved': [
+								cjs.create('dom_text', 'OK') // (text /)
+								/*
 							files.map(function(filename, index) { // {{#each files}}
 							return [ // {{#each}}
 								(function() {
@@ -144,6 +145,7 @@
 									}
 								}()) // {{/with}}
 								];}) // {{/each}}
+								*/
 								]
 							, 'rejected': [
 								cjs.create('dom_text', 'Error') // (text /)

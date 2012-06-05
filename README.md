@@ -1,5 +1,5 @@
 ##ConstraintJS
-[constraintjs.com](http://constraintjs.com/ "ConstraintJS Website")
+[cjs.from.so/](http://cjs.from.so/ "ConstraintJS Website")
 
 
 ### Building from source
