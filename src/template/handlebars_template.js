@@ -11,6 +11,10 @@
 			var parent_text = parsed_var_fn_val(parent);
 			var child_text = parsed_var_fn_val(child);
 			if(subtype === "square_brackets") {
+				if(child.type === "constant" && child.subtype === "string") {
+					child_text = '"' + child_text + '"';
+				}
+
 				return parent_text + ".item(" + child_text + ")";
 			} else if(subtype === "dot") {
 				return parent_text + ".item('" + child_text + "')";

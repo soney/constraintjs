@@ -92,8 +92,6 @@
 			var filenames = cjs.async(function(on_success, on_fail) {
 						list_files(path.get(), on_success, on_fail);
 					});
-			filenames = cjs(["file1.txt"]);
-			filenames.state = cjs.fsm().add_state("resolved");
 			var filetypes = filenames.map(function(filename) {
 					var filetype = cjs.async(function(on_success, on_fail) {
 							get_file_type(path.get() + "/" + filename, on_success, on_fail);
@@ -110,6 +108,48 @@
 			window.filetypes = filetypes;
 			var template;
 			template = cjs.template("#filelist");
+			template = function(obj) {
+					with (obj) {
+						return cjs.create('dom_element', 'span', {} // (root)
+							, cjs.create('fsm_constraint', files.state, { // {{#diagram files.item('state')}}
+								'pending': [
+									cjs.create('dom_text', 'Loading...') // (text /)
+								], 'resolved': [
+									files.map(function(filename, index) { // {{#each files}}
+										return [ // {{#each}}
+											cjs.create('fsm_constraint', filetypes.item(index).item('state'), { // {{#diagram filetypes.item(index).item('state')}}
+												'pending': [
+													cjs.create('dom_element', 'div', { // <div>
+															'class': cjs.concat('loading')
+														} 
+														, cjs.create('dom_text', '...') // (text /)
+													) // </div>
+												], 'resolved': [
+													, cjs.create('dom_element', 'div', { // <div>
+															'class': cjs.concat('resolved')
+														} 
+														, cjs.create('dom_text', filename) // {{filename}}
+														, cjs.create('dom_text', ' ') // (text /)
+														, cjs.create('dom_text', filetypes.item(index)) // {{filetypes[index]}}
+													) // </div>
+												], 'rejected': [
+													cjs.create('dom_element', 'div', { // <div>
+															'class': cjs.concat('error')
+														} 
+														, cjs.create('dom_text', 'error') // (text /)
+													) // </div>
+												]
+											}) // {/diagram}
+										];
+									}) // {{/each}}
+								], 'rejected': [
+									cjs.create('dom_text', 'Error') // (text /)
+								]
+							}) // {/diagram}
+							); // (/root)
+							}
+					};
+			/*
 			template = function (obj) {
 							with(obj) {
 							return cjs.create('dom_element', 'span', {} // (root)
@@ -118,15 +158,12 @@
 							'pending': [
 								cjs.create('dom_text', 'Loading...') // (text /)
 							], 'resolved': [
-								cjs.create('dom_text', 'OK') // (text /)
-								/*
 							files.map(function(filename, index) { // {{#each files}}
 							return [ // {{#each}}
 								(function() {
 									with(cjs.constraint.item(filetypes, cjs.get(index))) { // {{#with filetypes[index]}}
 										var filetype = cjs.constraint.item(filetypes, cjs.get(index));
 										var state = cjs.constraint.item(filetypes, cjs.get(index), "state");
-										console.log(filetype, filetype.get(), state, state.get());
 										return [
 											cjs.create('fsm_constraint', cjs.constraint.item(filetype, "state"), { // {{#diagram filetype.state}}
 
@@ -145,7 +182,6 @@
 									}
 								}()) // {{/with}}
 								];}) // {{/each}}
-								*/
 								]
 							, 'rejected': [
 								cjs.create('dom_text', 'Error') // (text /)

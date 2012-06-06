@@ -39,6 +39,7 @@ exports.main_src = c(
 			, "constraint/cjs_dom_constraints.js"
 			, "constraint/cjs_dom_mixins.js"
 			, "constraint/cjs_input_widgets.js"
+			, "constraint/cjs_anim.js"
 			, "binding/cjs_binding.js"
 			, "binding/cjs_dom_bindings.js"
 			, "binding/cjs_form_bindings.js"
