@@ -4,7 +4,7 @@ var _ = cjs._;
 cjs.constraint.raw_mixin("push", function(constraint) {
 	var my_val = constraint.get();
 	my_val.push.apply(my_val, _.rest(arguments));
-	my_val.nullify();
+	constraint.nullify();
 
 	return constraint;
 });
