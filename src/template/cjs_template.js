@@ -44,7 +44,7 @@
 				}
 			});
 			if(_.isNull(template_script)) {
-				str = "Could not find <script type='cjs/template' id='" + script_id + "'>(...)</script>";
+				str = "Could not find &lt;script type='cjs/template' id='" + script_id + "'&gt;(...)&lt;/script&gt;";
 			} else {
 				str = template_script.innerText;
 			}
