@@ -91,7 +91,7 @@ var cjs = (function (root) {
 	cjs.Exception.prototype = new Error();
 
 	cjs._debug = false;
-	cjs.version = "0.6.1";
+	cjs.version = "0.6.2";
 
 	return cjs;
 }(this));
