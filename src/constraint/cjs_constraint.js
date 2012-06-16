@@ -21,9 +21,9 @@
 			var context = this.context || root;
 			this.last_update = get_time();
 			var val = this.constraint.get();
-			if(this.last_val !== val) {
+			if(!_.isEqual(this.last_val, val)) {
 				this.callback.call(context, val, this.last_val);
-				this.last_val = val;
+				this.last_val = _.clone(val);
 			}
 		};
 		proto.on_change = function() {

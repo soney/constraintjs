@@ -118,6 +118,7 @@ var get_array_change_listener = function(constraint) {
 	var change_listener = function() {
 		var value = constraint_getter();
 		var diff = _.diff(cached_value, value);
+		cached_value = _.clone(value);
 		_.forEach(diff.removed, function(x) {
 			_.forEach(change_listener.removed_listeners, function(removed_listener) {
 				removed_listener(x.item, x.index);
