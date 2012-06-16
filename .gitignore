@@ -1,4 +1,5 @@
 build
+dist
 *.swp
 node_modules
 *.DS_Store
