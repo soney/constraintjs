@@ -220,6 +220,15 @@ test('FSM Constraints', function() {
 	equals(c2.get(), 1);
 });
 
+test('Statechart', function() {
+	var statechart = cjs.statechart()
+						.add_state("a.b.c.d.e")
+						.add_state("B")
+						.add_state("C")
+						.starts_at("B")
+						.run();
+});
+
 asyncTest('Constraint Event Listeners', function() {
 	start();
 	expect(4);
