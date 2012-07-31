@@ -2,6 +2,8 @@
 var _ = cjs._;
 
 (function(proto) {
+	proto.on_create = function() {
+	};
 	proto.clone = function() {
 		return red.create_event("manual");
 	};

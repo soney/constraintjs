@@ -221,12 +221,19 @@ test('FSM Constraints', function() {
 });
 
 test('Statechart', function() {
+	var me = cjs.create_event("manual");
 	var statechart = cjs.statechart()
 						.add_state("a.b.c.d.e")
 						.add_state("B")
+						.add_transition("B", "C", me)
 						.add_state("C")
 						.starts_at("B")
 						.run();
+	statechart.when("C", function() {
+		console.log("C", arguments);
+	});
+	me.fire();
+	console.log(statechart.get_state_names());
 });
 
 asyncTest('Constraint Event Listeners', function() {

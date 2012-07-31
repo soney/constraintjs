@@ -11,6 +11,7 @@ var CJSEvent = function() {
 	proto._initialize = function() {
 		this.transition = undefined;
 		this.listeners = [];
+		this.fire = _.bind(this._fire, this);
 	};
 	proto.on_create = function() {};
 	proto.on_fire = proto.add_listener = function(listener) {
@@ -19,7 +20,7 @@ var CJSEvent = function() {
 	proto.off_fire = proto.remove_listener = function(listener) {
 		this.listeners = _.without(listener);
 	};
-	proto.fire = proto.notify = function() {
+	proto._fire = function() {
 		var args = arguments;
 		_.forEach(this.listeners, function(listener) {
 			listener.apply(this, args);
