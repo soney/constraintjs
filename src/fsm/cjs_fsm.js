@@ -196,6 +196,9 @@ var FSM = function() {
 		this.states.push(state);
 		return state;
 	};
+	proto.reset = function() {
+		this.set_state(this._init_state);
+	};
 	proto.add_state = function(state_name) {
 		var state = this.state_with_name(state_name);
 		if(state === null) {
@@ -283,6 +286,7 @@ var FSM = function() {
 		//delete this.graph;
 	};
 	proto.starts_at = function(state_name) {
+		this._init_state = state_name;
 		var state = this.state_with_name(state_name);
 		if(state === null) {
 			state = this.create_state(state_name);

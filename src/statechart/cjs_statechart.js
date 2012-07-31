@@ -508,6 +508,25 @@ var Statechart = function(type) {
 		return new_statechart;
 	};
 
+	proto.reset = function() {
+		this.stop();
+		this.run();
+	};
+	proto.stop = function() {
+		this._states.forEach(function(state) {
+			state.stop();
+		});
+		if(this.is_running()) {
+			this._running = false;
+
+			if(this.get_type() !== "pre_init") {
+				this._set_state(this.get_state_with_name("_pre_init"), {
+					type: "reset"
+				});
+			}
+		}
+	};
+
 	proto._on = function(event_type, func) {
 		var listeners;
 		if(_.has(this._listeners, event_type)) {
@@ -555,10 +574,7 @@ var Statechart = function(type) {
 	proto.when = function(spec_str, callback) {
 		var selector;
 		if(_.isString(spec_str)) {
-			selector = parse_spec(spec_str);
-			if(selector === null) {
-				throw new Error("Unrecognized format for state/transition spec. Please see documentation.");
-			}
+			selector = this.parse_selector(spec_str);
 		} else {
 			selector = spec_str;
 		}
@@ -582,6 +598,13 @@ var Statechart = function(type) {
 	proto.on_exit = bind(proto._on, "exit");
 	proto.off_exit = bind(proto._off, "exit");
 	proto.once_exit = bind(proto._once, "exit");
+	proto.parse_selector = function(spec_str) {
+		var selector = parse_spec(spec_str);
+		if(selector === null) {
+			throw new Error("Unrecognized format for state/transition spec. Please see documentation.");
+		}
+		return selector;
+	};
 }(Statechart));
 
 var create_statechart = function() {

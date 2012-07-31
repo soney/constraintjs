@@ -12,7 +12,7 @@
 			if(!cjs.is_statechart(statechart_got)) {
 				return undefined;
 			}
-			var state = statechart_got.get_state();
+			var state = _.first(statechart_got.get_state());
 			for(i = 0; i<selectors.length; i++) {
 				var selector = selectors[i];
 				if(selector.matches(state)) {
@@ -53,7 +53,7 @@
 					var callback = function() {
 						last_transition_value = constraint.nullifyAndEval();
 					}
-					statechart.on(selector, callback);
+					statechart.when(selector, callback);
 					uninstall_funcs.push(_.bind(statechart.off_when, statechart, callback));
 				}
 			});

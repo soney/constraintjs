@@ -1,3 +1,4 @@
+(function(){
 module("CJS");
 
 test('Graph', function() {
@@ -111,12 +112,13 @@ test('Basic Constraints', function() {
 	var c2 = cjs.constraint(2);
 	var c3 = cjs.constraint(function() { return c1.get() + c2.get(); });
 
-	equals(c3.get(), 3);
+	equal(c3.get(), 3);
 	c1.set(4);
-	equals(c3.get(), 6);
+	equal(c3.get(), 6);
 });
 
 test('Array Constraints', function() {
+	expect(0);
 /*
 	var c1 = cjs.constraint([1,2,3]);
 	c1	.onAdd(function() {
@@ -138,21 +140,23 @@ var fsm = cjs	.fsm()
 				.add_state("C")
 				.add_state("D")
 				.starts_at("B");
-var ab = fsm.get_transition("A", "B", false);
-var bc = fsm.get_transition("B", "C", false);
-var cd = fsm.get_transition("C", "D", false);
-var bd = fsm.get_transition("B", "D", false);
-var da = fsm.get_transition("D", "A", false);
+var fsm_ab = fsm.get_transition("A", "B", false);
+var fsm_bc = fsm.get_transition("B", "C", false);
+var fsm_cd = fsm.get_transition("C", "D", false);
+var fsm_bd = fsm.get_transition("B", "D", false);
+var fsm_da = fsm.get_transition("D", "A", false);
 
 test('FSM', function() {
+	fsm.reset();
 	ok(fsm.is("B"));
-	bd();
+	fsm_bd();
 	ok(fsm.is("D"));
-	bc(); //Not in B, so this transition doesn't run
+	fsm_bc(); //Not in B, so this transition doesn't run
 	ok(fsm.is("D"));
 });
 
 test('FSM Event Listeners', function() {
+	fsm.reset();
 	expect(2);
 
 	var ran_post = false;
@@ -166,10 +170,11 @@ test('FSM Event Listeners', function() {
 	fsm.on("D", function() {
 		ok(ran_post);
 	});
-	bd();
+	fsm_bd();
 });
 
 test('FSM Constraints', function() {
+	fsm.reset();
 	var c = cjs.create("fsm_constraint", fsm, {
 		"A": 1
 		, "B": 2
@@ -186,14 +191,14 @@ test('FSM Constraints', function() {
 		}
 	});
 
-	equals(c.get(), 2);
-	equals(c2.get(), 2);
-	bd();
-	equals(c.get(), 4);
-	equals(c2.get(), 5);
-	da();
-	equals(c.get(), 1);
-	equals(c2.get(), 1);
+	equal(c.get(), 2);
+	equal(c2.get(), 2);
+	fsm_bd();
+	equal(c.get(), 4);
+	equal(c2.get(), 5);
+	fsm_da();
+	equal(c.get(), 1);
+	equal(c2.get(), 1);
 });
 
 var sc = cjs	.statechart()
@@ -209,15 +214,14 @@ var cd = cjs.create_event("manual");
 var bd = cjs.create_event("manual");
 var da = cjs.create_event("manual");
 
+sc.add_transition("A", "B", ab);
+sc.add_transition("B", "C", bc);
+sc.add_transition("C", "D", cd);
+sc.add_transition("B", "D", bd);
+sc.add_transition("D", "A", da);
+
 test('Statechart', function() {
-
-	sc.add_transition("A", "B", ab);
-	sc.add_transition("B", "C", bc);
-	sc.add_transition("C", "D", cd);
-	sc.add_transition("B", "D", bd);
-	sc.add_transition("D", "A", da);
-
-
+	sc.reset();
 	ok(sc.is("B"));
 	bd.fire();
 	ok(sc.is("D"));
@@ -227,27 +231,64 @@ test('Statechart', function() {
 
 test('Statechart Event Listeners', function() {
 	sc.reset();
-	expect(2);
+	expect(3);
 
 	var ran_post = false;
-	sc.when("B->D", function() {
+	var bd_trans = function() {
 		ran_post = true;
 		ok(true);
-	});
-	sc.when("B>-*", function() {
+	};
+	var b_star_trans = function() {
 		ok(!ran_post);
-	});
-	sc.when("D", function() {
+	};
+	var d_state = function() {
 		ok(ran_post);
-	});
+	};
+	sc.when("B->D", bd_trans);
+	sc.when("B>-*", b_star_trans);
+	sc.when("D", d_state);
+	
+
 	bd.fire();
+
+	sc.off_when("B->D", bd_trans);
+	sc.off_when("B>-*", b_star_trans);
+	sc.off_when("D", d_state);
+});
+
+test('Statechart Constraints', function() {
+	sc.reset();
+	var c = cjs.create("statechart_constraint", sc, {
+		"A": 1
+		, "B": 2
+		, "C": 3
+		, "D": 4
+	});
+
+	var c2 = cjs.create("statechart_constraint", sc, {
+		"A,B": function() {
+			return c.get();
+		}
+		, "C,D": function() {
+			return 5;
+		}
+	});
+
+	equal(c.get(), 2);
+	equal(c2.get(), 2);
+	bd.fire();
+	equal(c.get(), 4);
+	equal(c2.get(), 5);
+	da.fire();
+	equal(c.get(), 1);
+	equal(c2.get(), 1);
 });
 
 asyncTest('Constraint Event Listeners', function() {
 	start();
 	expect(4);
 	var c = cjs(1);
-	equals(c.get(), 1);
+	equal(c.get(), 1);
 	c.onChange(function(value) {
 		ok(value === 2);
 	});
@@ -257,7 +298,7 @@ asyncTest('Constraint Event Listeners', function() {
 	var e = cjs(function() {
 		return d.get() + 1;
 	});
-	equals(e.get(), 3);
+	equal(e.get(), 3);
 	e.onChange(function(value) {
 		ok(value === 4);
 	});
@@ -273,6 +314,7 @@ asyncTest('Asyncronous Constraints', function() {
 	});
 	window.setTimeout(function() {
 		start();
-		equals(c1.get(), 10);
+		equal(c1.get(), 10);
 	}, 40);
 });
+}());
