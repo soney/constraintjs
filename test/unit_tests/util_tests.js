@@ -132,19 +132,19 @@ test('Array Constraints', function() {
 	*/
 });
 
-test('FSM', function() {
-	var fsm = cjs	.fsm()
-					.add_state("A")
-					.add_state("B")
-					.add_state("C")
-					.add_state("D")
-					.starts_at("B");
-	var ab = fsm.get_transition("A", "B", false);
-	var bc = fsm.get_transition("B", "C", false);
-	var cd = fsm.get_transition("C", "D", false);
-	var bd = fsm.get_transition("B", "D", false);
-	var da = fsm.get_transition("D", "A", false);
+var fsm = cjs	.fsm()
+				.add_state("A")
+				.add_state("B")
+				.add_state("C")
+				.add_state("D")
+				.starts_at("B");
+var ab = fsm.get_transition("A", "B", false);
+var bc = fsm.get_transition("B", "C", false);
+var cd = fsm.get_transition("C", "D", false);
+var bd = fsm.get_transition("B", "D", false);
+var da = fsm.get_transition("D", "A", false);
 
+test('FSM', function() {
 	ok(fsm.is("B"));
 	bd();
 	ok(fsm.is("D"));
@@ -153,18 +153,6 @@ test('FSM', function() {
 });
 
 test('FSM Event Listeners', function() {
-	var fsm = cjs	.fsm()
-					.add_state("A")
-					.add_state("B")
-					.add_state("C")
-					.add_state("D")
-					.starts_at("B");
-	var ab = fsm.get_transition("A", "B", false);
-	var bc = fsm.get_transition("B", "C", false);
-	var cd = fsm.get_transition("C", "D", false);
-	var bd = fsm.get_transition("B", "D", false);
-	var da = fsm.get_transition("D", "A", false);
-	
 	expect(2);
 
 	var ran_post = false;
@@ -182,18 +170,6 @@ test('FSM Event Listeners', function() {
 });
 
 test('FSM Constraints', function() {
-	var fsm = cjs	.fsm()
-					.add_state("A")
-					.add_state("B")
-					.add_state("C")
-					.add_state("D")
-					.starts_at("B");
-	var ab = fsm.get_transition("A", "B", false);
-	var bc = fsm.get_transition("B", "C", false);
-	var cd = fsm.get_transition("C", "D", false);
-	var bd = fsm.get_transition("B", "D", false);
-	var da = fsm.get_transition("D", "A", false);
-
 	var c = cjs.create("fsm_constraint", fsm, {
 		"A": 1
 		, "B": 2
@@ -220,20 +196,51 @@ test('FSM Constraints', function() {
 	equals(c2.get(), 1);
 });
 
+var sc = cjs	.statechart()
+				.add_state("A")
+				.add_state("B")
+				.add_state("C")
+				.add_state("D")
+				.starts_at("B")
+				.run();
+var ab = cjs.create_event("manual");
+var bc = cjs.create_event("manual");
+var cd = cjs.create_event("manual");
+var bd = cjs.create_event("manual");
+var da = cjs.create_event("manual");
+
 test('Statechart', function() {
-	var me = cjs.create_event("manual");
-	var statechart = cjs.statechart()
-						.add_state("a.b.c.d.e")
-						.add_state("B")
-						.add_transition("B", "C", me)
-						.add_state("C")
-						.starts_at("B")
-						.run();
-	statechart.when("C", function() {
-		console.log("C", arguments);
+
+	sc.add_transition("A", "B", ab);
+	sc.add_transition("B", "C", bc);
+	sc.add_transition("C", "D", cd);
+	sc.add_transition("B", "D", bd);
+	sc.add_transition("D", "A", da);
+
+
+	ok(sc.is("B"));
+	bd.fire();
+	ok(sc.is("D"));
+	bc.fire(); //Not in B, so this transition doesn't run
+	ok(sc.is("D"));
+});
+
+test('Statechart Event Listeners', function() {
+	sc.reset();
+	expect(2);
+
+	var ran_post = false;
+	sc.when("B->D", function() {
+		ran_post = true;
+		ok(true);
 	});
-	me.fire();
-	console.log(statechart.get_state_names());
+	sc.when("B>-*", function() {
+		ok(!ran_post);
+	});
+	sc.when("D", function() {
+		ok(ran_post);
+	});
+	bd.fire();
 });
 
 asyncTest('Constraint Event Listeners', function() {

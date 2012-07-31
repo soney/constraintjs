@@ -42,7 +42,7 @@ var StateSelector = function(state_name) {
 (function(my) {
 	var proto = my.prototype;
 	proto.matches = function(state) {
-		return state.matches(this.state_name);
+		return state instanceof Statechart && state.matches(this.state_name);
 	};
 	proto.is = function(str) { return str === "state"; };
 }(StateSelector));
@@ -63,8 +63,8 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 	var proto = my.prototype;
 	proto.matches = function(transition, pre) {
 		if(transition instanceof StatechartTransition) {
-			var from_state = transition.get_from();
-			var to_state = transition.get_to();
+			var from_state = transition.from();
+			var to_state = transition.to();
 			return this.from_state_selector.matches(from_state) &&
 					this.to_state_selector.matches(to_state) &&
 					this.is_pre === pre;
@@ -133,7 +133,7 @@ var parse_transition_spec = function(left_str, transition_str, right_str) {
 };
 
 var parse_spec = function(str) {
-	var transition_separator_regex = new RegExp("^([a-zA-Z0-9,\\-*\\.]+)((<->|>-<|->|>-|<-|-<)([a-zA-Z0-9,\\-*\\.]+))?$");
+	var transition_separator_regex = /^([a-zA-Z0-9,\-*\.]+)\s*((<->|>-<|->|>-|<-|-<)\s*([a-zA-Z0-9,\-*\.]+))?$/;
 	var matches = str.match(transition_separator_regex);
 	if(matches === null) {
 		return null;
@@ -150,6 +150,22 @@ var parse_spec = function(str) {
 	}
 };
 
+var state_listener_id = 0;
+var StateListener = function(selector, callback) {
+	this.selector = selector;
+	this.callback = callback;
+	this.id = state_listener_id++;
+};
+(function(my) {
+	var proto = my.prototype;
+	proto.interested_in = function() {
+		return this.selector.matches.apply(this.selector, arguments);
+	};
+	proto.run = function() {
+		this.callback();
+	};
+}(StateListener));
+
 var Statechart = function(type) {
 	this._running = false;
 	this.transitions = [];
@@ -159,7 +175,7 @@ var Statechart = function(type) {
 	this._parent = undefined;
 	this._concurrent = false;
 	this._active_state = undefined;
-	this.listeners = [];
+	this._listeners = {};
 	this._type = _.isUndefined(type) ? "statechart" : type;
 	if(this.get_type() !== "pre_init") {
 		this.add_state("_pre_init", "pre_init");
@@ -349,14 +365,14 @@ var Statechart = function(type) {
 	proto._run_transition = function(transition, event) {
 		var from_state = transition.from()
 			, to_state = transition.to();
-		_.forEach(this.listeners, function(listener) {
+		var when_listeners = this._listeners.when;
+		_.forEach(when_listeners, function(listener) {
 			if(listener.interested_in(transition, true)) {
 				listener.run(event, transition, to_state, from_state);
 			}
 		});
-		console.log(to_state);
 		this._set_state(to_state, event);
-		_.forEach(this.listeners, function(listener) {
+		_.forEach(when_listeners, function(listener) {
 			if(listener.interested_in(transition, false)) {
 				listener.run(event, transition, to_state, from_state);
 			}
@@ -400,18 +416,7 @@ var Statechart = function(type) {
 	};
 
 	proto.add_transition = function() {
-		var from_state, to_state, event;
-		if(arguments.length >=3)  {
-			from_state = arguments[0];
-			to_state = arguments[1];
-			event = arguments[2];
-		} else {
-			from_state = this;
-			to_state = arguments[0];
-			event = arguments[1];
-		}
-
-		var transition = this._get_transition(from_state, to_state, event);
+		this._get_transition.apply(this, arguments);
 		
 		return this;
 	};
@@ -444,13 +449,13 @@ var Statechart = function(type) {
 	proto.matches = function(state) {
 		if(state instanceof Statechart) {
 			return this === state;
-		} else if(_.isString(Statechart)) {
+		} else if(_.isString(state)) {
 			var parent = this.parent();
 			var name = "";
 			while(!_.isUndefined(parent)) {
 				name = this.get_name(parent);
 
-				if(name === state) {
+				if(this.get_name(parent) === state) {
 					return true;
 				}
 				
@@ -503,26 +508,6 @@ var Statechart = function(type) {
 		return new_statechart;
 	};
 
-	proto.on = proto.addEventListener = function(spec_str, callback) {
-		var selector;
-		if(_.isString(spec_str)) {
-			selector = this.parse_selector(spec_str);
-		} else {
-			selector = spec_str;
-		}
-		var listener = new StateListener(selector, callback);
-		this.listeners.push(listener);
-		return this;
-	};
-	proto.off = proto.removeEventListener = function(listener_callback) {
-		this.listeners = _.reject(this.listeners, function(listener) {
-			return listener.callback === listener_callback;
-		});
-		return this;
-	};
-
-
-/*
 	proto._on = function(event_type, func) {
 		var listeners;
 		if(_.has(this._listeners, event_type)) {
@@ -567,19 +552,36 @@ var Statechart = function(type) {
 		};
 		return rv;
 	};
-	proto.when = function(spec, func) {
-		var listener = parse_spec(spec, func);
-
+	proto.when = function(spec_str, callback) {
+		var selector;
+		if(_.isString(spec_str)) {
+			selector = parse_spec(spec_str);
+			if(selector === null) {
+				throw new Error("Unrecognized format for state/transition spec. Please see documentation.");
+			}
+		} else {
+			selector = spec_str;
+		}
+		var listener = new StateListener(selector, callback);
+		this._on("when", listener);
+		return this;
 	};
-	proto.when = bind(proto._on, "when");
-	proto.off_when = bind(proto._off, "when");
+	proto.off_when = function(spec, func) {
+		var to_remove_listeners = _.filter(this._listeners.when, function(listener) {
+			return listener.callback === func;
+		});
+		var self = this;
+		_.forEach(to_remove_listeners, function(listener) {
+			self._off("when", listener);
+		});
+		return this;
+	};
 	proto.on_enter = bind(proto._on, "enter");
 	proto.off_enter = bind(proto._off, "enter");
 	proto.once_enter = bind(proto._once, "enter");
 	proto.on_exit = bind(proto._on, "exit");
 	proto.off_exit = bind(proto._off, "exit");
 	proto.once_exit = bind(proto._once, "exit");
-	*/
 }(Statechart));
 
 var create_statechart = function() {

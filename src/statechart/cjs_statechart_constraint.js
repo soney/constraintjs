@@ -8,11 +8,11 @@
 
 		var getter = function() {
 			var i;
-			var fsm_got = cjs.get(fsm);
-			if(!cjs.is_fsm(fsm_got)) {
+			var statechart_got = cjs.get(statechart);
+			if(!cjs.is_statechart(statechart_got)) {
 				return undefined;
 			}
-			var state = fsm_got.get_state();
+			var state = statechart_got.get_state();
 			for(i = 0; i<selectors.length; i++) {
 				var selector = selectors[i];
 				if(selector.matches(state)) {
@@ -30,30 +30,31 @@
 		var constraint = cjs.create("constraint", getter);
 
 		var uninstall_listeners = function(){};
-		var install_listeners = function(fsm) {
+		var install_listeners = function(statechart) {
 			var uninstall_funcs = [];
 			uninstall_listeners();
-			if(!cjs.is_fsm(fsm)) {
+			if(!cjs.is_statechart(statechart)) {
 				return;
 			}
 
 			selectors = _.map(state_spec_strs, function(state_spec_str) {
-				return fsm.parse_selector(state_spec_str);
+				return statechart.parse_selector(state_spec_str);
 			});
 			values = _.values(specs);
 
 			_.forEach(selectors, function(selector) {
 				if(selector.is("transition")) {
-					fsm.on(selector, function() {
+					var callback =  function() {
 						last_transition_value = constraint.nullifyAndEval();
-					});
-					uninstall_funcs.push(_.bind(fsm.off, fsm, fsm.last_callback()));
+					};
+					statechart.when(selector, callback);
+					uninstall_funcs.push(_.bind(statechart.off_when, statechart, callback));
 				} else {
-					fsm.on(selector, function() {
-					//	constraint.nullify();
+					var callback = function() {
 						last_transition_value = constraint.nullifyAndEval();
-					});
-					uninstall_funcs.push(_.bind(fsm.off, fsm, fsm.last_callback()));
+					}
+					statechart.on(selector, callback);
+					uninstall_funcs.push(_.bind(statechart.off_when, statechart, callback));
 				}
 			});
 			uninstall_listeners = function() {
@@ -63,14 +64,14 @@
 			};
 		};
 
-		if(cjs.is_constraint(fsm)) {
-			fsm.onChange(function(val) {
+		if(cjs.is_constraint(statechart)) {
+			statechart.onChange(function(val) {
 				uninstall_listeners();
 				install_listeners(val);
 			});
-			install_listeners(fsm.get());
+			install_listeners(statechart.get());
 		} else {
-			install_listeners(fsm);
+			install_listeners(statechart);
 		}
 
 		return constraint;
