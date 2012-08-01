@@ -4,27 +4,43 @@
 		var state_spec_strs = _.keys(specs)
 			, selectors = []
 			, values = []
-			, last_transition_value;
+			, last_state
+			, last_value;
 
-		var getter = function() {
-			var i;
+		var get_state = function() {
 			var statechart_got = cjs.get(statechart);
 			if(!cjs.is_statechart(statechart_got)) {
 				return undefined;
 			}
-			var state = _.first(statechart_got.get_state());
-			for(i = 0; i<selectors.length; i++) {
-				var selector = selectors[i];
-				if(selector.matches(state)) {
-					var value = values[i];
-					if(_.isFunction(value)) {
-						return value(state);
-					} else {
-						return cjs.get(value);
+			return statechart_got.get_state();
+		};
+
+		var get_values = function() {
+			return _.flatten(_.map(get_state(), function(state) {
+				return _.compact(_.map(selectors, function(selector, i) {
+					if(selector.matches(state)) {
+						return {state: state, value: values[i]};
 					}
-				}
+					return false;
+				}));
+			}), true);
+		};
+
+		var get_value = function() {
+			return _.first(get_values()) || {state: undefined, value: undefined};
+		};
+
+
+		var getter = function() {
+			var state_and_value = get_value();
+			var state = state_and_value.state
+				, value = state_and_value.value;
+
+			if(_.isFunction(value)) {
+				return value(state);
+			} else {
+				return cjs.get(value);
 			}
-			return last_transition_value;
 		};
 
 		var constraint = cjs.create("constraint", getter);
@@ -43,19 +59,11 @@
 			values = _.values(specs);
 
 			_.forEach(selectors, function(selector) {
-				if(selector.is("transition")) {
-					var callback =  function() {
-						last_transition_value = constraint.nullifyAndEval();
-					};
-					statechart.when(selector, callback);
-					uninstall_funcs.push(_.bind(statechart.off_when, statechart, callback));
-				} else {
-					var callback = function() {
-						last_transition_value = constraint.nullifyAndEval();
-					}
-					statechart.when(selector, callback);
-					uninstall_funcs.push(_.bind(statechart.off_when, statechart, callback));
-				}
+				var callback =  function() {
+					last_transition_value = constraint.nullifyAndEval();
+				};
+				statechart.when(selector, callback);
+				uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
 			});
 			uninstall_listeners = function() {
 				_.forEach(uninstall_funcs, function(uninstall_func) {
@@ -78,4 +86,7 @@
 	};
 	cjs.define("statechart_constraint", create_statechart_constraint);
 	cjs.constraint.statechart = create_statechart_constraint;
+
+	cjs.STAY = function(){};
+	cjs.STAYVALUE = function(){};
 }(cjs));
