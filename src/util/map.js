@@ -77,7 +77,7 @@ var Map = function() {
 		return this;
 	};
 	proto.map = function(func, context) {
-		var rv = new RedMap();
+		var rv = new Map();
 		this.forEach(function(value, key, index) {
 			var mapped_val = func.apply(this, arguments);
 			rv.set(key, mapped_val);
@@ -120,6 +120,9 @@ var Map = function() {
 	};
 	proto.get_keys = function() {
 		return _.clone(this._keys);
+	};
+	proto.get_values = function() {
+		return _.clone(this._values);
 	};
 }(Map));
 
