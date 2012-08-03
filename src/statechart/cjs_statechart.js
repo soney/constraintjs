@@ -204,6 +204,11 @@ var Statechart = function(type) {
 			var state = type instanceof Statechart ? type : new Statechart(type);
 			state.set_parent(this);
 			this._states.set(state_name, state);
+			this._notify("state_added", {
+				state_name: state_name
+				, state: state
+				, context: this
+			});
 		} else {
 			var first_state_name = _.first(state_names);
 			var state = this.get_state_with_name(first_state_name);
@@ -229,6 +234,10 @@ var Statechart = function(type) {
 		});
 		this.transitions = transitions_not_involving_state;
 		this._states.unset(state);
+		this._notify("state_removed", {
+			state: state
+			, context: this
+		});
 		return this;
 	};
 	proto.has_state = function(state_name) {
@@ -245,6 +254,10 @@ var Statechart = function(type) {
 	proto.remove_transition = function(transition) {
 		transition.destroy();
 		this.transitions = _.without(this.transitions, transition);
+		this._notify("transition_removed", {
+			transition: transition
+			, context: this
+		});
 		return this;
 	};
 	proto.get_initial_state = function() {
@@ -427,13 +440,17 @@ var Statechart = function(type) {
 		}
 
 		var transition = new StatechartTransition(this, from_state, to_state, event);
-		this.transitions.push(transition);
 		return transition;
 	};
 
 	proto.add_transition = function() {
-		this._get_transition.apply(this, arguments);
+		var transition = this._get_transition.apply(this, arguments);
+		this.transitions.push(transition);
 		
+		this._notify("transition_added", {
+			transition: transition
+			, context: this
+		});
 		return this;
 	};
 	proto.get_transitions = function() {
@@ -447,7 +464,7 @@ var Statechart = function(type) {
 	proto.get_name = function(relative_to) {
 		var parent = this.parent();
 		if(!relative_to) {
-			relative_to = parent;
+			relative_to = this.get_root();
 		}
 
 		var my_name = parent ? parent.name_for_state(this) : "";

@@ -4,8 +4,8 @@
 		var state_spec_strs = _.keys(specs)
 			, selectors = []
 			, values = []
-			, last_state
-			, last_value;
+			, current_state
+			, current_value;
 
 		var get_state = function() {
 			var statechart_got = cjs.get(statechart);
@@ -31,19 +31,39 @@
 		};
 
 
-		var getter = function() {
-			var state_and_value = get_value();
-			var state = state_and_value.state
-				, value = state_and_value.value;
+		var constraint = cjs.create("constraint", getter);
 
+		var on_state_change = function() {
+			var s_and_v = get_value();
+
+			var state = s_and_v.state;
+			var value = s_and_v.value;
+
+			if(current_state !== state) {
+				if(value === cjs.STAY) {
+					current_value = current_value;
+				} else if(value === cjs.STAYVALUE) {
+					current_value = current_value.snapshot();
+				} else {
+					current_value 
+				}
+				current_state = state;
+			//} else {
+				//current_value = value;
+			}
+
+
+			constraint.nullifyAndEval();
+		};
+
+		var getter = function() {
+			var value = current_value;
 			if(_.isFunction(value)) {
 				return value(state);
 			} else {
 				return cjs.get(value);
 			}
 		};
-
-		var constraint = cjs.create("constraint", getter);
 
 		var uninstall_listeners = function(){};
 		var install_listeners = function(statechart) {
@@ -60,7 +80,7 @@
 
 			_.forEach(selectors, function(selector) {
 				var callback =  function() {
-					last_transition_value = constraint.nullifyAndEval();
+					on_state_change();
 				};
 				statechart.when(selector, callback);
 				uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
@@ -81,7 +101,7 @@
 		} else {
 			install_listeners(statechart);
 		}
-
+		on_state_change();
 		return constraint;
 	};
 	cjs.define("statechart_constraint", create_statechart_constraint);

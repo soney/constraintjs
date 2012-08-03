@@ -1,5 +1,4 @@
 (function(){
-/*
 var sc = cjs	.statechart()
 				.add_state("A")
 				.add_state("B")
@@ -54,7 +53,6 @@ test('Statechart Event Listeners', function() {
 	sc.off_when("B>-*", b_star_trans);
 	sc.off_when("D", d_state);
 });
-*/
 
 test('Radio button statechart', function() {
 	var select = cjs.create_event("manual");
@@ -121,7 +119,16 @@ test('Radio button statechart', function() {
 	ok(array_equiv(sc.get_state_names(), ["keyboard.not_focused", "mouse.idle", "selection.not_selected"] ));
 	mouseover.fire();
 	ok(array_equiv(sc.get_state_names(), ["keyboard.not_focused", "mouse.hover", "selection.not_selected"] ));
-	console.log(sc.stringify());
-
+	mousedown.fire();
+	ok(array_equiv(sc.get_state_names(), ["keyboard.not_focused", "mouse.pressed", "selection.not_selected"] ));
+	mouseup.fire();
+	select.fire();
+	ok(array_equiv(sc.get_state_names(), ["keyboard.not_focused", "mouse.hover", "selection.selected"] ));
+	mousedown.fire();
+	ok(array_equiv(sc.get_state_names(), ["keyboard.not_focused", "mouse.pressed", "selection.selected"] ));
+	mouseout.fire();
+	ok(array_equiv(sc.get_state_names(), ["keyboard.not_focused", "mouse.pressed_out", "selection.selected"] ));
+	mouseup.fire();
+	ok(array_equiv(sc.get_state_names(), ["keyboard.not_focused", "mouse.idle", "selection.selected"] ));
 });
 }());

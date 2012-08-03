@@ -63,6 +63,7 @@
 		this.destroy_callbacks = [];
 		this.bindings = [];
 		this.invalidate = _.bind(this.nullify, this);
+		this._memory = [];
 	};
 
 	(function(my) {
@@ -232,6 +233,16 @@
 		};
 		proto.push_binding = function(binding) {
 			this.bindings.push(binding);
+		};
+		proto.snapshot = function() {
+			var value = this.get();
+			return cjs.create("constraint", value);
+		};
+		proto.remember = function() {
+			this.memory.push(this.get());
+		};
+		proto.do_recall = function(index) {
+			return this.memory[this.memory.length - 1 - index];
 		};
 	}(Constraint));
 
