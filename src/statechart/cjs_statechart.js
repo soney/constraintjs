@@ -514,9 +514,9 @@ var Statechart = function(type) {
 		return _.isEmpty(this.get_substates());
 	};
 
-	proto.clone = function(context, state_map) {
+	proto.clone = function(state_map) {
 		if(_.isUndefined(state_map)) {
-			state_map = red._create_map();
+			state_map = cjs.create("map");
 		}
 
 		var new_statechart = new Statechart(this.get_type());
@@ -525,7 +525,7 @@ var Statechart = function(type) {
 		for(var i = 0; i<substates_names.length; i++) {
 			var substate_name = substates_names[i];
 			var substate = this.get_state_with_name(substate_name);
-			new_statechart.add_state(substate_name, substate.clone(context, state_map));
+			new_statechart.add_state(substate_name, substate.clone(state_map));
 		}
 
 		var transitions = this.get_transitions();

@@ -33,6 +33,13 @@
 
 		var constraint = cjs.create("constraint", getter);
 
+		constraint.set_value_for_state = function(state, value) {
+			specs.set(state, value);
+		};
+		constraint.get_value_for_state = function(state) {
+			return specs.get(state);
+		};
+
 		var on_state_change = function() {
 			var s_and_v = get_value();
 
