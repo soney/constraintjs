@@ -26,5 +26,8 @@ var _ = cjs._;
 	proto.remove_listener = function() {
 		this.target.removeEventListener(this.type, this.fire);
 	};
+	proto.destroy = function() {
+		this.remove_listener();
+	};
 }(cjs._create_event_type("dom_event").prototype));
 }(cjs));

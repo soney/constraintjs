@@ -10,6 +10,7 @@ var StatechartTransition = function(statechart, from_state, to_state, event) {
 
 	this._event.on_fire(this.do_run);
 	this.id = _.uniqueId();
+	this._basis = undefined;
 };
 
 (function(my) {
@@ -34,6 +35,8 @@ var StatechartTransition = function(statechart, from_state, to_state, event) {
 		return this.get_statechart();
 	};
 	proto.get_statechart = function() { return this._statechart; };
+	proto.set_basis = function(basis) { this._basis = basis; };
+	proto.get_basis = function() { return this._basis; };
 }(StatechartTransition));
 
 var StateSelector = function(state_name) {
@@ -182,9 +185,12 @@ var Statechart = function(type) {
 	}
 	this._context = undefined;
 	this.id = _.uniqueId();
+	this._basis = undefined;
 };
 (function(my) {
 	var proto = my.prototype;
+	proto.set_basis = function(basis) { this._basis = basis; };
+	proto.get_basis = function() { return this._basis; };
 	proto.get_context = function() { return this._context; };
 	proto.set_context = function(context) { this._context = context; return this; };
 	proto.get_type = function() {
@@ -262,6 +268,9 @@ var Statechart = function(type) {
 		return this;
 	};
 	proto.destroy = function() {
+		this._notify("destroy", {
+			context: this
+		});
 	};
 	proto.has_state = function(state_name) {
 		return !_.isNull(this.get_state_with_name(state_name));
@@ -468,6 +477,7 @@ var Statechart = function(type) {
 
 	proto.add_transition = function() {
 		var transition = this._get_transition.apply(this, arguments);
+		this._last_transition = transition;
 		this.transitions.push(transition);
 		
 		this._notify("transition_added", {
@@ -475,6 +485,9 @@ var Statechart = function(type) {
 			, context: this
 		});
 		return this;
+	};
+	proto.get_last_transition = function() {
+		return this._last_transition;
 	};
 	proto.get_transitions = function() {
 		return _.clone(this.transitions);
@@ -551,6 +564,7 @@ var Statechart = function(type) {
 		}
 
 		var new_statechart = new Statechart(this.get_type());
+		new_statechart.set_basis(this);
 		state_map.set(this, new_statechart);
 		var substates_names = this.get_substate_names();
 		for(var i = 0; i<substates_names.length; i++) {
@@ -568,6 +582,8 @@ var Statechart = function(type) {
 			var event = transition.get_event().clone(this);
 
 			new_statechart.add_transition(from, to, event);
+			var cloned_transition = new_statechart.get_last_transition();
+			cloned_transition.set_basis(transition);
 		}
 		
 		return new_statechart;

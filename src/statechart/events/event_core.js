@@ -38,6 +38,7 @@ var CJSEvent = function() {
 	proto.clone = function() {
 		return new RedEvent();
 	};
+	proto.destroy = function(){};
 }(CJSEvent));
 
 var event_types = {};
