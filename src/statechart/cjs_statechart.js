@@ -179,7 +179,6 @@ var Statechart = function(type) {
 	this._type = _.isUndefined(type) ? "statechart" : type;
 	if(this.get_type() !== "pre_init") {
 		this.add_state("_pre_init", "pre_init");
-		this._active_state = this.get_state_with_name("_pre_init");
 	}
 	this._context = undefined;
 	this.id = _.uniqueId();
@@ -198,7 +197,7 @@ var Statechart = function(type) {
 			state_name = _.last(state_names);
 
 			if(this.has_state(state_name)) {
-				this.remove_state(this.get_state_with_name(state_name));
+				this.remove_state(state_name);
 			}
 
 			var state = type instanceof Statechart ? type : new Statechart(type);
@@ -220,28 +219,52 @@ var Statechart = function(type) {
 			state.add_state(_.rest(state_names), type);
 		}
 
+		if(!this.is_running() && state.get_type() === "pre_init") {
+			this._active_state = state;
+		}
+
 		return this;
 	};
-	proto.remove_state = function(state) {
-		var transitions_involving_state = [];
-		var transitions_not_involving_state = [];
-		_.forEach(this.transitions, function(transition) {
-			if(transition.involves(state)) {
-				transitions_involving_state.push(transition);
-			} else {
-				transitions_not_involving_state.push(transition);
+	proto.remove_state = function(state_name) {
+		var state_names = _.isArray(state_name) ? state_name : state_name.split(".");
+
+		if(_.size(state_names) === 1) {
+			state_name = _.last(state_names);
+
+			var state = this.get_state_with_name(state_name);
+			if(!_.isNull(state)) {
+				var transitions_involving_state = [];
+				var transitions_not_involving_state = [];
+				_.forEach(this.transitions, function(transition) {
+					if(transition.involves(state)) {
+						transitions_involving_state.push(transition);
+					} else {
+						transitions_not_involving_state.push(transition);
+					}
+				});
+				this.transitions = transitions_not_involving_state;
+				this._states.unset(state_name);
+				this._notify("state_removed", {
+					state: state
+					, state_name: state_name
+					, context: this
+				});
+				state.destroy();
 			}
-		});
-		this.transitions = transitions_not_involving_state;
-		this._states.unset(state);
-		this._notify("state_removed", {
-			state: state
-			, context: this
-		});
+		} else {
+			var first_state_name = _.first(state_names);
+			var state = this.get_state_with_name(first_state_name);
+			if(!_.isNull(state)) {
+				state.remove_state(_.rest(state_names));
+			}
+		}
+
 		return this;
+	};
+	proto.destroy = function() {
 	};
 	proto.has_state = function(state_name) {
-		return !_.isUndefined(this.get_state_with_name(state_name));
+		return !_.isNull(this.get_state_with_name(state_name));
 	};
 	proto.in_state = function(state_name) {
 		return this.get_state_with_name(state_name);
@@ -501,12 +524,20 @@ var Statechart = function(type) {
 		}
 	};
 
-	proto.get_substates = function() {
-		var state_names = this._states.get_values();
+	proto.get_substate_names = function() {
+		var state_names = this._states.get_keys();
 		if(state_names.length === 1) {
 			return [];
 		} else {
 			return state_names;
+		}
+	};
+	proto.get_substates = function() {
+		var states = this._states.get_values();
+		if(states.length === 1) {
+			return [];
+		} else {
+			return states;
 		}
 	};
 
@@ -521,7 +552,7 @@ var Statechart = function(type) {
 
 		var new_statechart = new Statechart(this.get_type());
 		state_map.set(this, new_statechart);
-		var substates_names = this.get_substates();
+		var substates_names = this.get_substate_names();
 		for(var i = 0; i<substates_names.length; i++) {
 			var substate_name = substates_names[i];
 			var substate = this.get_state_with_name(substate_name);
