@@ -231,7 +231,7 @@ var Statechart = function(type) {
 
 		return this;
 	};
-	proto.remove_state = function(state_name) {
+	proto.remove_state = function(state_name, also_destroy) {
 		var state_names = _.isArray(state_name) ? state_name : state_name.split(".");
 
 		if(_.size(state_names) === 1) {
@@ -255,7 +255,9 @@ var Statechart = function(type) {
 					, state_name: state_name
 					, context: this
 				});
-				state.destroy();
+				if(also_destroy !== true) {
+					state.destroy();
+				}
 			}
 		} else {
 			var first_state_name = _.first(state_names);
@@ -265,6 +267,14 @@ var Statechart = function(type) {
 			}
 		}
 
+		return this;
+	};
+	proto.rename_state = function(from_name, to_name) {
+		var state = this.get_state(from_name);
+		if(!_.isNull(state)) {
+			this.remove_state(from_name);
+			this.add_state(to_name, state);
+		}
 		return this;
 	};
 	proto.destroy = function() {
