@@ -270,7 +270,7 @@ var Statechart = function(type) {
 		return this;
 	};
 	proto.rename_state = function(from_name, to_name) {
-		var state = this.get_state(from_name);
+		var state = this._find_state(from_name);
 		if(!_.isNull(state)) {
 			this.remove_state(from_name);
 			this.add_state(to_name, state);
