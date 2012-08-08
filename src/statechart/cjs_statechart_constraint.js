@@ -1,11 +1,14 @@
 (function(cjs) {
 	var _ = cjs._;
 	var create_statechart_constraint = function(statechart, specs) {
-		var state_spec_strs = _.keys(specs)
+		var state_spec_strs = []
 			, selectors = []
 			, values = []
 			, current_state
 			, current_value;
+		if(specs) {
+			state_spec_strs  = _.keys(specs);
+		}
 
 		var get_state = function() {
 			var statechart_got = cjs.get(statechart);
