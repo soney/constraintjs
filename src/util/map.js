@@ -26,28 +26,40 @@ var Map = function() {
 	var proto = my.prototype;
 	proto.set = function() {
 		if(arguments.length >= 2) {
-			var key = arguments[0], value = arguments[1];
-			this._do_set(key, value);
+			var key = arguments[0], value = arguments[1], index = arguments[2];
+			this._do_set(key, value, index);
 		} else {
 			_.forEach(arguments[0], _.bind(function(value, key) {
 				this._do_set(key, value);
 			}, this));
 		}
 
-
 		return this;
 	};
 	proto._key_index = function(key) {
 		return _.indexOf(this._keys, key);
 	};
-	proto._do_set = function(key, value) {
+	proto.has_key = function(key) {
+		return this._key_index(key) >= 0;
+	};
+	proto._do_set = function(key, value, index) {
 		var key_index = this._key_index(key);
 
-		if(key_index<0) {
-			this._keys.push(key);
-			this._values.push(value);
+		if(key_index<0) { // Doesn't already exist
+			if(_.isNumber(index) && index >= 0 && index < this._keys.length) {
+				_.insert_at(this._keys, key, index);
+				_.insert_at(this._values, value, index);
+			} else {
+				this._keys.push(key);
+				this._values.push(value);
+			}
 		} else {
-			this._values[key_index] = value;
+			if(_.isNumber(index) && index >= 0 && index < this._keys.length) {
+				this._values[key_index] = value;
+				this.move(key, index);
+			} else {
+				this._values[key_index] = value;
+			}
 		}
 
 		return this;
@@ -110,6 +122,17 @@ var Map = function() {
 			move_index(this._values, key_index, index);
 		}
 		return this;
+	};
+	proto.rename = function(old_key, new_key) {
+		var old_key_index = this._key_index(old_key);
+		if(old_key_index >= 0) {
+			var new_key_index = this._key_index(new_key);
+			if(new_key_index >= 0) {
+				remove_by_index(this._keys, new_key_index);
+				remove_by_index(this._values, new_key_index);
+			}
+			this._keys[old_key_index] = new_key;
+		}
 	};
 	proto.key_for_value = function(value) {
 		var value_index = _.indexOf(this._values, value);
