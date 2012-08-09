@@ -163,9 +163,11 @@ var Map = function() {
 		}
 	};
 	proto.key_for_value = function(value) {
-		var value_index = _.indexOf(this._values.get(), value);
+		var values_got = this._values.get();
+		var value_index = _.indexOf(values_got, value);
 		if(value_index >= 0) {
-			return this._keys[value_index];
+			var keys_got = this._keys.get();
+			return keys_got[value_index];
 		}
 		return undefined;
 	};

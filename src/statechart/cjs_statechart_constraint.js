@@ -3,7 +3,8 @@
 	var create_statechart_constraint = function(statechart, specs) {
 		var	spec_map = cjs.create("map")
 			, current_state
-			, current_value;
+			, current_value
+			, current_selector;
 		if(specs) {
 			state_spec_strs  = _.keys(specs);
 		}
@@ -18,9 +19,11 @@
 
 		var get_values = function() {
 			return _.flatten(_.map(get_state(), function(state) {
-				return _.compact(spec_map.map(function(value, selector) {
+				return _.compact(spec_map.map(function(selector_and_value, state_spec) {
+					var selector = selector_and_value.selector;
+					var value = selector_and_value.value;
 					if(selector.matches(state)) {
-						return {state: state, value: value};
+						return {state: state, value: value, selector: selector};
 					}
 					return false;
 				}));
@@ -29,7 +32,7 @@
 
 		var get_value = function() {
 			var values = get_values();
-			return _.first(values) || {state: undefined, value: undefined};
+			return _.first(values) || {state: undefined, value: undefined, selector: undefined};
 		};
 
 		var getter = function() {
@@ -47,7 +50,11 @@
 
 		constraint.set_value_for_state = function(state_spec, value) {
 			var selector = statechart.parse_selector(state_spec);
-			spec_map.set(selector, value);
+			var replacing_existing_value = false;
+			if(state_spec === current_state) {
+				replacing_existing_value = true;
+			}
+			spec_map.set(state_spec, {selector: selector, value: value});
 
 			var callback =  function() {
 				on_state_change();
@@ -55,20 +62,34 @@
 			statechart.when(selector, callback);
 			uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
 
-			on_state_change();
+			if(current_state && selector.matches(current_state)) {
+				on_state_change(replacing_existing_value);
+			} else {
+				on_state_change();
+			}
 		};
 		constraint.get_value_for_state = function(state) {
-			return spec_map.get(state);
+			var matching_values = [];
+			spec_map.forEach(function(selector_and_value, state_spec) {
+					var selector = selector_and_value.selector;
+					var value = selector_and_value.value;
+					if(selector.matches(state)) {
+						matching_values.push(value);
+					}
+				});
+			return _.first(matching_values);
 		};
 		constraint._event = cjs(null);
 
-		var on_state_change = function() {
+		var on_state_change = function(forced) {
+			forced = forced===true;
 			var s_and_v = get_value();
 
 			var state = s_and_v.state;
 			var value = s_and_v.value;
+			var selector = s_and_v.selector;
 
-			if(current_state !== state) {
+			if(forced || current_state !== state) {
 				if(value === cjs.STAY) {
 					current_value = current_value;
 				} else if(value === cjs.STAYVALUE) {
@@ -77,6 +98,7 @@
 					current_value = value;
 				}
 				current_state = state;
+				current_selector = selector;
 				constraint._event.set(state.get_event());
 			}
 
@@ -96,13 +118,14 @@
 			if(!cjs.is_statechart(statechart)) {
 				return;
 			}
-			var selectors = spec_map.get_keys();
-			_.forEach(selectors, function(selector) {
-				var callback =  function() {
-					on_state_change();
-				};
-				statechart.when(selector, callback);
-				uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
+			spec_map.forEach(function(selector_and_value, state_spec) {
+					var selector = selector_and_value.selector;
+					var value = selector_and_value.value;
+					var callback =  function() {
+						on_state_change();
+					};
+					statechart.when(selector, callback);
+					uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
 			});
 		};
 
