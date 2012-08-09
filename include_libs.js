@@ -50,11 +50,6 @@ exports.main_src = c(
 			, "statechart/cjs_statechart.js"
 			, "statechart/cjs_statechart_constraint.js"
 			, "statechart/events/event_core.js"
-			, "statechart/events/dom_events.js"
-			, "statechart/events/manual_event.js"
-			, "statechart/events/parsed_event.js"
-			, "statechart/events/statechart_events.js"
-			, "statechart/events/timer_events.js"
 			, "constraint/cjs_async_constraint.js"
 			, "constraint/cjs_conditional_constraint.js"
 			, "template/cjs_template.js"
@@ -64,6 +59,11 @@ exports.main_src = c(
 			, "template/parsers/handlebars_parser.js"
 			, "template/ir_builders/handlebars_ir.js"
 			, "template/handlebars_template.js"
+			, "statechart/events/dom_events.js"
+			, "statechart/events/manual_event.js"
+			, "statechart/events/parsed_event.js"
+			, "statechart/events/statechart_events.js"
+			, "statechart/events/timer_events.js"
 			])
 );
 

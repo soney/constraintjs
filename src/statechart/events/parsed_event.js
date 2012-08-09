@@ -1,6 +1,6 @@
 (function(cjs) {
 var _ = cjs._;
-var esprima = window.esprima;
+var esprima = cjs.esprima;
 
 var event_types = {};
 
@@ -16,7 +16,7 @@ _.forEach(dom_events, function(dom_event) {
 			} else {
 				dom_elem = parent.dom_element;
 			}
-			return red.create_event("dom_event", dom_event, dom_elem);
+			return cjs.create_event("dom_event", dom_event, dom_elem);
 		}
 	};
 });
@@ -52,12 +52,13 @@ var eval_tree = function(node, context) {
 
 
 (function(proto) {
-	proto.on_create = function(str, statechart) {
+	proto.on_create = function(str, statechart, context) {
 		this.statechart = statechart;
+		this.context = context;
 		this.set_str(str);
 	};
 	proto.clone = function() {
-		return red.create_event("parsed", this.str);
+		return cjs.create_event("parsed", this.str);
 	};
 	proto.set_str = function(str) {
 		this._str = str;
@@ -70,13 +71,18 @@ var eval_tree = function(node, context) {
 		this._tree = esprima.parse(this.get_str());
 	};
 	proto._update_value = function() {
-		this._event = eval_tree(this._tree.body[0], this.get_context());
-		this._event.on_fire(_.bind(this.on_fire, this));
+		this._event = eval_tree(this._tree.body[0], this.context);
+		if(this._event) {
+			this._event.on_fire(_.bind(this.on_fire, this));
+		}
 	};
 	proto.get_context = function() {
+		return this.context.html_obj;
+		/*
 		var statechart = this.statechart;
 		var object = statechart.get_context();
 		return object;
+		*/
 	};
 	proto.clone = function(context) {
 		return cjs.create_event("parsed", this.get_str(), context);

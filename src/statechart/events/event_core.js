@@ -25,6 +25,7 @@ var CJSEvent = function() {
 		_.forEach(this.listeners, function(listener) {
 			listener.apply(this, args);
 		});
+
 	};
 	proto.guard = function(func) {
 		var new_transition = new RedEvent();

@@ -7,6 +7,8 @@ var fs = require('fs');
 var ejs = require('ejs');
 var cjs_inc = require('./include_libs');
 
+ejs.config({cache: false});
+
 var app = express();
 if(devel_mode) {
 	cjs_inc.main = cjs_inc.main_src;
@@ -193,7 +195,7 @@ app.configure(function() {
 							};
 						});
 
-						body = ejs.render(str, {locals: locals});
+						body = ejs.render(str, {locals: locals, cache: false});
 						res.writeHead(200, {
 							  'Content-Type': 'text/html'
 							, 'Content-Length': body.length
@@ -203,7 +205,7 @@ app.configure(function() {
 					return;
 				}
 				
-				var body = ejs.render(str, {locals: locals});
+				var body = ejs.render(str, {locals: locals, cache: false});
 				res.writeHead(200, {
 					  'Content-Type': 'text/html'
 					, 'Content-Length': body.length
