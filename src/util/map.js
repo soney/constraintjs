@@ -15,8 +15,8 @@ var move_index = function (arr, old_index, new_index) {
 };
 
 var Map = function() {
-	this._keys = [];
-	this._values = [];
+	this._keys = cjs.create("constraint", []);
+	this._values = cjs.create("constraint", []);
 	if(arguments.length > 0) {
 		this.set.apply(this, arguments);
 	}
@@ -37,28 +37,36 @@ var Map = function() {
 		return this;
 	};
 	proto._key_index = function(key) {
-		return _.indexOf(this._keys, key);
+		return _.indexOf(this._keys.get(), key);
 	};
 	proto.has_key = function(key) {
 		return this._key_index(key) >= 0;
 	};
 	proto._do_set = function(key, value, index) {
 		var key_index = this._key_index(key);
+		var keys_got = this._keys.get();
+		var values_got = this._values.get();
 
 		if(key_index<0) { // Doesn't already exist
-			if(_.isNumber(index) && index >= 0 && index < this._keys.length) {
-				_.insert_at(this._keys, key, index);
-				_.insert_at(this._values, value, index);
+			if(_.isNumber(index) && index >= 0 && index < keys_got.length) {
+				_.insert_at(keys_got, key, index);
+				this._keys.invalidate();
+				_.insert_at(values_got, value, index);
+				this._values.invalidate();
 			} else {
-				this._keys.push(key);
-				this._values.push(value);
+				keys_got.push(key);
+				this._keys.invalidate();
+				values_got.push(value);
+				this._values.invalidate();
 			}
 		} else {
 			if(_.isNumber(index) && index >= 0 && index < this._keys.length) {
-				this._values[key_index] = value;
+				values_got[key_index] = value;
+				this._values.invalidate();
 				this.move(key, index);
 			} else {
-				this._values[key_index] = value;
+				values_got[key_index] = value;
+				this._values.invalidate();
 			}
 		}
 
@@ -67,22 +75,31 @@ var Map = function() {
 	proto.get = function(key) {
 		var key_index = this._key_index(key);
 		if(key_index < 0) { return undefined; }
-		else { return this._values[key_index]; }
+		else {
+			var values_got = this._values.get();
+			return values_got[key_index];
+		}
 	};
 	proto.unset = function(key) {
 		var key_index = this._key_index(key);
+		var keys_got = this._keys.get();
+		var values_got = this._values.get();
 		if(key_index >= 0) {
-			remove_by_index(this._keys, key_index);
-			remove_by_index(this._values, key_index);
+			remove_by_index(keys_got, key_index);
+			this._keys.invalidate();
+			remove_by_index(values_got, key_index);
+			this._values.invalidate();
 		}
 		return this;
 	};
 	proto.forEach = function(func, context) {
-		var len = this._keys.length;
+		var keys_got = this._keys.get();
+		var values_got = this._values.get();
+		var len = keys_got.length;
 		var key, value;
 		context = context || this;
 		for(var i = 0; i<len; i++) {
-			key = this._keys[i]; value = this._values[i];
+			key = keys_got[i]; value = values_got[i];
 			
 			func.call(context, value, key, i);
 		}
@@ -104,11 +121,13 @@ var Map = function() {
 		return rv;
 	};
 	proto.any = function(func, context) {
-		var len = this._keys.length;
+		var keys_got = this._keys.get();
+		var values_got = this._values.get();
+		var len = keys_got.length;
 		var key, value;
 		context = context || this;
 		for(var i = 0; i<len; i++) {
-			key = this._keys[i]; value = this._values[i];
+			key = keys_got[i]; value = values_got[i];
 			
 			var val = func.call(context, value, key, i);
 			if(val) { return true; }
@@ -116,36 +135,52 @@ var Map = function() {
 		return false;
 	};
 	proto.move = function(key, index) {
+		var keys_got = this._keys.get();
+		var values_got = this._values.get();
 		var key_index = this._key_index(key);
 		if(key_index >= 0) {
-			move_index(this._keys,   key_index, index);
-			move_index(this._values, key_index, index);
+			move_index(keys_got,   key_index, index);
+			this._keys.invalidate();
+			move_index(values_got, key_index, index);
+			this._values.invalidate();
 		}
 		return this;
 	};
 	proto.rename = function(old_key, new_key) {
+		var keys_got = this._keys.get();
+		var values_got = this._values.get();
 		var old_key_index = this._key_index(old_key);
 		if(old_key_index >= 0) {
 			var new_key_index = this._key_index(new_key);
 			if(new_key_index >= 0) {
-				remove_by_index(this._keys, new_key_index);
-				remove_by_index(this._values, new_key_index);
+				remove_by_index(keys_got, new_key_index);
+				this._keys.invalidate();
+				remove_by_index(values_got, new_key_index);
+				this._values.invalidate();
 			}
-			this._keys[old_key_index] = new_key;
+			keys_got[old_key_index] = new_key;
+			this._keys.invalidate();
 		}
 	};
 	proto.key_for_value = function(value) {
-		var value_index = _.indexOf(this._values, value);
+		var value_index = _.indexOf(this._values.get(), value);
 		if(value_index >= 0) {
 			return this._keys[value_index];
 		}
 		return undefined;
 	};
 	proto.get_keys = function() {
-		return _.clone(this._keys);
+		return _.clone(this._keys.get());
 	};
 	proto.get_values = function() {
-		return _.clone(this._values);
+		return _.clone(this._values.get());
+	};
+	proto.$get = function(key) {
+		var self = this;
+		return cjs(function() {
+			var key_got = key.get();
+			return self.get(key_got);
+		});
 	};
 }(Map));
 
