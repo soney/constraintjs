@@ -136,6 +136,10 @@ var parse_transition_spec = function(left_str, transition_str, right_str) {
 };
 
 var parse_spec = function(str) {
+	if(str instanceof Statechart) {
+		return new StateSelector(str);
+	}
+
 	var transition_separator_regex = /^([a-zA-Z0-9,\-*\.]+)\s*((<->|>-<|->|>-|<-|-<)\s*([a-zA-Z0-9,\-*\.]+))?$/;
 	var matches = str.match(transition_separator_regex);
 	if(matches === null) {
@@ -162,7 +166,7 @@ var StateListener = function(selector, callback) {
 (function(my) {
 	var proto = my.prototype;
 	proto.interested_in = function() {
-		return this.selector.matches.apply(this.selector, arguments);
+		return this.selector === arguments[0] || this.selector.matches.apply(this.selector, arguments);
 	};
 	proto.run = function() {
 		this.callback();
@@ -186,9 +190,12 @@ var Statechart = function(type) {
 	this._context = undefined;
 	this.id = _.uniqueId();
 	this._basis = undefined;
+	this._event = undefined;
 };
 (function(my) {
 	var proto = my.prototype;
+	proto._set_event = function(event) { this._event = event; };
+	proto.get_event = function() { return this._event; };
 	proto.set_basis = function(basis) { this._basis = basis; };
 	proto.get_basis = function() { return this._basis; };
 	proto.get_context = function() { return this._context; };
@@ -366,7 +373,7 @@ var Statechart = function(type) {
 		if(this.is_concurrent()) {
 			var active_states = this._states.map(function(state) {
 				return state.get_state();
-			}).get_values();
+			});
 			var rv = [];
 			return rv.concat.apply(rv, active_states);
 		} else {
@@ -414,7 +421,7 @@ var Statechart = function(type) {
 				curr_state = curr_state.parent();
 			}
 
-			curr_state = this._active_state;
+			curr_state = state;
 
 			while(!_.isUndefined(curr_state) && curr_state !== this) {
 				states_entered.push(curr_state);
@@ -424,25 +431,43 @@ var Statechart = function(type) {
 			_.forEach(states_left, function(state) {
 				state._notify("exit", event);
 			});
+
 			this._active_state = state;
-			if(!this._active_state.is_running()) {
-				this._active_state.run();
-			}
+			this._active_state._set_event(event);
 			_.forEach(states_entered, function(state) {
 				state._notify("enter", event);
 			});
+			if(!this._active_state.is_running()) {
+				this._active_state.run();
+			}
 		}
 	};
 	proto._run_transition = function(transition, event) {
 		var from_state = transition.from()
 			, to_state = transition.to();
-		var when_listeners = this._listeners.when;
+
+
+		
+		var parentage = [this];
+		var parent = this.parent();
+		while(parent) {
+			parentage.push(parent);
+			parent = parent.parent();
+		}
+		var when_listeners = _.compact(_.flatten(_.map(parentage, function(parent) {
+			return parent._listeners.when;
+		}, true)));
 		_.forEach(when_listeners, function(listener) {
 			if(listener.interested_in(transition, true)) {
 				listener.run(event, transition, to_state, from_state);
 			}
 		});
 		this._set_state(to_state, event);
+		_.forEach(when_listeners, function(listener) {
+			if(listener.interested_in(transition, false)) {
+				listener.run(event, transition, to, from);
+			}
+		});
 		_.forEach(when_listeners, function(listener) {
 			if(listener.interested_in(transition, false)) {
 				listener.run(event, transition, to_state, from_state);
@@ -528,7 +553,16 @@ var Statechart = function(type) {
 
 	proto.matches = function(state) {
 		if(state instanceof Statechart) {
-			return this === state;
+			if(this === state) {
+				return true;
+			} else {
+				var parent = this.parent();
+				if(parent) {
+					return parent.matches(state);
+				} else {
+					return false;
+				}
+			}
 		} else if(_.isString(state)) {
 			var parent = this.parent();
 			var name = "";
@@ -589,9 +623,17 @@ var Statechart = function(type) {
 			var from = state_map.get(transition.from());
 			var to = state_map.get(transition.to());
 
-			var event = transition.get_event().clone(this);
+			var event = transition.get_event();
+			var cloned_event;
+			if(event.type === "init") {
+				cloned_event = event.clone(state_map.get(event.statechart));
+			} else if(event.type === "on_enter" || event.type === "on_exit") {
+				cloned_event = event.clone(state_map.get(event.state));
+			} else {
+				cloned_event = event.clone(this);
+			}
 
-			new_statechart.add_transition(from, to, event);
+			new_statechart.add_transition(from, to, cloned_event);
 			var cloned_transition = new_statechart.get_last_transition();
 			cloned_transition.set_basis(transition);
 		}

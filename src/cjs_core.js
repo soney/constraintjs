@@ -18,10 +18,12 @@ var cjs = (function (root) {
 			}
 		} else if(cjs.is_fsm(arg0)) {
 			return cjs.create("fsm_constraint", arg0, arg1);
+			/*
 		} else if(_.has(arg0, "condition") && _.has(arg0, "value")) {
 			var args = _.toArray(arguments);
 			args.unshift("conditional_constraint");
 			return cjs.create.apply(cjs, args);
+			*/
 		} else {
 			return cjs.constraint.apply(cjs, arguments);
 		}

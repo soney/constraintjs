@@ -7,7 +7,7 @@ var fs = require('fs');
 var ejs = require('ejs');
 var cjs_inc = require('./include_libs');
 
-var app = express.createServer();
+var app = express();
 if(devel_mode) {
 	cjs_inc.main = cjs_inc.main_src;
 } else {
@@ -154,7 +154,7 @@ app.configure(function() {
 					relative_path += "../";
 				}
 				var locals = {
-					include: function(files) {
+					cjs_include: function(files) {
 						return cjs_inc.include_templates(files.map(function(file) {
 							return relative_path+file;
 						}));

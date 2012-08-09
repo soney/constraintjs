@@ -89,10 +89,10 @@ var Map = function() {
 		return this;
 	};
 	proto.map = function(func, context) {
-		var rv = new Map();
+		var rv = [];
 		this.forEach(function(value, key, index) {
 			var mapped_val = func.apply(this, arguments);
-			rv.set(key, mapped_val);
+			rv.push(mapped_val);
 		}, context);
 		return rv;
 	};

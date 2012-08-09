@@ -12,7 +12,7 @@ var _ = cjs._;
 		});
 	};
 	proto.clone = function (context) {
-		return cjs.create_event("init", this.statechart);
+		return cjs.create_event("init", context);
 	};
 }(cjs._create_event_type("init").prototype));
 

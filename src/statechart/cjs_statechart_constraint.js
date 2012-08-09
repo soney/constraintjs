@@ -1,9 +1,7 @@
 (function(cjs) {
 	var _ = cjs._;
 	var create_statechart_constraint = function(statechart, specs) {
-		var state_spec_strs = []
-			, selectors = []
-			, values = []
+		var	spec_map = cjs.create("map")
 			, current_state
 			, current_value;
 		if(specs) {
@@ -20,9 +18,9 @@
 
 		var get_values = function() {
 			return _.flatten(_.map(get_state(), function(state) {
-				return _.compact(_.map(selectors, function(selector, i) {
+				return _.compact(spec_map.map(function(value, selector) {
 					if(selector.matches(state)) {
-						return {state: state, value: values[i]};
+						return {state: state, value: value};
 					}
 					return false;
 				}));
@@ -30,18 +28,39 @@
 		};
 
 		var get_value = function() {
-			return _.first(get_values()) || {state: undefined, value: undefined};
+			var values = get_values();
+			return _.first(values) || {state: undefined, value: undefined};
 		};
 
+		var getter = function() {
+			var value = current_value;
+			if(_.isFunction(value)) {
+				return value(state);
+			} else if(value && value.get) {
+				return value.get();
+			} else {
+				return cjs.get(value);
+			}
+		};
 
 		var constraint = cjs.create("constraint", getter);
 
-		constraint.set_value_for_state = function(state, value) {
-			specs.set(state, value);
+		constraint.set_value_for_state = function(state_spec, value) {
+			var selector = statechart.parse_selector(state_spec);
+			spec_map.set(selector, value);
+
+			var callback =  function() {
+				on_state_change();
+			};
+			statechart.when(selector, callback);
+			uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
+
+			on_state_change();
 		};
 		constraint.get_value_for_state = function(state) {
-			return specs.get(state);
+			return spec_map.get(state);
 		};
+		constraint._event = cjs(null);
 
 		var on_state_change = function() {
 			var s_and_v = get_value();
@@ -55,39 +74,29 @@
 				} else if(value === cjs.STAYVALUE) {
 					current_value = current_value.snapshot();
 				} else {
-					current_value 
+					current_value = value;
 				}
 				current_state = state;
-			//} else {
-				//current_value = value;
+				constraint._event.set(state.get_event());
 			}
-
 
 			constraint.nullifyAndEval();
 		};
 
-		var getter = function() {
-			var value = current_value;
-			if(_.isFunction(value)) {
-				return value(state);
-			} else {
-				return cjs.get(value);
-			}
-		};
 
-		var uninstall_listeners = function(){};
+		var uninstall_funcs = [];
+		var uninstall_listeners = function() {
+				_.forEach(uninstall_funcs, function(uninstall_func) {
+					uninstall_func();
+				});
+				uninstall_funcs = [];
+			};
 		var install_listeners = function(statechart) {
-			var uninstall_funcs = [];
 			uninstall_listeners();
 			if(!cjs.is_statechart(statechart)) {
 				return;
 			}
-
-			selectors = _.map(state_spec_strs, function(state_spec_str) {
-				return statechart.parse_selector(state_spec_str);
-			});
-			values = _.values(specs);
-
+			var selectors = spec_map.get_keys();
 			_.forEach(selectors, function(selector) {
 				var callback =  function() {
 					on_state_change();
@@ -95,11 +104,6 @@
 				statechart.when(selector, callback);
 				uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
 			});
-			uninstall_listeners = function() {
-				_.forEach(uninstall_funcs, function(uninstall_func) {
-					uninstall_func();
-				});
-			};
 		};
 
 		if(cjs.is_constraint(statechart)) {
