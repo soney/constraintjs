@@ -15,8 +15,8 @@ var move_index = function (arr, old_index, new_index) {
 };
 
 var Map = function() {
-	this._keys = cjs.create("constraint", []);
-	this._values = cjs.create("constraint", []);
+	this._keys = cjs.create("array");
+	this._values = cjs.create("array");
 	if(arguments.length > 0) {
 		this.set.apply(this, arguments);
 	}
@@ -37,36 +37,28 @@ var Map = function() {
 		return this;
 	};
 	proto._key_index = function(key) {
-		return _.indexOf(this._keys.get(), key);
+		return this._keys.index_of(key);
 	};
 	proto.has_key = function(key) {
 		return this._key_index(key) >= 0;
 	};
 	proto._do_set = function(key, value, index) {
 		var key_index = this._key_index(key);
-		var keys_got = this._keys.get();
-		var values_got = this._values.get();
 
 		if(key_index<0) { // Doesn't already exist
-			if(_.isNumber(index) && index >= 0 && index < keys_got.length) {
-				_.insert_at(keys_got, key, index);
-				this._keys.invalidate();
-				_.insert_at(values_got, value, index);
-				this._values.invalidate();
+			if(_.isNumber(index) && index >= 0 && index < this._keys.length()) {
+				this._keys.insert_at(key, index);
+				this._values.insert_at(value, index);
 			} else {
-				keys_got.push(key);
-				this._keys.invalidate();
-				values_got.push(value);
-				this._values.invalidate();
+				this._keys.push(key);
+				this._values.push(value);
 			}
 		} else {
-			if(_.isNumber(index) && index >= 0 && index < this._keys.length) {
-				values_got[key_index] = value;
-				this._values.invalidate();
+			if(_.isNumber(index) && index >= 0 && index < this._keys.length()) {
+				this._values.set_item(key_index, value);
 				this.move(key, index);
 			} else {
-				values_got[key_index] = value;
-				this._values.invalidate();
+				this._values.set_item(key_index, value);
 			}
 		}
 
@@ -76,30 +68,23 @@ var Map = function() {
 		var key_index = this._key_index(key);
 		if(key_index < 0) { return undefined; }
 		else {
-			var values_got = this._values.get();
-			return values_got[key_index];
+			return this._values.item(key_index);
 		}
 	};
 	proto.unset = function(key) {
 		var key_index = this._key_index(key);
-		var keys_got = this._keys.get();
-		var values_got = this._values.get();
 		if(key_index >= 0) {
-			remove_by_index(keys_got, key_index);
-			this._keys.invalidate();
-			remove_by_index(values_got, key_index);
-			this._values.invalidate();
+			this._keys.remove_item(key_index);
+			this._values.remove_item(key_index);
 		}
 		return this;
 	};
 	proto.forEach = function(func, context) {
-		var keys_got = this._keys.get();
-		var values_got = this._values.get();
-		var len = keys_got.length;
+		var len = this._keys.length();
 		var key, value;
 		context = context || this;
 		for(var i = 0; i<len; i++) {
-			key = keys_got[i]; value = values_got[i];
+			key = this._keys.item(i); value = this._values.item(i);
 			
 			func.call(context, value, key, i);
 		}
@@ -121,13 +106,11 @@ var Map = function() {
 		return rv;
 	};
 	proto.any = function(func, context) {
-		var keys_got = this._keys.get();
-		var values_got = this._values.get();
-		var len = keys_got.length;
+		var len = this._keys.length();
 		var key, value;
 		context = context || this;
 		for(var i = 0; i<len; i++) {
-			key = keys_got[i]; value = values_got[i];
+			key = this._keys.item(i); value = this._values.item(i);
 			
 			var val = func.call(context, value, key, i);
 			if(val) { return true; }
@@ -153,21 +136,16 @@ var Map = function() {
 		if(old_key_index >= 0) {
 			var new_key_index = this._key_index(new_key);
 			if(new_key_index >= 0) {
-				remove_by_index(keys_got, new_key_index);
-				this._keys.invalidate();
-				remove_by_index(values_got, new_key_index);
-				this._values.invalidate();
+				this._keys.remove_index(new_key_index);
+				this._values.remove_index(new_key_index);
 			}
-			keys_got[old_key_index] = new_key;
-			this._keys.invalidate();
+			this._keys.set_item(old_key_index, new_key)
 		}
 	};
 	proto.key_for_value = function(value) {
-		var values_got = this._values.get();
-		var value_index = _.indexOf(values_got, value);
+		var value_index = this._values.index_of(value);
 		if(value_index >= 0) {
-			var keys_got = this._keys.get();
-			return keys_got[value_index];
+			return this._keys.item(value_index);
 		}
 		return undefined;
 	};

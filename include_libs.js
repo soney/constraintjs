@@ -30,6 +30,7 @@ exports.main_src = c(
 			, "vendor/underscore_cjs.js"
 			, "vendor/sizzle_cjs.js"
 			, "util/cjs_underscore_extensions.js"
+			, "util/array.js"
 			, "util/map.js"
 			, "util/graph.js"
 			, "util/constraint_solver.js"
