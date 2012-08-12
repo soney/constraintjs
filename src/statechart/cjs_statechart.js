@@ -191,6 +191,11 @@ var Statechart = function(type) {
 	this.id = _.uniqueId();
 	this._basis = undefined;
 	this._event = undefined;
+	this.$state_added = _.bind(this.state_added, this);
+	this.$state_removed = _.bind(this.state_removed, this);
+	this.$state_moved = _.bind(this.state_moved, this);
+	this.$transition_added = _.bind(this.transition_added, this);
+	this.$transition_removed = _.bind(this.transition_removed, this);
 };
 (function(my) {
 	var proto = my.prototype;
@@ -202,6 +207,21 @@ var Statechart = function(type) {
 	proto.set_context = function(context) { this._context = context; return this; };
 	proto.get_type = function() {
 		return this._type;
+	};
+	proto.state_added = function(event) {
+		this._notify("state_added", event);
+	};
+	proto.state_removed = function(event) {
+		this._notify("state_removed", event);
+	};
+	proto.state_moved = function(event) {
+		this._notify("state_moved", event);
+	};
+	proto.transition_added = function(event) {
+		this._notify("transition_added", event);
+	};
+	proto.transition_removed = function(event) {
+		this._notify("transition_removed", event);
 	};
 	proto.add_state = function(state_name, type) {
 		var state_names = _.isArray(state_name) ? state_name : state_name.split(".");
@@ -216,10 +236,17 @@ var Statechart = function(type) {
 			var state = type instanceof Statechart ? type : new Statechart(type);
 			state.set_parent(this);
 			this._states.set(state_name, state);
+
+			state._on("state_added", this.$state_added);
+			state._on("state_removed", this.$state_removed);
+			state._on("state_moved", this.$state_moved);
+			state._on("transition_added", this.$transition_added);
+			state._on("transition_removed", this.$transition_removed);
+
 			this._notify("state_added", {
 				state_name: state_name
 				, state: state
-				, context: this
+				, target: this
 			});
 		} else {
 			var first_state_name = _.first(state_names);
@@ -256,11 +283,18 @@ var Statechart = function(type) {
 					}
 				});
 				this.transitions = transitions_not_involving_state;
+
+				state._off("state_added", this.$state_added);
+				state._off("state_removed", this.$state_removed);
+				state._off("state_moved", this.$state_moved);
+				state._off("transition_added", this.$transition_added);
+				state._off("transition_removed", this.$transition_removed);
+
 				this._states.unset(state_name);
 				this._notify("state_removed", {
 					state: state
 					, state_name: state_name
-					, context: this
+					, target: this
 				});
 				if(also_destroy !== true) {
 					state.destroy();
@@ -286,7 +320,7 @@ var Statechart = function(type) {
 	};
 	proto.destroy = function() {
 		this._notify("destroy", {
-			context: this
+			target: this
 		});
 	};
 	proto.has_state = function(state_name) {
@@ -305,7 +339,7 @@ var Statechart = function(type) {
 		this.transitions = _.without(this.transitions, transition);
 		this._notify("transition_removed", {
 			transition: transition
-			, context: this
+			, target: this
 		});
 		return this;
 	};
@@ -395,6 +429,17 @@ var Statechart = function(type) {
 			return state.get_name();
 		});
 	};
+	proto.get_substates = function() {
+		return this._states.get_values();
+	};
+	proto.flatten = function() {
+		var substates = this.get_substates();
+		var flattened_substates = _.flatten(_.map(substates, function(substate) {
+			return substate.flatten();
+		}), true);
+
+		return [this].concat(flattened_substates);
+	};
 	proto._set_state = function(state, event) {
 		if(this.is_concurrent()) {
 			/*
@@ -445,8 +490,6 @@ var Statechart = function(type) {
 	proto._run_transition = function(transition, event) {
 		var from_state = transition.from()
 			, to_state = transition.to();
-
-
 		
 		var parentage = [this];
 		var parent = this.parent();
@@ -517,7 +560,7 @@ var Statechart = function(type) {
 		
 		this._notify("transition_added", {
 			transition: transition
-			, context: this
+			, target: this
 		});
 		return this;
 	};

@@ -68,6 +68,16 @@
 				on_state_change();
 			}
 		};
+
+		constraint.unset_value_for_state = function(state_spec) {
+			spec_map.unset(state_spec);
+			uninstall_listeners();
+			install_listeners();
+		};
+
+		constraint.move_value_for_state = function(state_spec, to_index) {
+			spec_map.move(state_spec, to_index);
+		};
 		constraint.get_value_for_state = function(state) {
 			var matching_values = [];
 			spec_map.forEach(function(selector_and_value, state_spec) {
