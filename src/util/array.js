@@ -2,6 +2,15 @@
 var _ = cjs._;
 var remove_by_index = function(arrayName,arrayIndex) { 
 	arrayName.splice(arrayIndex,1); 
+}
+var move_index = function (arr, old_index, new_index) {
+    if (new_index >= arr.length) {
+        var k = new_index - arr.length;
+        while ((k--) + 1) {
+            arr.push(undefined);
+        }
+    }
+    arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
 };
 
 cjs.define("array", function(value) {
@@ -55,6 +64,19 @@ cjs.define("array", function(value) {
 		remove_by_index(value, index);
 		_value.invalidate();
 	};
+	_value.move_item = function(from_index, to_index) {
+		var value = _value.get();
+		move_index(value, from_index, to_index);
+		_value.invalidate();
+		return this;
+	};
+	_value.move = function(key, to_index) {
+		var value = _value.get();
+		var from_index = _.indexOf(value, item);
+		_value.move_item(from_index, to_index);
+		return this;
+	};
+	
 	return _value;
 });
 
