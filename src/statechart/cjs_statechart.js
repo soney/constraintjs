@@ -508,7 +508,7 @@ var Statechart = function(type) {
 		this._set_state(to_state, event);
 		_.forEach(when_listeners, function(listener) {
 			if(listener.interested_in(transition, false)) {
-				listener.run(event, transition, to, from);
+				listener.run(event, transition, to_state, from_state);
 			}
 		});
 		_.forEach(when_listeners, function(listener) {

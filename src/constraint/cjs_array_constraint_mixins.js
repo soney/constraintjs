@@ -41,6 +41,8 @@ cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn)
 		var diff = _.diff(cached_constraint_val, constraint_val);
 		var my_val = _.clone(cached_my_val);
 
+		cached_constraint_val = _.clone(constraint_val);
+
 		_.forEach(diff.removed, function(x) {
 			var mapped_val = my_val[x.index];
 			if(_.isFunction(remove_fn)) {
@@ -62,7 +64,6 @@ cjs.constraint.raw_mixin("map", function(constraint, add_fn, remove_fn, move_fn)
 			_.set_index(my_val, x.from_index, x.to_index);
 		});
 
-		cached_constraint_val = _.clone(constraint_val);
 		cached_my_val = my_val;
 
 		return my_val;
@@ -106,7 +107,7 @@ var get_array_change_listener = function(constraint) {
 	}
 
 	var constraint_getter = function() {
-		var value = cjs.get(constraint, true);
+		var value = cjs.get(constraint/*, true*/);
 		if(!_.isArray(value)) {
 			value = [value];
 		}
@@ -117,6 +118,7 @@ var get_array_change_listener = function(constraint) {
 
 	var change_listener = function() {
 		var value = constraint_getter();
+		//console.log(value, cjs.get(constraint, true));
 		var diff = _.diff(cached_value, value);
 		cached_value = _.clone(value);
 		_.forEach(diff.removed, function(x) {

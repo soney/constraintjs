@@ -49,7 +49,8 @@
 		var constraint = cjs.create("constraint", getter);
 
 		constraint.set_value_for_state = function(state_spec, value) {
-			var selector = statechart.parse_selector(state_spec);
+			var sc = cjs.get(statechart);
+			var selector = sc.parse_selector(state_spec);
 			var replacing_existing_value = false;
 			if(state_spec === current_state) {
 				replacing_existing_value = true;
@@ -59,8 +60,8 @@
 			var callback =  function() {
 				on_state_change();
 			};
-			statechart.when(selector, callback);
-			uninstall_funcs.push(_.bind(statechart.off_when, statechart, selector, callback));
+			sc.when(selector, callback);
+			uninstall_funcs.push(_.bind(sc.off_when, sc, selector, callback));
 
 			if(current_state && selector.matches(current_state)) {
 				on_state_change(replacing_existing_value);

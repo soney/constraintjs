@@ -29,7 +29,7 @@ test('Statechart', function() {
 
 test('Statechart Event Listeners', function() {
 	sc.reset();
-	expect(3);
+	expect(4);
 
 	var ran_post = false;
 	var bd_trans = function() {
