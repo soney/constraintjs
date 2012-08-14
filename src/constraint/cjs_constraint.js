@@ -199,7 +199,7 @@
 			return node.isOOD();
 		};
 		proto.update_on_change_listeners = function() {
-			_.defer(_.bind(function() {
+			//_.defer(_.bind(function() {
 				/*
 				var old_value = this.history.value;
 				var old_timestamp = this.history.timestamp;
@@ -219,7 +219,7 @@
 					/*
 				}
 				*/
-			}, this));
+			//}, this));
 		};
 		proto.influences = proto.depends_on_me = function(recursive) {
 			return constraint_solver.influences(this, recursive);
@@ -316,10 +316,13 @@
 	};
 	cjs.get = function(obj, recursive) {
 		var rv = obj;
-		while(cjs.is_constraint(rv)) {
+		if(cjs.is_constraint(rv)) {
 			rv = rv.get();
 		}
 		if(recursive === true) {
+			while(cjs.is_constraint(rv)) {
+				rv = rv.get();
+			}
 			if(_.isArray(rv)) {
 				rv = _.map(rv, function(elem) {
 					return cjs.get(elem, recursive);

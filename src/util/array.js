@@ -29,7 +29,7 @@ cjs.define("array", function(value) {
 		value[index] = item;
 		_value.invalidate();
 	};
-	_value.insert_at = function(index, item) {
+	_value.insert_at = function(item, index) {
 		var value = _value.get();
 		_.insert_at(value, item, index);
 		_value.invalidate();
