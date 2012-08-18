@@ -223,7 +223,7 @@ var Statechart = function(type) {
 	proto.transition_removed = function(event) {
 		this._notify("transition_removed", event);
 	};
-	proto.add_state = function(state_name, type) {
+	proto.add_state = function(state_name, type, index) {
 		var state_names = _.isArray(state_name) ? state_name : state_name.split(".");
 
 		if(_.size(state_names) === 1) {
@@ -235,7 +235,7 @@ var Statechart = function(type) {
 
 			var state = type instanceof Statechart ? type : new Statechart(type);
 			state.set_parent(this);
-			this._states.set(state_name, state);
+			this._states.set(state_name, state, index);
 
 			state._on("state_added", this.$state_added);
 			state._on("state_removed", this.$state_removed);
@@ -273,15 +273,9 @@ var Statechart = function(type) {
 
 			var state = this.get_state_with_name(state_name);
 			if(!_.isNull(state)) {
-				var transitions_involving_state = [];
-				var transitions_not_involving_state = [];
-				_.forEach(this.transitions, function(transition) {
-					if(transition.involves(state)) {
-						transitions_involving_state.push(transition);
-					} else {
-						transitions_not_involving_state.push(transition);
-					}
-				});
+				var transitions_involving_state = this.transitions_involving_state(state);
+				var transitions_not_involving_state = this.transitions_not_involving_state(state);
+
 				this.transitions = transitions_not_involving_state;
 
 				state._off("state_added", this.$state_added);
@@ -298,6 +292,9 @@ var Statechart = function(type) {
 				});
 				if(also_destroy !== true) {
 					state.destroy();
+					_.forEach(transitions_involving_state, function(transition) {
+						transition.destroy();
+					});
 				}
 			}
 		} else {
@@ -310,12 +307,25 @@ var Statechart = function(type) {
 
 		return this;
 	};
+	proto.transitions_involving_state = function(state) {
+		return _.filter(this.transitions, function(transition) {
+			return transition.involves(state);
+		});
+	};
+	proto.transitions_not_involving_state = function(state) {
+		return _.reject(this.transitions, function(transition) {
+			return transition.involves(state);
+		});
+	};
 	proto.rename_state = function(from_name, to_name) {
-		var state = this._find_state(from_name);
-		if(!_.isNull(state)) {
-			this.remove_state(from_name);
-			this.add_state(to_name, state);
-		}
+		this._states.rename(from_name, to_name);
+		return this;
+	};
+	proto.get_state_index = function(state_name) {
+		return this._states._key_index(state_name);
+	};
+	proto.move_state = function(state_name, index) {
+		this._states.move(state_name, index);
 		return this;
 	};
 	proto.destroy = function() {
@@ -333,6 +343,14 @@ var Statechart = function(type) {
 		var pre_init_state = this._find_state("_pre_init");
 		this.add_transition(pre_init_state, state_name, cjs.create_event("init", this));
 		return this;
+	};
+	proto.get_transition_by_id = function(transition_id) {
+		for(var i = 0; i<this.transitions.length; i++) {
+			if(this.transitions[i].id === transition_id) {
+				return this.transitions[i];
+			}
+		}
+		return undefined;
 	};
 	proto.remove_transition = function(transition) {
 		transition.destroy();
@@ -553,10 +571,20 @@ var Statechart = function(type) {
 		return transition;
 	};
 
-	proto.add_transition = function() {
-		var transition = this._get_transition.apply(this, arguments);
+	proto.add_transition = function(arg0) {
+		var transition;
+		if(arguments.length === 1 && arg0 instanceof StatechartTransition) {
+			transition = arg0;
+		} else {
+			transition = this._get_transition.apply(this, arguments);
+		}
+
 		this._last_transition = transition;
 		this.transitions.push(transition);
+
+		_.sortBy(this.transitions, function(transition) {
+			return transition.id;
+		}); // If transitions are removed and re-inserted, try to keep some consistent ordering
 		
 		this._notify("transition_added", {
 			transition: transition
