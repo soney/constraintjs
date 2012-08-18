@@ -34,6 +34,7 @@ exports.main_src = c(
 			, "util/map.js"
 			, "util/graph.js"
 			, "util/constraint_solver.js"
+			, "live_fn.js"
 			, "fsm/cjs_fsm.js"
 			, "constraint/cjs_constraint.js"
 			, "constraint/cjs_constraint_mixins.js"
