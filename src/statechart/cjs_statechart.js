@@ -495,14 +495,21 @@ var Statechart = function(type) {
 				state._notify("exit", event);
 			});
 
+			_.forEach(states_entered, function(entered_state) {
+				if(!entered_state.is_running()) {
+					entered_state.run();
+				}
+				if(entered_state !== state) {
+					entered_state._set_state(state);
+				}
+			});
+
 			this._active_state = state;
 			this._active_state._set_event(event);
+
 			_.forEach(states_entered, function(state) {
 				state._notify("enter", event);
 			});
-			if(!this._active_state.is_running()) {
-				this._active_state.run();
-			}
 		}
 	};
 	proto._run_transition = function(transition, event) {
