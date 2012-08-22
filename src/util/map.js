@@ -83,8 +83,11 @@ var Map = function() {
 		var len = this._keys.length();
 		var key, value;
 		context = context || this;
+		var keys = this._keys.get();
+		var values = this._values.get();
+		var len = keys.length;
 		for(var i = 0; i<len; i++) {
-			key = this._keys.item(i); value = this._values.item(i);
+			key = keys[i]; value = values[i];
 			
 			func.call(context, value, key, i);
 		}
