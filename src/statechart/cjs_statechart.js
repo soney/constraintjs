@@ -236,6 +236,9 @@ var Statechart = function(type) {
 			var state = type instanceof Statechart ? type : new Statechart(type);
 			state.set_parent(this);
 			this._states.set(state_name, state, index);
+			if(this.is_running()) {
+				state.run();
+			}
 
 			state._on("state_added", this.$state_added);
 			state._on("state_removed", this.$state_removed);
