@@ -181,16 +181,22 @@ var Statechart = function(type) {
 	this._starts_at = undefined;
 	this._parent = undefined;
 	this._concurrent = false;
-	this._active_state = undefined;
+
+	var self = this;
+	this._$complete_state = cjs.create("constraint", function() {
+		return self._complete_state_getter();
+	});
+	this._$local_state = cjs.create("constraint", undefined, true);
+
 	this._listeners = {};
 	this._type = _.isUndefined(type) ? "statechart" : type;
 	if(this.get_type() !== "pre_init") {
 		this.add_state("_pre_init", "pre_init");
 	}
-	this._context = undefined;
 	this.id = _.uniqueId();
 	this._basis = undefined;
-	this._event = undefined;
+	this._event = cjs.create("constraint", undefined, true);
+
 	this.$state_added = _.bind(this.state_added, this);
 	this.$state_removed = _.bind(this.state_removed, this);
 	this.$state_moved = _.bind(this.state_moved, this);
@@ -203,8 +209,9 @@ var Statechart = function(type) {
 	proto.get_event = function() { return this._event; };
 	proto.set_basis = function(basis) { this._basis = basis; };
 	proto.get_basis = function() { return this._basis; };
-	proto.get_context = function() { return this._context; };
-	proto.set_context = function(context) { this._context = context; return this; };
+	proto.get_local_state = function() {
+		return this._$local_state.get();
+	};
 	proto.get_type = function() {
 		return this._type;
 	};
@@ -263,7 +270,7 @@ var Statechart = function(type) {
 		}
 
 		if(!this.is_running() && state.get_type() === "pre_init") {
-			this._active_state = state;
+			this._$local_state.set(state, true);
 		}
 
 		return this;
@@ -409,8 +416,9 @@ var Statechart = function(type) {
 				state.run();
 			});
 		} else {
-			if(!_.isUndefined(this._active_state)) {
-				this._active_state.run();
+			var local_state = this.get_local_state();
+			if(!_.isUndefined(local_state)) {
+				local_state.run();
 			}
 		}
 		var event = {
@@ -424,7 +432,7 @@ var Statechart = function(type) {
 	proto.is_running = function() {
 		return this._running;
 	};
-	proto.get_state = function() {
+	proto._complete_state_getter = function() {
 		if(this.is_concurrent()) {
 			var active_states = this._states.map(function(state) {
 				return state.get_state();
@@ -436,14 +444,17 @@ var Statechart = function(type) {
 				return [];
 			}
 
-			var active_state = this._active_state;
-			if(active_state.get_type() === "pre_init") {
-				return [active_state];
+			var local_state = this.get_local_state();
+			if(local_state.get_type() === "pre_init") {
+				return [local_state];
 			} else {
-				var rv = [active_state];
-				return rv.concat(active_state.get_state());
+				var rv = [local_state];
+				return rv.concat(local_state.get_state());
 			}
 		}
+	};
+	proto.get_state = function() {
+		return this._$complete_state.get();
 	};
 	proto.get_state_names = function() {
 		return _.map(this.get_state(), function(state) {
@@ -480,7 +491,7 @@ var Statechart = function(type) {
 		} else {
 			var states_left = [];
 			var states_entered = [];
-			var curr_state = this._active_state;
+			var curr_state = this.get_local_state();
 
 			while(!_.isUndefined(curr_state) && curr_state !== this) {
 				states_left.push(curr_state);
@@ -507,8 +518,8 @@ var Statechart = function(type) {
 				}
 			});
 
-			this._active_state = state;
-			this._active_state._set_event(event);
+			state._set_event(event);
+			this._$local_state.set(state);
 
 			_.forEach(states_entered, function(state) {
 				state._notify("enter", event);
@@ -557,10 +568,11 @@ var Statechart = function(type) {
 				return substate.is(state);
 			});
 		} else {
-			if(_.isUndefined(this._active_state)) {
+			var local_state = this.get_local_state();
+			if(_.isUndefined(local_state)) {
 				return false;
 			} else {
-				return this._active_state.is(state);
+				return local_state.is(state);
 			}
 		}
 	};
