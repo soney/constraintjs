@@ -47,11 +47,11 @@ var Map = function() {
 
 		if(key_index<0) { // Doesn't already exist
 			if(_.isNumber(index) && index >= 0 && index < this._keys.length()) {
-				this._keys.insert_at(key, index);
 				this._values.insert_at(value, index);
+				this._keys.insert_at(key, index);
 			} else {
-				this._keys.push(key);
 				this._values.push(value);
+				this._keys.push(key);
 			}
 		} else {
 			if(_.isNumber(index) && index >= 0 && index < this._keys.length()) {
