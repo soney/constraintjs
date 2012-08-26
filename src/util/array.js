@@ -13,6 +13,10 @@ var move_index = function (arr, old_index, new_index) {
     arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
 };
 
+var default_equality_check = function(itema, itemb) {
+	return itema === itemb;
+};
+
 cjs.define("array", function(value) {
 	if(!_.isArray(value)) {
 		value = [];
@@ -46,9 +50,17 @@ cjs.define("array", function(value) {
 			return value_got[index_got];
 		});
 	};
-	_value.index_of = function(item) {
+	_value.index_of = function(item, equality_check) {
+		if(!_.isFunction(equality_check)) {
+			equality_check = default_equality_check;
+		}
 		var value = _value.get();
-		return _.indexOf(value, item);
+		for(var i = 0; i<value.length; i++) {
+			if(equality_check(value[i], item)) {
+				return i;
+			}
+		}
+		return -1;
 	};
 	_value.length = function() {
 		var value = _value.get();

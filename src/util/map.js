@@ -14,9 +14,10 @@ var move_index = function (arr, old_index, new_index) {
     arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
 };
 
-var Map = function() {
+var Map = function(equality_check) {
 	this._keys = cjs.create("array");
 	this._values = cjs.create("array");
+	this._equality_check = equality_check;
 	if(arguments.length > 0) {
 		this.set.apply(this, arguments);
 	}
@@ -37,7 +38,7 @@ var Map = function() {
 		return this;
 	};
 	proto._key_index = function(key) {
-		return this._keys.index_of(key);
+		return this._keys.index_of(key, this._equality_check);
 	};
 	proto.has_key = function(key) {
 		return this._key_index(key) >= 0;
@@ -146,7 +147,7 @@ var Map = function() {
 		}
 	};
 	proto.key_for_value = function(value) {
-		var value_index = this._values.index_of(value);
+		var value_index = this._values.index_of(value, this._equality_check);
 		if(value_index >= 0) {
 			return this._keys.item(value_index);
 		}
