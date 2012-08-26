@@ -168,8 +168,8 @@ var Map = function(equality_check) {
 	};
 }(Map));
 
-cjs.define("map", function() {
-	return new Map();
+cjs.define("map", function(eq_check) {
+	return new Map(eq_check);
 });
 
 }(cjs));
