@@ -1256,6 +1256,7 @@ if ( document.querySelectorAll ) {
 		var disconnectedMatch = !matches.call( document.createElement( "div" ), "div" ),
 			pseudoWorks = false;
 
+/*
 		try {
 			// This should fail with an exception
 			// Gecko does not error, returns false instead
@@ -1264,6 +1265,8 @@ if ( document.querySelectorAll ) {
 		} catch( pseudoError ) {
 			pseudoWorks = true;
 		}
+		*/
+			pseudoWorks = true;
 
 		Sizzle.matchesSelector = function( node, expr ) {
 			// Make sure that attribute selectors are quoted
