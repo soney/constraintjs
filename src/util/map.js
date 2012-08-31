@@ -127,8 +127,8 @@ var Map = function(equality_check) {
 		var key_index = this._key_index(key);
 		if(key_index >= 0) {
 			move_index(keys_got,   key_index, index);
-			this._keys.invalidate();
 			move_index(values_got, key_index, index);
+			this._keys.invalidate();
 			this._values.invalidate();
 		}
 		return this;
