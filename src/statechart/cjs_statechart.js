@@ -175,7 +175,7 @@ var StateListener = function(selector, callback) {
 
 var Statechart = function(type) {
 	this._running = false;
-	this.transitions = [];
+	this.transitions = cjs.create("array");
 	this._states = cjs.create("map");
 	
 	this._starts_at = undefined;
@@ -286,7 +286,7 @@ var Statechart = function(type) {
 				var transitions_involving_state = this.transitions_involving_state(state);
 				var transitions_not_involving_state = this.transitions_not_involving_state(state);
 
-				this.transitions = transitions_not_involving_state;
+				this.transitions.set(transitions_not_involving_state);
 
 				state._off("state_added", this.$state_added);
 				state._off("state_removed", this.$state_removed);
@@ -318,12 +318,12 @@ var Statechart = function(type) {
 		return this;
 	};
 	proto.transitions_involving_state = function(state) {
-		return _.filter(this.transitions, function(transition) {
+		return this.transitions.filter(function(transition) {
 			return transition.involves(state);
 		});
 	};
 	proto.transitions_not_involving_state = function(state) {
-		return _.reject(this.transitions, function(transition) {
+		return this.transitions.filter(function(transition) {
 			return transition.involves(state);
 		});
 	};
@@ -355,16 +355,18 @@ var Statechart = function(type) {
 		return this;
 	};
 	proto.get_transition_by_id = function(transition_id) {
-		for(var i = 0; i<this.transitions.length; i++) {
-			if(this.transitions[i].id === transition_id) {
-				return this.transitions[i];
+		var len = this.transitions.length();
+		for(var i = 0; i<len; i++) {
+			var transition = this.transitions.item(i);
+			if(transition.id === transition_id) {
+				return transition;
 			}
 		}
 		return undefined;
 	};
 	proto.remove_transition = function(transition) {
 		transition.destroy();
-		this.transitions = _.without(this.transitions, transition);
+		this.transitions.set(this.transitions.without(transition));
 		this._notify("transition_removed", {
 			transition: transition
 			, target: this
@@ -604,9 +606,9 @@ var Statechart = function(type) {
 		this._last_transition = transition;
 		this.transitions.push(transition);
 
-		_.sortBy(this.transitions, function(transition) {
+		this.transitions.set(_.sortBy(this.transitions.get(), function(transition) {
 			return transition.id;
-		}); // If transitions are removed and re-inserted, try to keep some consistent ordering
+		})); // If transitions are removed and re-inserted, try to keep some consistent ordering
 		
 		this._notify("transition_added", {
 			transition: transition
@@ -618,7 +620,7 @@ var Statechart = function(type) {
 		return this._last_transition;
 	};
 	proto.get_transitions = function() {
-		return _.clone(this.transitions);
+		return _.clone(this.transitions.get());
 	};
 
 	proto.name_for_state = function(state) {
@@ -863,17 +865,17 @@ var Statechart = function(type) {
 		return rv;
 	};
 	proto.local_transitions_from = function(state) {
-		return _.filter(this.transitions, function(transition) {
+		return this.transitions.filter(function(transition) {
 			return transition.from() === state;
 		});
 	};
 	proto.local_transitions_to = function(state) {
-		return _.filter(this.transitions, function(transition) {
+		return this.transitions.filter(function(transition) {
 			return transition.to() === state;
 		});
 	};
 	proto.local_transitions_involving = function(state) {
-		return _.filter(this.transitions, function(transition) {
+		return this.transitions.filter(function(transition) {
 			return transition.involves(state);
 		});
 	};

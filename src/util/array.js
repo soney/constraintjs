@@ -88,6 +88,20 @@ cjs.define("array", function(value) {
 		_value.move_item(from_index, to_index);
 		return this;
 	};
+	_value.filter = function(filter_func) {
+		var value = _value.get();
+		return _.filter(value, filter_func);
+	};
+	_value.reject = function(filter_func) {
+		var value = _value.get();
+		return _.reject(value, filter_func);
+	};
+	_value.without = function() {
+		var value = _value.get();
+		var args = [value];
+		args.push.apply(args, _.toArray(arguments));
+		return _.without.apply(_, args);
+	};
 	
 	return _value;
 });
