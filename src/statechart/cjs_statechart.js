@@ -323,7 +323,7 @@ var Statechart = function(type) {
 		});
 	};
 	proto.transitions_not_involving_state = function(state) {
-		return this.transitions.filter(function(transition) {
+		return this.transitions.reject(function(transition) {
 			return transition.involves(state);
 		});
 	};
