@@ -166,6 +166,14 @@ var Map = function(equality_check) {
 			return self.get(key_got);
 		});
 	};
+	proto.defer_invalidation = function(to_defer) {
+		this._values.defer_invalidation(to_defer);
+		this._keys.defer_invalidation(to_defer);
+	};
+	proto.invalidate = function() {
+		this._values.invalidate();
+		this._keys.invalidate();
+	};
 }(Map));
 
 cjs.define("map", function(eq_check) {

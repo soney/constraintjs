@@ -173,10 +173,11 @@ var StateListener = function(selector, callback) {
 	};
 }(StateListener));
 
-var Statechart = function(type) {
+var Statechart = function(type, defer_states_invalidation) {
 	this._running = false;
 	this.transitions = cjs.create("array");
 	this._states = cjs.create("map");
+	if(defer_states_invalidation === true) { this._states.defer_invalidation(true); }
 	
 	this._starts_at = undefined;
 	this._parent = undefined;
@@ -698,11 +699,16 @@ var Statechart = function(type) {
 	};
 
 	proto.clone = function(state_map) {
+		var statemap_was_undefined = false;
 		if(_.isUndefined(state_map)) {
 			state_map = cjs.create("map");
+			state_map.defer_invalidation(true);
+			statemap_was_undefined = true;
 		}
 
-		var new_statechart = new Statechart(this.get_type());
+		var new_statechart = new Statechart(this.get_type(), true);
+		//new_statechart._states.defer_invalidation(true);
+		new_statechart.transitions.defer_invalidation(true);
 		new_statechart.set_basis(this);
 		state_map.set(this, new_statechart);
 		var substates_names = this.get_substate_names();
@@ -733,6 +739,14 @@ var Statechart = function(type) {
 			cloned_transition.set_basis(transition);
 		}
 		
+		new_statechart._states.defer_invalidation(false);
+		new_statechart.transitions.defer_invalidation(false);
+		new_statechart._states.invalidate();
+		new_statechart.transitions.invalidate();
+
+		if(statemap_was_undefined) {
+		}
+
 		return new_statechart;
 	};
 
