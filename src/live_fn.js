@@ -16,7 +16,7 @@
 		var on_nullify = function() {
 			constraint_solver.getValue(constraint);
 		};
-		var node = constraint_solver.addObject(constraint);
+		var node = constraint_solver.addObject(constraint, { auto_add_outgoing_dependencies: false });
 		var listener_id = constraint_solver.add_listener("nullify", node, on_nullify);
 
 		var rv = {

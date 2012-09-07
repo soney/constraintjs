@@ -1,6 +1,7 @@
 /*global document:true */
 (function(cjs, root) {if(!cjs._is_node) {
 var _ = cjs._;
+/*
 
 var mouse = {
 	x: cjs.constraint()
@@ -69,5 +70,6 @@ root.addEventListener("touchmove", function(event) {
 root.addEventListener("touchend", function(event) {
 	cjs.touches.set(event.touches);
 });
+*/
 
 }}(cjs, this));

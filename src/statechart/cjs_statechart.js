@@ -741,8 +741,8 @@ var Statechart = function(type, defer_states_invalidation) {
 		
 		new_statechart._states.defer_invalidation(false);
 		new_statechart.transitions.defer_invalidation(false);
-		new_statechart._states.invalidate();
-		new_statechart.transitions.invalidate();
+		//new_statechart._states.invalidate();
+		//new_statechart.transitions.invalidate();
 
 		if(statemap_was_undefined) {
 		}
