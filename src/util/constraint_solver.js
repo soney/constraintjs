@@ -33,6 +33,7 @@ var ConstraintNode = function(obj, options) {
 	
 	this.obj.__constraint_solver_node__ = this;
 	this.id = id++;
+	//if(this.id === 39) { debugger; }
 };
 _.proto_extend(ConstraintNode, Node);
 (function(my) {
@@ -239,6 +240,7 @@ var ConstraintSolver = function() {
 			var outgoingEdge = outgoingEdges[i];
 			var dependentNode = outgoingEdge.toNode;
 
+
 			if(outgoingEdge.timestamp < dependentNode.timestamp) {
 				var toNode = outgoingEdge.toNode;
 				var fromNode = node;
@@ -285,6 +287,10 @@ var ConstraintSolver = function() {
 			if(dependency_edge!==null) {
 				dependency_edge.timestamp = demanding_var.timestamp+1;
 			}
+		}
+
+		if(node.id === 51) {
+			//console.log(demanding_var.id, node.id, node.ood);
 		}
 
 		if(node.ood) {
@@ -414,6 +420,7 @@ var ConstraintSolver = function() {
 			};
 		}
 
+		listener_id++;
 		var listener = {
 			filter: filter,
 			id: listener_id,
@@ -424,8 +431,7 @@ var ConstraintSolver = function() {
 			listener.interested_in_node = interested_in_node;
 		}
 		this.listeners.push(listener);
-		listener_id++;
-		return listener_id;
+		return listener.id;
 	};
 
 	proto.off = proto.remove_listener = function(listener_id) {

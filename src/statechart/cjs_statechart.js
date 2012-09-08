@@ -337,6 +337,11 @@ var Statechart = function(type, defer_states_invalidation) {
 	};
 	proto.move_state = function(state_name, index) {
 		this._states.move(state_name, index);
+		this._notify("state_moved", {
+			state_name: state_name
+			, target: this
+			, index: index
+		});
 		return this;
 	};
 	proto.destroy = function() {
@@ -707,6 +712,15 @@ var Statechart = function(type, defer_states_invalidation) {
 		}
 
 		var new_statechart = new Statechart(this.get_type(), true);
+
+		if(_.has(window, "red")) {
+			red._set_constraint_descriptor(new_statechart._states._keys, "State keys " + new_statechart.id + " shadowing " + this.id);
+			red._set_constraint_descriptor(new_statechart._states._values, "State values " + new_statechart.id + " shadowing " + this.id);
+			red._set_constraint_descriptor(new_statechart.transitions, "Transitions " + new_statechart.id + " shadowing " + this.id);
+			red._set_constraint_descriptor(new_statechart._$complete_state, "$complete_state " + new_statechart.id + " shadowing " + this.id);
+			red._set_constraint_descriptor(new_statechart._$local_state, "$local_state " + new_statechart.id + " shadowing " + this.id);
+		}
+
 		//new_statechart._states.defer_invalidation(true);
 		new_statechart.transitions.defer_invalidation(true);
 		new_statechart.set_basis(this);
