@@ -175,7 +175,7 @@ var StateListener = function(selector, callback) {
 
 var Statechart = function(type, defer_states_invalidation) {
 	this._running = false;
-	this.transitions = cjs.create("array");
+	this._transitions = cjs.create("array");
 	this._states = cjs.create("map");
 	if(defer_states_invalidation === true) { this._states.defer_invalidation(true); }
 	
@@ -225,12 +225,30 @@ var Statechart = function(type, defer_states_invalidation) {
 	proto.state_moved = function(event) {
 		this._notify("state_moved", event);
 	};
+	proto.state_renamed = function(event) {
+		this._notify("state_renamed", event);
+	};
 	proto.transition_added = function(event) {
 		this._notify("transition_added", event);
 	};
 	proto.transition_removed = function(event) {
 		this._notify("transition_removed", event);
 	};
+	proto.defer_invalidation = function(to_defer) {
+		this._states.defer_invalidation(to_defer);
+		this._transitions.defer_invalidation(to_defer);
+		this._states.forEach(function(state) {
+			state.defer_invalidation(to_defer);
+		});
+	};
+	proto.invalidate = function() {
+		this._states.invalidate();
+		this._transitions.invalidate();
+		this._states.forEach(function(state) {
+			state.invalidate();
+		});
+	};
+
 	proto.add_state = function(state_name, type, index) {
 		var state_names = _.isArray(state_name) ? state_name : state_name.split(".");
 
@@ -287,7 +305,7 @@ var Statechart = function(type, defer_states_invalidation) {
 				var transitions_involving_state = this.transitions_involving_state(state);
 				var transitions_not_involving_state = this.transitions_not_involving_state(state);
 
-				this.transitions.set(transitions_not_involving_state);
+				this._transitions.set(transitions_not_involving_state);
 
 				state._off("state_added", this.$state_added);
 				state._off("state_removed", this.$state_removed);
@@ -319,17 +337,22 @@ var Statechart = function(type, defer_states_invalidation) {
 		return this;
 	};
 	proto.transitions_involving_state = function(state) {
-		return this.transitions.filter(function(transition) {
+		return this._transitions.filter(function(transition) {
 			return transition.involves(state);
 		});
 	};
 	proto.transitions_not_involving_state = function(state) {
-		return this.transitions.reject(function(transition) {
+		return this._transitions.reject(function(transition) {
 			return transition.involves(state);
 		});
 	};
 	proto.rename_state = function(from_name, to_name) {
 		this._states.rename(from_name, to_name);
+		this._notify("state_renamed", {
+			from_name: from_name
+			, to_name: to_name
+			, target: this
+		});
 		return this;
 	};
 	proto.get_state_index = function(state_name) {
@@ -361,18 +384,20 @@ var Statechart = function(type, defer_states_invalidation) {
 		return this;
 	};
 	proto.get_transition_by_id = function(transition_id) {
-		var len = this.transitions.length();
+		var len = this._transitions.length();
 		for(var i = 0; i<len; i++) {
-			var transition = this.transitions.item(i);
+			var transition = this._transitions.item(i);
 			if(transition.id === transition_id) {
 				return transition;
 			}
 		}
 		return undefined;
 	};
-	proto.remove_transition = function(transition) {
-		transition.destroy();
-		this.transitions.set(this.transitions.without(transition));
+	proto.remove_transition = function(transition, and_destroy) {
+		if(and_destroy !== false) {
+			transition.destroy();
+		}
+		this._transitions.set(this._transitions.without(transition));
 		this._notify("transition_removed", {
 			transition: transition
 			, target: this
@@ -610,9 +635,9 @@ var Statechart = function(type, defer_states_invalidation) {
 		}
 
 		this._last_transition = transition;
-		this.transitions.push(transition);
+		this._transitions.push(transition);
 
-		this.transitions.set(_.sortBy(this.transitions.get(), function(transition) {
+		this._transitions.set(_.sortBy(this._transitions.get(), function(transition) {
 			return transition.id;
 		})); // If transitions are removed and re-inserted, try to keep some consistent ordering
 		
@@ -626,7 +651,7 @@ var Statechart = function(type, defer_states_invalidation) {
 		return this._last_transition;
 	};
 	proto.get_transitions = function() {
-		return _.clone(this.transitions.get());
+		return _.clone(this._transitions.get());
 	};
 
 	proto.name_for_state = function(state) {
@@ -716,13 +741,14 @@ var Statechart = function(type, defer_states_invalidation) {
 		if(_.has(window, "red")) {
 			red._set_constraint_descriptor(new_statechart._states._keys, "State keys " + new_statechart.id + " shadowing " + this.id);
 			red._set_constraint_descriptor(new_statechart._states._values, "State values " + new_statechart.id + " shadowing " + this.id);
-			red._set_constraint_descriptor(new_statechart.transitions, "Transitions " + new_statechart.id + " shadowing " + this.id);
+			red._set_constraint_descriptor(new_statechart._transitions, "Transitions " + new_statechart.id + " shadowing " + this.id);
 			red._set_constraint_descriptor(new_statechart._$complete_state, "$complete_state " + new_statechart.id + " shadowing " + this.id);
 			red._set_constraint_descriptor(new_statechart._$local_state, "$local_state " + new_statechart.id + " shadowing " + this.id);
 		}
 
 		//new_statechart._states.defer_invalidation(true);
-		new_statechart.transitions.defer_invalidation(true);
+		//new_statechart._transitions.defer_invalidation(true);
+		new_statechart.defer_invalidation(true);
 		new_statechart.set_basis(this);
 		state_map.set(this, new_statechart);
 		var substates_names = this.get_substate_names();
@@ -753,10 +779,7 @@ var Statechart = function(type, defer_states_invalidation) {
 			cloned_transition.set_basis(transition);
 		}
 		
-		new_statechart._states.defer_invalidation(false);
-		new_statechart.transitions.defer_invalidation(false);
-		//new_statechart._states.invalidate();
-		//new_statechart.transitions.invalidate();
+		new_statechart.defer_invalidation(false);
 
 		if(statemap_was_undefined) {
 		}
@@ -893,17 +916,17 @@ var Statechart = function(type, defer_states_invalidation) {
 		return rv;
 	};
 	proto.local_transitions_from = function(state) {
-		return this.transitions.filter(function(transition) {
+		return this._transitions.filter(function(transition) {
 			return transition.from() === state;
 		});
 	};
 	proto.local_transitions_to = function(state) {
-		return this.transitions.filter(function(transition) {
+		return this._transitions.filter(function(transition) {
 			return transition.to() === state;
 		});
 	};
 	proto.local_transitions_involving = function(state) {
-		return this.transitions.filter(function(transition) {
+		return this._transitions.filter(function(transition) {
 			return transition.involves(state);
 		});
 	};
