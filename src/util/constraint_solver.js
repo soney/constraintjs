@@ -289,9 +289,6 @@ var ConstraintSolver = function() {
 			}
 		}
 
-		if(node.id === 51) {
-			//console.log(demanding_var.id, node.id, node.ood);
-		}
 
 		if(node.ood) {
 			this.stack.push(node);
