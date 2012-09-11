@@ -63,6 +63,7 @@
 		this.destroy_callbacks = [];
 		this.bindings = [];
 		this.invalidate = _.bind(this.nullify, this);
+		this.invalidateAndEval = _.bind(this.nullifyAndEval, this);
 		this._memory = [];
 	};
 
