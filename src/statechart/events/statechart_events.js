@@ -11,8 +11,8 @@ var _ = cjs._;
 			type: "init"
 		});
 	};
-	proto.clone = function (context) {
-		return cjs.create_event("init", context);
+	proto.clone = function (parent, context, sc) {
+		return cjs.create_event("init", sc);
 	};
 }(cjs._create_event_type("init").prototype));
 
@@ -27,7 +27,7 @@ var _ = cjs._;
 			, state: this.state
 		});
 	};
-	proto.clone = function (context) {
+	proto.clone = function (parent, context, sc) {
 		return cjs.create_event("on_enter", this.state);
 	};
 }(cjs._create_event_type("on_enter").prototype));
@@ -43,7 +43,7 @@ var _ = cjs._;
 			, state: this.state
 		});
 	};
-	proto.clone = function (context) {
+	proto.clone = function (parent, context, sc) {
 		return red.create_event("on_exit", this.state);
 	};
 }(cjs._create_event_type("on_exit").prototype));

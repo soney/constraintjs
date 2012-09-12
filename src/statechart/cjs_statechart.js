@@ -37,6 +37,9 @@ var StatechartTransition = function(statechart, from_state, to_state, event) {
 	proto.get_statechart = function() { return this._statechart; };
 	proto.set_basis = function(basis) { this._basis = basis; };
 	proto.get_basis = function() { return this._basis; };
+	proto.stringify = function() {
+		return "" + this.id + (this._event.type === "red_event" ? ","+this._event.id : "");
+	};
 }(StatechartTransition));
 
 var StateSelector = function(state_name) {
@@ -767,11 +770,11 @@ var Statechart = function(type, defer_states_invalidation) {
 			var event = transition.get_event();
 			var cloned_event;
 			if(event.type === "init") {
-				cloned_event = event.clone(state_map.get(event.statechart));
+				cloned_event = event.clone(parent, context, state_map.get(event.statechart));
 			} else if(event.type === "on_enter" || event.type === "on_exit") {
 				cloned_event = event.clone(parent, context, state_map.get(event.state));
 			} else {
-				cloned_event = event.clone(this);
+				cloned_event = event.clone(parent, context, this);
 			}
 
 			new_statechart.add_transition(from, to, cloned_event);
@@ -898,7 +901,7 @@ var Statechart = function(type, defer_states_invalidation) {
 		rv += _.map(this.transitions_from(this), function(transition) {
 			var to = transition.to().get_name();
 			var event = transition.get_event();
-			return event.type + " -(" + transition.id + ")-> " + to;
+			return event.type + " -(" + transition.stringify() + ")-> " + to;
 		}).join(", ");
 		var self = this;
 		_.forEach(this.get_substates(), function(substate) {
