@@ -9,7 +9,6 @@ var CJSEvent = function() {
 (function(my) {
 	var proto = my.prototype;
 	proto._initialize = function() {
-		this.transition = undefined;
 		this.listeners = [];
 		this.fire = _.bind(this._fire, this);
 	};
@@ -27,10 +26,10 @@ var CJSEvent = function() {
 		});
 	};
 	proto.guard = function(func) {
-		var new_transition = new RedEvent();
+		var new_event = new RedEvent();
 		this.on_fire(function() {
 			if(func.apply(this, arguments)) {
-				new_transition.fire.apply(new_transition, arguments);
+				new_event.fire.apply(new_event, arguments);
 			}
 		});
 		return new_transition;

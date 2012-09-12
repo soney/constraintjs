@@ -728,7 +728,7 @@ var Statechart = function(type, defer_states_invalidation) {
 		return _.isEmpty(this.get_substates());
 	};
 
-	proto.clone = function(state_map) {
+	proto.clone = function(parent, context, state_map) {
 		var statemap_was_undefined = false;
 		if(_.isUndefined(state_map)) {
 			state_map = cjs.create("map");
@@ -755,7 +755,7 @@ var Statechart = function(type, defer_states_invalidation) {
 		for(var i = 0; i<substates_names.length; i++) {
 			var substate_name = substates_names[i];
 			var substate = this.get_state_with_name(substate_name);
-			new_statechart.add_state(substate_name, substate.clone(state_map));
+			new_statechart.add_state(substate_name, substate.clone(parent, context, state_map));
 		}
 
 		var transitions = this.get_transitions();
@@ -769,7 +769,7 @@ var Statechart = function(type, defer_states_invalidation) {
 			if(event.type === "init") {
 				cloned_event = event.clone(state_map.get(event.statechart));
 			} else if(event.type === "on_enter" || event.type === "on_exit") {
-				cloned_event = event.clone(state_map.get(event.state));
+				cloned_event = event.clone(parent, context, state_map.get(event.state));
 			} else {
 				cloned_event = event.clone(this);
 			}
@@ -781,8 +781,6 @@ var Statechart = function(type, defer_states_invalidation) {
 		
 		new_statechart.defer_invalidation(false);
 
-		if(statemap_was_undefined) {
-		}
 
 		return new_statechart;
 	};
