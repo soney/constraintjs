@@ -164,7 +164,20 @@
 			});
 		});
 	</script>
+	<script type="text/javascript">
+		var props = [];
+		for(prop_name in window) {
+			props.push(prop_name);
+		}
+	</script>
 	<%- cjs_include(cjs_inc.main) %>
+	<script type="text/javascript">
+		var new_props = [];
+		for(prop_name in window) {
+			new_props.push(prop_name);
+		}
+	</script>
+	<script type="text/javascript" src="underscore.js"></script>
 	<script type="text/javascript">
 		$(function() {
 		});
