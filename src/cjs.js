@@ -477,6 +477,14 @@ cjs.liven = function() {
 //
 
 var ArrayConstraint = function(value) {
+	this.value = [];
+	if(isArray(value)) {
+		var i, len = value.length;
+		for(i = 0; i<value.length; i++) {
+			var val = value[i];
+			this.value.push(cjs.$(val));
+		}
+	}
 };
 
 (function(my) {
