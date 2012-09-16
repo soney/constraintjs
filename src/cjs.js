@@ -95,6 +95,10 @@ var last = function(arr) {
 	return arr[arr.length - 1];
 };
 
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var has = function(obj, key) {
+	return hasOwnProperty.call(obj, key);
+};
 
 
 //
@@ -383,7 +387,7 @@ var Constraint = function(value, literal) {
 	var proto = my.prototype;
 	proto.destroy = function() { constraint_solver.removeObject(this); };
 	proto.cjs_getter = function() {
-		if(this.hasOwnProperty("value")) {
+		if(has(this, "value")) {
 			if(isFunction(this.value) && !this.literal){
 				return this.value();
 			} else {
@@ -477,19 +481,98 @@ cjs.liven = function() {
 //
 
 var ArrayConstraint = function(value) {
-	this.value = [];
+	this._value = [];
+	this._unsubstantiated_items = [];
 	if(isArray(value)) {
 		var i, len = value.length;
 		for(i = 0; i<value.length; i++) {
 			var val = value[i];
-			this.value.push(cjs.$(val));
+			this._value.push(cjs.$(val, true));
 		}
 	}
+	this._len = cjs.$(this._value.length);
 };
 
 (function(my) {
 	var proto = my.prototype;
-	proto.item = function(key, value) {
+	proto.item = function(key, arg1) {
+		var val;
+		if(arguments.length === 1) {
+			val = this._value[key];
+			if(val === undefined) {
+				// Create a dependency so that if the value for this key changes
+				// later on, we can detect it in the constraint solver
+				val = cjs.$(undefined);
+				this._unsubstantiated_items[key] = val;
+			}
+			return val.get();
+		} else if(arguments.length > 1) {
+			val = arg1;
+			var $previous_value = this._value[key];
+			if($previous_value === undefined) {
+				if(has(this._unsubstantiated_items, key)) {
+					$previous_value = this._unsubstantiated_items[key];
+					delete this._unsubstantiated_items[key];
+				}
+			}
+
+			if(cjs.is_constraint($previous_value)) {
+				$previous_value.set(val);
+			} else {
+				this._value[key] = cjs.$(val, true);
+			}
+			this._update_len();
+			return this;
+		}
+	};
+	proto.length = function() {
+		return this._len.get();
+	};
+	proto.push = function() {
+		var i, len = arguments.length;
+		//Make operation atomic
+		cjs.wait();
+		for(i = 0; i<len; i++) {
+			this.item(this._values.length, val);
+		}
+		cjs.signal();
+		return arguments.length;
+	};
+	proto.pop = function() {
+		var $value = this._value.pop();
+		var rv = undefined;
+		if(cjs.is_constraint($value)) {
+			rv = $value.get();
+			$value.destroy();
+		}
+		this._update_len();
+		return value;
+	};
+	proto.clear = function() {
+		var $val;
+		cjs.wait();
+		while(this._value.length > 0) {
+			$val = this._value.pop();
+			if(cjs.is_constraint($val)) { $val.destroy(); }
+		}
+		cjs.signal();
+	};
+	proto.set = function(arr) {
+		cjs.wait();
+		this.clear();
+		this.push.apply(this, arr);
+		cjs.signal();
+	};
+	proto.get = function() {
+		var i, len = this.length();
+		var rv = [];
+		for(i = 0; i<len; i++) {
+			rv.push(this.item(i));
+		}
+		return rv;
+	};
+	proto._update_len = function() {
+		this._len.set(this._value.length);
 	};
 }(ArrayConstraint));
 
@@ -500,6 +583,21 @@ cjs.array = function(value) { return new ArrayConstraint(value); };
 //
 
 var MapConstraint = function(arg0, arg1) {
+	var keys = [],
+		values = [];
+	if(arguments.length === 1) {
+		for(var key in arg0) {
+			keys.push(key);
+			values.push(arg0[key]);
+		}
+	} else if(arguments.length > 1) {
+		if(isArray(arg0) && isArray(arg1)) {
+			keys = arg0;
+			values = arg1;
+		}
+	}
+	this._keys = cjs.array(keys);
+	this._values = cjs.array(values);
 };
 
 (function(my) {
