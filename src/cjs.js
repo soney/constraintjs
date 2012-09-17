@@ -533,12 +533,13 @@ var ArrayConstraint = function(value) {
 		//Make operation atomic
 		cjs.wait();
 		for(i = 0; i<len; i++) {
-			this.item(this._values.length, val);
+			this.item(this._value.length, val);
 		}
 		cjs.signal();
 		return arguments.length;
 	};
 	proto.pop = function() {
+		cjs.wait();
 		var $value = this._value.pop();
 		var rv = undefined;
 		if(cjs.is_constraint($value)) {
@@ -546,7 +547,8 @@ var ArrayConstraint = function(value) {
 			$value.destroy();
 		}
 		this._update_len();
-		return value;
+		cjs.signal();
+		return rv;
 	};
 	proto.clear = function() {
 		var $val;
@@ -574,6 +576,108 @@ var ArrayConstraint = function(value) {
 	proto._update_len = function() {
 		this._len.set(this._value.length);
 	};
+	proto.indexWhere = function(filter) {
+		var i, len = this._value.length, $val;
+
+		for(i = 0; i<len; i++) {
+			$val = this._value[i];
+			if(filter($val.get())) { return i; }
+		}
+		this.length(); // We want to depend on the length if 
+
+		return -1;
+	};
+	proto.lastIndexWhere = function(filter) {
+		var i, len = this.length(), $val;
+
+		for(i = len-1; i>=0; i--) {
+			$val = this._value[i];
+			if(filter($val.get())) { return i; }
+		}
+		return -1;
+	};
+	proto.indexOf = function(item, equality_check) {
+		equality_check = equality_check || eeqeqeq;
+		var filter = function(x) { return x === item; };
+		return this.indexWhere(filter);
+	};
+	proto.lastIndexOf = function(item, equality_check) {
+		equality_check = equality_check || eeqeqeq;
+		var filter = function(x) { return x === item; };
+		return this.lastIndexWhere(filter);
+	};
+	var isPositiveInteger = function(val) {
+		return isNumber(val) && Math.round(val) === val && val >= 0;
+	};
+	proto.splice = function(index, howmany) {
+		var i;
+		if(!isNumber(howmany)) { howmany = 0; }
+		if(!isPositiveInteger(index) || !isPositiveInteger(howmany)) {
+			throw new Error("index and howmany must be positive integers");
+		}
+		var to_insert = Array.prototype.slice.call(arguments, 2);
+
+		cjs.wait();
+		var resulting_shift_size = to_insert.length - howmany;
+		var removed = [];
+		if(resulting_shift_size < 0) {
+			for(i = index; i<this._value.length + resulting_shift_size; i++) {
+				if(i-index < howmany) {
+					removed.push(this.item(i));
+				}
+
+				if(i-index < to_insert.length) {
+					this.item(i, to_insert[i-index]);
+				} else {
+					this.item(i, this.item(i - resulting_shift_size));
+				}
+			}
+			for(i = 0; i<-resulting_shift_size; i++) {
+				this.pop();
+			}
+		} else {
+			for(i = index; i<index+howmany; i++) {
+				removed.push(this.item(i));
+			}
+
+			for(i = this._value.length + resulting_shift_size - 1; i>=index; i--) {
+				if(i-index < to_insert.length) {
+					this.item(i, to_insert[i-index]);
+				} else {
+					this.item(i, this.item(i - resulting_shift_size));
+				}
+			}
+		}
+
+		this._update_len();
+		cjs.signal();
+		return removed;
+	};
+	proto.concat = function() {
+		var args = [], i, len = arguments.length;
+		for(i = 0; i<len; i++) {
+			var arg = arguments[i];
+			if(arg instanceof ArrayConstraint) {
+				args.push(arg.get());
+			} else {
+				args.push(arg);
+			}
+		}
+		var my_val = this.get();
+		return my_val.concat.apply(my_val, args);
+	};
+	proto.shift = function() { var rv_arr = this.splice(0, 1); return rv_arr[0]; };
+	proto.unshift = function() {
+		var args = Array.prototype.slice.call(arguments, 0);
+		this.splice.apply(this, ([0, 0]).concat(args));
+		return this._value.length;
+	};
+	proto.join = function() { var my_val = this.get(); return my_val.join.apply(my_val, arguments); };
+	proto.slice = function() { var my_val = this.get(); return my_val.slice.apply(my_val, arguments); };
+	proto.sort = function() { var my_val = this.get(); return my_val.sort.apply(my_val, arguments); };
+	proto.reverse = function() { var my_val = this.get(); return my_val.reverse.apply(my_val, arguments); };
+	proto.valueOf = function() { var my_val = this.get(); return my_val.valueOf.apply(my_val, arguments); };
+	proto.toString = function() { var my_val = this.get(); return my_val.toString.apply(my_val, arguments); };
 }(ArrayConstraint));
 
 cjs.array = function(value) { return new ArrayConstraint(value); };
@@ -582,7 +686,7 @@ cjs.array = function(value) { return new ArrayConstraint(value); };
 // ============== MAPS ============== 
 //
 
-var MapConstraint = function(arg0, arg1) {
+var MapConstraint = function(arg0, arg1, arg2) {
 	var keys = [],
 		values = [];
 	if(arguments.length === 1) {
@@ -598,20 +702,108 @@ var MapConstraint = function(arg0, arg1) {
 	}
 	this._keys = cjs.array(keys);
 	this._values = cjs.array(values);
+	this._equality_check = arg2 || eqeqeq;
 };
 
 (function(my) {
 	var proto = my.prototype;
+	proto.item = function(key, arg1, arg2) {
+		if(arguments.length === 1) {
+			var keyIndex = this.keyIndex(key);
+			if(keyIndex < 0) { return undefined; }
+			else { return this._values.item(keyIndex); }
+		} else if(arguments.length >= 2) {
+			var value = arg1, index = arg2;
+			this._do_set(key, value, index);
+		}
+		return this;
+	};
+	proto.keyIndex = function(key) {
+		return this._keys.indexOf(key, this._equality_check);
+	};
+	proto._do_set = function(key, value, index) {
+		var key_index = this._key_index(key);
+
+		if(key_index<0) { // Doesn't already exist
+			if(isNumber(index) && index >= 0 && index < this._keys.length()) {
+				cjs.wait();
+				this._values.splice(index, 0, value);
+				this._keys.splice(index, 0, key);
+				cjs.signal();
+			} else {
+				cjs.wait();
+				this._values.push(value);
+				this._keys.push(key);
+				cjs.signal();
+			}
+		} else {
+			if(isNumber(index) && index >= 0 && index < this._keys.length()) {
+				cjs.wait();
+				this._values.item(key_index, value);
+				this.move(key, index);
+				cjs.signal();
+			} else {
+				this._values.item(key_index, value);
+			}
+		}
+
+		return this;
+	};
+	proto.has = function(key) {
+		return this._key_index(key) >= 0;
+	};
+	proto.remove = function(key) {
+		var key_index = this._key_index(key);
+		if(key_index >= 0) {
+			cjs.wait();
+			this._keys.splice(key_index, 1);
+			this._values.splice(key_index, 1);
+			cjs.signal();
+		}
+		return this;
+	};
+	var move_index = function (arr, old_index, new_index) {
+		if (new_index >= arr.length()) {
+			var k = new_index - arr.length();
+			while ((k--) + 1) {
+				arr.push(undefined);
+			}
+		}
+		arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
+	};
+	proto.move = function(key, index) {
+		cjs.wait();
+		var key_index = this._key_index(key);
+		if(key_index >= 0) {
+			move_index(this._keys,   key_index, index);
+			move_index(this._values, key_index, index);
+		}
+		cjs.signal();
+		return this;
+	};
+	proto.rename = function(old_key, new_key) {
+		var old_key_index = this._key_index(old_key);
+		if(old_key_index >= 0) {
+			cjs.wait();
+			var new_key_index = this._key_index(new_key);
+			if(new_key_index >= 0) {
+				this._keys.splice(new_key_index, 1);
+				this._values.splice(new_key_index, 1);
+			}
+			this._keys.item(old_key_index, new_key);
+			cjs.signal();
+		}
+	};
+	proto.keyForValue = function(value) {
+		var value_index = this._values.indexOf(value, this._equality_check);
+		if(value_index < 0) {
+			return undefined;
+		} else {
+			return this._keys.item(value_index);
+		}
+	};
 }(MapConstraint));
-
 cjs.map = function(arg0, arg1) { return new MapConstraint(arg0, arg1); };
-
-//
-// ============== ASYNCHRONOUS CONSTRAINTS ============== 
-//
-
-cjs.async = function() {
-};
 
 return cjs;
 }(this));
