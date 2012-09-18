@@ -1,5 +1,21 @@
 var cjs = (function (root) {
 //
+// ============== CJS CORE ============== 
+//
+
+// The star of the show!
+var old_cjs = root.cjs;
+var cjs = function () {
+	return cjs.$.apply(cjs, arguments);
+};
+cjs.version = "1.0.0";
+
+cjs.noConflict = function() {
+	root.cjs = old_cjs;
+	return cjs;
+};
+
+//
 // ============== UTILITY FUNCTIONS ============== 
 //
 
@@ -99,17 +115,6 @@ var hasOwnProperty = Object.prototype.hasOwnProperty;
 var has = function(obj, key) {
 	return hasOwnProperty.call(obj, key);
 };
-
-
-//
-// ============== CJS CORE ============== 
-//
-
-// The star of the show!
-var cjs = function () {
-	return cjs.$.apply(cjs, arguments);
-};
-cjs.version = "1.0.0";
 
 //
 // ============== CONSTRAINT SOLVER ============== 
@@ -707,6 +712,8 @@ var MapConstraint = function(arg0, arg1, arg2) {
 
 (function(my) {
 	var proto = my.prototype;
+	proto.keys = function() { return this._keys.get(); };
+	proto.values = function() { return this._values.get(); };
 	proto.item = function(key, arg1, arg2) {
 		if(arguments.length === 1) {
 			var keyIndex = this.keyIndex(key);
