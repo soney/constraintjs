@@ -26,9 +26,14 @@ var uniqueId = (function() {
 }());
 
 // Return the first item in arr where test is true
-var index_where = function(arr, test) {
+var index_where = function(arr, test, start_index) {
 	var i, len = arr.length;
-	for(i = 0; i<len; i++) {
+	if(isNumber(start_index)) {
+		start_index = Math.round(start_index);
+	} else {
+		start_index = 0;
+	}
+	for(i = start_index; i<len; i++) {
 		if(test(arr[i], i)) { return i; }
 	}
 	return -1;
@@ -36,9 +41,9 @@ var index_where = function(arr, test) {
 
 var eqeqeq = function(a, b) { return a === b; };
 // Return the first item in arr equal to item (where equality is defined in equality_check)
-var index_of = function(arr, item, equality_check) {
+var index_of = function(arr, item, start_index, equality_check) {
 	equality_check = equality_check || eqeqeq;
-	return index_where(arr, function(x) { return equality_check(item, x); });
+	return index_where(arr, function(x) { return equality_check(item, x); }, start_index);
 };
 
 // Remove a set of items from an array
@@ -115,6 +120,110 @@ var hasOwnProperty = Object.prototype.hasOwnProperty;
 var has = function(obj, key) {
 	return hasOwnProperty.call(obj, key);
 };
+
+
+var nativeFilter = Array.prototype.filter;
+var filter = function(obj, iterator, context) {
+	var results = [];
+	if (obj == null) { return results; }
+	if (nativeFilter && obj.filter === nativeFilter) { return obj.filter(iterator, context); }
+	var i, len = obj.length, value;
+	for(i = 0; i<len; i++) {
+		value = obj[i];
+		if(iterator.call(context, value, i, obj)) { results.push(value); }
+	}
+	return results;
+};
+
+//Longest common subsequence
+//http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript
+var lcs = (function() {
+	var popsym = function(index, x, y, symbols, r, n, equality_check) {
+		var s = x[index],
+			pos = symbols[s]+1;
+		pos = index_of(y, s, pos>r?pos:r, equality_check);
+		if(pos===-1){pos=n;}
+		symbols[s]=pos;
+		return pos;
+	};
+	return function(x, y, equality_check) {
+		var symbols = {},
+			r=0,p=0,p1,L=0,idx,
+			m=x.length,n=y.length,
+			S = new Array(m<n?n:m);
+		p1 = popsym(0, x, y, symbols, r, n, equality_check);
+		for(i=0;i < m;i++){
+			p = (r===p)?p1:popsym(i, x, y, symbols, r, n, equality_check);
+			p1 = popsym(i+1, x, y, symbols, r, n, equality_check);
+			idx=(p > p1)?(i++,p1):p;
+			if(idx===n) {
+				p=popsym(i, x, y, symbols, r, n, equality_check);
+			} else {
+				r=idx;
+				S[L++]=x[i];
+			}
+		}
+		return S.slice(0,L);
+	};
+}());
+
+var diff = function(x, y, equality_check) {
+	equality_check = equality_check || eqeqeq;
+	var i,j;
+	var x_clone = x.slice(),
+		y_clone = y.slice();
+	var d = [], xi, yj, x_len = x_clone.length, found;
+	for(i = 0; i<x_len; i++) {
+		found = false;
+		xi = x_clone[i];
+		for(j = 0; j<y_clone.length; j++) {
+			yj = y_clone[j];
+			if(equality_check(xi, yj)) {
+				found = true;
+				y_clone.splice(j, 1);
+				break;
+			}
+		}
+		if(found === false) { d.push(xi); }
+	}
+	return d;
+};
+var intersection = function(x, y, equality_check) {
+	equality_check = equality_check || eqeqeq;
+	var i,j;
+	var x_clone = x.slice(),
+		y_clone = y.slice();
+	var d = [], xi, yj, x_len = x_clone.length, found;
+	for(i = 0; i<x_len; i++) {
+		found = false;
+		xi = x_clone[i];
+		for(j = 0; j<y_clone.length; j++) {
+			yj = y_clone[j];
+			if(equality_check(xi, yj)) {
+				d.push(xi);
+				y_clone.splice(j, 1);
+				break;
+			}
+		}
+	}
+	return d;
+};
+
+window.lcs = lcs;
+window.diff = diff;
+
+var array_diff = function(x, y, equality_check) {
+	var xy_lcs = lcs(x, y, equality_check);
+	var removed = diff(x, xy_lcs);
+	var added = diff(y, xy_lcs);
+
+	var moved = intersection(added, removed);
+	added = diff(added, moved);
+	removed = diff(removed, moved);
+	console.log(added, removed, moved);
+};
+
+window.array_diff = array_diff;
 
 //
 // ============== CONSTRAINT SOLVER ============== 
@@ -538,7 +647,7 @@ var ArrayConstraint = function(value) {
 		//Make operation atomic
 		cjs.wait();
 		for(i = 0; i<len; i++) {
-			this.item(this._value.length, val);
+			this.item(this._value.length, arguments[i]);
 		}
 		cjs.signal();
 		return arguments.length;
@@ -714,6 +823,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	var proto = my.prototype;
 	proto.keys = function() { return this._keys.get(); };
 	proto.values = function() { return this._values.get(); };
+	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
 	proto.item = function(key, arg1, arg2) {
 		if(arguments.length === 1) {
 			var keyIndex = this.keyIndex(key);
@@ -729,7 +839,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		return this._keys.indexOf(key, this._equality_check);
 	};
 	proto._do_set = function(key, value, index) {
-		var key_index = this._key_index(key);
+		var key_index = this.keyIndex(key);
 
 		if(key_index<0) { // Doesn't already exist
 			if(isNumber(index) && index >= 0 && index < this._keys.length()) {
@@ -757,7 +867,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		return this;
 	};
 	proto.has = function(key) {
-		return this._key_index(key) >= 0;
+		return this.keyIndex(key) >= 0;
 	};
 	proto.remove = function(key) {
 		var key_index = this._key_index(key);
