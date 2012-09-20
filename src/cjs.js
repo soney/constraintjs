@@ -785,6 +785,63 @@ var ArrayConstraint = function(value) {
 	proto.reverse = function() { var my_val = this.get(); return my_val.reverse.apply(my_val, arguments); };
 	proto.valueOf = function() { var my_val = this.get(); return my_val.valueOf.apply(my_val, arguments); };
 	proto.toString = function() { var my_val = this.get(); return my_val.toString.apply(my_val, arguments); };
+	proto.$shadow = function(onAdd, onRemove, onMove) {
+	lcs(x, y, equality_check);
+
+
+var lcs = (function() {
+	var popsym = function(index, x, y, symbols, r, n, equality_check) {
+		var s = x[index],
+			pos = symbols[s]+1;
+		pos = index_of(y, s, pos>r?pos:r, equality_check);
+		if(pos===-1){pos=n;}
+		symbols[s]=pos;
+		return pos;
+	};
+	return function(x, y, equality_check) {
+		var symbols = {},
+			r=0,p=0,p1,L=0,idx,
+			m=x.length,n=y.length,
+			S = new Array(m<n?n:m);
+		p1 = popsym(0, x, y, symbols, r, n, equality_check);
+		for(i=0;i < m;i++){
+			p = (r===p)?p1:popsym(i, x, y, symbols, r, n, equality_check);
+			p1 = popsym(i+1, x, y, symbols, r, n, equality_check);
+			idx=(p > p1)?(i++,p1):p;
+			if(idx===n) {
+				p=popsym(i, x, y, symbols, r, n, equality_check);
+			} else {
+				r=idx;
+				S[L++]=x[i];
+			}
+		}
+		return S.slice(0,L);
+	};
+}());
+
+var diff = function(x, y, equality_check) {
+	equality_check = equality_check || eqeqeq;
+	var i,j;
+	var x_clone = x.slice(),
+		y_clone = y.slice();
+	var d = [], xi, yj, x_len = x_clone.length, found;
+	for(i = 0; i<x_len; i++) {
+		found = false;
+		xi = x_clone[i];
+		for(j = 0; j<y_clone.length; j++) {
+			yj = y_clone[j];
+			if(equality_check(xi, yj)) {
+				found = true;
+				y_clone.splice(j, 1);
+				break;
+			}
+		}
+		if(found === false) { d.push(xi); }
+	}
+	return d;
+};
+var intersection = function(x, y, equality_check) {
+	};
 }(ArrayConstraint));
 
 cjs.array = function(value) { return new ArrayConstraint(value); };
