@@ -209,21 +209,6 @@ var intersection = function(x, y, equality_check) {
 	return d;
 };
 
-window.lcs = lcs;
-window.diff = diff;
-
-var array_diff = function(x, y, equality_check) {
-	var xy_lcs = lcs(x, y, equality_check);
-	var removed = diff(x, xy_lcs);
-	var added = diff(y, xy_lcs);
-
-	var moved = intersection(added, removed);
-	added = diff(added, moved);
-	removed = diff(removed, moved);
-	console.log(added, removed, moved);
-};
-
-window.array_diff = array_diff;
 
 //
 // ============== CONSTRAINT SOLVER ============== 
@@ -534,6 +519,14 @@ var Constraint = function(value, literal) {
 
 cjs.is_constraint = cjs.is_$ = function(obj) {
 	return obj instanceof Constraint;
+};
+
+cjs.get = function(obj) {
+	if(cjs.is_$(obj)) {
+		return obj.get();
+	} else {
+		return obj;
+	}
 };
 
 cjs.$ = function(arg0, arg1) {
@@ -922,5 +915,20 @@ var MapConstraint = function(arg0, arg1, arg2) {
 }(MapConstraint));
 cjs.map = function(arg0, arg1) { return new MapConstraint(arg0, arg1); };
 
+/*
+window.lcs = lcs;
+window.diff = diff;
+
+var array_diff = function(x, y, equality_check) {
+	var xy_lcs = lcs(x, y, equality_check);
+	var removed = diff(x, xy_lcs);
+	var added = diff(y, xy_lcs);
+
+	var moved = intersection(added, removed);
+	added = diff(added, moved);
+	removed = diff(removed, moved);
+	console.log(added, removed, moved);
+};
+*/
 return cjs;
 }(this));
