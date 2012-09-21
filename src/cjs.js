@@ -24,6 +24,9 @@ var slice = ArrayProto.slice,
     nativeForEach      = ArrayProto.forEach,
     nativeMap          = ArrayProto.map;
 
+// Establish the object that gets returned to break out of a loop iteration.
+var breaker = {};
+
 // Return a unique id when called
 var uniqueId = (function() {
 	var id = 0;
@@ -197,7 +200,6 @@ var indexed_lcs = (function() {
 		return S.slice(0,L);
 	};
 }());
-window.lcs = indexed_lcs;
 
 var diff = function(x, y, equality_check) {
 	equality_check = equality_check || eqeqeq;
@@ -354,7 +356,7 @@ var constraint_solver = (function() {
 		proto.getNodeDependency = function(fromNode, toNode) { return this.getEdge(fromNode, toNode); };
 		proto.addNodeDependency = function(fromNode, toNode) { return this.addEdge(new ConstraintEdge(fromNode, toNode)); };
 
-		proto.removeNodeDependency = function(fromNode, toNode) { this.graph.removeEdge(fromNode, toNode); };
+		proto.removeNodeDependency = function(edge) { this.removeEdge(edge); };
 
 		proto.nullifyNode = function(node) {
 			var i, j, outgoingEdges;
@@ -372,7 +374,7 @@ var constraint_solver = (function() {
 						var outgoingEdge = outgoingEdges[j];
 						var dependentNode = outgoingEdge.toNode;
 						if(outgoingEdge.timestamp < dependentNode.timestamp) {
-							this.removeNodeDependency(outgoingEdge);
+							this.removeEdge(outgoingEdge);
 						} else {
 							to_nullify.push(dependentNode);
 						}
@@ -471,11 +473,10 @@ var constraint_solver = (function() {
 			return edge;
 		};
 
-		proto.removeEdge = function(fromNode, toNode) {
-			var edge = this.getEdge(fromNode, toNode);
-			if(edge!==null) {
-				fromNode.removeOutgoingEdge(edge);
-				toNode.removeIncomingEdge(edge);
+		proto.removeEdge = function(edge) {
+			if(edge!=null) {
+				edge.fromNode.removeOutgoingEdge(edge);
+				edge.toNode.removeIncomingEdge(edge);
 			}
 		};
 
@@ -566,6 +567,8 @@ cjs.is_constraint = cjs.is_$ = function(obj) {
 cjs.get = function(obj) {
 	if(cjs.is_$(obj)) {
 		return obj.get();
+	} else if(obj instanceof ArrayConstraint) {
+		return obj.get();
 	} else {
 		return obj;
 	}
@@ -607,24 +610,29 @@ cjs.$.extend({
 //
 
 cjs.liven = function() {
-	var runner = function() {
-			var i; len = arguments.length;
-			for(i = 0; i<len; i++) {
-				arguments[i]();
-			}
-		};
+	var args = arguments;
 	var node = constraint_solver.add({
-		cjs_getter: runner
-	}, {
+		cjs_getter: function() {
+			each(args, function(arg) {
+				arg();
+			});
+		},
 		auto_add_outgoing_dependencies: false,
 		cache_value: false
 	});
 
-	constraint_solver.on_nullify(node, runner);
-	runner();
+	var do_get = function() {
+		constraint_solver.getNodeValue(node);
+	};
+
+	constraint_solver.on_nullify(node, do_get);
+	do_get();
 
 	return {
+//		node: node, //TODO: remove node & runner
+//		runner: runner, 
 		destroy: function() {
+			constraint_solver.off_nullify(node, do_get);
 			constraint_solver.removeObject(node);
 		}
 	};
@@ -651,6 +659,7 @@ var ArrayConstraint = function(value) {
 
 (function(my) {
 	var proto = my.prototype;
+	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
 	proto.item = function(key, arg1) {
 		var val;
 		if(arguments.length === 1) {
@@ -754,13 +763,13 @@ var ArrayConstraint = function(value) {
 		return -1;
 	};
 	proto.indexOf = function(item, equality_check) {
-		equality_check = equality_check || eeqeqeq;
-		var filter = function(x) { return x === item; };
+		equality_check = equality_check || this._equality_check;
+		var filter = function(x) { return equality_check(x, item); };
 		return this.indexWhere(filter);
 	};
 	proto.lastIndexOf = function(item, equality_check) {
-		equality_check = equality_check || eeqeqeq;
-		var filter = function(x) { return x === item; };
+		equality_check = equality_check || this._equality_check;
+		var filter = function(x) { return equality_check(x, item); };
 		return this.lastIndexWhere(filter);
 	};
 	var isPositiveInteger = function(val) {
@@ -790,7 +799,7 @@ var ArrayConstraint = function(value) {
 				}
 			}
 			for(i = 0; i<-resulting_shift_size; i++) {
-				this.pop();
+				removed.push(this.pop());
 			}
 		} else {
 			for(i = index; i<index+howmany; i++) {
@@ -954,7 +963,11 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	var proto = my.prototype;
 	proto.keys = function() { return this._keys.get(); };
 	proto.values = function() { return this._values.get(); };
-	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
+	proto.set_equality_check = function(equality_check) {
+		this._equality_check = equality_check;
+		if(this._keys instanceof ArrayConstraint) { this._keys.set_equality_check(equality_check); }
+		return this;
+	};
 	proto.item = function(key, arg1, arg2) {
 		if(arguments.length === 1) {
 			var keyIndex = this.keyIndex(key);
@@ -1005,7 +1018,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	};
 	proto.remove = function(key) {
 		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
-			var key_index = this._key_index(key);
+			var key_index = this.keyIndex(key);
 			if(key_index >= 0) {
 				cjs.wait();
 				this._keys.splice(key_index, 1);
@@ -1028,7 +1041,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	proto.move = function(key, index) {
 		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
 			cjs.wait();
-			var key_index = this._key_index(key);
+			var key_index = this.keyIndex(key);
 			if(key_index >= 0) {
 				move_index(this._keys,   key_index, index);
 				move_index(this._values, key_index, index);
@@ -1039,10 +1052,10 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	};
 	proto.rename = function(old_key, new_key) {
 		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
-			var old_key_index = this._key_index(old_key);
+			var old_key_index = this.keyIndex(old_key);
 			if(old_key_index >= 0) {
 				cjs.wait();
-				var new_key_index = this._key_index(new_key);
+				var new_key_index = this.keyIndex(new_key);
 				if(new_key_index >= 0) {
 					this._keys.splice(new_key_index, 1);
 					this._values.splice(new_key_index, 1);
@@ -1068,20 +1081,5 @@ var MapConstraint = function(arg0, arg1, arg2) {
 }(MapConstraint));
 cjs.map = function(arg0, arg1) { return new MapConstraint(arg0, arg1); };
 
-/*
-window.lcs = lcs;
-window.diff = diff;
-
-var array_diff = function(x, y, equality_check) {
-	var xy_lcs = lcs(x, y, equality_check);
-	var removed = diff(x, xy_lcs);
-	var added = diff(y, xy_lcs);
-
-	var moved = intersection(added, removed);
-	added = diff(added, moved);
-	removed = diff(removed, moved);
-	console.log(added, removed, moved);
-};
-*/
 return cjs;
 }(this));
