@@ -655,11 +655,21 @@ var ArrayConstraint = function(value) {
 	}
 	this._len = cjs.$(this._value.length);
 	this._equality_check = eqeqeq;
+	var self = this;
+	this.$value = new Constraint(function() {
+		return self._getter();
+	});
 };
 
 (function(my) {
 	var proto = my.prototype;
 	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
+	proto.onChange = function(callback) {
+		this.$value.onChange.apply(this.$value, arguments);
+	};
+	proto.offChange = function(callback) {
+		this.$value.offChange.apply(this.$value, arguments);
+	};
 	proto.item = function(key, arg1) {
 		var val;
 		if(arguments.length === 1) {
@@ -731,13 +741,16 @@ var ArrayConstraint = function(value) {
 		cjs.signal();
 		return this;
 	};
-	proto.get = function() {
+	proto._getter = function() {
 		var i, len = this.length();
 		var rv = [];
 		for(i = 0; i<len; i++) {
 			rv.push(this.item(i));
 		}
 		return rv;
+	};
+	proto.get = function() {
+		return this.$value.get();
 	};
 	proto._update_len = function() {
 		this._len.set(this._value.length);
