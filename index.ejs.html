@@ -180,12 +180,24 @@
 	<script type="text/javascript" src="underscore.js"></script>
 	<script type="text/javascript">
 		$(function() {
+			var arr = cjs.array([1,2,3]);
+			var shadow = arr.$shadow(function(x) {
+					console.log("Added", x, arguments);
+					return x+1;
+		}, function(x) {
+					console.log("Removed", x, arguments);
+		}, function(x) {
+					console.log("Moved", x, arguments);
+					return x+1;
+		});
+			shadow.get();
+			window.arr = arr; window.shadow = shadow;
 		});
 	</script>
 	<link rel="icon" type="image/ico" href="favicon.ico">
   </head>
   <body>
-	<a href="https://github.com/soney/ConstraintJS" target="cjs_github"><img style="opacity: 0.4; position: absolute; top: 0; right: 0; border: 0;" src="src/vendor/github_banner.png" alt="Fork me on GitHub"></a>
+	  <!--<a href="https://github.com/soney/ConstraintJS" target="cjs_github"><img style="opacity: 0.4; position: absolute; top: 0; right: 0; border: 0;" src="src/vendor/github_banner.png" alt="Fork me on GitHub"></a>-->
     <h1>ConstraintJS</h1>
     <div id="content">
 		<div id="mode_selector"><span class="mode<%= dev_mode ? ' selected' : '' %> "><a href="javascript:void(0)" id="dev">dev</a><span class="subtext">(<a href="javascript:void(0)" id="refresh_includes">refresh</a>)</span><span class = "sub_sub_text"  id="refresh_state"></span></span>

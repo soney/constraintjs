@@ -18,6 +18,11 @@ cjs.noConflict = function() {
 //
 // ============== UTILITY FUNCTIONS ============== 
 //
+var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
+var slice = ArrayProto.slice,
+	toString = ObjProto.toString,
+    nativeForEach      = ArrayProto.forEach,
+    nativeMap          = ArrayProto.map;
 
 // Return a unique id when called
 var uniqueId = (function() {
@@ -56,7 +61,7 @@ var remove_index = function(arr, from, to) {
 
 // Remove an item in an array
 var remove = function(arr, obj) {
-	var index = _.index_of(arr, obj);
+	var index = index_of(arr, obj);
 	if(index>=0) { remove_index(arr, index); }
 };
 
@@ -65,7 +70,6 @@ var clear = function(arr) {
 	arr.length = 0;
 };
   
-var toString = Object.prototype.toString;
 // Is a given value a number?
 var isNumber = function(obj) {
 	return toString.call(obj) == '[object Number]';
@@ -100,7 +104,7 @@ var proto_extend = function (subClass, superClass) {
 };
 
 var extend = function(obj) {
-	var args = Array.prototype.slice.call(arguments, 1)
+	var args = slice.call(arguments, 1)
 		, i
 		, len = args.length;
 	for(i = 0; i<len; i++) {
@@ -110,6 +114,32 @@ var extend = function(obj) {
 		}
 	}
 	return obj;
+};
+var each = function(obj, iterator, context) {
+	if (obj == null) { return; }
+	if (nativeForEach && obj.forEach === nativeForEach) {
+		obj.forEach(iterator, context);
+	} else if (obj.length === +obj.length) {
+		for (var i = 0, l = obj.length; i < l; i++) {
+			if (i in obj && iterator.call(context, obj[i], i, obj) === breaker) { return; }
+		}
+	} else {
+		for (var key in obj) {
+			if (has(obj, key)) {
+				if (iterator.call(context, obj[key], key, obj) === breaker) { return; }
+			}
+		}
+	}
+};
+var map = function(obj, iterator, context) {
+	var results = [];
+	if (obj == null) { return results; }
+	if (nativeMap && obj.map === nativeMap) { return obj.map(iterator, context); }
+	each(obj, function(value, index, list) {
+		results[results.length] = iterator.call(context, value, index, list);
+	});
+	if (obj.length === +obj.length) { results.length = obj.length; }
+	return results;
 };
 
 var last = function(arr) {
@@ -137,7 +167,7 @@ var filter = function(obj, iterator, context) {
 
 //Longest common subsequence
 //http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript
-var lcs = (function() {
+var indexed_lcs = (function() {
 	var popsym = function(index, x, y, symbols, r, n, equality_check) {
 		var s = x[index],
 			pos = symbols[s]+1;
@@ -148,24 +178,26 @@ var lcs = (function() {
 	};
 	return function(x, y, equality_check) {
 		var symbols = {},
-			r=0,p=0,p1,L=0,idx,
+			r=0,p=0,p1,L=0,idx,i,
 			m=x.length,n=y.length,
 			S = new Array(m<n?n:m);
+		if(n === 0 || m === 0) { return []; }
 		p1 = popsym(0, x, y, symbols, r, n, equality_check);
 		for(i=0;i < m;i++){
 			p = (r===p)?p1:popsym(i, x, y, symbols, r, n, equality_check);
 			p1 = popsym(i+1, x, y, symbols, r, n, equality_check);
 			idx=(p > p1)?(i++,p1):p;
-			if(idx===n) {
+			if(idx===n || i===m) {
 				p=popsym(i, x, y, symbols, r, n, equality_check);
 			} else {
 				r=idx;
-				S[L++]=x[i];
+				S[L++]={item: x[i], indicies: [i, idx]};
 			}
 		}
 		return S.slice(0,L);
 	};
 }());
+window.lcs = indexed_lcs;
 
 var diff = function(x, y, equality_check) {
 	equality_check = equality_check || eqeqeq;
@@ -188,7 +220,7 @@ var diff = function(x, y, equality_check) {
 	}
 	return d;
 };
-var intersection = function(x, y, equality_check) {
+var dualized_intersection = function(x, y, equality_check) {
 	equality_check = equality_check || eqeqeq;
 	var i,j;
 	var x_clone = x.slice(),
@@ -200,7 +232,7 @@ var intersection = function(x, y, equality_check) {
 		for(j = 0; j<y_clone.length; j++) {
 			yj = y_clone[j];
 			if(equality_check(xi, yj)) {
-				d.push(xi);
+				d.push([xi, yj]);
 				y_clone.splice(j, 1);
 				break;
 			}
@@ -476,15 +508,16 @@ var Constraint = function(value, literal) {
 	var node = constraint_solver.add(this);
 	this.value = value;
 	this.literal = literal === true;
+	this._equality_check = eqeqeq;
 	this.invalidate = function() {
 		constraint_solver.nullifyNode(node);
 	};
-	this.equality_check = eqeqeq;
 };
 
 (function(my) {
 	var proto = my.prototype;
 	proto.destroy = function() { constraint_solver.removeObject(this); };
+	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
 	proto.cjs_getter = function() {
 		if(has(this, "value")) {
 			if(isFunction(this.value) && !this.literal){
@@ -495,18 +528,6 @@ var Constraint = function(value, literal) {
 		}
 		return undefined;
 	};
-	proto.set = function(value, literal) {
-		var was_literal = this.literal;
-		var old_value = this.value;
-
-		this.literal = literal === true;
-		this.value = value;
-		
-		if(!this.equality_check(was_literal, this.literal) || !this.equality_check(old_value !== this.value)) {
-			this.invalidate();
-		}
-		return this;
-	};
 	proto.get = function() { return constraint_solver.getValue(this); };
 	proto.onChange = function(callback) {
 		constraint_solver.on_nullify(this, callback);
@@ -516,6 +537,27 @@ var Constraint = function(value, literal) {
 		constraint_solver.off_nullify(this, callback);
 	};
 }(Constraint));
+
+var SettableConstraint = function() {
+	SettableConstraint.superclass.constructor.apply(this, arguments);
+};
+
+(function(my) {
+	proto_extend(my, Constraint);
+	var proto = my.prototype;
+	proto.set = function(value, literal) {
+		var was_literal = this.literal;
+		var old_value = this.value;
+
+		this.literal = literal === true;
+		this.value = value;
+		
+		if(!this._equality_check(was_literal, this.literal) || !this._equality_check(old_value !== this.value)) {
+			this.invalidate();
+		}
+		return this;
+	};
+}(SettableConstraint));
 
 cjs.is_constraint = cjs.is_$ = function(obj) {
 	return obj instanceof Constraint;
@@ -530,7 +572,7 @@ cjs.get = function(obj) {
 };
 
 cjs.$ = function(arg0, arg1) {
-	return new Constraint(arg0, arg1);
+	return new SettableConstraint(arg0, arg1);
 };
 
 cjs.$.extend = function(arg0, arg1) {
@@ -544,15 +586,21 @@ cjs.$.extend = function(arg0, arg1) {
 
 	for(var key in values) {
 		var value = values[key];
-		Constraint.prototype[key] = function() {
-			var self = this;
-			var args = arguments;
-			return cjs.$(function() {
-				return value.apply(self, args);
-			});
-		};
+		var self = this;
+		Constraint.prototype[key] = value;
 	}
 };
+
+cjs.$.extend({
+	item: function(key) {
+		var got = this.get();
+		return got[key];
+	}
+	, indexOf: function(item, equality_check) {
+		var got = this.get();
+		return index_of(got, item, 0, equality_check);
+	}
+});
 
 //
 // ============== LIVEN ============== 
@@ -598,6 +646,7 @@ var ArrayConstraint = function(value) {
 		}
 	}
 	this._len = cjs.$(this._value.length);
+	this._equality_check = eqeqeq;
 };
 
 (function(my) {
@@ -671,6 +720,7 @@ var ArrayConstraint = function(value) {
 		this.clear();
 		this.push.apply(this, arr);
 		cjs.signal();
+		return this;
 	};
 	proto.get = function() {
 		var i, len = this.length();
@@ -785,62 +835,88 @@ var ArrayConstraint = function(value) {
 	proto.reverse = function() { var my_val = this.get(); return my_val.reverse.apply(my_val, arguments); };
 	proto.valueOf = function() { var my_val = this.get(); return my_val.valueOf.apply(my_val, arguments); };
 	proto.toString = function() { var my_val = this.get(); return my_val.toString.apply(my_val, arguments); };
-	proto.$shadow = function(onAdd, onRemove, onMove) {
-	lcs(x, y, equality_check);
+	proto.$shadow = function(onAdd, onRemove, onMove, context) {
+		context = context || this;
+		var last_value = [];
+		var last_mapped_value = [];
+		var self = this;
+		var item_aware_equality_check = function(a, b) {
+			var a_item = a == null ? a : a.item;
+			var b_item = b == null ? b : b.item;
+			return self._equality_check(a_item, b_item);
+		};
+		return new Constraint(function() {
+			var value = self.get();
+			var indexed_value = map(value, function(item, i) { return {item: item, index: i}; });
+			var indexed_last_value = map(last_value, function(item, i) { return { item: item, index: i}; });
 
+			var indexed_common_subsequence = indexed_lcs(indexed_last_value, indexed_value, item_aware_equality_check);
+			indexed_common_subsequence = map(indexed_common_subsequence, function(info) {
+				return {item: info.item.item, from: info.indicies[0], to: info.indicies[1]}
+			});
 
-var lcs = (function() {
-	var popsym = function(index, x, y, symbols, r, n, equality_check) {
-		var s = x[index],
-			pos = symbols[s]+1;
-		pos = index_of(y, s, pos>r?pos:r, equality_check);
-		if(pos===-1){pos=n;}
-		symbols[s]=pos;
-		return pos;
-	};
-	return function(x, y, equality_check) {
-		var symbols = {},
-			r=0,p=0,p1,L=0,idx,
-			m=x.length,n=y.length,
-			S = new Array(m<n?n:m);
-		p1 = popsym(0, x, y, symbols, r, n, equality_check);
-		for(i=0;i < m;i++){
-			p = (r===p)?p1:popsym(i, x, y, symbols, r, n, equality_check);
-			p1 = popsym(i+1, x, y, symbols, r, n, equality_check);
-			idx=(p > p1)?(i++,p1):p;
-			if(idx===n) {
-				p=popsym(i, x, y, symbols, r, n, equality_check);
-			} else {
-				r=idx;
-				S[L++]=x[i];
+			var indexed_added = diff(indexed_value, indexed_common_subsequence, item_aware_equality_check),
+				indexed_removed = diff(indexed_last_value, indexed_common_subsequence, item_aware_equality_check)
+				indexed_dualized_moved = dualized_intersection(indexed_added, indexed_removed, item_aware_equality_check);
+			var indexed_moved = map(indexed_dualized_moved, function(info) {
+				return {
+					item: info[0].item,
+					from: info[1].index,
+					to: info[0].index
+				};
+			});
+			indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
+			indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
+
+			if(isFunction(onRemove)) {
+				each(indexed_removed, function(info) {
+					onRemove(info.item, info.index, last_value[info.index]);
+				});
 			}
-		}
-		return S.slice(0,L);
-	};
-}());
 
-var diff = function(x, y, equality_check) {
-	equality_check = equality_check || eqeqeq;
-	var i,j;
-	var x_clone = x.slice(),
-		y_clone = y.slice();
-	var d = [], xi, yj, x_len = x_clone.length, found;
-	for(i = 0; i<x_len; i++) {
-		found = false;
-		xi = x_clone[i];
-		for(j = 0; j<y_clone.length; j++) {
-			yj = y_clone[j];
-			if(equality_check(xi, yj)) {
-				found = true;
-				y_clone.splice(j, 1);
-				break;
-			}
-		}
-		if(found === false) { d.push(xi); }
-	}
-	return d;
-};
-var intersection = function(x, y, equality_check) {
+			var mapped_value = map(value, function(item, index) {
+				var info_index = index_where(indexed_added, function(info) {
+					return info.index === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_added[info_index];
+					var mapped_item;
+					if(isFunction(onAdd)) {
+						mapped_item = onAdd(info.item, info.index);
+					} else {
+						mapped_item = info.item;
+					}
+					return mapped_item;
+				}
+				info_index = index_where(indexed_moved, function(info) {
+					return info.to === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_moved[info_index];
+					var mapped_item = last_mapped_value[info.from];
+					if(info.from !== index && isFunction(onMove)) {
+						mapped_item = onMove(item, index, info.from, mapped_item);
+					}
+					return mapped_item;
+				}
+				info_index = index_where(indexed_common_subsequence, function(info) {
+					return info.to === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_common_subsequence[info_index];
+					var mapped_item = last_mapped_value[info.from];
+					if(info.from !== index && isFunction(onMove)) {
+						mapped_item = onMove(item, index, info.from, mapped_item);
+					}
+					return mapped_item;
+				}
+				return last_value[index];
+			});
+			last_mapped_value = mapped_value;
+			last_value = value;
+
+			return mapped_value;
+		});
 	};
 }(ArrayConstraint));
 
@@ -851,21 +927,26 @@ cjs.array = function(value) { return new ArrayConstraint(value); };
 //
 
 var MapConstraint = function(arg0, arg1, arg2) {
-	var keys = [],
-		values = [];
+	var keys, values;
 	if(arguments.length === 1) {
 		for(var key in arg0) {
 			keys.push(key);
 			values.push(arg0[key]);
 		}
 	} else if(arguments.length > 1) {
-		if(isArray(arg0) && isArray(arg1)) {
-			keys = arg0;
-			values = arg1;
-		}
+		keys = arg0;
+		values = arg1;
 	}
-	this._keys = cjs.array(keys);
-	this._values = cjs.array(values);
+	if(isArray(keys)) { this._keys = cjs.array(keys); }
+	else if(keys instanceof ArrayConstraint) { this._keys = keys; }
+	else if(cjs.is_constraint(keys)) { this._keys = keys; }
+	else { this._keys = cjs.array(); }
+
+	if(isArray(values)) { this._values = cjs.array(values); }
+	else if(values instanceof ArrayConstraint) { this._values = keys; }
+	else if(cjs.is_constraint(values)) { this._values = values; }
+	else { this._values = cjs.array(); }
+
 	this._equality_check = arg2 || eqeqeq;
 };
 
@@ -889,28 +970,31 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		return this._keys.indexOf(key, this._equality_check);
 	};
 	proto._do_set = function(key, value, index) {
-		var key_index = this.keyIndex(key);
+		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
+			// Not settable otherwise
+			var key_index = this.keyIndex(key);
 
-		if(key_index<0) { // Doesn't already exist
-			if(isNumber(index) && index >= 0 && index < this._keys.length()) {
-				cjs.wait();
-				this._values.splice(index, 0, value);
-				this._keys.splice(index, 0, key);
-				cjs.signal();
+			if(key_index<0) { // Doesn't already exist
+				if(isNumber(index) && index >= 0 && index < this._keys.length()) {
+					cjs.wait();
+					this._values.splice(index, 0, value);
+					this._keys.splice(index, 0, key);
+					cjs.signal();
+				} else {
+					cjs.wait();
+					this._values.push(value);
+					this._keys.push(key);
+					cjs.signal();
+				}
 			} else {
-				cjs.wait();
-				this._values.push(value);
-				this._keys.push(key);
-				cjs.signal();
-			}
-		} else {
-			if(isNumber(index) && index >= 0 && index < this._keys.length()) {
-				cjs.wait();
-				this._values.item(key_index, value);
-				this.move(key, index);
-				cjs.signal();
-			} else {
-				this._values.item(key_index, value);
+				if(isNumber(index) && index >= 0 && index < this._keys.length()) {
+					cjs.wait();
+					this._values.item(key_index, value);
+					this.move(key, index);
+					cjs.signal();
+				} else {
+					this._values.item(key_index, value);
+				}
 			}
 		}
 
@@ -920,12 +1004,14 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		return this.keyIndex(key) >= 0;
 	};
 	proto.remove = function(key) {
-		var key_index = this._key_index(key);
-		if(key_index >= 0) {
-			cjs.wait();
-			this._keys.splice(key_index, 1);
-			this._values.splice(key_index, 1);
-			cjs.signal();
+		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
+			var key_index = this._key_index(key);
+			if(key_index >= 0) {
+				cjs.wait();
+				this._keys.splice(key_index, 1);
+				this._values.splice(key_index, 1);
+				cjs.signal();
+			}
 		}
 		return this;
 	};
@@ -937,29 +1023,35 @@ var MapConstraint = function(arg0, arg1, arg2) {
 			}
 		}
 		arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
+		return this;
 	};
 	proto.move = function(key, index) {
-		cjs.wait();
-		var key_index = this._key_index(key);
-		if(key_index >= 0) {
-			move_index(this._keys,   key_index, index);
-			move_index(this._values, key_index, index);
+		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
+			cjs.wait();
+			var key_index = this._key_index(key);
+			if(key_index >= 0) {
+				move_index(this._keys,   key_index, index);
+				move_index(this._values, key_index, index);
+			}
+			cjs.signal();
 		}
-		cjs.signal();
 		return this;
 	};
 	proto.rename = function(old_key, new_key) {
-		var old_key_index = this._key_index(old_key);
-		if(old_key_index >= 0) {
-			cjs.wait();
-			var new_key_index = this._key_index(new_key);
-			if(new_key_index >= 0) {
-				this._keys.splice(new_key_index, 1);
-				this._values.splice(new_key_index, 1);
+		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
+			var old_key_index = this._key_index(old_key);
+			if(old_key_index >= 0) {
+				cjs.wait();
+				var new_key_index = this._key_index(new_key);
+				if(new_key_index >= 0) {
+					this._keys.splice(new_key_index, 1);
+					this._values.splice(new_key_index, 1);
+				}
+				this._keys.item(old_key_index, new_key);
+				cjs.signal();
 			}
-			this._keys.item(old_key_index, new_key);
-			cjs.signal();
 		}
+		return this;
 	};
 	proto.keyForValue = function(value) {
 		var value_index = this._values.indexOf(value, this._equality_check);
@@ -968,6 +1060,10 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		} else {
 			return this._keys.item(value_index);
 		}
+	};
+	proto.$shadow = function(onAdd, onRemove, onMove, context) {
+		var value_shadow = this._values.$shadow(onAdd, onRemove, onMove, context || this);
+		return cjs.map(this._keys, value_shadow);
 	};
 }(MapConstraint));
 cjs.map = function(arg0, arg1) { return new MapConstraint(arg0, arg1); };
