@@ -243,6 +243,192 @@ var dualized_intersection = function(x, y, equality_check) {
 	return d;
 };
 
+var array_source_map = function(from, to, equality_check) {
+		equality_check = equality_check || eqeqeq;
+		var item_aware_equality_check = function(a, b) {
+			var a_item = a == null ? a : a.item;
+			var b_item = b == null ? b : b.item;
+			return equality_check(a_item, b_item);
+		};
+		var indexed_common_subsequence = map(indexed_lcs(from, to), function(info) { 
+			return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
+		});
+
+		var indexed_from = map(from, function(x,i) { return {item: x, index: i}; });
+		var indexed_to = map(to, function(x,i) { return {item: x, index: i}; });
+
+		var indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
+			indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
+			indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check),
+				function(info) {
+					var from = info[0].index,
+						from_item = info[0].item,
+						to = info[1].index,
+						to_item = info[1].item;
+					return {item: to_item, from: from, to: to, from_item: from_item, to_item: to_item};
+				}
+			);
+		indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
+		indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
+
+		var to_mappings = map(to, function(item, index) {
+				var info_index = index_where(indexed_added, function(info) {
+					return info.index === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_added[info_index];
+					return {
+						to: index,
+						to_item: item,
+						item: item
+					};
+				}
+
+				var info_index = index_where(indexed_moved, function(info) {
+					return info.to_index === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_moved[info_index];
+					return {
+						to: index,
+						to_item: item,
+						item: item,
+						from: info.from,
+						from_item: info.from_item
+					};
+				}
+
+				var info_index = index_where(indexed_common_subsequence, function(info) {
+					return info.to === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_moved[info_index];
+					return {
+						to: index,
+						to_item: item,
+						item: item,
+						from: info.from,
+						from_item: from[info.from]
+					};
+				}
+				debugger;
+			});
+		console.log(to, to_mappings);
+
+
+		/*
+
+		console.log(indexed_added, indexed_removed, indexed_moved);
+
+
+
+		console.log(indexed_common_subsequence);
+		
+		/*
+		var indexed_from = map(from, function(x, i) { return { item: x, index: i }; }),
+			indexed_to = map(to, function(x, i) { return { item: x, index: i }; });
+
+
+		console.log(indexed_common_subsequence);
+		*/
+		return indexed_common_subsequence;
+	};
+
+window.array_diff = array_source_map;
+
+var array_differ = function(val, equality_check) {
+	equality_check = equality_check || eqeqeq;
+
+	/*
+	var last_val = val;
+	var update = function(new_val) {
+		arr = val;
+	};
+	*/
+};
+/*
+		var last_value = [];
+		var last_mapped_value = [];
+		var self = this;
+		var item_aware_equality_check = function(a, b) {
+			var a_item = a == null ? a : a.item;
+			var b_item = b == null ? b : b.item;
+			return self._equality_check(a_item, b_item);
+		};
+		return new Constraint(function() {
+			var value = self.get();
+			var indexed_value = map(value, function(item, i) { return {item: item, index: i}; });
+			var indexed_last_value = map(last_value, function(item, i) { return { item: item, index: i}; });
+
+			var indexed_common_subsequence = indexed_lcs(indexed_last_value, indexed_value, item_aware_equality_check);
+			indexed_common_subsequence = map(indexed_common_subsequence, function(info) {
+				return {item: info.item.item, from: info.indicies[0], to: info.indicies[1]}
+			});
+
+			var indexed_added = diff(indexed_value, indexed_common_subsequence, item_aware_equality_check),
+				indexed_removed = diff(indexed_last_value, indexed_common_subsequence, item_aware_equality_check)
+				indexed_dualized_moved = dualized_intersection(indexed_added, indexed_removed, item_aware_equality_check);
+			var indexed_moved = map(indexed_dualized_moved, function(info) {
+				return {
+					item: info[0].item,
+					from: info[1].index,
+					to: info[0].index
+				};
+			});
+			indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
+			indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
+
+			if(isFunction(onRemove)) {
+				each(indexed_removed, function(info) {
+					onRemove(info.item, info.index, last_value[info.index]);
+				});
+			}
+
+			var mapped_value = map(value, function(item, index) {
+				var info_index = index_where(indexed_added, function(info) {
+					return info.index === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_added[info_index];
+					var mapped_item;
+					if(isFunction(onAdd)) {
+						mapped_item = onAdd(info.item, info.index);
+					} else {
+						mapped_item = info.item;
+					}
+					return mapped_item;
+				}
+				info_index = index_where(indexed_moved, function(info) {
+					return info.to === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_moved[info_index];
+					var mapped_item = last_mapped_value[info.from];
+					if(info.from !== index && isFunction(onMove)) {
+						mapped_item = onMove(item, index, info.from, mapped_item);
+					}
+					return mapped_item;
+				}
+				info_index = index_where(indexed_common_subsequence, function(info) {
+					return info.to === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_common_subsequence[info_index];
+					var mapped_item = last_mapped_value[info.from];
+					if(info.from !== index && isFunction(onMove)) {
+						mapped_item = onMove(item, index, info.from, mapped_item);
+					}
+					return mapped_item;
+				}
+				return last_value[index];
+			});
+			last_mapped_value = mapped_value;
+			last_value = value;
+
+			return mapped_value;
+		});
+		*/
+
 
 //
 // ============== CONSTRAINT SOLVER ============== 
