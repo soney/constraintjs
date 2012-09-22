@@ -277,61 +277,30 @@ var array_source_map = function(from, to, equality_check) {
 				});
 				if(info_index >= 0) {
 					var info = indexed_added[info_index];
-					return {
-						to: index,
-						to_item: item,
-						item: item
-					};
+					return { to: index, to_item: item, item: item };
 				}
 
-				var info_index = index_where(indexed_moved, function(info) {
-					return info.to_index === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_moved[info_index];
-					return {
-						to: index,
-						to_item: item,
-						item: item,
-						from: info.from,
-						from_item: info.from_item
-					};
-				}
-
-				var info_index = index_where(indexed_common_subsequence, function(info) {
+				info_index = index_where(indexed_moved, function(info) {
 					return info.to === index;
 				});
 				if(info_index >= 0) {
 					var info = indexed_moved[info_index];
-					return {
-						to: index,
-						to_item: item,
-						item: item,
-						from: info.from,
-						from_item: from[info.from]
-					};
+					return { to: index, to_item: item, item: item, from: info.from, from_item: info.from_item };
 				}
-				debugger;
+
+				info_index = index_where(indexed_common_subsequence, function(info) {
+					return info.to === index;
+				});
+				if(info_index >= 0) {
+					var info = indexed_common_subsequence[info_index];
+					return { to: index, to_item: item, item: item, from: info.from, from_item: from[info.from] };
+				}
 			});
-		console.log(to, to_mappings);
-
-
-		/*
-
-		console.log(indexed_added, indexed_removed, indexed_moved);
-
-
-
-		console.log(indexed_common_subsequence);
-		
-		/*
-		var indexed_from = map(from, function(x, i) { return { item: x, index: i }; }),
-			indexed_to = map(to, function(x, i) { return { item: x, index: i }; });
-
-
-		console.log(indexed_common_subsequence);
-		*/
-		return indexed_common_subsequence;
+		var removed_mappings = map(indexed_removed, function(info) {
+			return { from: info.index, from_item: info.item };
+		});
+		var mappings = to_mappings.concat(removed_mappings);
+		return mappings;
 	};
 
 window.array_diff = array_source_map;
