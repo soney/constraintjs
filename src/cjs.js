@@ -303,100 +303,41 @@ var array_source_map = function(from, to, equality_check) {
 		return mappings;
 	};
 
-window.array_diff = array_source_map;
 
 var array_differ = function(val, equality_check) {
 	equality_check = equality_check || eqeqeq;
-
-	/*
-	var last_val = val;
-	var update = function(new_val) {
-		arr = val;
-	};
-	*/
-};
-/*
-		var last_value = [];
-		var last_mapped_value = [];
-		var self = this;
-		var item_aware_equality_check = function(a, b) {
-			var a_item = a == null ? a : a.item;
-			var b_item = b == null ? b : b.item;
-			return self._equality_check(a_item, b_item);
-		};
-		return new Constraint(function() {
-			var value = self.get();
-			var indexed_value = map(value, function(item, i) { return {item: item, index: i}; });
-			var indexed_last_value = map(last_value, function(item, i) { return { item: item, index: i}; });
-
-			var indexed_common_subsequence = indexed_lcs(indexed_last_value, indexed_value, item_aware_equality_check);
-			indexed_common_subsequence = map(indexed_common_subsequence, function(info) {
-				return {item: info.item.item, from: info.indicies[0], to: info.indicies[1]}
-			});
-
-			var indexed_added = diff(indexed_value, indexed_common_subsequence, item_aware_equality_check),
-				indexed_removed = diff(indexed_last_value, indexed_common_subsequence, item_aware_equality_check)
-				indexed_dualized_moved = dualized_intersection(indexed_added, indexed_removed, item_aware_equality_check);
-			var indexed_moved = map(indexed_dualized_moved, function(info) {
-				return {
-					item: info[0].item,
-					from: info[1].index,
-					to: info[0].index
-				};
-			});
-			indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
-			indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
-
-			if(isFunction(onRemove)) {
-				each(indexed_removed, function(info) {
-					onRemove(info.item, info.index, last_value[info.index]);
-				});
-			}
-
-			var mapped_value = map(value, function(item, index) {
-				var info_index = index_where(indexed_added, function(info) {
-					return info.index === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_added[info_index];
-					var mapped_item;
-					if(isFunction(onAdd)) {
-						mapped_item = onAdd(info.item, info.index);
-					} else {
-						mapped_item = info.item;
-					}
-					return mapped_item;
-				}
-				info_index = index_where(indexed_moved, function(info) {
-					return info.to === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_moved[info_index];
-					var mapped_item = last_mapped_value[info.from];
-					if(info.from !== index && isFunction(onMove)) {
-						mapped_item = onMove(item, index, info.from, mapped_item);
-					}
-					return mapped_item;
-				}
-				info_index = index_where(indexed_common_subsequence, function(info) {
-					return info.to === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_common_subsequence[info_index];
-					var mapped_item = last_mapped_value[info.from];
-					if(info.from !== index && isFunction(onMove)) {
-						mapped_item = onMove(item, index, info.from, mapped_item);
-					}
-					return mapped_item;
-				}
-				return last_value[index];
-			});
-			last_mapped_value = mapped_value;
-			last_value = value;
-
-			return mapped_value;
+	var last_val = isArray(val) ? val : [];
+	return function(val) {
+		var source_map = array_source_map(last_val, val, equality_check);
+		var rearranged_array = source_map.slice().sort(function(a,b) {
+			var a_has_from = has(a, "from"),
+				b_has_from = has(b, "from");
+			if(a_has_from && b_has_from) { return a.from - b.from; }
+			else if(a_has_from && !b_has_from) { return -1; }
+			else if(!a_has_from && b_has_from) { return 1; }
+			else { return 0; }
 		});
-		*/
+		var added = filter(source_map, function(info) { return !has(info, "from"); }).reverse(), // back to front
+			removed = filter(rearranged_array, function(info) { return !has(info, "to"); }).reverse(), // back to frong
+			index_changed = filter(source_map, function(info) { return has(info, "from") && has(info, "to") && info.from !== info.to; }),
+			moved = [];
+
+		each(removed, function(info) { rearranged_array.splice(info.from, 0); });
+		each(added, function(info) { rearranged_array.splice(info.to, 0); });
+		
+		each(source_map, function(info, index) {
+			if(has(info, "from") && has(info, "to")) {
+				if(rearranged_array[index] !== info) {
+					var rearranged_array_info_index = index_of(rearranged_array, info, index);
+					rearranged_array.splice(index, 0, rearranged_array.splice(rearranged_array_info_index, 1)[0]);
+					moved.push({move_from: rearranged_array_info_index, insert_at: index, item: info.item, from: info.from, to: info.to});
+				}
+			}
+		});
+		last_val = val;
+		return { added: added, removed: removed, moved: moved, index_changed: index_changed , mapping: source_map};
+	};
+};
 
 
 //
@@ -1014,84 +955,10 @@ var ArrayConstraint = function(value) {
 	proto.toString = function() { var my_val = this.get(); return my_val.toString.apply(my_val, arguments); };
 	proto.$shadow = function(onAdd, onRemove, onMove, context) {
 		context = context || this;
-		var last_value = [];
-		var last_mapped_value = [];
-		var self = this;
-		var item_aware_equality_check = function(a, b) {
-			var a_item = a == null ? a : a.item;
-			var b_item = b == null ? b : b.item;
-			return self._equality_check(a_item, b_item);
-		};
+		var ad = array_differ([], this._equality_check);
 		return new Constraint(function() {
 			var value = self.get();
-			var indexed_value = map(value, function(item, i) { return {item: item, index: i}; });
-			var indexed_last_value = map(last_value, function(item, i) { return { item: item, index: i}; });
-
-			var indexed_common_subsequence = indexed_lcs(indexed_last_value, indexed_value, item_aware_equality_check);
-			indexed_common_subsequence = map(indexed_common_subsequence, function(info) {
-				return {item: info.item.item, from: info.indicies[0], to: info.indicies[1]}
-			});
-
-			var indexed_added = diff(indexed_value, indexed_common_subsequence, item_aware_equality_check),
-				indexed_removed = diff(indexed_last_value, indexed_common_subsequence, item_aware_equality_check)
-				indexed_dualized_moved = dualized_intersection(indexed_added, indexed_removed, item_aware_equality_check);
-			var indexed_moved = map(indexed_dualized_moved, function(info) {
-				return {
-					item: info[0].item,
-					from: info[1].index,
-					to: info[0].index
-				};
-			});
-			indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
-			indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
-
-			if(isFunction(onRemove)) {
-				each(indexed_removed, function(info) {
-					onRemove(info.item, info.index, last_value[info.index]);
-				});
-			}
-
-			var mapped_value = map(value, function(item, index) {
-				var info_index = index_where(indexed_added, function(info) {
-					return info.index === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_added[info_index];
-					var mapped_item;
-					if(isFunction(onAdd)) {
-						mapped_item = onAdd(info.item, info.index);
-					} else {
-						mapped_item = info.item;
-					}
-					return mapped_item;
-				}
-				info_index = index_where(indexed_moved, function(info) {
-					return info.to === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_moved[info_index];
-					var mapped_item = last_mapped_value[info.from];
-					if(info.from !== index && isFunction(onMove)) {
-						mapped_item = onMove(item, index, info.from, mapped_item);
-					}
-					return mapped_item;
-				}
-				info_index = index_where(indexed_common_subsequence, function(info) {
-					return info.to === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_common_subsequence[info_index];
-					var mapped_item = last_mapped_value[info.from];
-					if(info.from !== index && isFunction(onMove)) {
-						mapped_item = onMove(item, index, info.from, mapped_item);
-					}
-					return mapped_item;
-				}
-				return last_value[index];
-			});
-			last_mapped_value = mapped_value;
-			last_value = value;
-
+			var diff = ad(value);
 			return mapped_value;
 		});
 	};
