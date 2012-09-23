@@ -956,9 +956,31 @@ var ArrayConstraint = function(value) {
 	proto.$shadow = function(onAdd, onRemove, onMove, context) {
 		context = context || this;
 		var ad = array_differ([], this._equality_check);
+		var mapped_value = [];
 		return new Constraint(function() {
 			var value = self.get();
 			var diff = ad(value);
+			each(diff.removed, function(info) {
+				if(isFunction(onRemove)) {
+					onRemove(info.item, info.from, mapped_value);
+				}
+				mapped_value.splice(info.from, 1);
+			});
+			each(diff.added, function(info) {
+				var mapped_item;
+				if(isFunction(onAdd)) {
+					mapped_item = onAdd(info.item, info.to, info.from, mapped_value);
+				} else {
+					mapped_item = info.item;
+				}
+				mapped_value.splice(info.to, 0, mapped_item);
+			});
+			each(diff.moved, function(info) {
+				if(isFunction(onMove)) {
+					onMove(info.item, info.insert_at, info.move_from, mapped_value);
+				}
+				mapped_value.splice(info.insert_at, 0, mapped_value.splice(info.move_from, 1)[0]);
+			});
 			return mapped_value;
 		});
 	};
