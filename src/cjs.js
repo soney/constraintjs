@@ -459,8 +459,10 @@ var constraint_solver = (function() {
 			var to_nullify = [node];
 			for(i = 0; i<to_nullify.length; i++) {
 				var curr_node = to_nullify[i];
+				if(curr_node.id === 95) { console.log("FUUUUUUU"); }
 				if(curr_node.is_valid()) {
 					curr_node.mark_invalid();
+					if(curr_node.id === 95) { console.log("CCCCCC"); }
 
 					var nullification_listeners = this.get_nullification_listeners(curr_node);
 					this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
@@ -609,6 +611,7 @@ var Constraint = function(value, literal) {
 	this.invalidate = function() {
 		constraint_solver.nullifyNode(node);
 	};
+	this._change_listeners = [];
 };
 
 (function(my) {
@@ -629,8 +632,14 @@ var Constraint = function(value, literal) {
 	proto.onChange = function(callback) {
 		constraint_solver.on_nullify(this, callback);
 		this.get();
+		this._change_listeners.push(callback);
+		return this._change_listeners.length - 1;
 	};
 	proto.offChange = function(callback) {
+		if(isNumber(callback)) {
+			callback = this._change_listeners[callback];
+			delete this._change_listeners[callback];
+		}
 		constraint_solver.off_nullify(this, callback);
 	};
 }(Constraint));
@@ -755,13 +764,77 @@ var ArrayConstraint = function(value) {
 	this.$value = new Constraint(function() {
 		return self._getter();
 	});
+	this._add_listeners = [];
+	this._remove_listeners = [];
+	this._move_listeners = [];
+	this._index_change_listeners = [];
+	this._diff_listener_id = this._install_diff_listener();
 };
 
 (function(my) {
 	var proto = my.prototype;
 	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
+
+	var diff_events = {
+		"Add": "_add_listeners",
+		"Remove": "_remove_listeners",
+		"Move": "_move_listeners",
+		"IndexChange": "_index_change_listeners"
+	};
+	each(diff_events, function(arr_name, diff_event) {
+		proto["on" + diff_event] = function(listener) {
+			var arr = this[arr_name];
+			arr.push(listener);
+			return arr.length-1;
+		};
+		proto["off" + diff_event] = function(listener) {
+			var arr = this[arr_name];
+			var listener_index;
+
+			if(isNumber(listener)) { listener_index = listener; }
+			else { listener_index = index_of(arr, listener); }
+
+			if(listener_index >= 0) { delete this._add_listeners[listener]; }
+		};
+	});
+
+	proto._install_diff_listener = function() {
+		var self = this;
+		var ad = array_differ(this.get(), this._equality_check);
+		return this.$value.onChange(function() {
+			var diff = ad(self.get());
+			each(self._remove_listeners, function(listener) {
+				each(diff.removed, function(info) {
+					listener(info.item, info.from);
+				});
+			});
+			each(self._add_listeners, function(listener) {
+				each(diff.added, function(info) {
+					listener(info.item, info.to);
+				});
+			});
+			each(self._move_listeners, function(listener) {
+				each(diff.moved, function(info) {
+					listener(info.item, info.to, info.from);
+				});
+			});
+			each(self._index_change_listeners, function(listener) {
+				each(diff.index_changed, function(info) {
+					listener(info.item, info.to, info.from, info.from_item);
+				});
+			});
+		});
+	};
+	proto._uninstall_diff_listener = function() {
+		this.$value.offChange(this._diff_listener_id);
+	};
+	proto.destroy = function() {
+		this._uninstall_diff_listener();
+		this.$value.destroy();
+		this._len.destroy();
+	};
 	proto.onChange = function(callback) {
-		this.$value.onChange.apply(this.$value, arguments);
+		return this.$value.onChange.apply(this.$value, arguments);
 	};
 	proto.offChange = function(callback) {
 		this.$value.offChange.apply(this.$value, arguments);
@@ -957,6 +1030,7 @@ var ArrayConstraint = function(value) {
 		context = context || this;
 		var ad = array_differ([], this._equality_check);
 		var mapped_value = [];
+		var self = this;
 		return new Constraint(function() {
 			var value = self.get();
 			var diff = ad(value);
