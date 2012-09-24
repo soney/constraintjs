@@ -459,10 +459,8 @@ var constraint_solver = (function() {
 			var to_nullify = [node];
 			for(i = 0; i<to_nullify.length; i++) {
 				var curr_node = to_nullify[i];
-				if(curr_node.id === 95) { console.log("FUUUUUUU"); }
 				if(curr_node.is_valid()) {
 					curr_node.mark_invalid();
-					if(curr_node.id === 95) { console.log("CCCCCC"); }
 
 					var nullification_listeners = this.get_nullification_listeners(curr_node);
 					this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
@@ -473,6 +471,7 @@ var constraint_solver = (function() {
 						var dependentNode = outgoingEdge.toNode;
 						if(outgoingEdge.timestamp < dependentNode.timestamp) {
 							this.removeEdge(outgoingEdge);
+							j--;
 						} else {
 							to_nullify.push(dependentNode);
 						}
