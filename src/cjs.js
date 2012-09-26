@@ -1087,12 +1087,171 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	else { this._values = cjs.array(); }
 
 	this._equality_check = arg2 || eqeqeq;
+	this._set_listeners = [];
+	this._unset_listeners = [];
+	this._key_change_listeners = [];
+	this._value_change_listeners = [];
+	this._move_listeners = [];
+	this._index_change_listeners = [];
+	var self = this;
+	this.$value = new Constraint(function() {
+		return {keys: self.keys(), values: self.values()};
+	});
+	this._diff_listener_id = this._install_diff_listener();
 };
 
 (function(my) {
 	var proto = my.prototype;
+	var diff_events = {
+		"Set": "_set_listeners",
+		"Unset": "_unset_listeners",
+		"KeyChange": "_key_change_listeners",
+		"ValueChange": "_value_change_listeners",
+		"IndexChange": "_index_change_listeners",
+		"Move": "_move_listeners"
+	};
+	each(diff_events, function(arr_name, diff_event) {
+		proto["on" + diff_event] = function(listener) {
+			var arr = this[arr_name];
+			arr.push(listener);
+			return arr.length-1;
+		};
+		proto["off" + diff_event] = function(listener) {
+			var arr = this[arr_name];
+			var listener_index;
+
+			if(isNumber(listener)) { listener_index = listener; }
+			else { listener_index = index_of(arr, listener); }
+
+			if(listener_index >= 0) { delete this._add_listeners[listener]; }
+		};
+	});
+	proto._install_diff_listener = function() {
+		var key_differ = array_differ(this.keys(), this._equality_check);
+		var value_differ = array_differ(this.values());
+		var self = this;
+		return this.$value.onChange(function() {
+			var val = self.$value.get();
+			var key_diff = key_differ(val.keys);
+			var value_diff = value_differ(val.values);
+			var set = [], unset = [], key_change = [], value_change = [], index_changed = [], moved = [];
+			var i, j;
+			for(i = 0; i<key_diff.added.length; i++) {
+				var added_key = key_diff.added[i];
+				for(j = 0; j<key_diff.removed.length; j++) {
+					var removed_key = key_diff.removed[j];
+					if(added_key.to === removed_key.from) {
+						key_change.push({index: added_key.to, from: removed_key.from_item, to: added_key.item});
+						key_diff.added.splice(i--, 1);
+						key_diff.removed.splice(j--, 1);
+						break;
+					}
+				}
+			}
+			for(i = 0; i<value_diff.added.length; i++) {
+				var added_value = value_diff.added[i];
+				for(j = 0; j<value_diff.removed.length; j++) {
+					var removed_value = value_diff.removed[j];
+					if(added_value.to === removed_value.from) {
+						value_change.push({key: val.keys[added_value.to], index: added_value.to, from: removed_value.from_item, to: added_value.item});
+						value_diff.added.splice(i--, 1);
+						value_diff.removed.splice(j--, 1);
+						break;
+					}
+				}
+			}
+			for(i = 0; i<key_diff.added.length; i++) {
+				var added_key = key_diff.added[i];
+				for(j = 0; j<value_diff.added.length; j++) {
+					var added_val = value_diff.added[j];
+					if(added_key.to === added_val.to) {
+						set.push({index: added_key.to, key: added_key.item, value: added_val.item});
+						key_diff.added.splice(i--, 1);
+						value_diff.added.splice(j--, 1);
+						break;
+					}
+				}
+			}
+			for(i = 0; i<key_diff.removed.length; i++) {
+				var removed_key = key_diff.removed[i];
+				for(j = 0; j<value_diff.removed.length; j++) {
+					var removed_val = value_diff.removed[j];
+					if(removed_key.to === removed_val.to) {
+						unset.push({from: removed_key.from, key: removed_key.from_item, value: removed_val.from_item});
+						key_diff.removed.splice(i--, 1);
+						value_diff.removed.splice(j--, 1);
+						break;
+					}
+				}
+			}
+
+			for(i = 0; i<key_diff.moved.length; i++) {
+				var moved_key = key_diff.moved[i];
+				for(j = 0; j<value_diff.moved.length; j++) {
+					var moved_val = value_diff.moved[j];
+					if(moved_key.to === moved_val.to && moved_key.from === moved_val.from) {
+						moved.push({from: moved_key.from, to: moved_key.to, key: moved_key.item, value: moved_val.item, insert_at: moved_key.insert_at});
+						key_diff.moved.splice(i--, 1);
+						value_diff.moved.splice(j--, 1);
+						break;
+					}
+				}
+			}
+			for(i = 0; i<key_diff.index_changed.length; i++) {
+				var index_changed_key = key_diff.index_changed[i];
+				for(j = 0; j<value_diff.index_changed.length; j++) {
+					var index_changed_val = value_diff.index_changed[j];
+					if(index_changed_key.to === index_changed_val.to && index_changed_key.from === index_changed_val.from) {
+						index_changed.push({from: index_changed_key.from, to: index_changed_key.to, key: index_changed_key.item, value: index_changed_val.item});
+						key_diff.index_changed.splice(i--, 1);
+						value_diff.index_changed.splice(j--, 1);
+						break;
+					}
+				}
+			}
+			each(self._set_listeners, function(listener) {
+				each(set, function(info) {
+					listener(info.value, info.key, info.index);
+				});
+			});
+			each(self._unset_listeners, function(listener) {
+				each(unset, function(info) {
+					listener(info.value, info.key, info.from);
+				});
+			});
+			each(self._key_change_listeners, function(listener) {
+				each(key_change, function(info) {
+					listener(info.to, info.from, info.index);
+				});
+			});
+			each(self._value_change_listeners, function(listener) {
+				each(value_change, function(info) {
+					listener(info.to, info.key, info.from, info.index);
+				});
+			});
+			each(self._move_listeners, function(listener) {
+				each(moved, function(info) {
+					listener(info.value, info.key, info.insert_at, info.to, info.from);
+				});
+			});
+			each(self._index_change_listeners, function(listener) {
+				each(index_changed, function(info) {
+					listener(info.value, info.key, info.to, info.from);
+				});
+			});
+		});
+	};
+	proto._uninstall_diff_listener = function() {
+		this.$value.offChange(this._diff_listener_id);
+	};
+	proto.destroy = function() {
+		this._keys.destroy();
+		this._values.destroy();
+		this._uninstall_diff_listener();
+	};
 	proto.keys = function() { return this._keys.get(); };
 	proto.values = function() { return this._values.get(); };
+	proto.get = function() { return this.$value.get(); };
 	proto.set_equality_check = function(equality_check) {
 		this._equality_check = equality_check;
 		if(this._keys instanceof ArrayConstraint) { this._keys.set_equality_check(equality_check); }
