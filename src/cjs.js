@@ -463,6 +463,7 @@ var constraint_solver = (function() {
 					curr_node.mark_invalid();
 
 					var nullification_listeners = this.get_nullification_listeners(curr_node);
+					//if(curr_node.id === 45 && red.__debug) debugger;
 					this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
 
 					var outgoingEdges = curr_node.getOutgoing();
@@ -729,7 +730,6 @@ cjs.liven = function() {
 		constraint_solver.getNodeValue(node);
 	};
 
-	//if(red.__debug) { console.log("LIVEN"); debugger; }
 	constraint_solver.on_nullify(node, do_get);
 	constraint_solver.nullified_call_stack.push(do_get);
 	if(constraint_solver.semaphore >= 0) {
