@@ -729,8 +729,12 @@ cjs.liven = function() {
 		constraint_solver.getNodeValue(node);
 	};
 
+	//if(red.__debug) { console.log("LIVEN"); debugger; }
 	constraint_solver.on_nullify(node, do_get);
-	do_get();
+	constraint_solver.nullified_call_stack.push(do_get);
+	if(constraint_solver.semaphore >= 0) {
+		constraint_solver.run_nullified_listeners();
+	}
 
 	return {
 //		node: node, //TODO: remove node & runner
