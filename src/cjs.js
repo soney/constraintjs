@@ -54,18 +54,10 @@ var index_of = function(arr, item, start_index, equality_check) {
 	return index_where(arr, function(x) { return equality_check(item, x); }, start_index);
 };
 
-// Remove a set of items from an array
-var remove_index = function(arr, from, to) {
-	//http://ejohn.org/blog/javascript-array-remove/
-	var rest = arr.slice((to || from) + 1 || arr.length);
-	arr.length = from < 0 ? arr.length + from : from;
-	return arr.push.apply(arr, rest);
-};
-
 // Remove an item in an array
 var remove = function(arr, obj) {
 	var index = index_of(arr, obj);
-	if(index>=0) { remove_index(arr, index); }
+	if(index>=0) { arr.splice(index, 1); }
 };
 
 // Remove every item from an array
@@ -463,7 +455,6 @@ var constraint_solver = (function() {
 					curr_node.mark_invalid();
 
 					var nullification_listeners = this.get_nullification_listeners(curr_node);
-					//if(curr_node.id === 45 && red.__debug) debugger;
 					this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
 
 					var outgoingEdges = curr_node.getOutgoing();
@@ -487,11 +478,10 @@ var constraint_solver = (function() {
 		proto.run_nullified_listeners = function() {
 			if(!this.running_nullified_listeners) {
 				this.running_nullified_listeners = true;
-				for(i = 0; i<this.nullified_call_stack.length; i++) {
-					var nullified_callback = this.nullified_call_stack[i];
+				while(this.nullified_call_stack.length > 0) {
+					var nullified_callback = this.nullified_call_stack.pop();
 					nullified_callback();
 				}
-				clear(this.nullified_call_stack); 
 				this.running_nullified_listeners = false;
 			}
 		};
