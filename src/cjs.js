@@ -1054,6 +1054,9 @@ var ArrayConstraint = function(value) {
 }(ArrayConstraint));
 
 cjs.array = function(value) { return new ArrayConstraint(value); };
+cjs.is_array = function(obj) {
+	return obj instanceof ArrayConstraint;
+};
 
 //
 // ============== MAPS ============== 
@@ -1363,6 +1366,9 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	};
 }(MapConstraint));
 cjs.map = function(arg0, arg1) { return new MapConstraint(arg0, arg1); };
+cjs.is_map = function(obj) {
+	return obj instanceof MapConstraint;
+};
 
 return cjs;
 }(this));
