@@ -26,7 +26,7 @@ var vendor_src = cp(src, "vendor");
 exports.main_build = cp(build_path, ["cjs.min.js"]);
 
 exports.main_src = c(
-	cp(src, [ "cjs.js", "anim.js"])
+	cp(src, [ "cjs.js"])
 );
 
 var core_tests_dir = cp(path, "test/core/unit_tests");

@@ -5,15 +5,10 @@ var cjs = (function (root) {
 
 // The star of the show!
 var old_cjs = root.cjs;
-var cjs = function () {
-	return cjs.$.apply(cjs, arguments);
-};
-cjs.version = "1.0.0";
+var cjs = function () { return cjs.$.apply(cjs, arguments); };
+cjs.version = "0.7.0";
 
-cjs.noConflict = function() {
-	root.cjs = old_cjs;
-	return cjs;
-};
+cjs.noConflict = function() { root.cjs = old_cjs; return cjs; };
 
 //
 // ============== UTILITY FUNCTIONS ============== 
@@ -1544,15 +1539,19 @@ var FSM = function() {
 			to_state = this.create_or_find_state(arg1);
 			name = arg2;
 		}
+		var do_transition = this.get_transition(from_state, to_state, name);
+		add_transition_fn.call(this, do_transition, this);
+
+		return this;
+	};
+	proto.get_transition = function(from_state, to_state, name) {
 		var transition = new Transition(this, from_state, to_state, name);
 		this._transitions.push(transition);
-		var do_transition = bind(function() {
+		return  bind(function() {
 			if(this.is(from_state.name())) {
 				transition.run.apply(transition, arguments);
 			}
 		}, this);
-		add_transition_fn.call(this, do_transition, this);
-		return this;
 	};
 	proto.start_at = function(state_name) {
 		var state = this.state_with_name(state_name);
@@ -1773,6 +1772,282 @@ cjs.attr = function(elems, attr_name, val) {
 		var v = cjs.get(val);
 		dom_setter(elems, function(elem) { elem.setAttribute(k, v); });
 	});
+};
+
+var insert_at = function(child_node, parent_node, index) {
+	var children = parent_node.childNodes;
+	if(children.length <= index) {
+		parent_node.appendChild(child_node);
+	} else {
+		var before_child = children[index];
+		parent_node.insertBefore(child_node, before_child);
+	}
+};
+var move_child = function(parent_node, to_index, from_index) {
+	var children = parent_node.childNodes;
+	if(children.length > from_index) {
+		var child_node = children[from_index];
+		if(parent_node) {
+			if(from_index < to_index) { //If it's less than the index we're inserting at...
+				to_index++; //Increase the index by 1, to make up for the fact that we're removing me at the beginning
+			}
+			insert_at(child_node, parent_node, to_index);
+		}
+	}
+};
+
+cjs.children = function(elems, children) {
+	dom_setter(elems, function(elem) { elem.innerHTML = ""; });
+	var ad = array_differ();
+	cjs.liven(function() {
+		var diff = ad(cjs.get(children));
+		dom_setter(elems, function(elem) {
+			each(diff.removed, function(info) {
+				elem.removeChild(info.item);
+			});
+			each(diff.added, function(info) {
+				insert_at(info.item, elem, info.to);
+			});
+			each(diff.moved, function(info) {
+				move_child(elem, info.from, info.to);
+			});
+		});
+	});
+};
+
+var getColorValue = function(color) {
+    var t = document.createElement('div');
+    t.style.display = 'none';
+    t.style.color = color;
+    document.body.appendChild(t);
+
+    var style = window.getComputedStyle(t, null);
+    var colorValue = style.getPropertyCSSValue('color').getRGBColorValue();
+    document.body.removeChild(t);
+
+    var hex = function(x) {
+        return ('0' + parseInt(x, 10).toString(16)).slice(-2);
+    }
+
+    var hexString = '#';
+    with(colorValue) {
+        hexString += hex(red.cssText) + hex(green.cssText) + hex(blue.cssText);
+    }
+
+    return hexString;
+};
+
+var timings = {
+	linear: function(percentage, start, end, current) {
+		return percentage;
+	}
+	, _default: function(percentage) {
+		return percentage;
+	}
+};
+var speeds = {
+	slow: 600
+	, fast: 200
+	, _default: 400
+};
+var defaults = {
+	speed: "_default"
+	, in_filter: function(x) {
+		return x;
+	}
+	, out_filter: function(x) {
+		return x;
+	}
+	, timing: "linear"
+	, fps: 30
+};
+var get_time = function() {
+	return (new Date()).getTime();
+};
+
+var hex_to_rgb = function(str) {
+	var rv = [];
+	for(var i = 1; i<6; i+=2) {
+		rv.push(parseInt(str.substr(i, 2), 16));
+	}
+	return rv;
+};
+function decimalToHex(d, padding) {
+    var hex = Number(d).toString(16);
+    padding = typeof (padding) === "undefined" || padding === null ? padding = 2 : padding;
+
+    while (hex.length < padding) {
+        hex = "0" + hex;
+    }
+
+    return hex;
+}
+var rgb_to_hex = function(arr) {
+	var rv = "#";
+	each(arr, function(item) { rv += decimalToHex(Math.round(item), 2); });
+	return rv;
+};
+
+var Animation = function(options, unfiltered_from, unfiltered_to) {
+	this.options = options;
+
+	this.unfiltered_from = unfiltered_from;
+	this.unfiltered_to = unfiltered_to;
+
+	this.from = options.in_filter(this.unfiltered_from);
+	this.to = options.in_filter(this.unfiltered_to);
+
+	this.current = this.start;
+	this.timing = isString(options.timing) ? (timings[options.timing] || timings._default) : options.timing;
+	this.speed = isString(options.speed) ? (speeds[options.speed] || speeds._default) : options.speed;
+
+	this.start_time = null;
+	this.end_time = null;
+
+	this.started = false;
+	this.done = false;
+};
+(function(my) {
+	var proto = my.prototype;
+	proto.get = function(time) {
+		if(!this.started) {
+			return options.out_filter(this.from);
+		} else if(this.done) {
+			return options.out_filter(this.to);
+		}
+		time = time || get_time();
+		var raw_percentage = (time - this.start_time) / (this.end_time - this.start_time);
+		var percentage = this.timing(raw_percentage, this.start_time, this.end_time, this.current);
+
+		var current_value;
+
+		if(isArray(this.from) && isArray(this.to) &&  this.from.length === this.to.length) {
+			current_value = map(this.from, function(from, index) {
+				var to = this.to[index];
+				return to * percentage + from * (1 - percentage);
+			}, this);
+		} else {
+			current_value = this.to * percentage + this.from * (1 - percentage);
+		}
+
+		return this.options.out_filter(current_value);
+	}
+	proto.start = function() {
+		this.start_time = get_time();
+		this.end_time = this.start_time + this.speed;
+		this.started = true;
+	};
+	proto.stop = function() {
+		this.done = true;
+		return this;
+	};
+}(Animation));
+
+
+cjs.$.extend("anim", function(based_on, options) {
+	var based_on = this;
+	options = extend({}, defaults, options);
+
+	var current_animation = null;
+	var current_animation_end_timeout = null;
+	var invalidation_interval = null;
+
+	var old_val = based_on.get();
+	var new_constraint = cjs.$(function() {
+		if(current_animation === null) {
+			return old_val;
+		} else {
+			var rv = current_animation.get();
+			return rv;
+		}
+	});
+
+	based_on.onChange(function() {
+		//var animate_from = new_constraint.get();
+		var animate_from;
+		var orig_animate_to = animate_to = based_on.get();
+
+		if(current_animation_end_timeout === null) {
+			animate_from = old_val;
+		} else {
+			animate_from = new_constraint.get();
+			root.clearTimeout(current_animation_end_timeout);
+		}
+
+		var default_anim_options = {};
+		if(isString(animate_from) && isString(animate_to)) {
+			animate_from = hex_to_rgb(getColorValue(animate_from));
+			animate_to = hex_to_rgb(getColorValue(animate_to));
+
+			default_anim_options.out_filter = rgb_to_hex;
+		}
+
+		var anim_options = extend({}, options, default_anim_options);
+
+		current_animation = new Animation(anim_options, animate_from, animate_to);
+		current_animation.start();
+
+		invalidation_interval = setInterval(new_constraint.invalidate, 1000/options.fps);
+		current_animation_end_timeout = root.setTimeout(function() {
+			current_animation_end_timeout = null;
+			current_animation = null;
+			root.clearInterval(invalidation_interval);
+			invalidation_interval = null;
+			new_constraint.invalidate();
+		}, current_animation.speed);
+		old_val = orig_animate_to;
+	});
+
+	return new_constraint;
+});
+
+cjs.async_$ = function(invoke_callback, timeout_interval) {
+	var async_fsm = cjs	.fsm()
+						.add_state("pending")
+						.add_transition(function(do_transition ) {
+							if(_.isNumber(timeout_interval)) {
+								root.setTimeout(function() {
+									do_transition("timeout");
+								}, timeout_interval);
+							}
+						}, "rejected")
+						.add_state("resolved")
+						.add_state("rejected")
+						.starts_at("pending");
+
+	var do_resolved_transition = async_fsm.get_transition("pending", "resolved");
+	var do_rejected_transition = async_fsm.get_transition("pending", "rejected");
+
+	if(_.isNumber(timeout_interval)) {
+		root.setTimeout(function() {
+			do_rejected_transition("timeout");
+		}, timeout_interval);
+	}
+	var resolved_value, rejected_value;
+	var resolved = function(value) {
+		resolved_value = value;
+		do_resolved_transition(value);
+	};
+
+	var rejected = function(message) {
+		rejected_value = message;
+		do_rejected_transition(message);
+	};
+
+	invoke_callback(resolved, rejected);
+
+
+	var constraint = cjs.fsm_$(async_fsm, {
+		"pending": undefined
+		, "resolved": function() {
+			return cjs.get(resolved_value);
+		}
+		, "rejected": function() {
+			return cjs.get(rejected_value);
+		}
+	});
+
+	return constraint;
 };
 
 return cjs;

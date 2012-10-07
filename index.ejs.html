@@ -207,8 +207,10 @@
 				}
 			});
 
-			cjs.text($("#square"), cc.anim());
+			//cjs.text($("#square"), cc.anim());
 			cjs.css($("#square"), "background-color", fsm_constraint.anim());
+			window.children = cjs.array();
+			cjs.children($("#square"), children);
 
 		});
 	</script>
