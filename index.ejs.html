@@ -177,21 +177,39 @@
 			new_props.push(prop_name);
 		}
 	</script>
-	<script type="text/javascript" src="underscore.js"></script>
+	<!----><script type="text/javascript" src="underscore.js"></script><!---->
 	<script type="text/javascript">
 		$(function() {
-			var arr = cjs.array([1,2,3]);
-			var shadow = arr.$shadow(function(x) {
-					console.log("Added", x, arguments);
-					return x+1;
-		}, function(x) {
-					console.log("Removed", x, arguments);
-		}, function(x) {
-					console.log("Moved", x, arguments);
-					return x+1;
-		});
-			shadow.get();
-			window.arr = arr; window.shadow = shadow;
+			var fsm = cjs	.fsm()
+							.add_state("idle")
+							.add_transition(cjs.on("mousedown", document.getElementById("square")), "hover")
+							.add_state("hover")
+							.add_transition(cjs.on("mouseup", document.getElementById("square")), "idle")
+							.start_at("idle");
+			var fsm_constraint = window.fsm_constraint = cjs.fsm_$(fsm, {
+				"idle": function(event) { return "red"; }
+				, "hover": function(event) { return "blue"; }
+			});
+
+			var cc = cjs.conditional_$({
+				condition: function() {
+					return fsm_constraint.get()[0] === "r";
+				}
+				, value: function() {
+					return 1;
+				}
+			}, {
+				condition: function() {
+					return fsm_constraint.get()[0] === "b";
+				}
+				, value: function() {
+					return 2;
+				}
+			});
+
+			cjs.text($("#square"), cc.anim());
+			cjs.css($("#square"), "background-color", fsm_constraint.anim());
+
 		});
 	</script>
 	<link rel="icon" type="image/ico" href="favicon.ico">
@@ -199,6 +217,7 @@
   <body>
 	  <!--<a href="https://github.com/soney/ConstraintJS" target="cjs_github"><img style="opacity: 0.4; position: absolute; top: 0; right: 0; border: 0;" src="src/vendor/github_banner.png" alt="Fork me on GitHub"></a>-->
     <h1>ConstraintJS</h1>
+	<div id="square" style="width: 50px; height: 50px; background-color: #990000;"></div>
     <div id="content">
 		<div id="mode_selector"><span class="mode<%= dev_mode ? ' selected' : '' %> "><a href="javascript:void(0)" id="dev">dev</a><span class="subtext">(<a href="javascript:void(0)" id="refresh_includes">refresh</a>)</span><span class = "sub_sub_text"  id="refresh_state"></span></span>
 			<span class="mode<%= dev_mode ? '': ' selected' %>"><a href="javascript:void(0)" id="build">build</a><span class="subtext">(<a href="javascript:void(0)" id="recompile">rebuild</a>)</span><span class = "sub_sub_text" id="compilation_state"></span></span>

@@ -18,6 +18,11 @@ cjs.noConflict = function() {
 //
 // ============== UTILITY FUNCTIONS ============== 
 //
+var construct = function(constructor, args) {
+    var F = function() { return constructor.apply(this, args); }
+    F.prototype = constructor.prototype;
+    return new F();
+};
 var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
 var slice = ArrayProto.slice,
 	toString = ObjProto.toString,
@@ -26,6 +31,16 @@ var slice = ArrayProto.slice,
 
 // Establish the object that gets returned to break out of a loop iteration.
 var breaker = {};
+
+var camel_case = (function() {
+	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/;
+	var fcamelCase = function(all, letter) {
+		return String(letter).toUpperCase();
+	};
+	return function(string) {
+		return string.replace( rmsPrefix, "ms-" ).replace(rdashAlpha, fcamelCase);
+	};
+}());
 
 // Return a unique id when called
 var uniqueId = (function() {
@@ -45,6 +60,11 @@ var index_where = function(arr, test, start_index) {
 		if(test(arr[i], i)) { return i; }
 	}
 	return -1;
+};
+
+//Bind a function to a context
+var bind = function(func, context) {
+	return function() { return func.apply(context, arguments); };
 };
 
 var eqeqeq = function(a, b) { return a === b; };
@@ -76,6 +96,11 @@ var isArray = Array.isArray || function(obj) {
 	return toString.call(obj) == '[object Array]';
 };
   
+// Is a given value a DOM element?
+var isElement = function(obj) {
+	return !!(obj && obj.nodeType == 1);
+};
+  
 // Is a given value a function?
 var isFunction = function(obj) {
 	return toString.call(obj) == '[object Function]';
@@ -83,6 +108,20 @@ var isFunction = function(obj) {
 
 var isString = function(obj) {
 	return toString.call(obj) == '[object String]';
+};
+
+// Is a given variable an arguments object?
+var isArguments = function(obj) {
+	return toString.call(obj) == '[object Arguments]';
+};
+  
+// Safely convert anything iterable into a real, live array.
+var toArray = function(obj) {
+	if (!obj)                                     return [];
+	if (isArray(obj))                           return slice.call(obj);
+	if (isArguments(obj))                       return slice.call(obj);
+	if (obj.toArray && _.isFunction(obj.toArray)) return obj.toArray();
+	return _.values(obj);
 };
 
 // Set a constructor's prototype
@@ -633,6 +672,7 @@ var Constraint = function(value, literal) {
 		constraint_solver.off_nullify(this, callback);
 	};
 }(Constraint));
+cjs.Constraint = Constraint;
 
 var SettableConstraint = function() {
 	SettableConstraint.superclass.constructor.apply(this, arguments);
@@ -654,6 +694,7 @@ var SettableConstraint = function() {
 		return this;
 	};
 }(SettableConstraint));
+cjs.SettableConstraint = SettableConstraint;
 
 cjs.is_constraint = cjs.is_$ = function(obj) {
 	return obj instanceof Constraint;
@@ -697,6 +738,49 @@ cjs.$.extend({
 	, indexOf: function(item, equality_check) {
 		var got = this.get();
 		return index_of(got, item, 0, equality_check);
+	}
+	, add: function() {
+		var my_constraint = this;
+		var args = arguments;
+		return cjs.$(function() {
+			var rv = my_constraint.get();
+			each(args, function(arg) { rv += cjs.get(arg); });
+			return rv;
+		});
+	}
+	, sub: function() {
+		var my_constraint = this;
+		var args = arguments;
+		return cjs.$(function() {
+			var rv = my_constraint.get();
+			each(args, function(arg) { rv -= cjs.get(arg); });
+			return rv;
+		});
+	}
+	, mul: function() {
+		var my_constraint = this;
+		var args = arguments;
+		return cjs.$(function() {
+			var rv = my_constraint.get();
+			each(args, function(arg) { rv *= cjs.get(arg); });
+			return rv;
+		});
+	}
+	, div: function() {
+		var my_constraint = this;
+		var args = arguments;
+		return cjs.$(function() {
+			var rv = my_constraint.get();
+			each(args, function(arg) { rv /= cjs.get(arg); });
+			return rv;
+		});
+	}
+	, func: function(the_func) {
+		var my_constraint = this;
+		return cjs.$(function() {
+			var rv = the_func(my_constraint.get());
+			return rv;
+		});
 	}
 });
 
@@ -1054,9 +1138,8 @@ var ArrayConstraint = function(value) {
 }(ArrayConstraint));
 
 cjs.array = function(value) { return new ArrayConstraint(value); };
-cjs.is_array = function(obj) {
-	return obj instanceof ArrayConstraint;
-};
+cjs.is_array = function(obj) { return obj instanceof ArrayConstraint; };
+cjs.ArrayConstraint = ArrayConstraint;
 
 //
 // ============== MAPS ============== 
@@ -1366,8 +1449,330 @@ var MapConstraint = function(arg0, arg1, arg2) {
 	};
 }(MapConstraint));
 cjs.map = function(arg0, arg1) { return new MapConstraint(arg0, arg1); };
-cjs.is_map = function(obj) {
-	return obj instanceof MapConstraint;
+cjs.is_map = function(obj) { return obj instanceof MapConstraint; };
+cjs.MapConstraint = MapConstraint;
+
+var State = function(name) {
+	this._name = name;
+};
+(function(my) {
+	var proto = my.prototype;
+	proto.name = function() { return this._name; };
+}(State));
+
+var Transition = function(fsm, from_state, to_state, name) {
+	this.fsm = fsm;
+	this._from = from_state;
+	this._to = to_state;
+	this._name = name;
+};
+(function(my) {
+	var proto = my.prototype;
+	proto.from = function() { return this._from; };
+	proto.to = function() { return this._to; };
+	proto.name = function() { return this._name; };
+	proto.run = function() {
+		var args = toArray(arguments);
+		args.unshift(this.to());
+		this.fsm.set_state.apply(this.fsm, args);
+	};
+}(Transition));
+
+var FSM = function() {
+	this._states = [];
+	this._transitions = [];
+	this.$state = cjs.$(null);
+	this._chain_state = undefined;
+	this._listeners = {};
+};
+(function(my) {
+	var proto = my.prototype;
+	proto.state_with_name = function(state_name) {
+		var state_index = index_where(this._states, function(state) { return state.name() === state_name; } );
+		if(state_index >= 0) { return this._states[state_index]; }
+		else { return null; }
+	};
+	proto.add_state = function(state_name) {
+		var state = this.create_or_find_state(state_name);
+		this._chain_state = state;
+		return this;
+	};
+	proto.create_or_find_state = function(state_name) {
+		var state = this.state_with_name(state_name);
+		if(state === null) {
+			state = new State(state_name);
+			this._states.push(state);
+		}
+		return state;
+	};
+	proto.get_state = function() { return this.$state.get(); };
+	var get_state_regex = function(state_name) { 
+		var valid_chars = "[^\\-<>a-zA-Z0-9]*";
+		return valid_chars + "\\*|("+state_name+")" + valid_chars;
+	};
+	proto.set_state = function(state, event) {
+		var old_state = this.get_state();
+		var old_state_name = old_state ? old_state.name() : "";
+		var new_state_name = state ? state.name() : "";
+		var pre_transition_listeners = [];
+		var post_transition_listeners = [];
+		var old_state_regex = get_state_regex(old_state_name);
+		var new_state_regex = get_state_regex(new_state_name);
+		each(this._listeners, function(listeners, spec) {
+			if(spec.match(new RegExp("^"+new_state_regex+"$"))) {
+				post_transition_listeners.push.apply(post_transition_listeners, listeners);
+			} else if(spec.match(new RegExp("^" + old_state_regex + "(->|<->)" + new_state_regex+"$"))) {
+				post_transition_listeners.push.apply(post_transition_listeners, listeners);
+			} else if(spec.match(new RegExp("^" + old_state_regex + "(>-|>-<)" + new_state_regex+"$"))) {
+				pre_transition_listeners.push.apply(pre_transition_listeners, listeners);
+			}
+		});
+		var fsm = this;
+		each(pre_transition_listeners, function(listener) { listener(event, new_state_name, old_state_name, fsm); });
+		this.$state.set(state);
+		each(post_transition_listeners, function(listener) { listener(event, new_state_name, old_state_name, fsm); });
+	};
+
+	proto.add_transition = function(add_transition_fn, arg1, arg2, arg3) {
+		var from_state, to_state, name;
+		if(arguments.length >= 3) {
+			from_state = this.create_or_find_state(arg1);
+			to_state = this.create_or_find_state(arg2);
+			name = arg3;
+		} else {
+			from_state = this._chain_state;
+			to_state = this.create_or_find_state(arg1);
+			name = arg2;
+		}
+		var transition = new Transition(this, from_state, to_state, name);
+		this._transitions.push(transition);
+		var do_transition = bind(function() {
+			if(this.is(from_state.name())) {
+				transition.run.apply(transition, arguments);
+			}
+		}, this);
+		add_transition_fn.call(this, do_transition, this);
+		return this;
+	};
+	proto.start_at = function(state_name) {
+		var state = this.state_with_name(state_name);
+		this.set_state(state);
+		return this;
+	};
+	proto.is = function(state) {
+		var my_state = this.get_state();
+		return my_state === state || (my_state !== null && my_state.name() === state);
+	};
+	proto.on = function(state_spec, func) {
+		var listeners = this._listeners[state_spec];
+		if(!isArray(listeners)) {
+			listeners = this._listeners[state_spec] = [];
+		}
+
+		listeners.push(func);
+	};
+}(FSM));
+cjs.fsm = function() { return new FSM(); };
+cjs.is_fsm = function(obj) { return obj instanceof FSM; };
+cjs.FSM = FSM;
+
+cjs.on = function(event_type, target) {
+	var rv = function(do_something) { target.addEventListener(event_type, do_something); };
+
+	var context = this;
+	rv.guard = function(guard_func) {
+		return function(do_something) {
+			target.addEventListener(event_type, function() {
+					var args = toArray(arguments);
+					if(guard_func.apply(context, args)) {
+						do_something.apply(context, args);
+					}
+				});
+		};
+	};
+	rv.destroy = function() { target.removeEventListener(event_type, do_something); };
+	return rv;
+};
+
+
+var FSMConstraint = function(fsm, values) {
+	this._curr_constraint = cjs.$(null);
+	this._fsm = fsm;
+	this._listeners = {};
+	var precedence = -1;
+	var init_value = null;
+	each(values, function(value, selector) {
+		this.set(selector, value);
+
+		if(selector === "INIT" && precedence < 1) { precedence = 1; init_value = value; }
+		else if(selector === "*" && precedence < 2) { precedence = 2; init_value = value; }
+		else if(this._fsm.is(selector) && precedence < 3) { precedence = 3; init_value = value; }
+
+	}, this);
+	if(init_value !== null) { this._curr_constraint.set(init_value); }
+
+	var value = bind(function() {
+		return this._curr_constraint.get();
+	}, this);
+	FSMConstraint.superclass.constructor.call(this, value);
+};
+(function(my) {
+	proto_extend(my, Constraint);
+	var proto = my.prototype;
+	proto.set = function(selector, value) {
+		if(has(this._listeners, selector)) {
+			this.unset(selector);
+		}
+		var listener = this._listeners[selector] = bind(function(event) {
+			if(isFunction(value)) {
+				var args = toArray(arguments);
+				this._curr_constraint.set(function() {
+					return value.apply(this, args);
+				});
+			} else {
+				this._curr_constraint.set(value);
+			}
+		}, this);
+		this._fsm.on(selector, listener);
+		return this;
+	};
+	proto.unset = function(selector) {
+		var listener = this._listeners[selector];
+		if(listener) {
+			this._fsm.off(selector, listener);
+			delete this._listeners[selector];
+		}
+		return this;
+	};
+	proto.destroy = function() {
+		each(this._listeners, function(listener, selector) {
+			this._fsm.off(selector, listener);
+		}, this);
+		this._curr_constraint.destroy();
+		my.superclass.destroy.apply(this, arguments);
+	};
+}(FSMConstraint));
+cjs.fsm_$ = function(fsm, values) { return new FSMConstraint(fsm, values); };
+cjs.is_fsm_$ = function(obj) { return obj instanceof FSMConstraint; };
+cjs.FSMConstraint = FSMConstraint;
+
+var ConditionalConstraint = function() {
+	this._condition_map = cjs.map();
+	each(arguments, function(arg) {
+		if(arg) { this.set(arg.condition, arg.value); }
+	}, this);
+
+	var value = bind(function() {
+		var keys = this._condition_map.keys();
+		for(var i = 0; i<keys.length; i++) {
+			var key = keys[i];
+			var key_val;
+			if(isFunction(key)) { key_val = key(); }
+			else { key_val = key; }
+
+			if(key_val == true || key_val === "else") {
+				var val = this._condition_map.item(key);
+				if(isFunction(val)) { return val(key_val); }
+				else { return val; }
+			}
+		}
+	}, this);
+	ConditionalConstraint.superclass.constructor.call(this, value);
+};
+(function(my) {
+	proto_extend(my, Constraint);
+	var proto = my.prototype;
+	proto.set = function() {
+		var cm = this._condition_map;
+		cm.item.apply(cm, arguments);
+		return this;
+	};
+	proto.unset = function(condition) {
+		cm.unset.apply(cm, arguments);
+		return this;
+	};
+}(ConditionalConstraint));
+cjs.conditional_$ = function() { return construct(ConditionalConstraint, arguments); };
+cjs.is_conditional_$ = function(obj) { return obj instanceof FSMConstraint; };
+cjs.ConditionalConstraint = ConditionalConstraint;
+
+var dom_setter = function(elems, set_func) {
+	if(isElement(elems)) {
+		set_func(elems);
+	} else if(isArray(elems)) {
+		each(elems, function(elem) { dom_setter(elem, set_func); });
+	} else if(has(window, "jQuery") && elems instanceof jQuery) {
+		for(var i = 0; i<elems.length; i++) {
+			set_func(elems[i]);
+		}
+	} else if(cjs.is_$(elems)) {
+		dom_setter(elems.get(), set_func);
+	} else if(cjs.is_array(elems)) {
+		dom_setter(elems.get(), set_func);
+	}
+};
+
+
+cjs.text = function(elems, val) {
+	cjs.liven(function() {
+		var v = cjs.get(val);
+		dom_setter(elems, function(elem) {
+			elem.textContent = v;
+		});
+	});
+};
+
+cjs.html = function(elems, val) {
+	cjs.liven(function() {
+		var v = cjs.get(val);
+		dom_setter(elems, function(elem) {
+			elem.innerHTML = v;
+		});
+	});
+};
+
+cjs.val = function(elems, val) {
+	cjs.liven(function() {
+		var v = cjs.get(val);
+		dom_setter(elems, function(elem) {
+			elem.val = v;
+		});
+	});
+};
+
+cjs.class = function(elems, val) {
+	cjs.liven(function() {
+		var v;
+		if(cjs.is_$(val)) {
+			v = val.get();
+		} else if(cjs.is_array(val)) {
+			v = val.get();
+		} else {
+			v = val;
+		}
+
+		if(isArray(v)) { v = v.join(" "); }
+
+		dom_setter(elems, function(elem) {
+			elem.className = v;
+		});
+	});
+};
+
+cjs.css = function(elems, attr_name, val) {
+	cjs.liven(function() {
+		var k = camel_case(cjs.get(attr_name));
+		var v = cjs.get(val);
+		dom_setter(elems, function(elem) { elem.style[k] = v; });
+	});
+};
+
+cjs.attr = function(elems, attr_name, val) {
+	cjs.liven(function() {
+		var k = cjs.get(attr_name);
+		var v = cjs.get(val);
+		dom_setter(elems, function(elem) { elem.setAttribute(k, v); });
+	});
 };
 
 return cjs;
