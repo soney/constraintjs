@@ -177,9 +177,33 @@
 			new_props.push(prop_name);
 		}
 	</script>
+	<script id="filelist" type="cjs/template">
+	{{#diagram files.state}}
+		{{#state pending}}Loading...{{/state}}
+		{{#state resolved}}
+			{{#each files filename index}}
+				{{#diagram filetypes[index].state}}
+					{{#state pending}}
+						<div class='loading'>...</div>
+					{{/state}}
+					{{#state resolved}}
+						<div class='resolved'>{{filename}} {{filetypes[index]}}</div>
+					{{/state}}
+					{{#state rejected}}
+						<div class='error'>error</div>
+					{{/state}}
+				{{/diagram}}
+			{{/each}}
+		{{/state}}
+		{{#state rejected}}Error{{/state}}
+	{{/diagram}}
+	</script>
 	<!----><script type="text/javascript" src="underscore.js"></script><!---->
 	<script type="text/javascript">
 		$(function() {
+			cjs.template("#filelist");
+
+			/*
 			var fsm = cjs	.fsm()
 							.add_state("idle")
 							.add_transition(cjs.on("mousedown", document.getElementById("square")), "hover")
@@ -211,6 +235,7 @@
 			cjs.css($("#square"), "background-color", fsm_constraint.anim());
 			window.children = cjs.array();
 			cjs.children($("#square"), children);
+			*/
 
 		});
 	</script>

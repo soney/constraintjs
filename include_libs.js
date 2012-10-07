@@ -26,7 +26,17 @@ var vendor_src = cp(src, "vendor");
 exports.main_build = cp(build_path, ["cjs.min.js"]);
 
 exports.main_src = c(
-	cp(src, [ "cjs.js"])
+	cp(src, [
+		"cjs.js"
+		, "template/underscore.js"
+		, "template/cjs_dom.js"
+		, "template/cjs_template.js"
+		, "template/parsers/esprima.js"
+		, "template/parsers/html_parser.js"
+		, "template/parsers/handlebars_parser.js"
+		, "template/ir_builders/handlebars_ir.js"
+		, "template/handlebars_template.js"
+	])
 );
 
 var core_tests_dir = cp(path, "test/core/unit_tests");

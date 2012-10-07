@@ -1953,7 +1953,7 @@ cjs.$.extend("anim", function(based_on, options) {
 	var invalidation_interval = null;
 
 	var old_val = based_on.get();
-	var new_constraint = cjs.$(function() {
+	var new_constraint = new Constraint(function() {
 		if(current_animation === null) {
 			return old_val;
 		} else {
@@ -1962,7 +1962,7 @@ cjs.$.extend("anim", function(based_on, options) {
 		}
 	});
 
-	based_on.onChange(function() {
+	var on_change_func = function() {
 		//var animate_from = new_constraint.get();
 		var animate_from;
 		var orig_animate_to = animate_to = based_on.get();
@@ -1996,7 +1996,14 @@ cjs.$.extend("anim", function(based_on, options) {
 			new_constraint.invalidate();
 		}, current_animation.speed);
 		old_val = orig_animate_to;
-	});
+	};
+
+	based_on.onChange(on_change_func);
+
+	new_constraint.destroy = function() {
+		Constraint.prototype.destroy.apply(this);
+		based_on.offChange(on_change_func);
+	};
 
 	return new_constraint;
 });
