@@ -192,9 +192,9 @@
 							}
 							};
 			/**/
-		//	console.log(template);
+			console.log(template);
 			var files_dom = document.getElementById("files");
-		//	files_dom.appendChild(template({files: filenames, filetypes: filetypes}));
+			files_dom.appendChild(template({files: filenames, filetypes: filetypes}));
 		};
 	</script>
 	<style type="text/css">
@@ -219,9 +219,15 @@
 
 	</style>
 	<script id="filelist" type="cjs/template">
-	{{#diagram files.state}}
-		{{#state pending}}Loading...{{/state}}
-		{{#state resolved}}
+		{{#diagram files.state}}
+			{{#state pending}}Loading...{{/state}}
+			{{#state resolved}}hello{{/state}}
+			{{#state rejected}}Error{{/state}}
+		{{/diagram}}
+	</script>
+		<!--
+	-->
+	<!--
 			{{#each files filename index}}
 				{{#diagram filetypes[index].state}}
 					{{#state pending}}
@@ -235,10 +241,7 @@
 					{{/state}}
 				{{/diagram}}
 			{{/each}}
-		{{/state}}
-		{{#state rejected}}Error{{/state}}
-	{{/diagram}}
-	</script>
+			-->
   </head>
   <body>
 	  <div id="files" />

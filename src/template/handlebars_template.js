@@ -30,6 +30,32 @@
 		}
 	};
 
+	var parsed_var_js_fn_val = function(node) {
+		if(_.isArray(node)) {
+			return _.map(node, parsed_var_fn_val);
+		}
+		var type = node.type;
+		if(type === "Program") {
+			return parsed_var_fn_val(node.body[0]);
+		} else if(type === "ExpressionStatement") {
+			return parsed_var_fn_val(node.expression);
+		} else if(type === "Identifier") {
+			return node.name;
+		} else if(type === "MemberExpression") {
+			var parent_text = parsed_var_fn_val(node.object);
+			var child_text = parsed_var_fn_val(node.property);
+			if(node.computed) {
+				return parent_text + "[" + child_text + "]";
+			} else {
+				return parent_text + "." + child_text;
+			}
+		} else if(type === "Literal") {
+			return node.value;
+		} else {
+			console.log("Unknown type " + type);
+		}
+	};
+
 	var helpers = {};
 
 	var to_fn_str= function(node) {
@@ -203,21 +229,17 @@
 	build_handlebars_template.register_helper("each", function(node) {
 		var parsed_attributes = node.value.parsed_attributes;
 		var collection_name, val_name, key_name;
-		var attrs;
-		if(parsed_attributes.type === "compound") {
-			attrs = parsed_attributes.statements;
-		} else {
-			attrs = [parsed_attributes];
-		}
+		var attrs = parsed_attributes;
 
 		var rv;
 		if(_.size(attrs) >= 1) {
 			var collection_name_code = parsed_var_fn_val(attrs[0]);
 
-			var val_name_code = (_.size(attrs) >= 2) ? attrs[1].text : "value";
-			var key_name_code = (_.size(attrs) >= 3) ? attrs[2].text : "key";
+			var val_name_code = (_.size(attrs) >= 2) ? parsed_var_js_fn_val(attrs[1]) : "value";
+			var key_name_code = (_.size(attrs) >= 3) ? parsed_var_js_fn_val(attrs[2]) : "key";
 
-			rv = collection_name_code + ".map(function(" + val_name_code + ", " + key_name_code + ") { // {{#each " + attrs[0].text + "}}\n";
+
+			rv = collection_name_code + ".map(function(" + val_name_code + ", " + key_name_code + ") { // {{#each " + collection_name_code + "}}\n";
 			rv += "return [ // {{#each}}\n";
 			_.forEach(node.children, function(child, index) {
 				if(index > 0) {
@@ -233,7 +255,7 @@
 
 	build_handlebars_template.register_helper("diagram", function(node) {
 		var diagram_name = parsed_var_fn_val(node.value.parsed_attributes);
-		rv = "\ncjs.fsm_$(" + diagram_name + ", { // {{#diagram " + diagram_name + "}}\n\n";
+		rv = "\ncjs.variable_fsm_$(" + diagram_name + ", { // {{#diagram " + diagram_name + "}}\n\n";
 		var index=0;
 		_.forEach(node.children, function(child) {
 			if(child.type === "mustache" && child.subtype === "section" && child.value.tag === "state") {
@@ -241,7 +263,7 @@
 				if(index > 0) {
 					rv += ", ";
 				}
-				rv += "'" + state_name + "': [\n";
+				rv += "'" + state_name + "': function() { return [\n";
 
 				_.forEach(child.children, function(c, i) {
 					if(i>0) {
@@ -250,7 +272,7 @@
 					rv += to_fn_str(c);
 				});
 
-				rv += "]";
+				rv += "]; }";
 				index++;
 			}
 		});

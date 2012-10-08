@@ -93,7 +93,7 @@ var isArray = Array.isArray || function(obj) {
   
 // Is a given value a DOM element?
 var isElement = function(obj) {
-	return !!(obj && obj.nodeType == 1);
+	return !!(obj && (obj.nodeType === 1 || obj.nodeType === 8 || obj.nodeType === 3));
 };
   
 // Is a given value a function?
@@ -695,13 +695,19 @@ cjs.is_constraint = cjs.is_$ = function(obj) {
 	return obj instanceof Constraint;
 };
 
-cjs.get = function(obj) {
-	if(cjs.is_$(obj)) {
-		return obj.get();
-	} else if(obj instanceof ArrayConstraint) {
-		return obj.get();
+cjs.get = function(obj, recursive) {
+	if(cjs.is_$(obj) || obj instanceof ArrayConstraint) {
+		if(recursive === true) {
+			return cjs.get(obj.get(), true);
+		} else {
+			return obj.get();
+		}
 	} else {
-		return obj;
+		if(recursive === true && isArray(obj)) {
+			return map(obj, function(x) { return cjs.get(x, true); });
+		} else {
+			return obj;
+		}
 	}
 };
 
@@ -1621,11 +1627,9 @@ var FSMConstraint = function(fsm, values) {
 	var init_value = null;
 	each(values, function(value, selector) {
 		this.set(selector, value);
-
 		if(selector === "INIT" && precedence < 1) { precedence = 1; init_value = value; }
 		else if(selector === "*" && precedence < 2) { precedence = 2; init_value = value; }
 		else if(this._fsm.is(selector) && precedence < 3) { precedence = 3; init_value = value; }
-
 	}, this);
 	if(init_value !== null) { this._curr_constraint.set(init_value); }
 
@@ -1819,10 +1823,10 @@ cjs.children = function(elems, children) {
 	dom_setter(elems, function(elem) { elem.innerHTML = ""; });
 	var ad = array_differ();
 	cjs.liven(function() {
-		var diff = ad(cjs.get(children));
+		var diff = ad(cjs.get(children, true));
 		dom_setter(elems, function(elem) {
 			each(diff.removed, function(info) {
-				elem.removeChild(info.item);
+				elem.removeChild(elem.children[info.index]);
 			});
 			each(diff.added, function(info) {
 				insert_at(info.item, elem, info.to);
@@ -2073,7 +2077,16 @@ cjs.async_$ = function(invoke_callback, timeout_interval) {
 		}
 	});
 
+
 	constraint.state = async_fsm;
+
+	constraint.item = function() {
+		if(arguments.length === 1 && arguments[0] === "state") {
+			return this.state;
+		} else {
+			return Constraint.prototype.item.apply(this, arguments);
+		}
+	};
 
 	return constraint;
 };
