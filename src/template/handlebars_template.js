@@ -3,32 +3,31 @@
 	var default_container = "span";
 
 	var parsed_var_fn_val = function(node) {
+		if(_.isArray(node)) {
+			return _.map(node, parsed_var_fn_val);
+		}
 		var type = node.type;
-		if(type === "prop") {
-			var subtype = node.subtype;
-			var parent = node.parent;
-			var child = node.child;
-			var parent_text = parsed_var_fn_val(parent);
-			var child_text = parsed_var_fn_val(child);
-			if(subtype === "square_brackets") {
-				if(child.type === "constant" && child.subtype === "string") {
-					child_text = '"' + child_text + '"';
-				}
-
+		if(type === "Program") {
+			return parsed_var_fn_val(node.body[0]);
+		} else if(type === "ExpressionStatement") {
+			return parsed_var_fn_val(node.expression);
+		} else if(type === "Identifier") {
+			return node.name;
+		} else if(type === "MemberExpression") {
+			var parent_text = parsed_var_fn_val(node.object);
+			var child_text = parsed_var_fn_val(node.property);
+			if(node.computed) {
 				return parent_text + ".item(" + child_text + ")";
-			} else if(subtype === "dot") {
-				return parent_text + ".item('" + child_text + "')";
 			} else {
-				console.log("Unknown type " + type + "/" + subtype);
+				return parent_text + ".item('" + child_text + "')";
 			}
-		} else if(type === "constant") {
+			console.log(node);
+			return;
+		} else if(type === "Literal") {
 			return node.value;
-		} else if(type === "var") {
-			return node.var_name;
 		} else {
 			console.log("Unknown type " + type);
 		}
-		return "'todo'";
 	};
 
 	var helpers = {};
@@ -124,7 +123,6 @@
 		var fn_string = "with (obj) {\n"
 							+ to_fn_str(ir)
 							+ "\n}";
-		console.log(ir);
 
 		var fn;
 		try {

@@ -201,9 +201,6 @@
 	<!----><script type="text/javascript" src="underscore.js"></script><!---->
 	<script type="text/javascript">
 		$(function() {
-			cjs.template("#filelist");
-
-			/*
 			var fsm = cjs	.fsm()
 							.add_state("idle")
 							.add_transition(cjs.on("mousedown", document.getElementById("square")), "hover")
@@ -231,12 +228,8 @@
 				}
 			});
 
-			//cjs.text($("#square"), cc.anim());
+			cjs.text($("#square"), cc.anim());
 			cjs.css($("#square"), "background-color", fsm_constraint.anim());
-			window.children = cjs.array();
-			cjs.children($("#square"), children);
-			*/
-
 		});
 	</script>
 	<link rel="icon" type="image/ico" href="favicon.ico">
