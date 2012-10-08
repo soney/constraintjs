@@ -193,7 +193,7 @@ app.configure(function() {
 							};
 						});
 
-						body = ejs.render(str, {locals: locals, cache: false});
+						body = ejs.render(str, locals);
 						res.writeHead(200, {
 							  'Content-Type': 'text/html'
 							, 'Content-Length': body.length
@@ -203,7 +203,7 @@ app.configure(function() {
 					return;
 				}
 				
-				var body = ejs.render(str, {locals: locals, cache: false});
+				var body = ejs.render(str, locals);
 				res.writeHead(200, {
 					  'Content-Type': 'text/html'
 					, 'Content-Length': body.length

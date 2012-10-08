@@ -718,17 +718,19 @@ cjs.$.extend = function(arg0, arg1) {
 		values = arg0;
 	}
 
-	for(var key in values) {
-		var value = values[key];
-		var self = this;
+	each(values, function(value, key) {
 		Constraint.prototype[key] = value;
-	}
+	});
 };
 
 cjs.$.extend({
 	item: function(key) {
-		var got = this.get();
-		return got[key];
+		var my_constraint = this;
+		return new Constraint(function() {
+			var got = my_constraint.get();
+			if(got != null) { return got[cjs.get(key)]; }
+			else { return undefined; }
+		});
 	}
 	, indexOf: function(item, equality_check) {
 		var got = this.get();
@@ -737,7 +739,7 @@ cjs.$.extend({
 	, add: function() {
 		var my_constraint = this;
 		var args = arguments;
-		return cjs.$(function() {
+		return new Constraint(function() {
 			var rv = my_constraint.get();
 			each(args, function(arg) { rv += cjs.get(arg); });
 			return rv;
@@ -746,7 +748,7 @@ cjs.$.extend({
 	, sub: function() {
 		var my_constraint = this;
 		var args = arguments;
-		return cjs.$(function() {
+		return new Constraint(function() {
 			var rv = my_constraint.get();
 			each(args, function(arg) { rv -= cjs.get(arg); });
 			return rv;
@@ -755,7 +757,7 @@ cjs.$.extend({
 	, mul: function() {
 		var my_constraint = this;
 		var args = arguments;
-		return cjs.$(function() {
+		return new Constraint(function() {
 			var rv = my_constraint.get();
 			each(args, function(arg) { rv *= cjs.get(arg); });
 			return rv;
@@ -764,7 +766,7 @@ cjs.$.extend({
 	, div: function() {
 		var my_constraint = this;
 		var args = arguments;
-		return cjs.$(function() {
+		return new Constraint(function() {
 			var rv = my_constraint.get();
 			each(args, function(arg) { rv /= cjs.get(arg); });
 			return rv;
@@ -772,9 +774,23 @@ cjs.$.extend({
 	}
 	, func: function(the_func) {
 		var my_constraint = this;
-		return cjs.$(function() {
+		return new Constraint(function() {
 			var rv = the_func(my_constraint.get());
 			return rv;
+		});
+	}
+	, map: function(func) {
+		var my_constraint = this;
+		var old_val, old_rv;
+		return new Constraint(function() {
+			var val = my_constraint.get();
+			if(val === old_val) { return old_rv; }
+			else { old_val = val; }
+			if(isArray(val)) {
+				return old_rv = map(val, func);
+			} else {
+				return undefined;
+			}
 		});
 	}
 });
@@ -1493,6 +1509,9 @@ var FSM = function() {
 		return this;
 	};
 	proto.create_or_find_state = function(state_name) {
+		if(state_name instanceof State) {
+			return this.create_or_find_state(state_name.name());
+		}
 		var state = this.state_with_name(state_name);
 		if(state === null) {
 			state = new State(state_name);
@@ -1528,9 +1547,15 @@ var FSM = function() {
 		each(post_transition_listeners, function(listener) { listener(event, new_state_name, old_state_name, fsm); });
 	};
 
-	proto.add_transition = function(add_transition_fn, arg1, arg2, arg3) {
+	proto.add_transition = function(add_transition_fn) {
+		var do_transition = this.get_transition.apply(this, slice.call(arguments, 1));
+		add_transition_fn.call(this, do_transition, this);
+
+		return this;
+	};
+	proto.get_transition = function(arg1, arg2, arg3) {
 		var from_state, to_state, name;
-		if(arguments.length >= 3) {
+		if(arguments.length >= 2) {
 			from_state = this.create_or_find_state(arg1);
 			to_state = this.create_or_find_state(arg2);
 			name = arg3;
@@ -1539,12 +1564,6 @@ var FSM = function() {
 			to_state = this.create_or_find_state(arg1);
 			name = arg2;
 		}
-		var do_transition = this.get_transition(from_state, to_state, name);
-		add_transition_fn.call(this, do_transition, this);
-
-		return this;
-	};
-	proto.get_transition = function(from_state, to_state, name) {
 		var transition = new Transition(this, from_state, to_state, name);
 		this._transitions.push(transition);
 		return  bind(function() {
@@ -2020,7 +2039,7 @@ cjs.async_$ = function(invoke_callback, timeout_interval) {
 						}, "rejected")
 						.add_state("resolved")
 						.add_state("rejected")
-						.starts_at("pending");
+						.start_at("pending");
 
 	var do_resolved_transition = async_fsm.get_transition("pending", "resolved");
 	var do_rejected_transition = async_fsm.get_transition("pending", "rejected");
@@ -2053,6 +2072,8 @@ cjs.async_$ = function(invoke_callback, timeout_interval) {
 			return cjs.get(rejected_value);
 		}
 	});
+
+	constraint.state = async_fsm;
 
 	return constraint;
 };

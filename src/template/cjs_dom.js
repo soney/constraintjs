@@ -9,16 +9,16 @@ cjs.dom = function(type) {
 		var rv = document.createTextNode('');
 
 		cjs.text(rv, cjs.$(function() {
-			var arg_vals = map(args, function(arg) { return cjs.get(arg); });
-			return args_vals.join("");
+			var arg_vals = _.map(args, function(arg) { return cjs.get(arg); });
+			return arg_vals.join("");
 		}));
 
 		return rv;
 	} else if(type === "comment") {
 		var rv = document.createComment('');
 		cjs.text(rv, cjs.$(function() {
-			var arg_vals = map(args, function(arg) { return cjs.get(arg); });
-			return args_vals.join("");
+			var arg_vals = _.map(args, function(arg) { return cjs.get(arg); });
+			return arg_vals.join("");
 		}));
 		return rv;
 	} else if(type === "element") {

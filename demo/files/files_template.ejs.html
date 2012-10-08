@@ -62,7 +62,7 @@
 		};
 
 		var list_files = function(path, on_success, on_fail) {
-			var delay = get_delay(1000, 2000);
+			var delay = get_delay(100, 200);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.1)) {
 					on_fail("Random error");
@@ -74,7 +74,7 @@
 
 
 		var get_file_type = function(path, on_success, on_fail) {
-			var delay = get_delay(1000, 2000);
+			var delay = get_delay(100, 200);
 			window.setTimeout(function() {
 				if(fail_with_probability(0.2)) {
 					on_fail("Random error");
@@ -84,30 +84,32 @@
 			}, delay);
 		};
 	</script>
-	<%- include(cjs_inc.main) %>
+	<%- cjs_include(cjs_inc.main) %>
 	<script type="text/javascript">
 
+		var _ = cjs._;
 		window.onload = function() {
 			var path = cjs("/");
-			var filenames = cjs.async(function(on_success, on_fail) {
+			var filenames = cjs.async_$(function(on_success, on_fail) {
 						list_files(path.get(), on_success, on_fail);
 					});
 			var filetypes = filenames.map(function(filename) {
-					var filetype = cjs.async(function(on_success, on_fail) {
+					var filetype = cjs.async_$(function(on_success, on_fail) {
 							get_file_type(path.get() + "/" + filename, on_success, on_fail);
 						});
 					return filetype;
 				});
-			ft1 = cjs("file");
-			ft1.state = cjs.fsm().add_state("resolved");
+			//ft1 = cjs("file");
+			//ft1.state = cjs.fsm().add_state("resolved");
 
-			filetypes = cjs([ft1]);
+			//filetypes = cjs([ft1]);
 
 
 			window.filenames = filenames;
 			window.filetypes = filetypes;
 			var template;
 			template = cjs.template("#filelist");
+			/*
 			template = function(obj) {
 					with (obj) {
 						return cjs.create('dom_element', 'span', {} // (root)
@@ -190,9 +192,9 @@
 							}
 							};
 			/**/
-			console.log(template);
+		//	console.log(template);
 			var files_dom = document.getElementById("files");
-			files_dom.appendChild(template({files: filenames, filetypes: filetypes}));
+		//	files_dom.appendChild(template({files: filenames, filetypes: filetypes}));
 		};
 	</script>
 	<style type="text/css">

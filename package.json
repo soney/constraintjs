@@ -17,7 +17,7 @@
 ]
 , "private": false
 , "dependencies": {
-	"express": ">= 2.4.3"
+	"express": ">= 2.x.x"
 	, "ejs": ">= 0.4.3"
 	, "uglify-js": ">= 1.1.1"
 	, "dryice": ">= 0.2.5"
