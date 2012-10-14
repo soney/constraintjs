@@ -805,13 +805,11 @@ cjs.$.extend({
 // ============== LIVEN ============== 
 //
 
-cjs.liven = function() {
-	var args = arguments;
+cjs.liven = function(func, context) {
+	context = context || this;
 	var node = constraint_solver.add({
 		cjs_getter: function() {
-			each(args, function(arg) {
-				arg();
-			});
+			func.call(context);
 		},
 		auto_add_outgoing_dependencies: false,
 		cache_value: false
