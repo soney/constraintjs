@@ -1363,6 +1363,12 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		}
 		return this;
 	};
+	proto.clear = function() {
+		cjs.wait();
+		this._keys.clear();
+		this._values.clear();
+		cjs.signal();
+	};
 	proto.keyIndex = function(key) {
 		return this._keys.indexOf(key, this._equality_check);
 	};
