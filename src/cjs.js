@@ -1456,6 +1456,15 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		}
 		return this;
 	};
+	proto.each = function(func, context) {
+		var keys = this.keys();
+		var values = this.values();
+		context = context || this;
+		for(var i = 0; i<keys.length; i++) {
+			func.call(context, values[i], keys[i], i);
+		}
+		return this;
+	};
 	proto.keyForValue = function(value) {
 		var value_index = this._values.indexOf(value, this._equality_check);
 		if(value_index < 0) {
