@@ -343,13 +343,13 @@ var array_differ = function(val, equality_check) {
 			else if(!a_has_from && b_has_from) { return 1; }
 			else { return 0; }
 		});
-		var added = filter(source_map, function(info) { return !has(info, "from"); }).reverse(), // back to front
-			removed = filter(rearranged_array, function(info) { return !has(info, "to"); }).reverse(), // back to frong
+		var added = filter(source_map, function(info) { return !has(info, "from"); }), // back to front
+			removed = filter(rearranged_array, function(info) { return !has(info, "to"); }).reverse(), // back to front
 			index_changed = filter(source_map, function(info) { return has(info, "from") && has(info, "to") && info.from !== info.to; }),
 			moved = [];
 
-		each(removed, function(info) { rearranged_array.splice(info.from, 0); });
-		each(added, function(info) { rearranged_array.splice(info.to, 0); });
+		each(removed, function(info) { rearranged_array.splice(info.from, 1); });
+		each(added, function(info) { rearranged_array.splice(info.to, 0, info); });
 		
 		each(source_map, function(info, index) {
 			if(has(info, "from") && has(info, "to")) {
@@ -895,9 +895,14 @@ var ArrayConstraint = function(value) {
 		var ad = array_differ(this.get(), this._equality_check);
 		return this.$value.onChange(function() {
 			var diff = ad(self.get());
+			each(self._index_change_listeners, function(listener) {
+				each(diff.index_changed, function(info) {
+					listener(info.item, info.to, info.from, info.from_item);
+				});
+			});
 			each(self._remove_listeners, function(listener) {
 				each(diff.removed, function(info) {
-					listener(info.item, info.from);
+					listener(info.from_item, info.from);
 				});
 			});
 			each(self._add_listeners, function(listener) {
@@ -908,11 +913,6 @@ var ArrayConstraint = function(value) {
 			each(self._move_listeners, function(listener) {
 				each(diff.moved, function(info) {
 					listener(info.item, info.to, info.from);
-				});
-			});
-			each(self._index_change_listeners, function(listener) {
-				each(diff.index_changed, function(info) {
-					listener(info.item, info.to, info.from, info.from_item);
 				});
 			});
 		});
@@ -1061,19 +1061,21 @@ var ArrayConstraint = function(value) {
 		var resulting_shift_size = to_insert.length - howmany;
 		var removed = [];
 		if(resulting_shift_size < 0) {
-			for(i = index; i<this._value.length + resulting_shift_size; i++) {
-				if(i-index < howmany) {
-					removed.push(this.item(i));
-				}
+			for(i = index; i<this._value.length; i++) {
+				if(i < this._value.length + resulting_shift_size) {
+					if(i < index + howmany) {
+						removed.push(this.item(i));
+					}
 
-				if(i-index < to_insert.length) {
-					this.item(i, to_insert[i-index]);
+					if(i < index + to_insert.length) {
+						this.item(i, to_insert[i-index]);
+					} else {
+						this.item(i, this.item(i - resulting_shift_size));
+					}
 				} else {
-					this.item(i, this.item(i - resulting_shift_size));
+					removed.push(this.pop());
+					i--;
 				}
-			}
-			for(i = 0; i<-resulting_shift_size; i++) {
-				removed.push(this.pop());
 			}
 		} else {
 			for(i = index; i<index+howmany; i++) {
@@ -1304,6 +1306,11 @@ var MapConstraint = function(arg0, arg1, arg2) {
 					}
 				}
 			}
+			each(self._index_change_listeners, function(listener) {
+				each(index_changed, function(info) {
+					listener(info.value, info.key, info.to, info.from);
+				});
+			});
 			each(self._set_listeners, function(listener) {
 				each(set, function(info) {
 					listener(info.value, info.key, info.index);
@@ -1327,11 +1334,6 @@ var MapConstraint = function(arg0, arg1, arg2) {
 			each(self._move_listeners, function(listener) {
 				each(moved, function(info) {
 					listener(info.value, info.key, info.insert_at, info.to, info.from);
-				});
-			});
-			each(self._index_change_listeners, function(listener) {
-				each(index_changed, function(info) {
-					listener(info.value, info.key, info.to, info.from);
 				});
 			});
 		});
