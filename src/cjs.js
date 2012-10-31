@@ -1060,28 +1060,23 @@ var ArrayConstraint = function(value) {
 		cjs.wait();
 		var resulting_shift_size = to_insert.length - howmany;
 		var removed = [];
-		if(resulting_shift_size < 0) {
-			for(i = index; i<this._value.length; i++) {
-				if(i < this._value.length + resulting_shift_size) {
-					if(i < index + howmany) {
-						removed.push(this.item(i));
-					}
 
-					if(i < index + to_insert.length) {
-						this.item(i, to_insert[i-index]);
-					} else {
-						this.item(i, this.item(i - resulting_shift_size));
-					}
+		for(i = index; i<index+howmany; i++) {
+			removed.push(this.item(i));
+		}
+
+		if(resulting_shift_size < 0) {
+			for(i = index; i<this._value.length + resulting_shift_size; i++) {
+				if(i < index + to_insert.length) {
+					this.item(i, to_insert[i-index]);
 				} else {
-					removed.push(this.pop());
-					i--;
+					this.item(i, this.item(i - resulting_shift_size));
 				}
 			}
-		} else {
-			for(i = index; i<index+howmany; i++) {
-				removed.push(this.item(i));
+			for(i = 0; i<-resulting_shift_size; i++) {
+				this.pop();
 			}
-
+		} else {
 			for(i = this._value.length + resulting_shift_size - 1; i>=index; i--) {
 				if(i-index < to_insert.length) {
 					this.item(i, to_insert[i-index]);
