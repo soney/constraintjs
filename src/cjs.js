@@ -917,6 +917,11 @@ var ArrayConstraint = function(value) {
 			});
 		});
 	};
+	proto.each = function(callback, context) {
+		context = context || this;
+		each(this.get(), callback);
+		return this;
+	};
 	proto._uninstall_diff_listener = function() {
 		this.$value.offChange(this._diff_listener_id);
 	};
