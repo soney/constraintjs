@@ -43,6 +43,12 @@ var uniqueId = (function() {
 	return function() { return id++; };
 }());
 
+// Clone
+var clone = function(obj) {
+	if (!isObject(obj)) return obj;
+	return isArray(obj) ? obj.slice() : extend({}, obj);
+};
+
 // Return the first item in arr where test is true
 var index_where = function(arr, test, start_index) {
 	var i, len = arr.length;
@@ -103,6 +109,11 @@ var isFunction = function(obj) {
 
 var isString = function(obj) {
 	return toString.call(obj) == '[object String]';
+};
+
+// Is a given variable an object?
+var isObject = function(obj) {
+	return obj === Object(obj);
 };
 
 // Is a given variable an arguments object?
@@ -270,98 +281,184 @@ var dualized_intersection = function(x, y, equality_check) {
 };
 
 var array_source_map = function(from, to, equality_check) {
-		equality_check = equality_check || eqeqeq;
-		var item_aware_equality_check = function(a, b) {
-			var a_item = a == null ? a : a.item;
-			var b_item = b == null ? b : b.item;
-			return equality_check(a_item, b_item);
-		};
-		var indexed_common_subsequence = map(indexed_lcs(from, to), function(info) { 
-			return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
-		});
-
-		var indexed_from = map(from, function(x,i) { return {item: x, index: i}; });
-		var indexed_to = map(to, function(x,i) { return {item: x, index: i}; });
-
-		var indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
-			indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
-			indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check),
-				function(info) {
-					var from = info[0].index,
-						from_item = info[0].item,
-						to = info[1].index,
-						to_item = info[1].item;
-					return {item: to_item, from: from, to: to, from_item: from_item, to_item: to_item};
-				}
-			);
-		indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
-		indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
-
-		var to_mappings = map(to, function(item, index) {
-				var info_index = index_where(indexed_added, function(info) {
-					return info.index === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_added[info_index];
-					return { to: index, to_item: item, item: item };
-				}
-
-				info_index = index_where(indexed_moved, function(info) {
-					return info.to === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_moved[info_index];
-					return { to: index, to_item: item, item: item, from: info.from, from_item: info.from_item };
-				}
-
-				info_index = index_where(indexed_common_subsequence, function(info) {
-					return info.to === index;
-				});
-				if(info_index >= 0) {
-					var info = indexed_common_subsequence[info_index];
-					return { to: index, to_item: item, item: item, from: info.from, from_item: from[info.from] };
-				}
-			});
-		var removed_mappings = map(indexed_removed, function(info) {
-			return { from: info.index, from_item: info.item };
-		});
-		var mappings = to_mappings.concat(removed_mappings);
-		return mappings;
+	equality_check = equality_check || eqeqeq;
+	var item_aware_equality_check = function(a, b) {
+		var a_item = a == null ? a : a.item;
+		var b_item = b == null ? b : b.item;
+		return equality_check(a_item, b_item);
 	};
+	var indexed_common_subsequence = map(indexed_lcs(from, to), function(info) { 
+		return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
+	});
+
+	var indexed_from = map(from, function(x,i) { return {item: x, index: i}; });
+	var indexed_to = map(to, function(x,i) { return {item: x, index: i}; });
+
+	var indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
+		indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
+		indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check),
+			function(info) {
+				var from = info[0].index,
+					from_item = info[0].item,
+					to = info[1].index,
+					to_item = info[1].item;
+				return {item: to_item, from: from, to: to, from_item: from_item, to_item: to_item};
+			}
+		);
+	indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
+	indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
+
+	var to_mappings = map(to, function(item, index) {
+			var info_index = index_where(indexed_added, function(info) {
+				return info.index === index;
+			});
+			if(info_index >= 0) {
+				var info = indexed_added[info_index];
+				return { to: index, to_item: item, item: item };
+			}
+
+			info_index = index_where(indexed_moved, function(info) {
+				return info.to === index;
+			});
+			if(info_index >= 0) {
+				var info = indexed_moved[info_index];
+				return { to: index, to_item: item, item: item, from: info.from, from_item: info.from_item };
+			}
+
+			info_index = index_where(indexed_common_subsequence, function(info) {
+				return info.to === index;
+			});
+			if(info_index >= 0) {
+				var info = indexed_common_subsequence[info_index];
+				return { to: index, to_item: item, item: item, from: info.from, from_item: from[info.from] };
+			}
+		});
+	var removed_mappings = map(indexed_removed, function(info) {
+		return { from: info.index, from_item: info.item };
+	});
+	var mappings = to_mappings.concat(removed_mappings);
+	return mappings;
+};
+
+var get_array_diff = function(from_val, to_val, equality_check) {
+	equality_check = equality_check || eqeqeq;
+	var source_map = array_source_map(from_val, to_val, equality_check);
+	var rearranged_array = source_map.slice().sort(function(a,b) {
+		var a_has_from = has(a, "from"),
+			b_has_from = has(b, "from");
+		if(a_has_from && b_has_from) { return a.from - b.from; }
+		else if(a_has_from && !b_has_from) { return -1; }
+		else if(!a_has_from && b_has_from) { return 1; }
+		else { return 0; }
+	});
+	var added = filter(source_map, function(info) { return !has(info, "from"); }), // back to front
+		removed = filter(rearranged_array, function(info) { return !has(info, "to"); }).reverse(), // back to front
+		index_changed = filter(source_map, function(info) { return has(info, "from") && has(info, "to") && info.from !== info.to; }),
+		moved = [];
+
+	each(removed, function(info) { rearranged_array.splice(info.from, 1); });
+	each(added, function(info) { rearranged_array.splice(info.to, 0, info); });
+	
+	each(source_map, function(info, index) {
+		if(has(info, "from") && has(info, "to")) {
+			if(rearranged_array[index] !== info) {
+				var rearranged_array_info_index = index_of(rearranged_array, info, index);
+				rearranged_array.splice(index, 0, rearranged_array.splice(rearranged_array_info_index, 1)[0]);
+				moved.push({move_from: rearranged_array_info_index, insert_at: index, item: info.item, from: info.from, to: info.to});
+			}
+		}
+	});
+	return { added: added, removed: removed, moved: moved, index_changed: index_changed , mapping: source_map};
+};
+
+var get_map_diff = function(key_diff, value_diff, keys) {
+	key_diff = clone(key_diff);
+	value_diff = clone(value_diff);
+	var set = [], unset = [], key_change = [], value_change = [], index_changed = [], moved = [];
+	var i, j;
+	for(i = 0; i<key_diff.added.length; i++) {
+		var added_key = key_diff.added[i];
+		for(j = 0; j<key_diff.removed.length; j++) {
+			var removed_key = key_diff.removed[j];
+			if(added_key.to === removed_key.from) {
+				key_change.push({index: added_key.to, from: removed_key.from_item, to: added_key.item});
+				key_diff.added.splice(i--, 1);
+				key_diff.removed.splice(j--, 1);
+				break;
+			}
+		}
+	}
+	for(i = 0; i<value_diff.added.length; i++) {
+		var added_value = value_diff.added[i];
+		for(j = 0; j<value_diff.removed.length; j++) {
+			var removed_value = value_diff.removed[j];
+			if(added_value.to === removed_value.from) {
+				value_change.push({index: added_value.to, from: removed_value.from_item, to: added_value.item});
+				value_diff.added.splice(i--, 1);
+				value_diff.removed.splice(j--, 1);
+				break;
+			}
+		}
+	}
+	for(i = 0; i<key_diff.added.length; i++) {
+		var added_key = key_diff.added[i];
+		for(j = 0; j<value_diff.added.length; j++) {
+			var added_val = value_diff.added[j];
+			if(added_key.to === added_val.to) {
+				set.push({index: added_key.to, key: added_key.item, value: added_val.item});
+				key_diff.added.splice(i--, 1);
+				value_diff.added.splice(j--, 1);
+				break;
+			}
+		}
+	}
+	for(i = 0; i<key_diff.removed.length; i++) {
+		var removed_key = key_diff.removed[i];
+		for(j = 0; j<value_diff.removed.length; j++) {
+			var removed_val = value_diff.removed[j];
+			if(removed_key.to === removed_val.to) {
+				unset.push({from: removed_key.from, key: removed_key.from_item, value: removed_val.from_item});
+				key_diff.removed.splice(i--, 1);
+				value_diff.removed.splice(j--, 1);
+				break;
+			}
+		}
+	}
+
+	for(i = 0; i<key_diff.moved.length; i++) {
+		var moved_key = key_diff.moved[i];
+		for(j = 0; j<value_diff.moved.length; j++) {
+			var moved_val = value_diff.moved[j];
+			if(moved_key.to === moved_val.to && moved_key.from === moved_val.from) {
+				moved.push({from: moved_key.from, to: moved_key.to, key: moved_key.item, value: moved_val.item, insert_at: moved_key.insert_at});
+				key_diff.moved.splice(i--, 1);
+				value_diff.moved.splice(j--, 1);
+				break;
+			}
+		}
+	}
+	for(i = 0; i<key_diff.index_changed.length; i++) {
+		var index_changed_key = key_diff.index_changed[i];
+		for(j = 0; j<value_diff.index_changed.length; j++) {
+			var index_changed_val = value_diff.index_changed[j];
+			if(index_changed_key.to === index_changed_val.to && index_changed_key.from === index_changed_val.from) {
+				index_changed.push({from: index_changed_key.from, to: index_changed_key.to, key: index_changed_key.item, value: index_changed_val.item});
+				key_diff.index_changed.splice(i--, 1);
+				value_diff.index_changed.splice(j--, 1);
+				break;
+			}
+		}
+	}
+	return { set: set, unset: unset, key_change: key_change, value_change: value_change, index_changed: index_changed, moved: moved}
+};
 
 
 var array_differ = function(val, equality_check) {
-	equality_check = equality_check || eqeqeq;
 	var last_val = isArray(val) ? val : [];
 	return function(val) {
-		var source_map = array_source_map(last_val, val, equality_check);
-		var rearranged_array = source_map.slice().sort(function(a,b) {
-			var a_has_from = has(a, "from"),
-				b_has_from = has(b, "from");
-			if(a_has_from && b_has_from) { return a.from - b.from; }
-			else if(a_has_from && !b_has_from) { return -1; }
-			else if(!a_has_from && b_has_from) { return 1; }
-			else { return 0; }
-		});
-		var added = filter(source_map, function(info) { return !has(info, "from"); }), // back to front
-			removed = filter(rearranged_array, function(info) { return !has(info, "to"); }).reverse(), // back to front
-			index_changed = filter(source_map, function(info) { return has(info, "from") && has(info, "to") && info.from !== info.to; }),
-			moved = [];
-
-		each(removed, function(info) { rearranged_array.splice(info.from, 1); });
-		each(added, function(info) { rearranged_array.splice(info.to, 0, info); });
-		
-		each(source_map, function(info, index) {
-			if(has(info, "from") && has(info, "to")) {
-				if(rearranged_array[index] !== info) {
-					var rearranged_array_info_index = index_of(rearranged_array, info, index);
-					rearranged_array.splice(index, 0, rearranged_array.splice(rearranged_array_info_index, 1)[0]);
-					moved.push({move_from: rearranged_array_info_index, insert_at: index, item: info.item, from: info.from, to: info.to});
-				}
-			}
-		});
+		var diff = get_array_diff(last_val, val, equality_check);
 		last_val = val;
-		return { added: added, removed: removed, moved: moved, index_changed: index_changed , mapping: source_map};
+		return diff;
 	};
 };
 
@@ -654,17 +751,28 @@ var Constraint = function(value, literal) {
 	};
 	proto.get = function() { return constraint_solver.getValue(this); };
 	proto.onChange = function(callback) {
-		constraint_solver.on_nullify(this, callback);
+		var self = this;
+		var listener = {
+			callback: callback
+			, on_nullify: function() {
+				callback(self.get());
+			}
+		};
+		constraint_solver.on_nullify(this, listener.on_nullify);
 		this.get();
-		this._change_listeners.push(callback);
-		return this._change_listeners.length - 1;
+		this._change_listeners.push(listener);
+		return this;
 	};
 	proto.offChange = function(callback) {
-		if(isNumber(callback)) {
-			callback = this._change_listeners[callback];
-			delete this._change_listeners[callback];
-		}
-		constraint_solver.off_nullify(this, callback);
+		each(this._change_listeners, function(listener) {
+			if(listener.callback === callback) {
+				constraint_solver.off_nullify(listener.on_nullify);
+			}
+		});
+		this._change_listeners = filter(this._change_listeners, function(listener) {
+			return listener.callback !== callback;
+		});
+		return this;
 	};
 }(Constraint));
 cjs.Constraint = Constraint;
@@ -874,19 +982,28 @@ var ArrayConstraint = function(value) {
 		"IndexChange": "_index_change_listeners"
 	};
 	each(diff_events, function(arr_name, diff_event) {
-		proto["on" + diff_event] = function(listener) {
+		proto["on" + diff_event] = function(callback) {
+			var listener_info = {
+				callback: callback
+				, init_value: this.get()
+			};
 			var arr = this[arr_name];
-			arr.push(listener);
-			return arr.length-1;
+			arr.push(listener_info);
+			return this;
 		};
-		proto["off" + diff_event] = function(listener) {
+		proto["off" + diff_event] = function(callback) {
 			var arr = this[arr_name];
-			var listener_index;
 
-			if(isNumber(listener)) { listener_index = listener; }
-			else { listener_index = index_of(arr, listener); }
+			var listener_index = index_where(arr, function(listener_info) {
+				return listener_info.callback === callback;
+			});
 
-			if(listener_index >= 0) { delete this._add_listeners[listener]; }
+			if(listener_index >= 0) {
+				delete arr[listener_index];
+				arr.splice(listener_index, 1);
+			}
+
+			return this;
 		};
 	});
 
@@ -894,25 +1011,47 @@ var ArrayConstraint = function(value) {
 		var self = this;
 		var ad = array_differ(this.get(), this._equality_check);
 		return this.$value.onChange(function() {
-			var diff = ad(self.get());
+			var my_val = self.get();
+			var diff = ad(my_val);
+
 			each(self._index_change_listeners, function(listener) {
-				each(diff.index_changed, function(info) {
-					listener(info.item, info.to, info.from, info.from_item);
+				var the_diff = diff;
+				if(_.has(listener, "init_value")) {
+					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
+					delete listener.init_value;
+				}
+				each(the_diff.index_changed, function(info) {
+					listener.callback(info.item, info.to, info.from, info.from_item);
 				});
 			});
 			each(self._remove_listeners, function(listener) {
-				each(diff.removed, function(info) {
-					listener(info.from_item, info.from);
+				var the_diff = diff;
+				if(_.has(listener, "init_value")) {
+					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
+					delete listener.init_value;
+				}
+				each(the_diff.removed, function(info) {
+					listener.callback(info.from_item, info.from);
 				});
 			});
 			each(self._add_listeners, function(listener) {
-				each(diff.added, function(info) {
-					listener(info.item, info.to);
+				var the_diff = diff;
+				if(_.has(listener, "init_value")) {
+					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
+					delete listener.init_value;
+				}
+				each(the_diff.added, function(info) {
+					listener.callback(info.item, info.to);
 				});
 			});
 			each(self._move_listeners, function(listener) {
-				each(diff.moved, function(info) {
-					listener(info.item, info.to, info.from);
+				var the_diff = diff;
+				if(_.has(listener, "init_value")) {
+					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
+					delete listener.init_value;
+				}
+				each(the_diff.moved, function(info) {
+					listener.callback(info.item, info.to, info.from);
 				});
 			});
 		});
@@ -1208,19 +1347,28 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		"Move": "_move_listeners"
 	};
 	each(diff_events, function(arr_name, diff_event) {
-		proto["on" + diff_event] = function(listener) {
+		proto["on" + diff_event] = function(callback) {
+			var listener_info = {
+				callback: callback
+				, init_value: {keys: this.keys(), values: this.values()}
+			};
 			var arr = this[arr_name];
-			arr.push(listener);
-			return arr.length-1;
+			arr.push(listener_info);
+			return this;
 		};
-		proto["off" + diff_event] = function(listener) {
+		proto["off" + diff_event] = function(callback) {
 			var arr = this[arr_name];
-			var listener_index;
 
-			if(isNumber(listener)) { listener_index = listener; }
-			else { listener_index = index_of(arr, listener); }
+			var listener_index = index_where(arr, function(listener_info) {
+				return listener_info.callback === callback;
+			});
 
-			if(listener_index >= 0) { delete this._add_listeners[listener]; }
+			if(listener_index >= 0) {
+				delete arr[listener_index];
+				arr.splice(listener_index, 1);
+			}
+
+			return this;
 		};
 	});
 	proto._install_diff_listener = function() {
@@ -1228,112 +1376,81 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		var value_differ = array_differ(this.values());
 		var self = this;
 		return this.$value.onChange(function() {
-			var val = self.$value.get();
-			var key_diff = key_differ(val.keys);
-			var value_diff = value_differ(val.values);
-			var set = [], unset = [], key_change = [], value_change = [], index_changed = [], moved = [];
-			var i, j;
-			for(i = 0; i<key_diff.added.length; i++) {
-				var added_key = key_diff.added[i];
-				for(j = 0; j<key_diff.removed.length; j++) {
-					var removed_key = key_diff.removed[j];
-					if(added_key.to === removed_key.from) {
-						key_change.push({index: added_key.to, from: removed_key.from_item, to: added_key.item});
-						key_diff.added.splice(i--, 1);
-						key_diff.removed.splice(j--, 1);
-						break;
-					}
-				}
-			}
-			for(i = 0; i<value_diff.added.length; i++) {
-				var added_value = value_diff.added[i];
-				for(j = 0; j<value_diff.removed.length; j++) {
-					var removed_value = value_diff.removed[j];
-					if(added_value.to === removed_value.from) {
-						value_change.push({key: val.keys[added_value.to], index: added_value.to, from: removed_value.from_item, to: added_value.item});
-						value_diff.added.splice(i--, 1);
-						value_diff.removed.splice(j--, 1);
-						break;
-					}
-				}
-			}
-			for(i = 0; i<key_diff.added.length; i++) {
-				var added_key = key_diff.added[i];
-				for(j = 0; j<value_diff.added.length; j++) {
-					var added_val = value_diff.added[j];
-					if(added_key.to === added_val.to) {
-						set.push({index: added_key.to, key: added_key.item, value: added_val.item});
-						key_diff.added.splice(i--, 1);
-						value_diff.added.splice(j--, 1);
-						break;
-					}
-				}
-			}
-			for(i = 0; i<key_diff.removed.length; i++) {
-				var removed_key = key_diff.removed[i];
-				for(j = 0; j<value_diff.removed.length; j++) {
-					var removed_val = value_diff.removed[j];
-					if(removed_key.to === removed_val.to) {
-						unset.push({from: removed_key.from, key: removed_key.from_item, value: removed_val.from_item});
-						key_diff.removed.splice(i--, 1);
-						value_diff.removed.splice(j--, 1);
-						break;
-					}
-				}
-			}
+			var keys_val = self.keys();
+			var vals_val = self.values();
 
-			for(i = 0; i<key_diff.moved.length; i++) {
-				var moved_key = key_diff.moved[i];
-				for(j = 0; j<value_diff.moved.length; j++) {
-					var moved_val = value_diff.moved[j];
-					if(moved_key.to === moved_val.to && moved_key.from === moved_val.from) {
-						moved.push({from: moved_key.from, to: moved_key.to, key: moved_key.item, value: moved_val.item, insert_at: moved_key.insert_at});
-						key_diff.moved.splice(i--, 1);
-						value_diff.moved.splice(j--, 1);
-						break;
-					}
-				}
-			}
-			for(i = 0; i<key_diff.index_changed.length; i++) {
-				var index_changed_key = key_diff.index_changed[i];
-				for(j = 0; j<value_diff.index_changed.length; j++) {
-					var index_changed_val = value_diff.index_changed[j];
-					if(index_changed_key.to === index_changed_val.to && index_changed_key.from === index_changed_val.from) {
-						index_changed.push({from: index_changed_key.from, to: index_changed_key.to, key: index_changed_key.item, value: index_changed_val.item});
-						key_diff.index_changed.splice(i--, 1);
-						value_diff.index_changed.splice(j--, 1);
-						break;
-					}
-				}
-			}
+			var key_diff = key_differ(keys_val);
+			var value_diff = value_differ(vals_val);
+
+
+			var map_diff = get_map_diff(key_diff, value_diff);
+
+
 			each(self._index_change_listeners, function(listener) {
-				each(index_changed, function(info) {
-					listener(info.value, info.key, info.to, info.from);
+				var md = map_diff;
+				if(_.has(listener, "init_value")) {
+					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
+												, get_array_diff(listener.init_value.values, vals_val));
+					delete listener.init_value;
+				}
+
+				each(md.index_changed, function(info) {
+					listener.callback(info.value, info.key, info.to, info.from);
 				});
 			});
 			each(self._set_listeners, function(listener) {
-				each(set, function(info) {
-					listener(info.value, info.key, info.index);
+				var md = map_diff;
+				if(_.has(listener, "init_value")) {
+					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
+												, get_array_diff(listener.init_value.values, vals_val));
+					delete listener.init_value;
+				}
+				each(md.set, function(info) {
+					listener.callback(info.value, info.key, info.index);
 				});
 			});
 			each(self._unset_listeners, function(listener) {
-				each(unset, function(info) {
-					listener(info.value, info.key, info.from);
+				var md = map_diff;
+				if(_.has(listener, "init_value")) {
+					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
+												, get_array_diff(listener.init_value.values, vals_val));
+					delete listener.init_value;
+				}
+				each(md.unset, function(info) {
+					listener.callback(info.value, info.key, info.from);
 				});
 			});
 			each(self._key_change_listeners, function(listener) {
-				each(key_change, function(info) {
-					listener(info.to, info.from, info.index);
+				var md = map_diff;
+				if(_.has(listener, "init_value")) {
+					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
+												, get_array_diff(listener.init_value.values, vals_val));
+					delete listener.init_value;
+				}
+				each(md.key_change, function(info) {
+					listener.callback(info.to, info.from, info.index);
 				});
 			});
 			each(self._value_change_listeners, function(listener) {
-				each(value_change, function(info) {
-					listener(info.to, info.key, info.from, info.index);
+				var md = map_diff;
+				if(_.has(listener, "init_value")) {
+					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
+												, get_array_diff(listener.init_value.values, vals_val));
+					delete listener.init_value;
+				}
+				each(md.value_change, function(info) {
+					listener.callback(info.to, keys_val[info.index], info.from, info.index);
 				});
 			});
 			each(self._move_listeners, function(listener) {
-				each(moved, function(info) {
-					listener(info.value, info.key, info.insert_at, info.to, info.from);
+				var md = map_diff;
+				if(_.has(listener, "init_value")) {
+					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
+												, get_array_diff(listener.init_value.values, vals_val));
+					delete listener.init_value;
+				}
+				each(md.moved, function(info) {
+					listener.callback(info.value, info.key, info.insert_at, info.to, info.from);
 				});
 			});
 		});
