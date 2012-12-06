@@ -120,14 +120,24 @@ var isObject = function(obj) {
 var isArguments = function(obj) {
 	return toString.call(obj) == '[object Arguments]';
 };
+ 
+// Keep the identity function around for default iterators.
+var identity = function(value) {
+	return value;
+};
+
+// Retrieve the values of an object's properties.
+var values = function(obj) {
+	return map(obj, identity);
+};
   
 // Safely convert anything iterable into a real, live array.
 var toArray = function(obj) {
 	if (!obj)                                     return [];
 	if (isArray(obj))                           return slice.call(obj);
 	if (isArguments(obj))                       return slice.call(obj);
-	if (obj.toArray && _.isFunction(obj.toArray)) return obj.toArray();
-	return _.values(obj);
+	if (obj.toArray && isFunction(obj.toArray)) return obj.toArray();
+	return values(obj);
 };
 
 // Set a constructor's prototype
@@ -1016,7 +1026,7 @@ var ArrayConstraint = function(value) {
 
 			each(self._index_change_listeners, function(listener) {
 				var the_diff = diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
 					delete listener.init_value;
 				}
@@ -1026,7 +1036,7 @@ var ArrayConstraint = function(value) {
 			});
 			each(self._remove_listeners, function(listener) {
 				var the_diff = diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
 					delete listener.init_value;
 				}
@@ -1036,7 +1046,7 @@ var ArrayConstraint = function(value) {
 			});
 			each(self._add_listeners, function(listener) {
 				var the_diff = diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
 					delete listener.init_value;
 				}
@@ -1046,7 +1056,7 @@ var ArrayConstraint = function(value) {
 			});
 			each(self._move_listeners, function(listener) {
 				var the_diff = diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					the_diff = get_array_diff(listener.init_value, my_val, self._equality_check);
 					delete listener.init_value;
 				}
@@ -1388,7 +1398,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 
 			each(self._index_change_listeners, function(listener) {
 				var md = map_diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
 												, get_array_diff(listener.init_value.values, vals_val));
 					delete listener.init_value;
@@ -1400,7 +1410,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 			});
 			each(self._set_listeners, function(listener) {
 				var md = map_diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
 												, get_array_diff(listener.init_value.values, vals_val));
 					delete listener.init_value;
@@ -1411,7 +1421,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 			});
 			each(self._unset_listeners, function(listener) {
 				var md = map_diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
 												, get_array_diff(listener.init_value.values, vals_val));
 					delete listener.init_value;
@@ -1422,7 +1432,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 			});
 			each(self._key_change_listeners, function(listener) {
 				var md = map_diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
 												, get_array_diff(listener.init_value.values, vals_val));
 					delete listener.init_value;
@@ -1433,7 +1443,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 			});
 			each(self._value_change_listeners, function(listener) {
 				var md = map_diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
 												, get_array_diff(listener.init_value.values, vals_val));
 					delete listener.init_value;
@@ -1444,7 +1454,7 @@ var MapConstraint = function(arg0, arg1, arg2) {
 			});
 			each(self._move_listeners, function(listener) {
 				var md = map_diff;
-				if(_.has(listener, "init_value")) {
+				if(has(listener, "init_value")) {
 					md = get_map_diff(get_array_diff(listener.init_value.keys, keys_val, self._equality_check)
 												, get_array_diff(listener.init_value.values, vals_val));
 					delete listener.init_value;
@@ -2167,7 +2177,7 @@ cjs.async_$ = function(invoke_callback, timeout_interval) {
 	var async_fsm = cjs	.fsm()
 						.add_state("pending")
 						.add_transition(function(do_transition ) {
-							if(_.isNumber(timeout_interval)) {
+							if(isNumber(timeout_interval)) {
 								root.setTimeout(function() {
 									do_transition("timeout");
 								}, timeout_interval);
@@ -2180,7 +2190,7 @@ cjs.async_$ = function(invoke_callback, timeout_interval) {
 	var do_resolved_transition = async_fsm.get_transition("pending", "resolved");
 	var do_rejected_transition = async_fsm.get_transition("pending", "rejected");
 
-	if(_.isNumber(timeout_interval)) {
+	if(isNumber(timeout_interval)) {
 		root.setTimeout(function() {
 			do_rejected_transition("timeout");
 		}, timeout_interval);
