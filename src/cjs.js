@@ -934,7 +934,7 @@ cjs.$.extend({
 // ============== LIVEN ============== 
 //
 
-cjs.liven = function(func, context) {
+cjs.liven = function(func, context, run_on_create) {
 	context = context || this;
 	var node = constraint_solver.add({
 		cjs_getter: function() {
@@ -949,18 +949,31 @@ cjs.liven = function(func, context) {
 	};
 
 	constraint_solver.on_nullify(node, do_get);
-	constraint_solver.nullified_call_stack.push(do_get);
-	if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
-	if(constraint_solver.semaphore >= 0) {
-		constraint_solver.run_nullified_listeners();
+	if(run_on_create !== false) {
+		constraint_solver.nullified_call_stack.push(do_get);
+		if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
+
+		if(constraint_solver.semaphore >= 0) {
+			constraint_solver.run_nullified_listeners();
+		}
 	}
 
 	return {
-//		node: node, //TODO: remove node & runner
-//		runner: runner, 
 		destroy: function() {
 			constraint_solver.off_nullify(node, do_get);
 			constraint_solver.removeObject(node);
+		}
+		, pause: function() {
+			constraint_solver.off_nullify(node, do_get);
+			return this;
+		}
+		, resume: function() {
+			constraint_solver.on_nullify(node, do_get);
+			return this;
+		}
+		, run: function() {
+			do_get();
+			return this;
 		}
 	};
 };
