@@ -489,6 +489,7 @@ var constraint_solver = (function() {
 	var ConstraintNode = function(obj, options) {
 		this.outgoingEdges = [];
 		this.incomingEdges = [];
+		this.nullificationListeners = [];
 		this.obj = obj;
 		this.valid = false;
 
@@ -525,6 +526,17 @@ var constraint_solver = (function() {
 
 		proto.getOutgoing = function() { return this.outgoingEdges; };
 		proto.getIncoming = function() { return this.incomingEdges; };
+
+		proto.onNullify = function(callback) {
+			this.nullificationListeners.push(callback);
+		};
+		proto.offNullify = function(callback) {
+			var ri;
+			do {
+				ri = remove(this.nullificationListeners, callback);
+			} while (ri >= 0);
+		
+		};
 
 		//Take out the incoming & outgoing edges
 		proto.destroy = function() {
@@ -564,7 +576,7 @@ var constraint_solver = (function() {
 		this.stack = [];
 		this.nullified_call_stack = [];
 		if(__debug) { this.nullified_reasons = []; }
-		this.nullification_listeners = {};
+		//this.nullification_listeners = {};
 		this.running_nullified_listeners = false;
 		this.semaphore = 0;
 	};
@@ -582,7 +594,7 @@ var constraint_solver = (function() {
 			}
 		};
 		proto.removeNode = function(node) {
-			delete this.nullification_listeners[node.id];
+			//delete this.nullification_listeners[node.id];
 			node.destroy();
 		};
 
@@ -670,29 +682,45 @@ var constraint_solver = (function() {
 
 		proto.on_nullify = function(arg0, callback) {
 			var node = arg0 instanceof ConstraintNode ? arg0 : this.getNode(arg0);
+			node.onNullify(callback);
+			/*
 			var id = node.id;
 			if(isNumber(id)) {
 				var listeners = this.nullification_listeners[id];
 				if(!isArray(listeners)) { this.nullification_listeners[id] = listeners = []; }
 				listeners.push(callback);
 			}
+			*/
 		};
 
 		proto.off_nullify = function(arg0, callback) {
 			var node = arg0 instanceof ConstraintNode ? arg0 : this.getNode(arg0);
+			node.offNullify(callback);
+			/*
 			var id = node.id;
+			var ri;
 			if(isNumber(id)) {
 				var listeners = this.nullification_listeners[id];
-				if(isArray(listeners)) { remove(listeners, callback); }
+				if(isArray(listeners)) {
+					do {
+						ri = remove(listeners, callback);
+					} while (ri >= 0);
+				}
 			}
-			var ri = remove(this.nullified_call_stack, callback);
-			if(__debug) {
-				this.nullified_reasons.splice(ri, 1);
-			}
+			*/
+			do {
+				ri = remove(this.nullified_call_stack, callback);
+				if(__debug) {
+					if(ri >= 0) {
+						this.nullified_reasons.splice(ri, 1);
+					}
+				}
+			} while (ri >= 0);
 		};
 
 		proto.get_nullification_listeners = function(arg0) {
 			var node = arg0 instanceof ConstraintNode ? arg0 : this.getNode(arg0);
+			/*
 			var id = node.id;
 			if(isNumber(id)) {
 				var listeners = this.nullification_listeners[id];
@@ -701,6 +729,8 @@ var constraint_solver = (function() {
 				}
 			}
 			return [];
+			*/
+			return node.nullificationListeners;
 		};
 
 		proto.getEdge = function(fromNode, toNode) {
@@ -787,7 +817,7 @@ var Constraint = function(value, literal) {
 	proto.offChange = function(callback) {
 		each(this._change_listeners, function(listener) {
 			if(listener.callback === callback) {
-				constraint_solver.off_nullify(listener.on_nullify);
+				constraint_solver.off_nullify(this, listener.on_nullify);
 			}
 		});
 		this._change_listeners = filter(this._change_listeners, function(listener) {
@@ -934,22 +964,50 @@ cjs.$.extend({
 // ============== LIVEN ============== 
 //
 
-cjs.liven = function(func, context, run_on_create) {
-	context = context || this;
+cjs.liven = function(func, options) {
+	options = extend({
+		context: this
+		, run_on_create: true
+		, pause_while_running: false
+	}, options);
+
 	var node = constraint_solver.add({
 		cjs_getter: function() {
-			func.call(context);
+			func.call(options.context);
 		},
 		auto_add_outgoing_dependencies: false,
 		cache_value: false
 	});
 
+	var destroy = function() {
+		constraint_solver.off_nullify(node, do_get);
+		constraint_solver.removeObject(node);
+	};
+	var pause = function() {
+		constraint_solver.off_nullify(node, do_get);
+		return this;
+	};
+	var resume = function() {
+		constraint_solver.on_nullify(node, do_get);
+		return this;
+	};
+	var run = function() {
+		do_get();
+		return this;
+	};
+
 	var do_get = function() {
+		if(options.pause_while_running) {
+			pause();
+		}
 		constraint_solver.getNodeValue(node);
+		if(options.pause_while_running) {
+			resume();
+		}
 	};
 
 	constraint_solver.on_nullify(node, do_get);
-	if(run_on_create !== false) {
+	if(options.run_on_create !== false) {
 		constraint_solver.nullified_call_stack.push(do_get);
 		if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
 
@@ -959,22 +1017,10 @@ cjs.liven = function(func, context, run_on_create) {
 	}
 
 	return {
-		destroy: function() {
-			constraint_solver.off_nullify(node, do_get);
-			constraint_solver.removeObject(node);
-		}
-		, pause: function() {
-			constraint_solver.off_nullify(node, do_get);
-			return this;
-		}
-		, resume: function() {
-			constraint_solver.on_nullify(node, do_get);
-			return this;
-		}
-		, run: function() {
-			do_get();
-			return this;
-		}
+		destroy: destroy
+		, pause: pause
+		, resume: resume
+		, run: run
 	};
 };
 
@@ -1200,7 +1246,9 @@ var ArrayConstraint = function(value) {
 
 		for(i = 0; i<len; i++) {
 			$val = this._value[i];
-			if(filter($val.get())) { return i; }
+			if(filter($val.get())) {
+				return i;
+			}
 		}
 		this.length(); // We want to depend on the length if 
 
@@ -1524,7 +1572,8 @@ var MapConstraint = function(arg0, arg1, arg2) {
 		cjs.signal();
 	};
 	proto.keyIndex = function(key) {
-		return this._keys.indexOf(key, this._equality_check);
+		var rv = this._keys.indexOf(key, this._equality_check);
+		return rv;
 	};
 	proto._do_set = function(key, value, index) {
 		if(this._keys instanceof ArrayConstraint && this._values instanceof ArrayConstraint) {
@@ -2257,6 +2306,7 @@ cjs.async_$ = function(invoke_callback, timeout_interval) {
 
 	return constraint;
 };
+if(__debug) { cjs._constraint_solver = constraint_solver; }
 
 return cjs;
 }(this));
