@@ -1022,11 +1022,21 @@ var MapConstraint = function(options) {
 	this._ordered_values = [];
 
 	this.$keys = cjs.$(bind(this._do_get_keys, this));
-	this.$values = cjs.$(bind(this.$_do_get_values, this));
-	this.$entries = cjs.$(bind(this.$_do_get_entries, this));
-	this.$size = cjs.$(bind(this.$_do_get_size, this));
+	this.$values = cjs.$(bind(this._do_get_values, this));
+	this.$entries = cjs.$(bind(this._do_get_entries, this));
+	this.$size = cjs.$(bind(this._do_get_size, this));
 
 	this._initialize_listeners();
+
+	cjs.wait();
+	each(options.values, function(v, k) {
+		this.put(k, v);
+	}, this);
+	each(options.keys, function(k, i) {
+		var v = options.values[i];
+		this.put(k, v);
+	}, this);
+	cjs.signal();
 };
 
 (function(my) {
@@ -1035,40 +1045,40 @@ var MapConstraint = function(options) {
 	var index_change_event_str = "index_change"; // value, key, to, from
 	var put_event_str = "put"; // value, key, index
 	var remove_event_str = "remove"; // value, key, index
-	var key_change_event_str = "key_change"; // value, to_key, from_key, from_key, index
 	var value_change_event_str = "value_change"; // to_value, key, from_value, index
 	var move_event_str = "move"; // value, key, to_index, from_index
 
 	get_categorical_listeners(proto, {
 		"Put":  put_event_str,
 		"Remove":  remove_event_str,
-		"KeyChange":  key_change_event_str,
 		"ValueChange":  value_change_event_str,
 		"IndexChange":  index_change_event_str,
 		"Move":  move_event_str
 	});
 
-	proto._find_key = function(key) {
+	proto._find_key = function(key, fetch_unsubstantiated, create_unsubstantiated) {
 		var hash = this._hash(key);
 		var rv = {
 			hv: false
 			, i: -1
 			, h: hash
+			, ui: -1
+			, uhv: false
 		};
 
+		var eq = this._equality_check;
 		var index_where_fn = function(a, b) {
 					return eq(a.key.get(), key);
 				};
 
 		var hash_values = this._values[hash];
 		if(isArray(hash_values)) {
-			var eq = this._equality_check;
 			var key_index = index_where(hash_values, index_where_fn);
 			rv.hv = hash_values;
 			rv.i = key_index;
 		}
 
-		if(rv.i < 0) { //Not found
+		if(rv.i < 0 && fetch_unsubstantiated !== false) { //Not found
 			var unsubstantiated_values = this._unsubstantiated_values[hash];
 			var unsubstantiated_index = -1; 
 			if(isArray(unsubstantiated_values)) {
@@ -1077,7 +1087,7 @@ var MapConstraint = function(options) {
 				unsubstantiated_values = this._unsubstantiated_values[hash] = [];
 			}
 
-			if(unsubstantiated_index < 0) {
+			if(unsubstantiated_index < 0 && create_unsubstantiated === true) {
 				var unsubstantiated_info = { key: cjs.$(key), value: cjs.$(undefined, true) };
 				unsubstantiated_values.push(unsubstantiated_info);
 				unsubstantiated_index = unsubstantiated_values.length-1;
@@ -1087,7 +1097,7 @@ var MapConstraint = function(options) {
 		}
 		return rv;
 	};
-	proto._do_set_item_ki = function(ki, key, value, index) {
+	proto._do_set_item_ki = function(ki, key, value, index, ignore_events) {
 		var key_index = ki.i,
 			hash_values = ki.hv,
 			hash = ki.h;
@@ -1100,66 +1110,84 @@ var MapConstraint = function(options) {
 			info = hash_values[key_index];
 			var old_value = info.value.get();
 			info.value.set(value, true);
-			this._queued_events.push(value_change_event_str, info.value, info.key, old_value, info.index);
+			if(ignore_events !== true) {
+				this._queued_events.push(value_change_event_str, info.value, info.key, old_value, info.index);
+			}
 		} else {
 			if(!isNumber(index) || index < 0) {
 				index = this._ordered_values.length;
 			}
-			var unsubstantiated_index = ki.ui,
-				unsubstantiated_hash_values = ki.uhv,
-				unsubstantiated_info = unsubstantiated_hash_values[unsubstantiated_index];
+			var unsubstantiated_index = ki.ui;
+			if(unsubstantiated_index >= 0) {
+				var unsubstantiated_hash_values = ki.uhv,
+					unsubstantiated_info = unsubstantiated_hash_values[unsubstantiated_index];
 
-			unsubstantiated_hash_values.splice(unsubstantiated_index, 1);
-			if(unsubstantiated_hash_values.length === 0) {
-				delete this._unsubstantiated_values[hash];
+				unsubstantiated_hash_values.splice(unsubstantiated_index, 1);
+				if(unsubstantiated_hash_values.length === 0) {
+					delete this._unsubstantiated_values[hash];
+				}
+
+				info = unsubstantiated_info;
+				info.value.set(value, true);
+				info.index = cjs.$(index, true);
+			} else {
+				info = { key: cjs.$(key), value: cjs.$(value, true), index: cjs.$(index, true) };
 			}
-
-			unsubstantiated_info.value.set(value, true);
-			unsubstantiated_info.index = cjs.$(index, true);
 
 			hash_values.push(info);
 			this._ordered_values.splice(index, 0, info);
-			this._queued_events.push(put_event_str, value, key, index);
-			for(var i = index + 1; i<this._ordered_values.length; i++) {
-				this._set_index(this._ordered_values[i], i);
+
+			if(ignore_events !== true) {
+				this._queued_events.push(put_event_str, value, key, index);
 			}
+			for(var i = index + 1; i<this._ordered_values.length; i++) {
+				this._set_index(this._ordered_values[i], i, ignore_events);
+			}
+			this.$size.invalidate();
 			this.$keys.invalidate();
 			this.$values.invalidate();
 			this.$entries.invalidate();
 		}
 	};
 
-	proto._set_index = function(info, to_index) {
+	proto._set_index = function(info, to_index, ignore_events) {
 		var old_index = info.index.get;
 		info.index.set(to_index);
-		this._queued_events.push(index_change_event_str, info.value, info.key, info.index, old_index);
+		if(ignore_events !== false) {
+			this._queued_events.push(index_change_event_str, info.value, info.key, info.index, old_index);
+		}
+	};
+	var _destroy_info = function(infos) {
+		each(infos, function(info) {
+			info.key.destroy();
+			info.value.destroy();
+			info.index.destroy();
+		});
 	};
 	proto._remove_index = function(index) {
 		var info = this._ordered_values[index];
-		info.key.destroy();
-		info.value.destroy();
-		info.index.destroy();
-		this._ordered_values.splice(index, 1);
+		_destroy_info(this._ordered_values.splice(index, 1));
 		this._queued_events.push(remove_event_str, info.value.get(), info.key.get(), info.index.get());
+		this.$size.invalidate();
 	};
 
-	proto.put = function(key, value, index) {
+	proto.set = proto.put = function(key, value, index) {
 		cjs.wait();
 		this.wait();
-		var ki = this._find_key(key);
+		var ki = this._find_key(key, true, false);
 		this._do_set_item_ki(ki, key, value, index);
 		this.signal();
 		cjs.signal();
 		return this;
 	};
 	proto.remove = function(key) {
-		var ki = this._find_key(key);
+		var ki = this._find_key(key, false, false);
 		var key_index = ki.i,
 			hash_values = ki.hv;
 		if(key_index >= 0) {
 			cjs.wait();
 			this.wait();
-			hash_values.splice(key_index, 1);
+			_destroy_info(hash_values.splice(key_index, 1));
 			if(hash_values.length === 0) {
 				delete hash_values[key_index]
 			}
@@ -1182,7 +1210,7 @@ var MapConstraint = function(options) {
 		return this;
 	};
 	proto.get = function(key) {
-		var ki = this._find_key(key);
+		var ki = this._find_key(key, true, true);
 		var key_index = ki.i,
 			hash_values = ki.hv;
 		if(key_index >= 0) {
@@ -1190,7 +1218,7 @@ var MapConstraint = function(options) {
 			return info.value.get();
 		} else {
 			var unsubstantiated_info = ki.uhv[ki.ui];
-			return uunsubstantiated_info.value.get();
+			return unsubstantiated_info.value.get();
 		}
 	};
 	proto.keys = function() {
@@ -1276,7 +1304,7 @@ var MapConstraint = function(options) {
 		return this;
 	};
 	proto.item_or_append = function(key, create_fn, create_fn_context) {
-		var ki = this._find_key(key);
+		var ki = this._find_key(key, false, false);
 		var key_index = ki.i,
 			hash_values = ki.hv,
 			hash = ki.h;
@@ -1295,7 +1323,7 @@ var MapConstraint = function(options) {
 		}
 	};
 	proto.has = proto.containsKey = function(key) {
-		var ki = this._find_key(key);
+		var ki = this._find_key(key, true, true);
 		var key_index = ki.i;
 		return key_index >= 0;
 	};
@@ -1331,39 +1359,10 @@ var MapConstraint = function(options) {
 		return this;
 	};
 	proto.move = function(key, index) {
-		var ki = this._find_key(key);
+		var ki = this._find_key(key, false, false);
 		var key_index = ki.i;
 		if(key_index >= 0) {
 			this.move_index(key_index, index);
-		}
-		return this;
-	};
-	proto.rename = function(old_key, new_key) {
-		var ki = this._find_key(key);
-		var key_index = ki.i,
-			hash_values = ki.hv,
-			hash = ki.h;
-		if(key_index >= 0) {
-			cjs.wait();
-			this.wait();
-			var new_hash = this._hash(new_key);
-			if(new_hash !== hash) {
-				hash_values.splice(key_index, 1);
-				var new_hash_values = this._values[new_hash];
-				if(!isArray(new_hash_values)) {
-					new_hash_values = this._values[new_hash] = [];
-				}
-				new_hash_values.push(info);
-			}
-
-			var info = hash_values[key_index];
-			info.key.set(new_key);
-
-			this._queued_events.push(key_change_event_str, info.value.get(), info.key.get(), old_key, info.index.get());
-			this.$keys.invalidate();
-			this.$entries.invalidate();
-			this.signal();
-			cjs.signal();
 		}
 		return this;
 	};
