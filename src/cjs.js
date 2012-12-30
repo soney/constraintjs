@@ -29,16 +29,6 @@ var slice = ArrayProto.slice,
 // Establish the object that gets returned to break out of a loop iteration.
 var breaker = {};
 
-var camel_case = (function() {
-	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/;
-	var fcamelCase = function(all, letter) {
-		return String(letter).toUpperCase();
-	};
-	return function(string) {
-		return string.replace( rmsPrefix, "ms-" ).replace(rdashAlpha, fcamelCase);
-	};
-}());
-
 // Return a unique id when called
 var uniqueId = (function() {
 	var id = 0;
@@ -136,9 +126,9 @@ var values = function(obj) {
   
 // Safely convert anything iterable into a real, live array.
 var toArray = function(obj) {
-	if (!obj)                                     return [];
-	if (isArray(obj))                           return slice.call(obj);
-	if (isArguments(obj))                       return slice.call(obj);
+	if (!obj) return [];
+	if (isArray(obj)) return slice.call(obj);
+	if (isArguments(obj)) return slice.call(obj);
 	if (obj.toArray && isFunction(obj.toArray)) return obj.toArray();
 	return values(obj);
 };
@@ -660,56 +650,28 @@ cjs.liven = function(func, options) {
 	};
 };
 
-
-//
-// ============== ARRAYS ============== 
-//
-
-var ArrayConstraint = function(value) {
-	this._value = [];
-	this._unsubstantiated_items = [];
-	if(isArray(value)) {
-		var i, len = value.length;
-		for(i = 0; i<value.length; i++) {
-			var val = value[i];
-			this._value.push(cjs.$(val, true));
-		}
-	}
-	this._len = cjs.$(this._value.length);
-	this._equality_check = eqeqeq;
-	var self = this;
-	this.$value = new Constraint(function() {
-		return self._getter();
-	});
-	this._add_listeners = [];
-	this._remove_listeners = [];
-	this._move_listeners = [];
-	this._index_change_listeners = [];
-	this._semaphore = 0;
-};
-
-(function(my) {
-	var proto = my.prototype;
-	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
-
-	var diff_events = {
-		"Add": "_add_listeners",
-		"Remove": "_remove_listeners",
-		"Move": "_move_listeners",
-		"IndexChange": "_index_change_listeners"
+var get_categorical_listeners = function(proto, events) {
+	proto._initialize_listeners = function() {
+		this._semaphore = 0;
+		this.__running_listeners = false;
+		this._queued_events = [];
+		var listeners = this._listeners = {};
+		each(events, function(arr_name, diff_event) {
+			listeners[arr_name] = [];
+		});
 	};
-	each(diff_events, function(arr_name, diff_event) {
-		proto["on" + diff_event] = function(callback) {
+	each(events, function(arr_name, diff_event) {
+		proto["on" + diff_event] = function(callback, context) {
 			var listener_info = {
-				callback: callback
-				, init_value: this.get()
+				callback: callback,
+				context: context || this
 			};
-			var arr = this[arr_name];
+			var arr = this._listeners[arr_name];
 			arr.push(listener_info);
 			return this;
 		};
 		proto["off" + diff_event] = function(callback) {
-			var arr = this[arr_name];
+			var arr = this._listeners[arr_name];
 
 			var listener_index = index_where(arr, function(listener_info) {
 				return listener_info.callback === callback;
@@ -724,109 +686,200 @@ var ArrayConstraint = function(value) {
 		};
 	});
 
-	proto.each = function(callback, context) {
-		context = context || this;
-		each(this.get(), callback);
-		return this;
+	proto.wait = function() {
+		this._semaphore--;
 	};
-	proto._uninstall_diff_listener = function() {
-		this.$value.offChange(this._diff_listener_id);
-	};
-	proto.destroy = function() {
-		this._uninstall_diff_listener();
-		this.$value.destroy();
-		this._len.destroy();
-	};
-	proto.onChange = function(callback) {
-		return this.$value.onChange.apply(this.$value, arguments);
-	};
-	proto.offChange = function(callback) {
-		this.$value.offChange.apply(this.$value, arguments);
-	};
-	proto.item = function(key, arg1) {
-		var val;
-		if(arguments.length === 1) {
-			val = this._value[key];
-			if(val === undefined) {
-				// Create a dependency so that if the value for this key changes
-				// later on, we can detect it in the constraint solver
-				val = cjs.$(undefined);
-				this._unsubstantiated_items[key] = val;
-			}
-			return val.get();
-		} else if(arguments.length > 1) {
-			val = arg1;
-			var $previous_value = this._value[key];
-			if($previous_value === undefined) {
-				if(has(this._unsubstantiated_items, key)) {
-					$previous_value = this._unsubstantiated_items[key];
-					delete this._unsubstantiated_items[key];
-				}
-			}
 
-			if(cjs.is_constraint($previous_value)) {
-				$previous_value.set(val);
-			} else {
-				this._value[key] = cjs.$(val, true);
-			}
-			this._update_len();
-			return this;
+	proto.signal = function() {
+		this._semaphore++;
+		if(this.semaphore >= 0 && !this.__running_listeners) {
+			this.__running_listeners = true;
+			this._run_listeners();
+			this.__running_listeners = false;
 		}
 	};
+
+	proto._run_listeners = function() {
+		var queued_events = this._queued_events;
+		while(queued_events.length > 0) {
+			var queued_event = queued_events.shift();
+			var type = queued_event.shift();
+			var listeners = this._listeners[type];
+			each(listeners, function(listener_info) {
+				var callback = listener_info.callback;
+				var context = listener_info.context;
+				callback.apply(context, queued_event);
+			});
+		}
+	};
+};
+
+
+//
+// ============== ARRAYS ============== 
+//
+
+var ArrayConstraint = function(options) {
+	options = extend({
+		equals: eqeqeq,
+		value: []
+	}, options);
+	this._value = [];
+	this._unsubstantiated_items = [];
+
+	if(isArray(options.value)) {
+		var i, len = options.value.length;
+		for(i = 0; i<len; i++) {
+			var val = options.value[i];
+			this._value.push(cjs.$(val, true));
+		}
+	}
+	this.$len = cjs.$(this._value.length);
+
+	this._equality_check = options.equals;
+
+	var self = this;
+
+	this._initialize_listeners();
+};
+
+(function(my) {
+	var proto = my.prototype;
+
+	var add_event_str = "add"; // value, index
+	var remove_event_str = "remove"; // value, index
+	var index_change_event_str = "index_change"; // value, to_index, from_index
+	var value_change_event_str = "value_change"; // to_value, from_value, index
+
+	get_categorical_listeners(proto, {
+		"Add":  add_event_str,
+		"Remove":  remove_event_str,
+		"IndexChange":  index_change_event_str,
+		"ValueChange":  value_change_event_str
+	});
+
+	proto.set_equality_check = function(equality_check) {
+		this._equality_check = equality_check;
+		return this;
+	};
+
+	proto.each = function(func, context) {
+		context = context || root;
+		var i, len = this.length();
+		for(var i = 0; i<len; i++) {
+			if(func.call(context, this.get(i), i) === false) {
+				break;
+			}
+		}
+		return this;
+	};
+	proto.get = function(key) {
+		var val = this._value[key];
+		if(val === undefined) {
+			// Create a dependency so that if the value for this key changes
+			// later on, we can detect it in the constraint solver
+			val = cjs.$(undefined);
+			this._unsubstantiated_items[key] = val;
+		}
+		return val.get();
+	};
+	proto.put = function(key, val) {
+		cjs.wait();
+		this.wait();
+		var $previous_value = this._value[key];
+		if($previous_value === undefined && has(this._unsubstantiated_items, key)) {
+			$previous_value = this._unsubstantiated_items[key];
+			delete this._unsubstantiated_items[key];
+		}
+
+		if(cjs.is_$($previous_value)) {
+			var prev_val = $previous_value.get();
+			$previous_value.set(val, true);
+			this._queued_events.push(value_change_event_str, val, key, prev_val);
+		} else {
+			this._value[key] = cjs.$(val, true);
+			this._queued_events.push(add_event_str, val, key);
+		}
+		this._update_len();
+		this.signal();
+		cjs.signal();
+		return this;
+	};
+	proto.i = proto.item = function(key, val) {
+		if(arguments.length === 1) {
+			return this.get(key);
+		} else if(arguments.length > 1) {
+			return this.put(key, val);
+		}
+	};
+	proto.destroy = function() {
+		this.$len.destroy();
+	};
 	proto.length = function() {
-		return this._len.get();
+		return this.$len.get();
 	};
 	proto.push = function() {
 		var i, len = arguments.length;
 		//Make operation atomic
 		cjs.wait();
+		this.wait();
 		for(i = 0; i<len; i++) {
-			this.item(this._value.length, arguments[i]);
+			this.put(this._value.length, arguments[i]);
 		}
+		this.signal();
 		cjs.signal();
 		return arguments.length;
 	};
 	proto.pop = function() {
-		cjs.wait();
+		cjs.wait(); this.wait();
+
 		var $value = this._value.pop();
-		var rv = undefined;
-		if(cjs.is_constraint($value)) {
+		var len = this._value.length;
+		var rv;
+		if(cjs.is_$($value)) {
 			rv = $value.get();
 			$value.destroy();
+			this._queued_events.push(remove_event_str, rv, len);
 		}
 		this._update_len();
-		cjs.signal();
+
+		this.signal(); cjs.signal();
 		return rv;
 	};
 	proto.clear = function() {
 		var $val;
-		cjs.wait();
+		cjs.wait(); this.wait();
+
 		while(this._value.length > 0) {
 			$val = this._value.pop();
-			if(cjs.is_constraint($val)) { $val.destroy(); }
+			var len = this._value.length;
+			if(cjs.is_constraint($val)) {
+				this._queued_events.push(remove_event_str, $val.get(), len);
+				$val.destroy();
+			}
 		}
-		cjs.signal();
-	};
-	proto.set = function(arr) {
-		cjs.wait();
-		this.clear();
-		this.push.apply(this, arr);
-		cjs.signal();
+		this._update_len();
+
+
+		this.signal(); cjs.signal();
 		return this;
 	};
-	proto._getter = function() {
-		var i, len = this.length();
+	proto.set = function(arr) {
+		cjs.wait(); this.wait();
+
+		this.clear();
+		this.push.apply(this, arr);
+
+		this.signal(); cjs.signal();
+		return this;
+	};
+	proto.toArray = function() {
 		var rv = [];
-		for(i = 0; i<len; i++) {
-			rv.push(this.item(i));
-		}
+		this.each(function(v, i) { rv[i] = v; });
 		return rv;
 	};
-	proto.get = function() {
-		return this.$value.get();
-	};
 	proto._update_len = function() {
-		this._len.set(this._value.length);
+		this.$len.set(this._value.length);
 	};
 	proto.indexWhere = function(filter) {
 		var i, len = this._value.length, $val;
@@ -837,7 +890,7 @@ var ArrayConstraint = function(value) {
 				return i;
 			}
 		}
-		this.length(); // We want to depend on the length if 
+		this.length(); // We want to depend on the length if not found
 
 		return -1;
 	};
@@ -869,9 +922,9 @@ var ArrayConstraint = function(value) {
 		if(!isPositiveInteger(index) || !isPositiveInteger(howmany)) {
 			throw new Error("index and howmany must be positive integers");
 		}
-		var to_insert = Array.prototype.slice.call(arguments, 2);
+		var to_insert = slice.call(arguments, 2);
 
-		cjs.wait();
+		cjs.wait(); this.wait();
 		var resulting_shift_size = to_insert.length - howmany;
 		var removed = [];
 
@@ -882,9 +935,9 @@ var ArrayConstraint = function(value) {
 		if(resulting_shift_size < 0) {
 			for(i = index; i<this._value.length + resulting_shift_size; i++) {
 				if(i < index + to_insert.length) {
-					this.item(i, to_insert[i-index]);
+					this.put(i, to_insert[i-index]);
 				} else {
-					this.item(i, this.item(i - resulting_shift_size));
+					this.put(i, this.get(i - resulting_shift_size));
 				}
 			}
 			for(i = 0; i<-resulting_shift_size; i++) {
@@ -893,48 +946,46 @@ var ArrayConstraint = function(value) {
 		} else {
 			for(i = this._value.length + resulting_shift_size - 1; i>=index; i--) {
 				if(i-index < to_insert.length) {
-					this.item(i, to_insert[i-index]);
+					this.put(i, to_insert[i-index]);
 				} else {
-					this.item(i, this.item(i - resulting_shift_size));
+					this.put(i, this.get(i - resulting_shift_size));
 				}
 			}
 		}
 
 		this._update_len();
-		cjs.signal();
+		this.signal(); cjs.signal();
 		return removed;
 	};
+	proto.shift = function() {
+		var rv_arr = this.splice(0, 1);
+		return rv_arr[0];
+	};
+	proto.unshift = function() {
+		var args = toArray(arguments);
+		this.splice.apply(this, ([0, 0]).concat(args));
+		return this._value.length;
+	};
+
 	proto.concat = function() {
 		var args = [], i, len = arguments.length;
 		for(i = 0; i<len; i++) {
 			var arg = arguments[i];
 			if(arg instanceof ArrayConstraint) {
-				args.push(arg.get());
+				args.push(arg.toArray());
 			} else {
 				args.push(arg);
 			}
 		}
-		var my_val = this.get();
+		var my_val = this.toArray();
 		return my_val.concat.apply(my_val, args);
 	};
-	proto.shift = function() { var rv_arr = this.splice(0, 1); return rv_arr[0]; };
-	proto.unshift = function() {
-		var args = Array.prototype.slice.call(arguments, 0);
-		this.splice.apply(this, ([0, 0]).concat(args));
-		return this._value.length;
-	};
-	proto.join = function() { var my_val = this.get(); return my_val.join.apply(my_val, arguments); };
-	proto.slice = function() { var my_val = this.get(); return my_val.slice.apply(my_val, arguments); };
-	proto.sort = function() { var my_val = this.get(); return my_val.sort.apply(my_val, arguments); };
-	proto.reverse = function() { var my_val = this.get(); return my_val.reverse.apply(my_val, arguments); };
-	proto.valueOf = function() { var my_val = this.get(); return my_val.valueOf.apply(my_val, arguments); };
-	proto.toString = function() { var my_val = this.get(); return my_val.toString.apply(my_val, arguments); };
-	proto.wait = function() {
-		this._semaphore--;
-	};
-	proto.signal = function() {
-		this._semaphore++;
-	};
+	each(["join", "slice", "sort", "reverse", "valueOf", "toString"], function(fn_name) {
+			proto[fn_name] = function() {
+				var my_val = this.toArray();
+				return my_val[fn_name].apply(my_val, arguments);
+			};
+	});
 }(ArrayConstraint));
 
 cjs.array = function(value) { return new ArrayConstraint(value); };
@@ -949,27 +1000,22 @@ var defaulthash = function(key) { return ""+key; };
 var MapConstraint = function(options) {
 	options = extend({
 		hash: defaulthash,
-		equals: eqeqeq,
+		equals: eqeqeq
 	}, options);
 	this._equality_check = options.equals;
 	this._hash = options.hash;
-	this._values = {};
-	this._unsubstantiated_items = {};
-	this._ordered_values = [];
-	this._semaphore = 0;
-	this._queued_events = [];
-  
-	this._add_listeners();
-	this.__running_listeners = false;
 
-	this.$_do_get_keys = bind(this._do_get_keys, this);
-	this.$_do_get_values = bind(this._do_get_values, this);
-	this.$_do_get_entries = bind(this._do_get_entries, this);
-	this.$_do_get_size = bind(this._do_get_size, this);
+	this._values = {};
+	this._unsubstantiated_values = {};
+
+	this._ordered_values = cjs.array();
+
 	this.$keys = cjs.$(bind(this._do_get_keys, this));
-	this.$values = cjs.$(bind(this.$_do_get_values);
-	this.$entries = cjs.$(bind(this.$_do_get_entries);
-	this.$size = cjs.$(bind(this.$_do_get_size);
+	this.$values = cjs.$(bind(this.$_do_get_values, this));
+	this.$entries = cjs.$(bind(this.$_do_get_entries, this));
+	this.$size = cjs.$(bind(this.$_do_get_size, this));
+
+	this._initialize_listeners();
 };
 
 (function(my) {
@@ -982,44 +1028,13 @@ var MapConstraint = function(options) {
 	var value_change_event_str = "value_change"; // to_value, key, from_value, index
 	var move_event_str = "move"; // value, key, to_index, from_index
 
-	var diff_events = {
+	get_categorical_listeners(proto, {
 		"Put":  put_event_str,
 		"Remove":  remove_event_str,
 		"KeyChange":  key_change_event_str,
 		"ValueChange":  value_change_event_str,
 		"IndexChange":  index_change_event_str,
 		"Move":  move_event_str
-	};
-	proto._add_listeners = function() {
-		var listeners = this._listeners = {};
-		each(diff_events, function(arr_name, diff_event) {
-			listeners[arr_name] = [];
-		});
-	};
-	each(diff_events, function(arr_name, diff_event) {
-		proto["on" + diff_event] = function(callback, context) {
-			var listener_info = {
-				callback: callback,
-				context: context || this
-			};
-			var arr = this._listeners[arr_name];
-			arr.push(listener_info);
-			return this;
-		};
-		proto["off" + diff_event] = function(callback) {
-			var arr = this._listeners[arr_name];
-
-			var listener_index = index_where(arr, function(listener_info) {
-				return listener_info.callback === callback;
-			});
-
-			if(listener_index >= 0) {
-				delete arr[listener_index];
-				arr.splice(listener_index, 1);
-			}
-
-			return this;
-		};
 	});
 
 	proto._find_key = function(key) {
@@ -1054,7 +1069,7 @@ var MapConstraint = function(options) {
 			this._queued_events.push(value_change_event_str, info.value, info.key, old_value, info.index);
 		} else {
 			if(!isNumber(index) || index < 0) {
-				index = this._ordered_values.length;
+				index = this._ordered_values.length();
 			}
 			info = {
 				key: cjs.$(key, true),
@@ -1064,8 +1079,8 @@ var MapConstraint = function(options) {
 			hash_values.push(info);
 			this._ordered_values.splice(index, 0, info);
 			this._queued_events.push(put_event_str, value, key, index);
-			for(var i = index + 1; i<this._ordered_values.length; i++) {
-				this._set_index(this._ordered_values[i], i);
+			for(var i = index + 1; i<this._ordered_values.length(); i++) {
+				this._set_index(this._ordered_values.get(i), i);
 			}
 			this.$keys.invalidate();
 			this.$values.invalidate();
@@ -1079,7 +1094,7 @@ var MapConstraint = function(options) {
 		this._queued_events.push(index_change_event_str, info.value, info.key, info.index, old_index);
 	};
 	proto._remove_index = function(index) {
-		var info = this._ordered_values[index];
+		var info = this._ordered_values.get(index);
 		info.key.destroy();
 		info.value.destroy();
 		info.index.destroy();
@@ -1197,7 +1212,8 @@ var MapConstraint = function(options) {
 	};
 	proto.each = function(func, context) {
 		context = context || root;
-		for(var i = 0; i<this._ordered_values.lenth; i++) {
+		var i, len = this._ordered_values.length;
+		for(i=0; i<len; i++) {
 			var info = this._ordered_values[i];
 			if(info) {
 				if(func.call(context, info.value.get(), info.key.get(), info.index.get()) === false) {
@@ -1205,6 +1221,7 @@ var MapConstraint = function(options) {
 				}
 			}
 		}
+		return this;
 	};
 	proto.set_equality_check = function(equality_check) {
 		this._equality_check = equality_check;
@@ -1324,30 +1341,6 @@ var MapConstraint = function(options) {
 	proto.isEmpty = function() {
 		return this.size() === 0;
 	};
-	proto.wait = function() {
-		this._semaphore--;
-	};
-	proto.signal = function() {
-		this._semaphore++;
-		if(this.semaphore >= 0 && !this.__running_listeners) {
-			this.__running_listeners = true;
-			this._run_listeners();
-			this.__running_listeners = false;
-		}
-	};
-	proto._run_listeners = function() {
-		var queued_events = this._queued_events;
-		while(queued_events.length > 0) {
-			var queued_event = queued_events.shift();
-			var type = queued_event.shift();
-			var listeners = this._listeners[type];
-			each(listeners, function(listener_info) {
-				var callback = listener_info.callback;
-				var context = listener_info.context;
-				callback.apply(context, queued_event);
-			});
-		}
-	};
 	proto.destroy = function() {
 		this.wait();
 		cjs.wait();
@@ -1357,6 +1350,12 @@ var MapConstraint = function(options) {
 		this.$entries.destroy();
 		cjs.signal();
 		this.signal();
+	};
+	proto.toMap = function(key_map_fn) {
+		key_map_fn = key_map_fn || identity;
+		var rv = {};
+		this.each(function(v, k) { rv[key_map_fn(k)] = v; });
+		return rv;
 	};
 }(MapConstraint));
 

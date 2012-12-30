@@ -1,3 +1,12 @@
+var camel_case = (function() {
+	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/;
+	var fcamelCase = function(all, letter) {
+		return String(letter).toUpperCase();
+	};
+	return function(string) {
+		return string.replace( rmsPrefix, "ms-" ).replace(rdashAlpha, fcamelCase);
+	};
+}());
 cjs.$.extend({
 	item: function(key) {
 		var my_constraint = this;
