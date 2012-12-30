@@ -7,7 +7,15 @@ var __debug = true;
 
 // The star of the show!
 var old_cjs = root.cjs;
-var cjs = function () { return cjs.$.apply(cjs, arguments); };
+var cjs = function (val) {
+	if(isArray(val)) {
+		return cjs.array({ value: val });
+	} else if(isObject(val)) {
+		return cjs.map({ value: val });
+	} else {
+		return cjs.$.apply(cjs, arguments);
+	}
+};
 cjs.version = "0.7.0";
 
 cjs.noConflict = function() { root.cjs = old_cjs; return cjs; };
@@ -1000,7 +1008,10 @@ var defaulthash = function(key) { return ""+key; };
 var MapConstraint = function(options) {
 	options = extend({
 		hash: defaulthash,
-		equals: eqeqeq
+		equals: eqeqeq,
+		values: {},
+		keys: [],
+		values: []
 	}, options);
 	this._equality_check = options.equals;
 	this._hash = options.hash;
@@ -1008,7 +1019,7 @@ var MapConstraint = function(options) {
 	this._values = {};
 	this._unsubstantiated_values = {};
 
-	this._ordered_values = cjs.array();
+	this._ordered_values = [];
 
 	this.$keys = cjs.$(bind(this._do_get_keys, this));
 	this.$values = cjs.$(bind(this.$_do_get_values, this));
@@ -1045,18 +1056,41 @@ var MapConstraint = function(options) {
 			, h: hash
 		};
 
+		var index_where_fn = function(a, b) {
+					return eq(a.key.get(), key);
+				};
+
 		var hash_values = this._values[hash];
 		if(isArray(hash_values)) {
 			var eq = this._equality_check;
-			var key_index = index_where(hash_values, function(a, b) {
-				return eq(a.key.get(), key);
-			});
+			var key_index = index_where(hash_values, index_where_fn);
 			rv.hv = hash_values;
 			rv.i = key_index;
 		}
+
+		if(rv.i < 0) { //Not found
+			var unsubstantiated_values = this._unsubstantiated_values[hash];
+			var unsubstantiated_index = -1; 
+			if(isArray(unsubstantiated_values)) {
+				unsubstantiated_index = index_where(unsubstantiated_values, index_where_fn);
+			} else {
+				unsubstantiated_values = this._unsubstantiated_values[hash] = [];
+			}
+
+			if(unsubstantiated_index < 0) {
+				var unsubstantiated_info = { key: cjs.$(key), value: cjs.$(undefined, true) };
+				unsubstantiated_values.push(unsubstantiated_info);
+				unsubstantiated_index = unsubstantiated_values.length-1;
+			}
+			rv.uhv = unsubstantiated_values;
+			rv.ui = unsubstantiated_index;
+		}
 		return rv;
 	};
-	proto._do_set_item_ki = function(key_index, hash_values, hash, key, value, index) {
+	proto._do_set_item_ki = function(ki, key, value, index) {
+		var key_index = ki.i,
+			hash_values = ki.hv,
+			hash = ki.h;
 		if(!hash_values) {
 			hash_values = this._values[hash] = [];
 		}
@@ -1069,18 +1103,25 @@ var MapConstraint = function(options) {
 			this._queued_events.push(value_change_event_str, info.value, info.key, old_value, info.index);
 		} else {
 			if(!isNumber(index) || index < 0) {
-				index = this._ordered_values.length();
+				index = this._ordered_values.length;
 			}
-			info = {
-				key: cjs.$(key, true),
-				value: cjs.$(value, true),
-				index: cjs.$(index, true)
-			};
+			var unsubstantiated_index = ki.ui,
+				unsubstantiated_hash_values = ki.uhv,
+				unsubstantiated_info = unsubstantiated_hash_values[unsubstantiated_index];
+
+			unsubstantiated_hash_values.splice(unsubstantiated_index, 1);
+			if(unsubstantiated_hash_values.length === 0) {
+				delete this._unsubstantiated_values[hash];
+			}
+
+			unsubstantiated_info.value.set(value, true);
+			unsubstantiated_info.index = cjs.$(index, true);
+
 			hash_values.push(info);
 			this._ordered_values.splice(index, 0, info);
 			this._queued_events.push(put_event_str, value, key, index);
-			for(var i = index + 1; i<this._ordered_values.length(); i++) {
-				this._set_index(this._ordered_values.get(i), i);
+			for(var i = index + 1; i<this._ordered_values.length; i++) {
+				this._set_index(this._ordered_values[i], i);
 			}
 			this.$keys.invalidate();
 			this.$values.invalidate();
@@ -1094,7 +1135,7 @@ var MapConstraint = function(options) {
 		this._queued_events.push(index_change_event_str, info.value, info.key, info.index, old_index);
 	};
 	proto._remove_index = function(index) {
-		var info = this._ordered_values.get(index);
+		var info = this._ordered_values[index];
 		info.key.destroy();
 		info.value.destroy();
 		info.index.destroy();
@@ -1106,10 +1147,7 @@ var MapConstraint = function(options) {
 		cjs.wait();
 		this.wait();
 		var ki = this._find_key(key);
-		var key_index = ki.i,
-			hash_values = ki.hv,
-			hash = ki.h;
-		this._do_set_item_ki(key_index, hash_values, hash, key, value, index);
+		this._do_set_item_ki(ki, key, value, index);
 		this.signal();
 		cjs.signal();
 		return this;
@@ -1150,8 +1188,10 @@ var MapConstraint = function(options) {
 		if(key_index >= 0) {
 			var info = hash_values[key_index];
 			return info.value.get();
+		} else {
+			var unsubstantiated_info = ki.uhv[ki.ui];
+			return uunsubstantiated_info.value.get();
 		}
-		return undefined;
 	};
 	proto.keys = function() {
 		return this.$keys.get();
@@ -1248,7 +1288,7 @@ var MapConstraint = function(options) {
 			this.wait();
 			var context = create_fn_context || root;
 			var value = create_fn.call(context);
-			this._do_set_item_ki(key_index, hash_values, hash, key, value);
+			this._do_set_item_ki(ki, hash, key, value);
 			this.signal();
 			cjs.signal();
 			return value;
