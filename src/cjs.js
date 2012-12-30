@@ -700,7 +700,7 @@ var get_categorical_listeners = function(proto, events) {
 
 	proto.signal = function() {
 		this._semaphore++;
-		if(this.semaphore >= 0 && !this.__running_listeners) {
+		if(this._semaphore >= 0 && !this.__running_listeners) {
 			this.__running_listeners = true;
 			this._run_listeners();
 			this.__running_listeners = false;
@@ -803,10 +803,10 @@ var ArrayConstraint = function(options) {
 		if(cjs.is_$($previous_value)) {
 			var prev_val = $previous_value.get();
 			$previous_value.set(val, true);
-			this._queued_events.push(value_change_event_str, val, key, prev_val);
+			this._queued_events.push([value_change_event_str, val, key, prev_val]);
 		} else {
 			this._value[key] = cjs.$(val, true);
-			this._queued_events.push(add_event_str, val, key);
+			this._queued_events.push([add_event_str, val, key]);
 		}
 		this._update_len();
 		this.signal();
@@ -847,7 +847,7 @@ var ArrayConstraint = function(options) {
 		if(cjs.is_$($value)) {
 			rv = $value.get();
 			$value.destroy();
-			this._queued_events.push(remove_event_str, rv, len);
+			this._queued_events.push([remove_event_str, rv, len]);
 		}
 		this._update_len();
 
@@ -862,7 +862,7 @@ var ArrayConstraint = function(options) {
 			$val = this._value.pop();
 			var len = this._value.length;
 			if(cjs.is_constraint($val)) {
-				this._queued_events.push(remove_event_str, $val.get(), len);
+				this._queued_events.push([remove_event_str, $val.get(), len]);
 				$val.destroy();
 			}
 		}
@@ -1009,7 +1009,7 @@ var MapConstraint = function(options) {
 	options = extend({
 		hash: defaulthash,
 		equals: eqeqeq,
-		values: {},
+		value: {},
 		keys: [],
 		values: []
 	}, options);
@@ -1029,7 +1029,7 @@ var MapConstraint = function(options) {
 	this._initialize_listeners();
 
 	cjs.wait();
-	each(options.values, function(v, k) {
+	each(options.value, function(v, k) {
 		this.put(k, v);
 	}, this);
 	each(options.keys, function(k, i) {
@@ -1084,7 +1084,9 @@ var MapConstraint = function(options) {
 			if(isArray(unsubstantiated_values)) {
 				unsubstantiated_index = index_where(unsubstantiated_values, index_where_fn);
 			} else {
-				unsubstantiated_values = this._unsubstantiated_values[hash] = [];
+				if(create_unsubstantiated) {
+					unsubstantiated_values = this._unsubstantiated_values[hash] = [];
+				}
 			}
 
 			if(unsubstantiated_index < 0 && create_unsubstantiated === true) {
@@ -1111,7 +1113,7 @@ var MapConstraint = function(options) {
 			var old_value = info.value.get();
 			info.value.set(value, true);
 			if(ignore_events !== true) {
-				this._queued_events.push(value_change_event_str, info.value, info.key, old_value, info.index);
+				this._queued_events.push([value_change_event_str, info.value, info.key, old_value, info.index]);
 			}
 		} else {
 			if(!isNumber(index) || index < 0) {
@@ -1138,7 +1140,7 @@ var MapConstraint = function(options) {
 			this._ordered_values.splice(index, 0, info);
 
 			if(ignore_events !== true) {
-				this._queued_events.push(put_event_str, value, key, index);
+				this._queued_events.push([put_event_str, value, key, index]);
 			}
 			for(var i = index + 1; i<this._ordered_values.length; i++) {
 				this._set_index(this._ordered_values[i], i, ignore_events);
@@ -1154,7 +1156,7 @@ var MapConstraint = function(options) {
 		var old_index = info.index.get;
 		info.index.set(to_index);
 		if(ignore_events !== false) {
-			this._queued_events.push(index_change_event_str, info.value, info.key, info.index, old_index);
+			this._queued_events.push([index_change_event_str, info.value, info.key, info.index, old_index]);
 		}
 	};
 	var _destroy_info = function(infos) {
@@ -1167,7 +1169,7 @@ var MapConstraint = function(options) {
 	proto._remove_index = function(index) {
 		var info = this._ordered_values[index];
 		_destroy_info(this._ordered_values.splice(index, 1));
-		this._queued_events.push(remove_event_str, info.value.get(), info.key.get(), info.index.get());
+		this._queued_events.push([remove_event_str, info.value.get(), info.key.get(), info.index.get()]);
 		this.$size.invalidate();
 	};
 
@@ -1344,7 +1346,7 @@ var MapConstraint = function(options) {
 		var info = this._ordered_values[old_index];
 		this._ordered_values.splice(old_index, 1);
 		this._ordered_values.splice(new_index, 0, info);
-		this._queued_events.push(move_event_str, info.value.get(), info.key.get(), new_index, old_index);
+		this._queued_events.push([move_event_str, info.value.get(), info.key.get(), new_index, old_index]);
 
 		var low = Math.min(old_index, new_index);
 		var high = Math.max(old_index, new_index);
@@ -1358,11 +1360,12 @@ var MapConstraint = function(options) {
 		cjs.signal();
 		return this;
 	};
-	proto.move = function(key, index) {
+	proto.move = function(key, to_index) {
 		var ki = this._find_key(key, false, false);
 		var key_index = ki.i;
 		if(key_index >= 0) {
-			this.move_index(key_index, index);
+			var info = ki.hv[key_index];
+			this.move_index(info.index.get(), to_index);
 		}
 		return this;
 	};
@@ -1390,7 +1393,7 @@ var MapConstraint = function(options) {
 		cjs.signal();
 		this.signal();
 	};
-	proto.toMap = function(key_map_fn) {
+	proto.toObject = function(key_map_fn) {
 		key_map_fn = key_map_fn || identity;
 		var rv = {};
 		this.each(function(v, k) { rv[key_map_fn(k)] = v; });
