@@ -1090,7 +1090,7 @@ var MapConstraint = function(options) {
 			}
 
 			if(unsubstantiated_index < 0 && create_unsubstantiated === true) {
-				var unsubstantiated_info = { key: cjs.$(key), value: cjs.$(undefined, true) };
+				var unsubstantiated_info = { key: cjs.$(key), value: cjs.$(undefined, true), index: cjs.$(-1, true) };
 				unsubstantiated_values.push(unsubstantiated_info);
 				unsubstantiated_index = unsubstantiated_values.length-1;
 			}
@@ -1131,7 +1131,7 @@ var MapConstraint = function(options) {
 
 				info = unsubstantiated_info;
 				info.value.set(value, true);
-				info.index = cjs.$(index, true);
+				info.index.set(index, true);
 			} else {
 				info = { key: cjs.$(key), value: cjs.$(value, true), index: cjs.$(index, true) };
 			}
@@ -1168,8 +1168,8 @@ var MapConstraint = function(options) {
 	};
 	proto._remove_index = function(index) {
 		var info = this._ordered_values[index];
-		_destroy_info(this._ordered_values.splice(index, 1));
 		this._queued_events.push([remove_event_str, info.value.get(), info.key.get(), info.index.get()]);
+		_destroy_info(this._ordered_values.splice(index, 1));
 		this.$size.invalidate();
 	};
 
@@ -1187,15 +1187,15 @@ var MapConstraint = function(options) {
 		var key_index = ki.i,
 			hash_values = ki.hv;
 		if(key_index >= 0) {
-			cjs.wait();
-			this.wait();
-			_destroy_info(hash_values.splice(key_index, 1));
-			if(hash_values.length === 0) {
-				delete hash_values[key_index]
-			}
+			cjs.wait(); this.wait();
 
 			var info = hash_values[key_index];
 			var ordered_index = info.index.get();
+
+			hash_values.splice(key_index, 1);
+			if(hash_values.length === 0) {
+				delete hash_values[key_index]
+			}
 
 			this._remove_index(ordered_index);
 			for(var i = ordered_index; i<this._ordered_values.length; i++) {
@@ -1206,8 +1206,7 @@ var MapConstraint = function(options) {
 			this.$values.invalidate();
 			this.$entries.invalidate();
 
-			this.signal();
-			cjs.signal();
+			this.signal(); cjs.signal();
 		}
 		return this;
 	};
@@ -1242,7 +1241,7 @@ var MapConstraint = function(options) {
 			}
 			each(this._values, function(arr, hash) {
 				delete this._values[hash];
-			});
+			}, this);
 
 			this.$keys.invalidate();
 			this.$values.invalidate();
@@ -1304,6 +1303,18 @@ var MapConstraint = function(options) {
 			this.put(arg0, arg1, arg2);
 		}
 		return this;
+	};
+	proto.indexOf = function(key) {
+		var ki = this._find_key(key, true, true);
+		var key_index = ki.i,
+			hash_values = ki.hv;
+		if(key_index >= 0) {
+			var info = hash_values[key_index];
+			return info.index.get();
+		} else {
+			var unsubstantiated_info = ki.uhv[ki.ui];
+			return unsubstantiated_info.index.get();
+		}
 	};
 	proto.item_or_append = function(key, create_fn, create_fn_context) {
 		var ki = this._find_key(key, false, false);
