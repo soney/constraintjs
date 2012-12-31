@@ -10,7 +10,7 @@ var old_cjs = root.cjs;
 var cjs = function (val) {
 	if(isArray(val)) {
 		return cjs.array({ value: val });
-	} else if(isObject(val)) {
+	} else if(isObject(val) && !isElement(val)) {
 		return cjs.map({ value: val });
 	} else {
 		return cjs.$.apply(cjs, arguments);
@@ -1316,20 +1316,20 @@ var MapConstraint = function(options) {
 			return unsubstantiated_info.index.get();
 		}
 	};
-	proto.item_or_append = function(key, create_fn, create_fn_context) {
+	proto.get_or_put = function(key, create_fn, create_fn_context, index) {
 		var ki = this._find_key(key, false, false);
 		var key_index = ki.i,
 			hash_values = ki.hv,
 			hash = ki.h;
 		if(key_index >= 0) {
 			var info = hash_values[key_index];
-			return info.value;
+			return info.value.get();
 		} else {
 			cjs.wait();
 			this.wait();
 			var context = create_fn_context || root;
-			var value = create_fn.call(context);
-			this._do_set_item_ki(ki, hash, key, value);
+			var value = create_fn.call(context, key);
+			this._do_set_item_ki(ki, key, value, index);
 			this.signal();
 			cjs.signal();
 			return value;
