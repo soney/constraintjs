@@ -1005,6 +1005,11 @@ cjs.ArrayConstraint = ArrayConstraint;
 //
 
 var defaulthash = function(key) { return ""+key; };
+var get_str_hash_fn = function(prop_name) {
+	return function(key) {
+		return key[prop_name]();
+	};
+};
 var MapConstraint = function(options) {
 	options = extend({
 		hash: defaulthash,
@@ -1014,7 +1019,7 @@ var MapConstraint = function(options) {
 		values: []
 	}, options);
 	this._equality_check = options.equals;
-	this._hash = options.hash;
+	this._hash = isString(options.hash) ? get_str_hash_fn(options.hash) : options.hash;
 
 	this._values = {};
 	this._unsubstantiated_values = {};
