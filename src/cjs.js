@@ -155,11 +155,9 @@ var proto_extend = function (subClass, superClass) {
 };
 
 var extend = function(obj) {
-	var args = slice.call(arguments, 1)
-		, i
-		, len = args.length;
-	for(i = 0; i<len; i++) {
-		var source = args[i];
+	var i, len = arguments.length;
+	for(i = 1; i<len; i++) {
+		var source = arguments[i];
 		for (var prop in source) {
 			obj[prop] = source[prop];
 		}
@@ -176,7 +174,7 @@ var each = function(obj, iterator, context) {
 		}
 	} else {
 		for (var key in obj) {
-			if (has(obj, key)) {
+			if(has(obj, key)) {
 				if (iterator.call(context, obj[key], key, obj) === breaker) { return; }
 			}
 		}
@@ -200,20 +198,6 @@ var last = function(arr) {
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 var has = function(obj, key) {
 	return hasOwnProperty.call(obj, key);
-};
-
-
-var nativeFilter = Array.prototype.filter;
-var filter = function(obj, iterator, context) {
-	var results = [];
-	if (obj == null) { return results; }
-	if (nativeFilter && obj.filter === nativeFilter) { return obj.filter(iterator, context); }
-	var i, len = obj.length, value;
-	for(i = 0; i<len; i++) {
-		value = obj[i];
-		if(iterator.call(context, value, i, obj)) { results.push(value); }
-	}
-	return results;
 };
 
 //
@@ -522,14 +506,14 @@ var Constraint = function(value, literal) {
 		return this;
 	};
 	proto.offChange = function(callback) {
-		each(this._change_listeners, function(listener) {
-			if(listener.callback === callback) {
+		for(var i = 0; i<this._change_listeners.length; i++) {
+			var listener = this._change_listeners[i];
+			if(listener === callback) {
 				constraint_solver.off_nullify(this, listener.on_nullify);
+				this._change_listeners.splice(i, 1);
+				i--;
 			}
-		});
-		this._change_listeners = filter(this._change_listeners, function(listener) {
-			return listener.callback !== callback;
-		});
+		}
 		return this;
 	};
 }(Constraint));
@@ -739,14 +723,12 @@ var ArrayConstraint = function(options) {
 		var i, len = options.value.length;
 		for(i = 0; i<len; i++) {
 			var val = options.value[i];
-			this._value.push(cjs.$(val, true));
+			this._value[i] = cjs.$(val, true);
 		}
 	}
 	this.$len = cjs.$(this._value.length);
 
 	this._equality_check = options.equals;
-
-	var self = this;
 
 	this._initialize_listeners();
 };
@@ -1018,30 +1000,38 @@ var MapConstraint = function(options) {
 		keys: [],
 		values: []
 	}, options);
+	each(options.value, function(v, k) {
+		options.keys.push(k);
+		options.values.push(v);
+	}, this);
 	this._equality_check = options.equals;
 	this._hash = isString(options.hash) ? get_str_hash_fn(options.hash) : options.hash;
 
 	this._values = {};
-	this._unsubstantiated_values = {};
-
 	this._ordered_values = [];
-
-	this.$keys = cjs.$(bind(this._do_get_keys, this));
-	this.$values = cjs.$(bind(this._do_get_values, this));
-	this.$entries = cjs.$(bind(this._do_get_entries, this));
-	this.$size = cjs.$(bind(this._do_get_size, this));
-
-	this._initialize_listeners();
-
-	cjs.wait();
-	each(options.value, function(v, k) {
-		this.put(k, v);
-	}, this);
+	var index = 0;
 	each(options.keys, function(k, i) {
 		var v = options.values[i];
-		this.put(k, v);
+		var info = { key: cjs.$(k, true), value: cjs.$(v, true), index: cjs.$(index, true) };
+		var hash = this._hash(k);
+		var hash_val = this._values[hash];
+		if(isArray(hash_val)) {
+			hash_val.push(info);
+		} else {
+			this._values[hash] = [info];
+		}
+		this._ordered_values[index] = info;
+		index++;
 	}, this);
-	cjs.signal();
+
+	this._unsubstantiated_values = {};
+
+	this.$keys = new Constraint(bind(this._do_get_keys, this));
+	this.$values = new Constraint(bind(this._do_get_values, this));
+	this.$entries = new Constraint(bind(this._do_get_entries, this));
+	this.$size = new Constraint(bind(this._do_get_size, this));
+
+	this._initialize_listeners();
 };
 
 (function(my) {
@@ -1095,7 +1085,7 @@ var MapConstraint = function(options) {
 			}
 
 			if(unsubstantiated_index < 0 && create_unsubstantiated === true) {
-				var unsubstantiated_info = { key: cjs.$(key), value: cjs.$(undefined, true), index: cjs.$(-1, true) };
+				var unsubstantiated_info = { key: cjs.$(key, true), value: cjs.$(undefined, true), index: cjs.$(-1, true) };
 				unsubstantiated_values.push(unsubstantiated_info);
 				unsubstantiated_index = unsubstantiated_values.length-1;
 			}
@@ -1138,7 +1128,7 @@ var MapConstraint = function(options) {
 				info.value.set(value, true);
 				info.index.set(index, true);
 			} else {
-				info = { key: cjs.$(key), value: cjs.$(value, true), index: cjs.$(index, true) };
+				info = { key: cjs.$(key, true), value: cjs.$(value, true), index: cjs.$(index, true) };
 			}
 
 			hash_values.push(info);
