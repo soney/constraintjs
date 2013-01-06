@@ -1410,6 +1410,59 @@ var MapConstraint = function(options) {
 cjs.map = function(arg0, arg1) { return new MapConstraint(arg0, arg1); };
 cjs.is_map = function(obj) { return obj instanceof MapConstraint; };
 cjs.MapConstraint = MapConstraint;
+
+var memoize_default_hash = function() {
+	var rv = "";
+	for(var i = 0; i<arguments.length; i++) {
+		rv += "" + arguments[i];
+	}
+	return rv;
+};
+var memoize_default_equals = function(args1, args2) {
+	if(args1.length === args2.length) {
+		for(var i = 0; i<args1.length; i++) {
+			var arg1 = args1[i],
+				arg2 = args2[i];
+			if(arg1 !== arg2) {
+				return false;
+			}
+		}
+		return true;
+	} else {
+		return false;
+	}
+};
+
+cjs.memoize = function(getter_fn, options) {
+	options = extend({
+		hash: memoize_default_hash,
+		equals: memoize_default_equals,
+		context: root
+	}, options);
+
+	var args_map = cjs.map({
+		hash: options.hash,
+		equals: options.equals
+	});
+
+	var context = options.context;
+	var rv = function() {
+		var args = arguments;
+		var constraint = args_map.get_or_put(args, function() {
+			return new cjs.Constraint(function() {
+				return getter_fn.apply(context, args)
+			});
+		});
+		return constraint.get();
+	};
+	rv.destroy = function() {
+		args_map.each(function(constraint) {
+			constraint.destroy();
+		}).destroy();
+	};
+	return rv;
+};
+
 if(__debug) { cjs._constraint_solver = constraint_solver; }
 
 return cjs;
