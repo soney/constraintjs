@@ -10,7 +10,7 @@ var old_cjs = root.cjs;
 var cjs = function (val) {
 	if(isArray(val)) {
 		return cjs.array({ value: val });
-	} else if(isObject(val) && !isElement(val)) {
+	} else if(isObject(val) && !isFunction(val) && !isElement(val)) {
 		return cjs.map({ value: val });
 	} else {
 		return cjs.$.apply(cjs, arguments);
@@ -211,8 +211,8 @@ var has = function(obj, key) {
 
 var constraint_solver = (function() {
 	var ConstraintNode = function(obj, options) {
-		this.outgoingEdges = [];
-		this.incomingEdges = [];
+		this.outgoingEdges = {};
+		this.incomingEdges = {};
 		this.nullificationListeners = [];
 		this.obj = obj;
 		this.valid = false;
@@ -242,11 +242,11 @@ var constraint_solver = (function() {
 			}
 		};
 
-		proto.addOutgoingEdge = function(edge) { this.outgoingEdges.push(edge); };
-		proto.addIncomingEdge = function(edge) { this.incomingEdges.push(edge); };
+		proto.addOutgoingEdge = function(edge) { this.outgoingEdges[edge.toNode.id] = edge; };
+		proto.addIncomingEdge = function(edge) { this.incomingEdges[edge.fromNode.id] = edge; };
 
-		proto.removeOutgoingEdge = function(edge) { remove(this.outgoingEdges, edge); };
-		proto.removeIncomingEdge = function(edge) { remove(this.incomingEdges, edge); };
+		proto.removeOutgoingEdge = function(edge) { delete this.outgoingEdges[edge.toNode.id] };
+		proto.removeIncomingEdge = function(edge) { delete this.incomingEdges[edge.fromNode.id]; };
 
 		proto.getOutgoing = function() { return this.outgoingEdges; };
 		proto.getIncoming = function() { return this.incomingEdges; };
@@ -263,12 +263,12 @@ var constraint_solver = (function() {
 
 		//Take out the incoming & outgoing edges
 		proto.destroy = function() {
-			this.incomingEdges.forEach(function(edge) {
+			each(this.incomingEdges, function(edge) {
 				var fromNode = edge.fromNode;
 				fromNode.removeOutgoingEdge(edge);
 			});
 
-			this.outgoingEdges.forEach(function(edge) {
+			each(this.outgoingEdges, function(edge) {
 				var toNode = edge.toNode;
 				toNode.removeIncomingEdge(edge);
 			});
@@ -279,14 +279,9 @@ var constraint_solver = (function() {
 		};
 
 		proto.getEdgeTo = function(toNode) {
-			var i = index_where(this.outgoingEdges, function(edge) {
-				return edge.toNode === toNode;
-			});
-
-			if(i < 0) { return null; }
-			else { return this.outgoingEdges[i]; }
+			return this.outgoingEdges[toNode.id];
 		};
-		proto.hasEdgeTo = function(toNode) { return this.getEdgeTo(toNode)!==null; };
+		proto.hasEdgeTo = function(toNode) { return has(this.outgoingEdges, toNode.id); };
 	}(ConstraintNode));
 
 	var ConstraintEdge = function(fromNode, toNode) {
@@ -319,10 +314,7 @@ var constraint_solver = (function() {
 			node.destroy();
 		};
 
-		proto.getNodeDependency = function(fromNode, toNode) { return this.getEdge(fromNode, toNode); };
 		proto.addNodeDependency = function(fromNode, toNode) { return this.addEdge(new ConstraintEdge(fromNode, toNode)); };
-
-		proto.removeNodeDependency = function(edge) { this.removeEdge(edge); };
 
 		proto.nullifyNode = function(node) {
 			var i, j, outgoingEdges;
@@ -339,8 +331,8 @@ var constraint_solver = (function() {
 					}
 
 					var outgoingEdges = curr_node.getOutgoing();
-					for(j = 0; j<outgoingEdges.length; j++) {
-						var outgoingEdge = outgoingEdges[j];
+					for(var toNodeID in outgoingEdges) {
+						var outgoingEdge = outgoingEdges[toNodeID];
 						var dependentNode = outgoingEdge.toNode;
 						if(outgoingEdge.timestamp < dependentNode.timestamp) {
 							this.removeEdge(outgoingEdge);
@@ -374,13 +366,13 @@ var constraint_solver = (function() {
 			var demanding_var = last(this.stack);
 
 			if(demanding_var) {
-				var dependency_edge = this.getNodeDependency(node, demanding_var);
+				var dependency_edge = this.getEdge(node, demanding_var);
 				if(!dependency_edge) {
 					if(node.options.auto_add_outgoing_dependencies && demanding_var.options.auto_add_incoming_dependencies) {
 						dependency_edge = this.addNodeDependency(node, demanding_var);
 					}
 				}
-				if(dependency_edge!==null) {
+				if(dependency_edge!==undefined) {
 					dependency_edge.timestamp = demanding_var.timestamp+1;
 				}
 			}
@@ -435,10 +427,8 @@ var constraint_solver = (function() {
 		};
 
 		proto.removeEdge = function(edge) {
-			if(edge!=null) {
-				edge.fromNode.removeOutgoingEdge(edge);
-				edge.toNode.removeIncomingEdge(edge);
-			}
+			edge.fromNode.removeOutgoingEdge(edge);
+			edge.toNode.removeIncomingEdge(edge);
 		};
 
 		proto.wait = function() {
@@ -470,17 +460,12 @@ var Constraint = function(value, literal) {
 	var node = constraint_solver.add(this);
 	this.value = value;
 	this.literal = literal === true;
-	this._equality_check = eqeqeq;
-	this.invalidate = function() {
-		constraint_solver.nullifyNode(node);
-	};
 	this._change_listeners = [];
 };
 
 (function(my) {
 	var proto = my.prototype;
 	proto.destroy = function() { constraint_solver.removeObject(this); };
-	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
 	proto.cjs_getter = function() {
 		if(has(this, "value")) {
 			if(isFunction(this.value) && !this.literal){
@@ -516,6 +501,9 @@ var Constraint = function(value, literal) {
 		}
 		return this;
 	};
+	proto.invalidate = function() {
+		constraint_solver.nullifyNode(constraint_solver.getNode(this));
+	};
 }(Constraint));
 cjs.Constraint = Constraint;
 
@@ -526,6 +514,8 @@ var SettableConstraint = function() {
 (function(my) {
 	proto_extend(my, Constraint);
 	var proto = my.prototype;
+	proto.get_equality_check = function() { return this._equality_check || eqeqeq; }
+	proto.set_equality_check = function(equality_check) { this._equality_check = equality_check; return this; };
 	proto.set = function(value, literal) {
 		var was_literal = this.literal;
 		var old_value = this.value;
@@ -533,7 +523,7 @@ var SettableConstraint = function() {
 		this.literal = literal === true;
 		this.value = value;
 		
-		if(!this._equality_check(was_literal, this.literal) || !this._equality_check(old_value !== this.value)) {
+		if(was_literal !== this.literal || !this.get_equality_check()(old_value, this.value)) {
 			this.invalidate();
 		}
 		return this;
@@ -723,10 +713,10 @@ var ArrayConstraint = function(options) {
 		var i, len = options.value.length;
 		for(i = 0; i<len; i++) {
 			var val = options.value[i];
-			this._value[i] = cjs.$(val, true);
+			this._value[i] = new SettableConstraint(val, true);
 		}
 	}
-	this.$len = cjs.$(this._value.length);
+	this.$len = new SettableConstraint(this._value.length);
 
 	this._equality_check = options.equals;
 
@@ -768,7 +758,7 @@ var ArrayConstraint = function(options) {
 		if(val === undefined) {
 			// Create a dependency so that if the value for this key changes
 			// later on, we can detect it in the constraint solver
-			val = cjs.$(undefined);
+			val = new SettableConstraint(undefined);
 			this._unsubstantiated_items[key] = val;
 		}
 		return val.get();
@@ -787,7 +777,7 @@ var ArrayConstraint = function(options) {
 			$previous_value.set(val, true);
 			this._queued_events.push([value_change_event_str, val, key, prev_val]);
 		} else {
-			this._value[key] = cjs.$(val, true);
+			this._value[key] = new SettableConstraint(val, true);
 			this._queued_events.push([add_event_str, val, key]);
 		}
 		this._update_len();
@@ -1012,7 +1002,7 @@ var MapConstraint = function(options) {
 	var index = 0;
 	each(options.keys, function(k, i) {
 		var v = options.values[i];
-		var info = { key: cjs.$(k, true), value: cjs.$(v, true), index: cjs.$(index, true) };
+		var info = { key: new SettableConstraint(k, true), value: new SettableConstraint(v, true), index: new SettableConstraint(index, true) };
 		var hash = this._hash(k);
 		var hash_val = this._values[hash];
 		if(isArray(hash_val)) {
@@ -1085,7 +1075,7 @@ var MapConstraint = function(options) {
 			}
 
 			if(unsubstantiated_index < 0 && create_unsubstantiated === true) {
-				var unsubstantiated_info = { key: cjs.$(key, true), value: cjs.$(undefined, true), index: cjs.$(-1, true) };
+				var unsubstantiated_info = { key: new SettableConstraint(key, true), value: new SettableConstraint(undefined, true), index: new SettableConstraint(-1, true) };
 				unsubstantiated_values.push(unsubstantiated_info);
 				unsubstantiated_index = unsubstantiated_values.length-1;
 			}
@@ -1128,7 +1118,7 @@ var MapConstraint = function(options) {
 				info.value.set(value, true);
 				info.index.set(index, true);
 			} else {
-				info = { key: cjs.$(key, true), value: cjs.$(value, true), index: cjs.$(index, true) };
+				info = { key: new SettableConstraint(key, true), value: new SettableConstraint(value, true), index: new SettableConstraint(index, true) };
 			}
 
 			hash_values.push(info);
@@ -1449,7 +1439,7 @@ cjs.memoize = function(getter_fn, options) {
 	var rv = function() {
 		var args = arguments;
 		var constraint = args_map.get_or_put(args, function() {
-			return new cjs.Constraint(function() {
+			return new Constraint(function() {
 				return getter_fn.apply(context, args)
 			});
 		});
