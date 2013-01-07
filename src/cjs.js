@@ -344,7 +344,7 @@ var constraint_solver = (function() {
 					}
 				}
 			}
-			if(this.semaphore >= 0) {
+			if(this.semaphore >= 0 && this.nullified_call_stack.length > 0) {
 				this.run_nullified_listeners();
 			}
 		};
@@ -436,7 +436,7 @@ var constraint_solver = (function() {
 		};
 		proto.signal = function() {
 			this.semaphore++;
-			if(this.semaphore >= 0) {
+			if(this.semaphore >= 0 && this.nullified_call_stack.length > 0) {
 				this.run_nullified_listeners();
 			}
 		};
@@ -620,7 +620,7 @@ cjs.liven = function(func, options) {
 		constraint_solver.nullified_call_stack.push(do_get);
 		//if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
 
-		if(constraint_solver.semaphore >= 0) {
+		if(constraint_solver.semaphore >= 0 && constraint_solver.nullified_call_stack.length > 0) {
 			constraint_solver.run_nullified_listeners();
 		}
 	}
