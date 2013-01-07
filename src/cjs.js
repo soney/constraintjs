@@ -1,5 +1,5 @@
 var cjs = (function (root) {
-var __debug = true;
+//var __debug = true;
 
 //
 // ============== CJS CORE ============== 
@@ -293,7 +293,7 @@ var constraint_solver = (function() {
 	var ConstraintSolver = function() {
 		this.stack = [];
 		this.nullified_call_stack = [];
-		if(__debug) { this.nullified_reasons = []; }
+		//if(__debug) { this.nullified_reasons = []; }
 		this.running_nullified_listeners = false;
 		this.semaphore = 0;
 	};
@@ -325,10 +325,11 @@ var constraint_solver = (function() {
 					curr_node.mark_invalid();
 
 					var nullification_listeners = this.get_nullification_listeners(curr_node);
+					each(nullification_listeners, function(nl) {
+						nl.__in_cjs_call_stack__ = true;
+					});
 					this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
-					if(__debug) {
-						this.nullified_reasons.push.apply(this.nullified_reasons, map(nullification_listeners, function() { return curr_node; }));
-					}
+					//if(__debug) { this.nullified_reasons.push.apply(this.nullified_reasons, map(nullification_listeners, function() { return curr_node; })); }
 
 					var outgoingEdges = curr_node.getOutgoing();
 					for(var toNodeID in outgoingEdges) {
@@ -352,8 +353,9 @@ var constraint_solver = (function() {
 			if(!this.running_nullified_listeners) {
 				this.running_nullified_listeners = true;
 				while(this.nullified_call_stack.length > 0) {
-					var nullified_callback = this.nullified_call_stack.pop();
-					if(__debug) { var nullified_reason = this.nullified_reasons.pop(); }
+					var nullified_callback = this.nullified_call_stack.shift();
+					delete nullified_callback.__in_cjs_call_stack__;
+					//if(__debug) { var nullified_reason = this.nullified_reasons.shift(); }
 					nullified_callback();
 				}
 				this.running_nullified_listeners = false;
@@ -401,14 +403,12 @@ var constraint_solver = (function() {
 		proto.off_nullify = function(arg0, callback) {
 			var node = arg0 instanceof ConstraintNode ? arg0 : this.getNode(arg0);
 			node.offNullify(callback);
-			do {
+
+			if(callback.__in_cjs_call_stack__) {
+				delete nullified_callback.__in_cjs_call_stack__;
 				ri = remove(this.nullified_call_stack, callback);
-				if(__debug) {
-					if(ri >= 0) {
-						this.nullified_reasons.splice(ri, 1);
-					}
-				}
-			} while (ri >= 0);
+				//if(__debug && ri >= 0) { this.nullified_reasons.splice(ri, 1); }
+			}
 		};
 
 		proto.get_nullification_listeners = function(arg0) {
@@ -616,8 +616,9 @@ cjs.liven = function(func, options) {
 
 	constraint_solver.on_nullify(node, do_get);
 	if(options.run_on_create !== false) {
+		do_get.__in_cjs_call_stack__ = true;
 		constraint_solver.nullified_call_stack.push(do_get);
-		if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
+		//if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
 
 		if(constraint_solver.semaphore >= 0) {
 			constraint_solver.run_nullified_listeners();
@@ -1453,7 +1454,7 @@ cjs.memoize = function(getter_fn, options) {
 	return rv;
 };
 
-if(__debug) { cjs._constraint_solver = constraint_solver; }
+//if(__debug) { cjs._constraint_solver = constraint_solver; }
 
 return cjs;
 }(this));
