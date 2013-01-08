@@ -671,6 +671,7 @@ var get_categorical_listeners = function(proto, events) {
 
 	proto.wait = function() {
 		this._semaphore--;
+		return this;
 	};
 
 	proto.signal = function() {
@@ -680,6 +681,7 @@ var get_categorical_listeners = function(proto, events) {
 			this._run_listeners();
 			this.__running_listeners = false;
 		}
+		return this;
 	};
 
 	proto._run_listeners = function() {
