@@ -1284,6 +1284,10 @@ var MapConstraint = function(options) {
 		this._equality_check = equality_check;
 		return this;
 	};
+	proto.set_hash = function(hash) {
+		this._hash = isString(hash) ? get_str_hash_fn(hash) : hash;
+		return this;
+	};
 	proto.item = function(arg0, arg1, arg2) {
 		if(arguments.length === 1) {
 			return this.get(arg0);
