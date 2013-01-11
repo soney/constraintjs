@@ -796,6 +796,7 @@ var ArrayConstraint = function(options) {
 		}
 	};
 	proto.destroy = function() {
+		console.log("DESTROY", this, this.$len.__cjs_cs_node__.id);
 		this.$len.destroy();
 	};
 	proto.length = function() {
@@ -988,7 +989,9 @@ var get_str_hash_fn = function(prop_name) {
 var MapConstraint = function(options) {
 	options = extend({
 		hash: defaulthash,
+		valuehash: false,
 		equals: eqeqeq,
+		valueequals: eqeqeq,
 		value: {},
 		keys: [],
 		values: []
@@ -998,21 +1001,48 @@ var MapConstraint = function(options) {
 		options.values.push(v);
 	}, this);
 	this._equality_check = options.equals;
+	this._vequality_check = options.valueequals;
 	this._hash = isString(options.hash) ? get_str_hash_fn(options.hash) : options.hash;
 
-	this._values = {};
+
+	this._khash = {};
+	if(options.valuehash) {
+		this._vhash = {};
+		if(isFunction(options.valuehash)) {
+			this._valuehash = options.valuehash;
+		} else if(isString(options.valuehash)) {
+			this._valuehash = get_str_hash_fn(options.valuehash);
+		} else {
+			this._valuehash = defaulthash;
+		}
+	} else {
+		this._vhash = false;
+	}
+
 	this._ordered_values = [];
 	var index = 0;
 	each(options.keys, function(k, i) {
 		var v = options.values[i];
 		var info = { key: new SettableConstraint(k, true), value: new SettableConstraint(v, true), index: new SettableConstraint(index, true) };
 		var hash = this._hash(k);
-		var hash_val = this._values[hash];
-		if(isArray(hash_val)) {
+		var hash_val = this._khash[hash];
+
+		if(hash_val) {
 			hash_val.push(info);
 		} else {
-			this._values[hash] = [info];
+			this._khash[hash] = [info];
 		}
+
+		if(this._vhash) {
+			var value_hash = this._valuehash(v);
+			var vhash_val = this._vhash[value_hash];
+			if(vhash_val) {
+				vhash_val.push(info);
+			} else {
+				this._vhash[value_hash] = [info];
+			}
+		}
+
 		this._ordered_values[index] = info;
 		index++;
 	}, this);
@@ -1059,7 +1089,7 @@ var MapConstraint = function(options) {
 					return eq(a.key.get(), key);
 				};
 
-		var hash_values = this._values[hash];
+		var hash_values = this._khash[hash];
 		if(isArray(hash_values)) {
 			var key_index = index_where(hash_values, index_where_fn);
 			rv.hv = hash_values;
@@ -1092,13 +1122,40 @@ var MapConstraint = function(options) {
 			hash_values = ki.hv,
 			hash = ki.h;
 		if(!hash_values) {
-			hash_values = this._values[hash] = [];
+			hash_values = this._khash[hash] = [];
 		}
 
 		var info;
 		if(key_index >= 0) {
 			info = hash_values[key_index];
 			var old_value = info.value.get();
+
+			if(this._vhash) {
+				var old_value_hash = this._valuehash(old_value);
+				var value_hash = this._valuehash(value);
+				var old_vhash_val = this._vhash[old_value_hash];
+				var vhash_val = this._vhash[value_hash];
+
+				if(old_vhash_val) {
+					var len = old_vhash_val.length;
+					for(var i = 0; i<len; i++) {
+						if(old_vhash_val[i] === info) {
+							old_vhash_val.splice(i, 1);
+							break;
+						}
+					}
+					if(old_vhash_val.length === 0) {
+						delete this._vhash[old_value_hash];
+					}
+				}
+
+				if(vhash_val) {
+					vhash_val.push(info);
+				} else {
+					this._vhash[value_hash] = [info];
+				}
+			}
+
 			info.value.set(value, true);
 			if(ignore_events !== true) {
 				this._queued_events.push([value_change_event_str, info.value, info.key, old_value, info.index]);
@@ -1125,6 +1182,17 @@ var MapConstraint = function(options) {
 			}
 
 			hash_values.push(info);
+
+			if(this._vhash) {
+				var value_hash = this._valuehash(value);
+				var vhash_val = this._vhash[value_hash];
+				if(vhash_val) {
+					vhash_val.push(info);
+				} else {
+					this._vhash[value_hash] = [info];
+				}
+			}
+
 			this._ordered_values.splice(index, 0, info);
 
 			if(ignore_events !== true) {
@@ -1135,9 +1203,9 @@ var MapConstraint = function(options) {
 			}
 			this.$size.invalidate();
 			this.$keys.invalidate();
-			this.$values.invalidate();
-			this.$entries.invalidate();
 		}
+		this.$values.invalidate();
+		this.$entries.invalidate();
 	};
 
 	proto._set_index = function(info, to_index, ignore_events) {
@@ -1185,6 +1253,23 @@ var MapConstraint = function(options) {
 				delete hash_values[key_index]
 			}
 
+			if(this._vhash) {
+				var value_hash = this._valuehash(info.value.get());
+				var vhash_val = this._vhash[value_hash];
+				if(vhash_val) {
+					var len = vhash_val.length;
+					for(var i = 0; i<len; i++) {
+						if(vhash_val[i] === info) {
+							vhash_val.splice(i, 1);
+							break;
+						}
+					}
+					if(vhash_val.length === 0) {
+						delete this._vhash[value_hash];
+					}
+				}
+			}
+
 			this._remove_index(ordered_index);
 			for(var i = ordered_index; i<this._ordered_values.length; i++) {
 				this._set_index(this._ordered_values[i], i);
@@ -1227,8 +1312,11 @@ var MapConstraint = function(options) {
 			while(this._ordered_values.length > 0) {
 				this._remove_index(0);
 			}
-			each(this._values, function(arr, hash) {
-				delete this._values[hash];
+			each(this._khash, function(arr, hash) {
+				delete this._khash[hash];
+			}, this);
+			if(this._vhash, function(arr, hash) {
+				delete this._vhash[hash];
 			}, this);
 
 			this.$keys.invalidate();
@@ -1333,15 +1421,29 @@ var MapConstraint = function(options) {
 		return key_index >= 0;
 	};
 	proto.containsValue = function(value, eq_check) {
-		eq_check = eq_check || eqeqeq;
-		var rv = false;
-		this.each(function(v, k) {
-			if(eq_check(value, v)) {
-				rv = true;
-				return false;
+		eq_check = eq_check || this._vequality_check;
+		if(this._vhash) {
+			var value_hash = this._valuehash(value);
+			var vhash_val = this._vhash[value_hash];
+			if(vhash_val) {
+				var len = vhash_val.length;
+				for(var i = 0; i<len; i++) {
+					if(eq_check(vhash_val[i], info)) {
+						return true;
+					}
+				}
 			}
-		});
-		return rv;
+			return false;
+		} else {
+			var rv = false;
+			this.each(function(v, k) {
+				if(eq_check(value, v)) {
+					rv = true;
+					return false;
+				}
+			});
+			return rv;
+		}
 	};
 	proto.move_index = function(old_index, new_index) {
 		cjs.wait();
@@ -1373,15 +1475,30 @@ var MapConstraint = function(options) {
 		return this;
 	};
 	proto.keyForValue = function(value, eq_check) {
-		eq_check = eq_check || eqeqeq;
-		var key;
-		this.each(function(v, k) {
-			if(eq_check(value, v)) {
-				key = k;
-				return false;
+		eq_check = eq_check || this._vequality_check;
+		if(this._vhash) {
+			var value_hash = this._valuehash(value);
+			var vhash_val = this._vhash[value_hash];
+			if(vhash_val) {
+				var len = vhash_val.length;
+				for(var i = 0; i<len; i++) {
+					var info = vhash_val[i];
+					if(eq_check(info.value.get(), value)) {
+						return info.key.get();
+					}
+				}
 			}
-		});
-		return key;
+			return undefined;
+		} else {
+			var key;
+			this.each(function(v, k) {
+				if(eq_check(value, v)) {
+					key = k;
+					return false;
+				}
+			});
+			return key;
+		}
 	};
 	proto.isEmpty = function() {
 		return this.size() === 0;
