@@ -796,7 +796,6 @@ var ArrayConstraint = function(options) {
 		}
 	};
 	proto.destroy = function() {
-		console.log("DESTROY", this, this.$len.__cjs_cs_node__.id);
 		this.$len.destroy();
 	};
 	proto.length = function() {
