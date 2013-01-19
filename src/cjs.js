@@ -456,8 +456,8 @@ cjs.signal = function() {
 // ============== CORE CONSTRAINTS ============== 
 //
 
-var Constraint = function(value, literal) {
-	var node = constraint_solver.add(this);
+var Constraint = function(value, literal, options) {
+	var node = constraint_solver.add(this, options);
 	this.value = value;
 	this.literal = literal === true;
 	this._change_listeners = [];
