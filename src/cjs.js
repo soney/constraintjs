@@ -476,7 +476,7 @@ var Constraint = function(value, literal, options) {
 		}
 		return undefined;
 	};
-	proto.get = function() { return constraint_solver.getValue(this); };
+	proto.get = proto.update = function() { return constraint_solver.getValue(this); };
 	proto.onChange = function(callback) {
 		var self = this;
 		var listener = {
