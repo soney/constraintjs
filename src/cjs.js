@@ -1420,7 +1420,13 @@ var MapConstraint = function(options) {
 	proto.has = proto.containsKey = function(key) {
 		var ki = this._find_key(key, true, true);
 		var key_index = ki.i;
-		return key_index >= 0;
+		if(key_index >= 0) {
+			return true;
+		} else {
+			var unsubstantiated_info = ki.uhv[ki.ui]; 
+			unsubstantiated_info.value.update(); // Add a dependency
+			return false;
+		}
 	};
 	proto.containsValue = function(value, eq_check) {
 		eq_check = eq_check || this._vequality_check;
