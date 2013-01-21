@@ -263,6 +263,7 @@ var constraint_solver = (function() {
 
 		//Take out the incoming & outgoing edges
 		proto.destroy = function() {
+			cjs.wait();
 			each(this.incomingEdges, function(edge) {
 				var fromNode = edge.fromNode;
 				fromNode.removeOutgoingEdge(edge);
@@ -270,12 +271,14 @@ var constraint_solver = (function() {
 
 			each(this.outgoingEdges, function(edge) {
 				var toNode = edge.toNode;
+				constraint_solver.nullifyNode(toNode);
 				toNode.removeIncomingEdge(edge);
 			});
 
 			clear(this.incomingEdges);
 			clear(this.outgoingEdges);
 			delete this.obj.__cjs_cs_node__;
+			cjs.signal();
 		};
 
 		proto.getEdgeTo = function(toNode) {
