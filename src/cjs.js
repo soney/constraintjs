@@ -1,5 +1,5 @@
 var cjs = (function (root) {
-//var __debug = true;
+var __debug = true;
 
 //
 // ============== CJS CORE ============== 
@@ -227,6 +227,7 @@ var constraint_solver = (function() {
 		this.obj.__cjs_cs_node__ = this;
 		this.timestamp = 0;
 		this.id = uniqueId();
+		//if(this.id == 296) debugger;
 	};
 	(function(my) {
 		var proto = my.prototype;
@@ -296,7 +297,7 @@ var constraint_solver = (function() {
 	var ConstraintSolver = function() {
 		this.stack = [];
 		this.nullified_call_stack = [];
-		//if(__debug) { this.nullified_reasons = []; }
+		if(__debug) { this.nullified_reasons = []; }
 		this.running_nullified_listeners = false;
 		this.semaphore = 0;
 	};
@@ -305,7 +306,25 @@ var constraint_solver = (function() {
 
 		proto.getNode = function(obj) { return obj.__cjs_cs_node__ || null; };
 		proto.hasNode = function(obj) { return this.getNode(obj)!==null; };
-		proto.add = function(obj, options) { return this.getNode(obj) || new ConstraintNode(obj, options); };
+		proto.add = function(obj, options) {
+			return this.getNode(obj) || new ConstraintNode(obj, options);
+			var node = new ConstraintNode(obj, options);
+
+			var demanding_var = last(this.stack);
+
+			if(demanding_var) {
+				var dependency_edge = this.getEdge(node, demanding_var);
+				if(!dependency_edge) {
+					if(node.options.auto_add_outgoing_dependencies && demanding_var.options.auto_add_incoming_dependencies) {
+						dependency_edge = this.addNodeDependency(node, demanding_var);
+					}
+				}
+				if(dependency_edge!==undefined) {
+					dependency_edge.timestamp = demanding_var.timestamp+1;
+				}
+			}
+			return node;
+		};
 
 		proto.removeObject = function(obj) {
 			var node = this.getNode(obj);
@@ -317,14 +336,18 @@ var constraint_solver = (function() {
 			node.destroy();
 		};
 
-		proto.addNodeDependency = function(fromNode, toNode) { return this.addEdge(new ConstraintEdge(fromNode, toNode)); };
+		proto.addNodeDependency = function(fromNode, toNode) {
+			return this.addEdge(new ConstraintEdge(fromNode, toNode));
+		};
 
 		proto.nullifyNode = function(node) {
 			var i, j, outgoingEdges;
 			var to_nullify = [node];
+			var to_nullify_len = 1;
 			for(i = 0; i<to_nullify.length; i++) {
 				var curr_node = to_nullify[i];
 				if(curr_node.is_valid()) {
+					if(curr_node.id == 208) debugger;
 					curr_node.mark_invalid();
 
 					var nullification_listeners = this.get_nullification_listeners(curr_node);
@@ -332,7 +355,7 @@ var constraint_solver = (function() {
 						nl.__in_cjs_call_stack__ = true;
 					});
 					this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
-					//if(__debug) { this.nullified_reasons.push.apply(this.nullified_reasons, map(nullification_listeners, function() { return curr_node; })); }
+					if(__debug) { this.nullified_reasons.push.apply(this.nullified_reasons, map(nullification_listeners, function() { return curr_node; })); }
 
 					var outgoingEdges = curr_node.getOutgoing();
 					for(var toNodeID in outgoingEdges) {
@@ -342,7 +365,7 @@ var constraint_solver = (function() {
 							this.removeEdge(outgoingEdge);
 							j--;
 						} else {
-							to_nullify.push(dependentNode);
+							to_nullify[to_nullify_len++] = dependentNode;
 						}
 					}
 				}
@@ -358,7 +381,7 @@ var constraint_solver = (function() {
 				while(this.nullified_call_stack.length > 0) {
 					var nullified_callback = this.nullified_call_stack.shift();
 					delete nullified_callback.__in_cjs_call_stack__;
-					//if(__debug) { var nullified_reason = this.nullified_reasons.shift(); }
+					if(__debug) { var nullified_reason = this.nullified_reasons.shift(); }
 					nullified_callback();
 				}
 				this.running_nullified_listeners = false;
@@ -410,7 +433,7 @@ var constraint_solver = (function() {
 			if(callback.__in_cjs_call_stack__) {
 				delete nullified_callback.__in_cjs_call_stack__;
 				ri = remove(this.nullified_call_stack, callback);
-				//if(__debug && ri >= 0) { this.nullified_reasons.splice(ri, 1); }
+				if(__debug && ri >= 0) { this.nullified_reasons.splice(ri, 1); }
 			}
 		};
 
@@ -621,19 +644,23 @@ cjs.liven = function(func, options) {
 	if(options.run_on_create !== false) {
 		do_get.__in_cjs_call_stack__ = true;
 		constraint_solver.nullified_call_stack.push(do_get);
-		//if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
+		if(__debug) { constraint_solver.nullified_reasons.push("liven start"); }
 
 		if(constraint_solver.semaphore >= 0 && constraint_solver.nullified_call_stack.length > 0) {
 			constraint_solver.run_nullified_listeners();
 		}
 	}
 
-	return {
+	var rv = {
 		destroy: destroy
 		, pause: pause
 		, resume: resume
 		, run: run
 	};
+	if(__debug) {
+		rv.node = node;
+	}
+	return rv;
 };
 
 var get_categorical_listeners = function(proto, events) {
@@ -1399,7 +1426,7 @@ var MapConstraint = function(options) {
 		}
 	};
 	proto.get_or_put = function(key, create_fn, create_fn_context, index) {
-		var ki = this._find_key(key, false, false);
+		var ki = this._find_key(key, true, false);
 		var key_index = ki.i,
 			hash_values = ki.hv,
 			hash = ki.h;
