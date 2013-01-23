@@ -227,7 +227,6 @@ var constraint_solver = (function() {
 		this.obj.__cjs_cs_node__ = this;
 		this.timestamp = 0;
 		this.id = uniqueId();
-		//if(this.id == 296) debugger;
 	};
 	(function(my) {
 		var proto = my.prototype;
@@ -347,7 +346,6 @@ var constraint_solver = (function() {
 			for(i = 0; i<to_nullify.length; i++) {
 				var curr_node = to_nullify[i];
 				if(curr_node.is_valid()) {
-					if(curr_node.id == 208) debugger;
 					curr_node.mark_invalid();
 
 					var nullification_listeners = this.get_nullification_listeners(curr_node);
@@ -421,13 +419,11 @@ var constraint_solver = (function() {
 		};
 		proto.doEval = function(obj) { return this.doEvalNode(this.getNode(obj)); };
 
-		proto.on_nullify = function(arg0, callback) {
-			var node = arg0 instanceof ConstraintNode ? arg0 : this.getNode(arg0);
+		proto.on_nullify = function(node, callback) {
 			node.onNullify(callback);
 		};
 
-		proto.off_nullify = function(arg0, callback) {
-			var node = arg0 instanceof ConstraintNode ? arg0 : this.getNode(arg0);
+		proto.off_nullify = function(node, callback) {
 			node.offNullify(callback);
 
 			if(callback.__in_cjs_call_stack__) {
@@ -511,8 +507,8 @@ var Constraint = function(value, literal, options) {
 				callback(self.get());
 			}
 		};
-		constraint_solver.on_nullify(this, listener.on_nullify);
-		this.get();
+		var node = constraint_solver.getNode(this);
+		constraint_solver.on_nullify(node, listener.on_nullify);
 		this._change_listeners.push(listener);
 		return this;
 	};
@@ -520,7 +516,8 @@ var Constraint = function(value, literal, options) {
 		for(var i = 0; i<this._change_listeners.length; i++) {
 			var listener = this._change_listeners[i];
 			if(listener === callback) {
-				constraint_solver.off_nullify(this, listener.on_nullify);
+				var node = constraint_solver.getNode(this);
+				constraint_solver.off_nullify(node, listener.on_nullify);
 				this._change_listeners.splice(i, 1);
 				i--;
 			}
