@@ -307,6 +307,7 @@ var constraint_solver = (function() {
 		proto.hasNode = function(obj) { return this.getNode(obj)!==null; };
 		proto.add = function(obj, options) {
 			return this.getNode(obj) || new ConstraintNode(obj, options);
+			/*
 			var node = new ConstraintNode(obj, options);
 
 			var demanding_var = last(this.stack);
@@ -323,6 +324,7 @@ var constraint_solver = (function() {
 				}
 			}
 			return node;
+			*/
 		};
 
 		proto.removeObject = function(obj) {
@@ -559,12 +561,10 @@ cjs.is_constraint = cjs.is_$ = function(obj) {
 };
 
 cjs.get = function(obj, recursive) {
-	if(cjs.is_$(obj) || obj instanceof ArrayConstraint) {
-		if(recursive === true) {
-			return cjs.get(obj.get(), true);
-		} else {
-			return obj.get();
-		}
+	if(cjs.is_$(obj)) {
+		return cjs.get(obj.get(), recursive);
+	} else if(cjs.is_array(obj)) {
+		return obj.toArray();
 	} else {
 		if(recursive === true && isArray(obj)) {
 			return map(obj, function(x) { return cjs.get(x, true); });
