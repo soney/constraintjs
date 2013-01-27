@@ -1403,7 +1403,7 @@ var MapConstraint = function(options) {
 	};
 	proto.each_key = function(func, context) {
 		context = context || root;
-		var i, len = this._ordered_values.length;
+		var i, len = this.size();
 		for(i=0; i<len; i++) {
 			var info = this._ordered_values[i];
 			if(info) {
@@ -1416,7 +1416,7 @@ var MapConstraint = function(options) {
 	};
 	proto.each = function(func, context) {
 		context = context || root;
-		var i, len = this._ordered_values.length;
+		var i, len = this.size();
 		for(i=0; i<len; i++) {
 			var info = this._ordered_values[i];
 			if(info) {
