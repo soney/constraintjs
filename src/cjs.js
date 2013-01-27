@@ -220,7 +220,9 @@ var constraint_solver = (function() {
 		this.options = extend({
 									auto_add_outgoing_dependencies: true,
 									auto_add_incoming_dependencies: true,
-									cache_value: true
+									cache_value: true,
+									check_on_nullify: false
+								//	equals: eqeqeq
 								},
 								options);
 		
@@ -342,34 +344,52 @@ var constraint_solver = (function() {
 		};
 
 		proto.nullifyNode = function(node) {
+			if(this._is_nullifying === true) {
+				throw new Error("Already nullifying");
+			}
+			this._is_nullifying = true;
 			var i, j, outgoingEdges;
 			var to_nullify = [node];
-			var to_nullify_len = 1;
+			var to_nullify_len = 1, invalid;
 			for(i = 0; i<to_nullify.length; i++) {
 				var curr_node = to_nullify[i];
+
 				if(curr_node.is_valid()) {
 					curr_node.mark_invalid();
+					invalid = true;
+					if(curr_node.options.cache_value === true && curr_node.options.check_on_nullify === true) {
+						var equals = curr_node.options.equals || eqeqeq;
+						var old_value = curr_node.value;
+						var new_value = this.getNodeValue(curr_node);
 
-					var nullification_listeners = this.get_nullification_listeners(curr_node);
-					each(nullification_listeners, function(nl) {
-						nl.__in_cjs_call_stack__ = true;
-					});
-					this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
-					if(__debug) { this.nullified_reasons.push.apply(this.nullified_reasons, map(nullification_listeners, function() { return curr_node; })); }
+						if(equals(old_value, new_value)) {
+							invalid = false;
+						}
+					}
 
-					var outgoingEdges = curr_node.getOutgoing();
-					for(var toNodeID in outgoingEdges) {
-						var outgoingEdge = outgoingEdges[toNodeID];
-						var dependentNode = outgoingEdge.toNode;
-						if(outgoingEdge.timestamp < dependentNode.timestamp) {
-							this.removeEdge(outgoingEdge);
-							j--;
-						} else {
-							to_nullify[to_nullify_len++] = dependentNode;
+					if(invalid) {
+						var nullification_listeners = this.get_nullification_listeners(curr_node);
+						each(nullification_listeners, function(nl) {
+							nl.__in_cjs_call_stack__ = true;
+						});
+						this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
+						if(__debug) { this.nullified_reasons.push.apply(this.nullified_reasons, map(nullification_listeners, function() { return curr_node; })); }
+
+						var outgoingEdges = curr_node.getOutgoing();
+						for(var toNodeID in outgoingEdges) {
+							var outgoingEdge = outgoingEdges[toNodeID];
+							var dependentNode = outgoingEdge.toNode;
+							if(outgoingEdge.timestamp < dependentNode.timestamp) {
+								this.removeEdge(outgoingEdge);
+								j--;
+							} else {
+								to_nullify[to_nullify_len++] = dependentNode;
+							}
 						}
 					}
 				}
 			}
+			delete this._is_nullifying;
 			if(this.semaphore >= 0 && this.nullified_call_stack.length > 0) {
 				this.run_nullified_listeners();
 			}
@@ -574,8 +594,8 @@ cjs.get = function(obj, recursive) {
 	}
 };
 
-cjs.$ = function(arg0, arg1) {
-	return new SettableConstraint(arg0, arg1);
+cjs.$ = function(arg0, arg1, arg2) {
+	return new SettableConstraint(arg0, arg1, arg2);
 };
 
 cjs.$.extend = function(arg0, arg1) {
@@ -1380,6 +1400,19 @@ var MapConstraint = function(options) {
 			rv.push({key: key, value: value});
 		});
 		return rv;
+	};
+	proto.each_key = function(func, context) {
+		context = context || root;
+		var i, len = this._ordered_values.length;
+		for(i=0; i<len; i++) {
+			var info = this._ordered_values[i];
+			if(info) {
+				if(func.call(context, info.key.get()) === false) {
+					break;
+				}
+			}
+		}
+		return this;
 	};
 	proto.each = function(func, context) {
 		context = context || root;
