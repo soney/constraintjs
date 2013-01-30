@@ -215,16 +215,18 @@ var constraint_solver = (function() {
 		this.incomingEdges = {};
 		this.nullificationListeners = [];
 		this.obj = obj;
-		this.valid = false;
 
 		this.options = extend({
 									auto_add_outgoing_dependencies: true,
 									auto_add_incoming_dependencies: true,
 									cache_value: true,
-									check_on_nullify: false
-								//	equals: eqeqeq
+									check_on_nullify: false //,
+								//	equals: eqeqeq,
+								//	start_valid: true
 								},
 								options);
+
+		this.valid = this.options.start_valid === true;
 		
 		this.obj.__cjs_cs_node__ = this;
 		this.timestamp = 0;
