@@ -217,12 +217,12 @@ var constraint_solver = (function() {
 		this.obj = obj;
 
 		this.options = extend({
-									auto_add_outgoing_dependencies: true,
-									auto_add_incoming_dependencies: true,
-									cache_value: true,
-									check_on_nullify: false //,
-								//	equals: eqeqeq,
-								//	start_valid: true
+									//start_valid: true,
+									//cache_value: true,
+									//equals: eqeqeq,
+									//auto_add_outgoing_dependencies: true,
+									//auto_add_incoming_dependencies: true,
+									//check_on_nullify: false
 								},
 								options);
 
@@ -239,11 +239,14 @@ var constraint_solver = (function() {
 		proto.mark_valid = function() { this.valid = true; };
 		proto.is_valid = function() { return this.valid; };
 		proto.update_value = function() {
-			if(this.options.cache_value) {
+			if(this.options.cache_value !== false) {
 				this.value = this.cs_eval();
 			} else {
 				this.cs_eval();
 			}
+		};
+		proto.setOption = function(key, value) {
+			this.options[key] = value;
 		};
 
 		proto.addOutgoingEdge = function(edge) { this.outgoingEdges[edge.toNode.id] = edge; };
@@ -359,7 +362,7 @@ var constraint_solver = (function() {
 				if(curr_node.is_valid()) {
 					curr_node.mark_invalid();
 					invalid = true;
-					if(curr_node.options.cache_value === true && curr_node.options.check_on_nullify === true) {
+					if(curr_node.options.cache_value !== false && curr_node.options.check_on_nullify === true) {
 						var equals = curr_node.options.equals || eqeqeq;
 						var old_value = curr_node.value;
 						var new_value = this.getNodeValue(curr_node);
@@ -418,7 +421,7 @@ var constraint_solver = (function() {
 			if(demanding_var) {
 				var dependency_edge = this.getEdge(node, demanding_var);
 				if(!dependency_edge) {
-					if(node.options.auto_add_outgoing_dependencies && demanding_var.options.auto_add_incoming_dependencies) {
+					if(node.options.auto_add_outgoing_dependencies !== false && demanding_var.options.auto_add_incoming_dependencies !== false) {
 						dependency_edge = this.addNodeDependency(node, demanding_var);
 					}
 				}
@@ -545,6 +548,13 @@ var Constraint = function(value, literal, options) {
 				this._change_listeners.splice(i, 1);
 				i--;
 			}
+		}
+		return this;
+	};
+	proto.setOption = function() {
+		var node = constraint_solver.getNode(this);
+		if(node) {
+			node.setOption.apply(node, arguments);
 		}
 		return this;
 	};
