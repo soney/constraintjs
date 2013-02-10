@@ -349,10 +349,15 @@ var constraint_solver = (function() {
 		};
 
 		proto.nullifyNode = function(node) {
+			var is_root = this._is_nullifying !== true;
+			/*
 			if(this._is_nullifying === true) {
 				throw new Error("Already nullifying");
 			}
-			this._is_nullifying = true;
+			*/
+			if(is_root) {
+				this._is_nullifying = true;
+			}
 			var i, j, outgoingEdges;
 			var to_nullify = [node];
 			var to_nullify_len = 1, invalid;
@@ -394,8 +399,10 @@ var constraint_solver = (function() {
 					}
 				}
 			}
-			delete this._is_nullifying;
-			if(this.semaphore >= 0 && this.nullified_call_stack.length > 0) {
+			if(is_root) {
+				delete this._is_nullifying;
+			}
+			if(is_root && this.semaphore >= 0 && this.nullified_call_stack.length > 0) {
 				this.run_nullified_listeners();
 			}
 		};
