@@ -314,24 +314,6 @@ var constraint_solver = (function() {
 		proto.hasNode = function(obj) { return this.getNode(obj)!==null; };
 		proto.add = function(obj, options) {
 			return this.getNode(obj) || new ConstraintNode(obj, options);
-			/*
-			var node = new ConstraintNode(obj, options);
-
-			var demanding_var = last(this.stack);
-
-			if(demanding_var) {
-				var dependency_edge = this.getEdge(node, demanding_var);
-				if(!dependency_edge) {
-					if(node.options.auto_add_outgoing_dependencies && demanding_var.options.auto_add_incoming_dependencies) {
-						dependency_edge = this.addNodeDependency(node, demanding_var);
-					}
-				}
-				if(dependency_edge!==undefined) {
-					dependency_edge.timestamp = demanding_var.timestamp+1;
-				}
-			}
-			return node;
-			*/
 		};
 
 		proto.removeObject = function(obj) {
