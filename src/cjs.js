@@ -1667,5 +1667,11 @@ cjs.removeDependency = function(from, to) {
 	}
 };
 
+cjs.addDependency = function(from, to) {
+	var fromNode = constraint_solver.getNode(from),
+		toNode = constraint_solver.getNode(to);
+	constraint_solver.addNodeDependency(fromNode, toNode);
+};
+
 return cjs;
 }(this));
