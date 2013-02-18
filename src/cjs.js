@@ -1029,7 +1029,7 @@ var ArrayConstraint = function(options) {
 		var my_val = this.toArray();
 		return my_val.concat.apply(my_val, args);
 	};
-	each(["join", "slice", "sort", "reverse", "valueOf", "toString"], function(fn_name) {
+	each(["filter", "join", "slice", "sort", "reverse", "valueOf", "toString"], function(fn_name) {
 			proto[fn_name] = function() {
 				var my_val = this.toArray();
 				return my_val[fn_name].apply(my_val, arguments);
@@ -1059,12 +1059,14 @@ var MapConstraint = function(options) {
 		valueequals: eqeqeq,
 		value: {},
 		keys: [],
-		values: []
+		values: [],
+		literal_values: true
 	}, options);
 	each(options.value, function(v, k) {
 		options.keys.push(k);
 		options.values.push(v);
 	}, this);
+	this._default_literal_values = !!options.literal_values;
 	this._equality_check = options.equals;
 	this._vequality_check = options.valueequals;
 	this._hash = isString(options.hash) ? get_str_hash_fn(options.hash) : options.hash;
@@ -1086,9 +1088,10 @@ var MapConstraint = function(options) {
 
 	this._ordered_values = [];
 	var index = 0;
+	var is_literal = this._default_literal_values;
 	each(options.keys, function(k, i) {
 		var v = options.values[i];
-		var info = { key: new SettableConstraint(k, true), value: new SettableConstraint(v, true), index: new SettableConstraint(index, true) };
+		var info = { key: new SettableConstraint(k, true), value: new SettableConstraint(v, is_literal), index: new SettableConstraint(index, true) };
 		var hash = this._hash(k);
 		var hash_val = this._khash[hash];
 
@@ -1173,7 +1176,8 @@ var MapConstraint = function(options) {
 			}
 
 			if(unsubstantiated_index < 0 && create_unsubstantiated === true) {
-				var unsubstantiated_info = { key: new SettableConstraint(key, true), value: new SettableConstraint(undefined, true), index: new SettableConstraint(-1, true) };
+				var is_literal = this._default_literal_values;
+				var unsubstantiated_info = { key: new SettableConstraint(key, true), value: new SettableConstraint(undefined, is_literal), index: new SettableConstraint(-1, true) };
 				unsubstantiated_values.push(unsubstantiated_info);
 				unsubstantiated_index = unsubstantiated_values.length-1;
 			}
@@ -1182,7 +1186,7 @@ var MapConstraint = function(options) {
 		}
 		return rv;
 	};
-	proto._do_set_item_ki = function(ki, key, value, index, ignore_events) {
+	proto._do_set_item_ki = function(ki, key, value, index, literal, ignore_events) {
 		var key_index = ki.i,
 			hash_values = ki.hv,
 			hash = ki.h;
@@ -1190,6 +1194,7 @@ var MapConstraint = function(options) {
 			hash_values = this._khash[hash] = [];
 		}
 
+		var is_literal = literal === undefined ? this._default_literal_values : !!literal;
 		var info;
 		if(key_index >= 0) {
 			info = hash_values[key_index];
@@ -1221,7 +1226,7 @@ var MapConstraint = function(options) {
 				}
 			}
 
-			info.value.set(value, true);
+			info.value.set(value, is_literal);
 			if(ignore_events !== true) {
 				this._queued_events.push([value_change_event_str, info.value, info.key, old_value, info.index]);
 			}
@@ -1240,10 +1245,10 @@ var MapConstraint = function(options) {
 				}
 
 				info = unsubstantiated_info;
-				info.value.set(value, true);
+				info.value.set(value, is_literal);
 				info.index.set(index, true);
 			} else {
-				info = { key: new SettableConstraint(key, true), value: new SettableConstraint(value, true), index: new SettableConstraint(index, true) };
+				info = { key: new SettableConstraint(key, true), value: new SettableConstraint(value, is_literal), index: new SettableConstraint(index, true) };
 			}
 
 			hash_values.push(info);
@@ -1294,11 +1299,11 @@ var MapConstraint = function(options) {
 		this.$size.invalidate();
 	};
 
-	proto.set = proto.put = function(key, value, index) {
+	proto.set = proto.put = function(key, value, index, literal) {
 		cjs.wait();
 		this.wait();
 		var ki = this._find_key(key, true, false);
-		this._do_set_item_ki(ki, key, value, index);
+		this._do_set_item_ki(ki, key, value, index, literal);
 		this.signal();
 		cjs.signal();
 		return this;
@@ -1426,7 +1431,7 @@ var MapConstraint = function(options) {
 		for(i=0; i<len; i++) {
 			var info = this._ordered_values[i];
 			if(info) {
-				if(func.call(context, info.key.get()) === false) {
+				if(func.call(context, info.key.get(), i) === false) {
 					break;
 				}
 			}
@@ -1474,7 +1479,7 @@ var MapConstraint = function(options) {
 			return unsubstantiated_info.index.get();
 		}
 	};
-	proto.get_or_put = function(key, create_fn, create_fn_context, index) {
+	proto.get_or_put = function(key, create_fn, create_fn_context, index, literal) {
 		var ki = this._find_key(key, true, false);
 		var key_index = ki.i,
 			hash_values = ki.hv,
@@ -1487,7 +1492,7 @@ var MapConstraint = function(options) {
 			this.wait();
 			var context = create_fn_context || root;
 			var value = create_fn.call(context, key);
-			this._do_set_item_ki(ki, key, value, index);
+			this._do_set_item_ki(ki, key, value, index, literal);
 			this.signal();
 			cjs.signal();
 			return value;
@@ -1635,20 +1640,22 @@ cjs.memoize = function(getter_fn, options) {
 	options = extend({
 		hash: memoize_default_hash,
 		equals: memoize_default_equals,
-		context: root
+		context: false,
+		literal_values: false
 	}, options);
 
 	var args_map = cjs.map({
 		hash: options.hash,
-		equals: options.equals
+		equals: options.equals,
+		literal_values: options.literal_values
 	});
 
-	var context = options.context;
 	var rv = function() {
-		var args = arguments;
+		var args = arguments,
+			my_context = options.context || this;
 		var constraint = args_map.get_or_put(args, function() {
 			return new Constraint(function() {
-				return getter_fn.apply(context, args)
+				return getter_fn.apply(my_context, args)
 			});
 		});
 		return constraint.get();
