@@ -4,6 +4,8 @@ var __debug = true;
 //
 // ============== CJS CORE ============== 
 //
+//
+var SECRET_NODE_NAME = "__cjs_cs_node__";
 
 // The star of the show!
 var old_cjs = root.cjs;
@@ -228,7 +230,7 @@ var constraint_solver = (function() {
 
 		this.valid = this.options.start_valid === true;
 		
-		this.obj.__cjs_cs_node__ = this;
+		this.obj[SECRET_NODE_NAME] = this;
 		this.timestamp = 0;
 		this.id = uniqueId();
 	};
@@ -269,7 +271,7 @@ var constraint_solver = (function() {
 		};
 
 		//Take out the incoming & outgoing edges
-		proto.destroy = function() {
+		proto.destroy = function(silent) {
 			cjs.wait();
 			each(this.incomingEdges, function(edge) {
 				var fromNode = edge.fromNode;
@@ -278,13 +280,15 @@ var constraint_solver = (function() {
 
 			each(this.outgoingEdges, function(edge) {
 				var toNode = edge.toNode;
-				constraint_solver.nullifyNode(toNode);
+				if(silent !== true) {
+					constraint_solver.nullifyNode(toNode);
+				}
 				toNode.removeIncomingEdge(edge);
 			});
 
 			clear(this.incomingEdges);
 			clear(this.outgoingEdges);
-			delete this.obj.__cjs_cs_node__;
+			delete this.obj[SECRET_NODE_NAME];
 			cjs.signal();
 		};
 
@@ -310,20 +314,20 @@ var constraint_solver = (function() {
 	(function(my) {
 		var proto = my.prototype;
 
-		proto.getNode = function(obj) { return obj.__cjs_cs_node__ || null; };
+		proto.getNode = function(obj) { return obj[SECRET_NODE_NAME] || null; };
 		proto.hasNode = function(obj) { return this.getNode(obj)!==null; };
 		proto.add = function(obj, options) {
 			return this.getNode(obj) || new ConstraintNode(obj, options);
 		};
 
-		proto.removeObject = function(obj) {
+		proto.removeObject = function(obj, silent) {
 			var node = this.getNode(obj);
 			if(node!==null) {
-				this.removeNode(node);
+				this.removeNode(node, silent);
 			}
 		};
-		proto.removeNode = function(node) {
-			node.destroy();
+		proto.removeNode = function(node, silent) {
+			node.destroy(silent);
 		};
 
 		proto.addNodeDependency = function(fromNode, toNode) {
@@ -503,7 +507,7 @@ var Constraint = function(value, literal, options) {
 
 (function(my) {
 	var proto = my.prototype;
-	proto.destroy = function() { constraint_solver.removeObject(this); };
+	proto.destroy = function(silent) { constraint_solver.removeObject(this, silent); };
 	proto.cjs_getter = function() {
 		if(has(this, "value")) {
 			if(isFunction(this.value) && !this.literal){
@@ -675,6 +679,7 @@ cjs.liven = function(func, options) {
 		, resume: resume
 		, run: run
 	};
+	rv[SECRET_NODE_NAME] = node;
 	if(__debug) {
 		rv.node = node;
 	}
@@ -1651,6 +1656,16 @@ cjs.memoize = function(getter_fn, options) {
 };
 
 //if(__debug) { cjs._constraint_solver = constraint_solver; }
+//
+cjs.removeDependency = function(from, to) {
+	var fromNode = constraint_solver.getNode(from),
+		toNode = constraint_solver.getNode(to);
+	var outgoing = fromNode.getOutgoing();
+	var edge = outgoing[toNode.id];
+	if(edge) {
+		constraint_solver.removeEdge(edge);
+	}
+};
 
 return cjs;
 }(this));
