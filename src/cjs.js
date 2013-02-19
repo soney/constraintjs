@@ -447,7 +447,7 @@ var constraint_solver = (function() {
 			node.offNullify(callback);
 
 			if(callback.__in_cjs_call_stack__) {
-				delete nullified_callback.__in_cjs_call_stack__;
+				delete callback.__in_cjs_call_stack__;
 				ri = remove(this.nullified_call_stack, callback);
 				if(__debug && ri >= 0) { this.nullified_reasons.splice(ri, 1); }
 			}
