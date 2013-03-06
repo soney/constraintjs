@@ -1058,7 +1058,6 @@ var MapConstraint = function(options) {
 	this._vequality_check = options.valueequals;
 	this._hash = isString(options.hash) ? get_str_hash_fn(options.hash) : options.hash;
 
-
 	this._khash = {};
 	if(options.valuehash) {
 		this._vhash = {};
@@ -1444,6 +1443,36 @@ var MapConstraint = function(options) {
 	};
 	proto.set_hash = function(hash) {
 		this._hash = isString(hash) ? get_str_hash_fn(hash) : hash;
+		this._khash = {};
+		this._unsubstantiated_values = {};
+		each(this._ordered_values, function(info) {
+			var key = info.key.get();
+			var hash = this._hash(key);
+			var hash_val = this._khash[hash];
+			if(hash_val) {
+				hash_val.push(info);
+			} else {
+				this._khash[hash] = [info];
+			}
+		}, this);
+		return this;
+	};
+	proto.set_value_hash = function(vhash) {
+		this._valuehash = isString(vhash) ? get_str_hash_fn(vhash) : vhash;
+
+		this._vhash = {};
+		if(this._valuehash) {
+			each(this._ordered_values, function(info) {
+				var value = info.value.get();
+				var hash = this._valuehash(value);
+				var hash_val = this._vhash[hash];
+				if(hash_val) {
+					hash_val.push(info);
+				} else {
+					this._vhash[hash] = [info];
+				}
+			}, this);
+		}
 		return this;
 	};
 	proto.item = function(arg0, arg1, arg2) {
