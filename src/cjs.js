@@ -1704,6 +1704,22 @@ cjs.memoize = function(getter_fn, options) {
 			constraint.destroy();
 		}).destroy();
 	};
+	rv.set_cached_value = function() {
+		var args = slice(arguments, 0, arguments.length-1);
+		var value = last(arguments);
+
+		args_map.set_cached_value(args, value);
+	};
+	rv.initialize = function() {
+		var args = arguments,
+			my_context = options.context || this;
+		args_map.put(args, new Constraint(function() {
+			return getter_fn.apply(my_context, args);
+		}));
+	};
+	rv.has = function() {
+		return args_map.has(arguments);
+	};
 	return rv;
 };
 
