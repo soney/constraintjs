@@ -242,7 +242,7 @@ var constraint_solver = (function() {
 		proto.is_valid = function() { return this.valid; };
 		proto.update_value = function() {
 			if(this.options.cache_value !== false) {
-				this.value = this.cs_eval();
+				this.set_cached_value(this.cs_eval());
 			} else {
 				this.cs_eval();
 			}
@@ -268,6 +268,9 @@ var constraint_solver = (function() {
 			do {
 				ri = remove(this.nullificationListeners, callback);
 			} while (ri >= 0);
+		};
+		proto.set_cached_value = function(value) {
+			this.value = value;
 		};
 
 		//Take out the incoming & outgoing edges
@@ -575,6 +578,13 @@ var SettableConstraint = function() {
 		
 		if(was_literal !== this.literal || !this.get_equality_check()(old_value, this.value)) {
 			this.invalidate();
+		}
+		return this;
+	};
+	proto.set_cached_value = function(value) {
+		var node = constraint_solver.getNode(this);
+		if(node) {
+			node.set_cached_value(value);
 		}
 		return this;
 	};
@@ -1611,6 +1621,15 @@ var MapConstraint = function(options) {
 	};
 	proto.isEmpty = function() {
 		return this.size() === 0;
+	};
+	proto.set_cached_value = function(key, value) {
+		var ki = this._find_key(key, false, false);
+		var key_index = ki.i;
+		if(key_index >= 0) {
+			var info = ki.hv[key_index];
+			info.value.set_cached_value(value);
+		}
+		return this;
 	};
 	proto.destroy = function() {
 		this.wait();
