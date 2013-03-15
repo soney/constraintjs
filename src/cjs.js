@@ -557,6 +557,20 @@ var Constraint = function(value, literal, options) {
 	proto.invalidate = function() {
 		constraint_solver.nullifyNode(constraint_solver.getNode(this));
 	};
+	proto.validate = function() {
+		var node = constraint_solver.getNode(this);
+		if(node) {
+			node.mark_valid();
+		}
+		return this;
+	};
+	proto.set_cached_value = function(value) {
+		var node = constraint_solver.getNode(this);
+		if(node) {
+			node.set_cached_value(value);
+		}
+		return this;
+	};
 }(Constraint));
 cjs.Constraint = Constraint;
 
@@ -578,13 +592,6 @@ var SettableConstraint = function() {
 		
 		if(was_literal !== this.literal || !this.get_equality_check()(old_value, this.value)) {
 			this.invalidate();
-		}
-		return this;
-	};
-	proto.set_cached_value = function(value) {
-		var node = constraint_solver.getNode(this);
-		if(node) {
-			node.set_cached_value(value);
 		}
 		return this;
 	};
@@ -1689,7 +1696,7 @@ cjs.memoize = function(getter_fn, options) {
 		literal_values: options.literal_values
 	});
 
-	var rv = function() {
+	var get_constraint = function() {
 		var args = arguments,
 			my_context = options.context || this;
 		var constraint = args_map.get_or_put(args, function() {
@@ -1697,6 +1704,11 @@ cjs.memoize = function(getter_fn, options) {
 				return getter_fn.apply(my_context, args)
 			});
 		});
+		return constraint;
+	};
+
+	var rv = function() {
+		var constraint = get_constraint.apply(this, arguments);
 		return constraint.get();
 	};
 	rv.destroy = function() {
@@ -1705,20 +1717,11 @@ cjs.memoize = function(getter_fn, options) {
 		}).destroy();
 	};
 	rv.set_cached_value = function() {
-		var args = slice(arguments, 0, arguments.length-1);
-		var value = last(arguments);
+		var args = slice.call(arguments, 0, arguments.length-1);
 
-		args_map.set_cached_value(args, value);
-	};
-	rv.initialize = function() {
-		var args = arguments,
-			my_context = options.context || this;
-		args_map.put(args, new Constraint(function() {
-			return getter_fn.apply(my_context, args);
-		}));
-	};
-	rv.has = function() {
-		return args_map.has(arguments);
+		var constraint = get_constraint.apply(this, args);
+		var value = last(arguments);
+		constraint.set_cached_value(value);
 	};
 	return rv;
 };
