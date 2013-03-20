@@ -527,7 +527,7 @@ var Constraint = function(value, literal, options) {
 		var listener = {
 			callback: callback
 			, on_nullify: function() {
-				callback(self.get());
+				callback();
 			}
 		};
 		var node = constraint_solver.getNode(this);
