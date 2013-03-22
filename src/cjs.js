@@ -571,6 +571,10 @@ var Constraint = function(value, literal, options) {
 		}
 		return this;
 	};
+	proto.is_valid = function() {
+		var node =constraint_solver.getNode(this);
+		return node.is_valid();
+	};
 }(Constraint));
 cjs.Constraint = Constraint;
 
