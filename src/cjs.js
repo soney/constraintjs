@@ -29,7 +29,7 @@ var cjs = (function (root) {
     
     // Return a unique id when called
     var uniqueId = (function () {
-        var id = 0;
+        var id = -1;
         return function () { id += 1; return id; };
     }());
     
@@ -393,8 +393,8 @@ var cjs = (function (root) {
                                         this.removeEdge(outgoingEdge);
                                         j -= 1;
                                     } else {
-                                        to_nullify_len += 1;
                                         to_nullify[to_nullify_len] = dependentNode;
+                                        to_nullify_len += 1;
                                     }
                                 }
                             }
