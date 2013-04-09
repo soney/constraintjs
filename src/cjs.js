@@ -67,10 +67,11 @@ var cjs = (function (root) {
     var isString = function (obj) {
         return toString.call(obj) === '[object String]';
     };
-    
+
+    var the_o = Object;
     // Is a given variable an object?
     var isObject = function (obj) {
-        return obj === Object(obj);
+        return obj === the_o(obj);
     };
     
     // Is a given variable an arguments object?
