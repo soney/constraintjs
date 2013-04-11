@@ -2,8 +2,6 @@
 
 var cjs = (function (root) {
 	"use strict";
-	var __debug = true;
-	
 	//
 	// ============== CJS CORE ============== 
 	//
@@ -97,9 +95,9 @@ var cjs = (function (root) {
 		}
 	};
 
-	var hasOwnProperty = Object.prototype.hasOwnProperty;
+	var hOP = Object.prototype.hasOwnProperty;
 	var has = function (obj, key) {
-		return hasOwnProperty.call(obj, key);
+		return hOP.call(obj, key);
 	};
 
 	var each = function (obj, iterator, context) {
@@ -315,7 +313,6 @@ var cjs = (function (root) {
 		var ConstraintSolver = function () {
 			this.stack = [];
 			this.nullified_call_stack = [];
-			if (__debug) { this.nullified_reasons = []; }
 			this.running_nullified_listeners = false;
 			this.semaphore = 0;
 		};
@@ -379,10 +376,6 @@ var cjs = (function (root) {
 							var nullification_listeners = this.get_nullification_listeners(curr_node);
 							each(nullification_listeners, nullify_listener);
 							this.nullified_call_stack.push.apply(this.nullified_call_stack, nullification_listeners);
-							if (__debug) {
-								this.nullified_reasons.push.apply(this.nullified_reasons,
-									map(nullification_listeners, bind(get_curr_node, this, curr_node)));
-							}
 
 							outgoingEdges = curr_node.getOutgoing();
 							for (toNodeID in outgoingEdges) {
@@ -415,7 +408,6 @@ var cjs = (function (root) {
 					while (this.nullified_call_stack.length > 0) {
 						var nullified_callback = this.nullified_call_stack.shift();
 						delete nullified_callback.__in_cjs_call_stack__;
-						if (__debug) { var nullified_reason = this.nullified_reasons.shift(); }
 						nullified_callback();
 					}
 					this.running_nullified_listeners = false;
@@ -465,7 +457,6 @@ var cjs = (function (root) {
 				if (callback.__in_cjs_call_stack__) {
 					delete callback.__in_cjs_call_stack__;
 					var ri = remove(this.nullified_call_stack, callback);
-					if (__debug && ri >= 0) { this.nullified_reasons.splice(ri, 1); }
 				}
 			};
 
@@ -702,7 +693,6 @@ var cjs = (function (root) {
 		if (options.run_on_create !== false) {
 			do_get.__in_cjs_call_stack__ = true;
 			constraint_solver.nullified_call_stack.push(do_get);
-			if (__debug) { constraint_solver.nullified_reasons.push("liven start"); }
 
 			if (constraint_solver.semaphore >= 0 && constraint_solver.nullified_call_stack.length > 0) {
 				constraint_solver.run_nullified_listeners();
@@ -716,9 +706,6 @@ var cjs = (function (root) {
 			run: run
 		};
 		rv[SECRET_NODE_NAME] = node;
-		if (__debug) {
-			rv.node = node;
-		}
 		return rv;
 	};
 
@@ -1741,8 +1728,6 @@ var cjs = (function (root) {
 		return rv;
 	};
 
-	//if (__debug) { cjs._constraint_solver = constraint_solver; }
-	//
 	cjs.removeDependency = function (from, to) {
 		var fromNode = constraint_solver.getNode(from),
 			toNode = constraint_solver.getNode(to);
