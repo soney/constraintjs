@@ -28,6 +28,7 @@ exports.main_build = cp(build_path, ["cjs.min.js"]);
 exports.main_src = c(
 	cp(src, [
 		"cjs.js"
+		/*
 		, "template/underscore.js"
 		, "template/cjs_dom.js"
 		, "template/cjs_template.js"
@@ -36,6 +37,7 @@ exports.main_src = c(
 		, "template/parsers/handlebars_parser.js"
 		, "template/ir_builders/handlebars_ir.js"
 		, "template/handlebars_template.js"
+		*/
 	])
 );
 
