@@ -201,7 +201,7 @@ var cjs = (function (root) {
 			return cjs.$.apply(cjs, arguments);
 		}
 	};
-	cjs.version = "0.7.0";
+	cjs.version = "<%= version %>";
 
 	cjs.noConflict = function () { root.cjs = old_cjs; return cjs; };
 

@@ -20,7 +20,7 @@ module.exports = function(grunt) {
 				}
 			},
 			build: {
-				src: cjs_inc.main_src,
+				src: "build/cjs.js",
 				dest: "build/cjs.min.js"
 			}
 		},
@@ -30,8 +30,7 @@ module.exports = function(grunt) {
 						'<%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */',
 				process: {
 					data: {
-						version: package.version,
-						build_time: grunt.template.today("yyyy-mm-dd h:MM:ss TT")
+						version: package.version
 					}
 				}
 			},
