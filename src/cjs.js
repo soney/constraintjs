@@ -664,6 +664,9 @@ var cjs = (function (root) {
 		var do_get;
 		var destroy = function () {
 			constraint_solver.off_nullify(node, do_get);
+			if(options.on_destroy) {
+				options.on_destroy.call(options.context);
+			}
 			constraint_solver.removeObject(node);
 		};
 		var pause = function () {
