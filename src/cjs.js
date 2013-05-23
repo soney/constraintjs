@@ -36,6 +36,8 @@ var cjs = (function (root) {
 		return function () { return func.apply(context, arguments); };
 	};
 
+	var console_error = root.console && root.console.error ? bind(root.console.error, root.console) : function(){};
+
 	// Is a given value a number?
 	var isNumber = function (obj) {
 		return toString.call(obj) === '[object Number]';
@@ -404,7 +406,11 @@ var cjs = (function (root) {
 					while (this.nullified_call_stack.length > 0) {
 						var nullified_callback = this.nullified_call_stack.shift();
 						delete nullified_callback.__in_cjs_call_stack__;
-						nullified_callback();
+						try {
+							nullified_callback();
+						} catch(e) {
+							console_error(e);
+						}
 					}
 					this.running_nullified_listeners = false;
 				}
