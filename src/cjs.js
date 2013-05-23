@@ -36,11 +36,6 @@ var cjs = (function (root) {
 		return function () { return func.apply(context, arguments); };
 	};
 
-	// Remove every item from an array
-	var clear = function (arr) {
-		arr.length = 0;
-	};
-
 	// Is a given value a number?
 	var isNumber = function (obj) {
 		return toString.call(obj) === '[object Number]';
@@ -292,8 +287,9 @@ var cjs = (function (root) {
 					toNode.removeIncomingEdge(edge);
 				});
 
-				clear(this.incomingEdges);
-				clear(this.outgoingEdges);
+				delete this.incomingEdges;
+				delete this.outgoingEdges;
+
 				delete this.obj[SECRET_NODE_NAME];
 				cjs.signal();
 			};
