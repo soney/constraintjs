@@ -406,11 +406,13 @@ var cjs = (function (root) {
 					while (this.nullified_call_stack.length > 0) {
 						var nullified_callback = this.nullified_call_stack.shift();
 						delete nullified_callback.__in_cjs_call_stack__;
-						try {
+						//try {
 							nullified_callback();
+							/*
 						} catch(e) {
 							console_error(e);
 						}
+						*/
 					}
 					this.running_nullified_listeners = false;
 				}
@@ -440,6 +442,10 @@ var cjs = (function (root) {
 				}
 
 				return node.value;
+			};
+			
+			proto.clear_stack = function() {
+				this.stack.length = 0;
 			};
 
 			proto.doEvalNode = function (node) {
@@ -501,6 +507,9 @@ var cjs = (function (root) {
 	};
 	cjs.signal = function () {
 		constraint_solver.signal();
+	};
+	cjs.clear_stack = function () {
+		constraint_solver.clear_stack();
 	};
 
 	//
