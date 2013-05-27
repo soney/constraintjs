@@ -8,7 +8,7 @@ module.exports = function(grunt) {
 		pkg: package,
 		jshint: {
 			build: {
-				src: cjs_inc.main_src
+				src: "build/cjs.js"
 			}
 		},
 		uglify: {
@@ -35,7 +35,7 @@ module.exports = function(grunt) {
 				}
 			},
 			js: {
-				src: cjs_inc.main_src,
+				src: ["src/header.js", "src/cjs.js", "src/cjs_liven.js", "src/cjs_array.js", "src/cjs_map.js", "src/footer.js"],
 				dest: "build/cjs.js"
 			}
 		},
@@ -52,5 +52,5 @@ module.exports = function(grunt) {
 
 	// Default task(s).
 	grunt.registerTask('default', ['concat', 'uglify']);
-	grunt.registerTask('test', ['jshint']);
+	grunt.registerTask('test', ['concat', 'jshint']);
 };

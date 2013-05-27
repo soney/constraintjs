@@ -1,7 +1,3 @@
-/*jslint nomen: true, vars: true */
-
-var cjs = (function (root) {
-	"use strict";
 	//
 	// ============== CJS CORE ============== 
 	//
@@ -108,7 +104,7 @@ var cjs = (function (root) {
 			}
 		} else {
 			for (key in obj) {
-				if (obj.hasOwnProperty(key)) {
+				if (has(obj, key)) {
 					if (iterator.call(context, obj[key], key, obj) === breaker) { return; }
 				}
 			}
@@ -219,17 +215,14 @@ var cjs = (function (root) {
 			this.obj = obj;
 
 			this.options = extend({
-					//start_valid: true,
 					//cache_value: true,
 					//equals: eqeqeq,
 					//auto_add_outgoing_dependencies: true,
 					//auto_add_incoming_dependencies: true,
 					//check_on_nullify: false
-			},
-				options);
+				}, options);
 
-			this.valid = this.options.start_valid === true;
-			
+			this.valid = false;
 			this.obj[SECRET_NODE_NAME] = this;
 			this.timestamp = 0;
 			this.id = uniqueId();
@@ -258,16 +251,17 @@ var cjs = (function (root) {
 			proto.removeIncomingEdge = function (edge) { delete this.incomingEdges[edge.fromNode.id]; };
 
 			proto.getOutgoing = function () { return this.outgoingEdges; };
-			proto.getIncoming = function () { return this.incomingEdges; };
 
 			proto.onNullify = function (callback) {
 				this.nullificationListeners.push(callback);
 			};
 			proto.offNullify = function (callback) {
 				var ri;
-				do {
-					ri = remove(this.nullificationListeners, callback);
-				} while (ri >= 0);
+				for(var i = this.nullificationListeners.length-1; i>=0; i-=1) {
+					if(this.nullificationListeners[i] === callback) {
+						this.nullificationListeners.splice(i, 1);
+					}
+				}
 			};
 			proto.set_cached_value = function (value) {
 				this.value = value;
@@ -289,9 +283,6 @@ var cjs = (function (root) {
 					toNode.removeIncomingEdge(edge);
 				});
 
-				delete this.incomingEdges;
-				delete this.outgoingEdges;
-
 				delete this.obj[SECRET_NODE_NAME];
 				cjs.signal();
 			};
@@ -301,12 +292,6 @@ var cjs = (function (root) {
 			};
 			proto.hasEdgeTo = function (toNode) { return has(this.outgoingEdges, toNode.id); };
 		}(ConstraintNode));
-
-		var ConstraintEdge = function (fromNode, toNode) {
-			this.fromNode = fromNode;
-			this.toNode = toNode;
-			this.timestamp = 0;
-		};
 
 		var ConstraintSolver = function () {
 			this.stack = [];
@@ -318,7 +303,6 @@ var cjs = (function (root) {
 			var proto = my.prototype;
 
 			proto.getNode = function (obj) { return obj[SECRET_NODE_NAME] || null; };
-			proto.hasNode = function (obj) { return this.getNode(obj) !== null; };
 			proto.add = function (obj, options) {
 				return this.getNode(obj) || new ConstraintNode(obj, options);
 			};
@@ -334,19 +318,16 @@ var cjs = (function (root) {
 			};
 
 			proto.addNodeDependency = function (fromNode, toNode) {
-				return this.addEdge(new ConstraintEdge(fromNode, toNode));
+				return this.addEdge({fromNode: fromNode, toNode: toNode, timestamp: 0});
 			};
 
 			proto.nullifyNode = function (node) {
 				var is_root = this._is_nullifying !== true;
-				/*
-				if (this._is_nullifying === true) {
-					throw new Error("Already nullifying");
-				}
-				*/
+
 				if (is_root) {
 					this._is_nullifying = true;
 				}
+
 				var i, j, outgoingEdges, toNodeID;
 				var to_nullify = [node];
 				var to_nullify_len = 1, invalid;
@@ -377,7 +358,7 @@ var cjs = (function (root) {
 
 							outgoingEdges = curr_node.getOutgoing();
 							for (toNodeID in outgoingEdges) {
-								if (outgoingEdges.hasOwnProperty(toNodeID)) {
+								if (has(outgoingEdges, toNodeID)) {
 									var outgoingEdge = outgoingEdges[toNodeID];
 									var dependentNode = outgoingEdge.toNode;
 									if (outgoingEdge.timestamp < dependentNode.timestamp) {
@@ -421,9 +402,11 @@ var cjs = (function (root) {
 			proto.getValue = function (obj) { return this.getNodeValue(this.getNode(obj)); };
 
 			proto.getNodeValue = function (node) {
-				var demanding_var = last(this.stack);
+				var stack_len = this.stack.length;
 
-				if (demanding_var) {
+
+				if (stack_len > 0) {
+					var demanding_var = this.stack[stack_len - 1];
 					var dependency_edge = this.getEdge(node, demanding_var);
 					if (!dependency_edge) {
 						if (node.options.auto_add_outgoing_dependencies !== false && demanding_var.options.auto_add_incoming_dependencies !== false) {
@@ -436,18 +419,14 @@ var cjs = (function (root) {
 				}
 
 				if (!node.is_valid()) {
-					this.stack.push(node);
+					this.stack[stack_len] = node;
 					this.doEvalNode(node);
-					this.stack.pop();
+					this.stack.length = stack_len;
 				}
 
 				return node.value;
 			};
 			
-			proto.clear_stack = function() {
-				this.stack.length = 0;
-			};
-
 			proto.doEvalNode = function (node) {
 				node.mark_valid();
 				node.update_value();
@@ -464,12 +443,11 @@ var cjs = (function (root) {
 
 				if (callback.__in_cjs_call_stack__) {
 					delete callback.__in_cjs_call_stack__;
-					var ri = remove(this.nullified_call_stack, callback);
+					remove(this.nullified_call_stack, callback);
 				}
 			};
 
-			proto.get_nullification_listeners = function (arg0) {
-				var node = arg0 instanceof ConstraintNode ? arg0 : this.getNode(arg0);
+			proto.get_nullification_listeners = function (node) {
 				return node.nullificationListeners;
 			};
 
@@ -507,9 +485,6 @@ var cjs = (function (root) {
 	};
 	cjs.signal = function () {
 		constraint_solver.signal();
-	};
-	cjs.clear_stack = function () {
-		constraint_solver.clear_stack();
 	};
 
 	//
@@ -653,1110 +628,3 @@ var cjs = (function (root) {
 			Constraint.prototype[key] = value;
 		});
 	};
-	//
-	// ============== LIVEN ============== 
-	//
-
-	cjs.liven = function (func, options) {
-		options = extend({
-			context: this,
-			run_on_create: true,
-			pause_while_running: false
-		}, options);
-
-		var node = constraint_solver.add({
-			cjs_getter: function () {
-				func.call(options.context);
-			},
-			auto_add_outgoing_dependencies: false,
-			cache_value: false
-		});
-
-		var do_get;
-		var destroy = function () {
-			constraint_solver.off_nullify(node, do_get);
-			if(options.on_destroy) {
-				options.on_destroy.call(options.context);
-			}
-			constraint_solver.removeObject(node);
-		};
-		var pause = function () {
-			constraint_solver.off_nullify(node, do_get);
-			return this;
-		};
-		var resume = function () {
-			constraint_solver.on_nullify(node, do_get);
-			return this;
-		};
-		var run = function () {
-			do_get();
-			return this;
-		};
-
-		do_get = function () {
-			if (options.pause_while_running) {
-				pause();
-			}
-			constraint_solver.getNodeValue(node);
-			if (options.pause_while_running) {
-				resume();
-			}
-		};
-
-		constraint_solver.on_nullify(node, do_get);
-		if (options.run_on_create !== false) {
-			do_get.__in_cjs_call_stack__ = true;
-			constraint_solver.nullified_call_stack.push(do_get);
-
-			if (constraint_solver.semaphore >= 0 && constraint_solver.nullified_call_stack.length > 0) {
-				constraint_solver.run_nullified_listeners();
-			}
-		}
-
-		var rv = {
-			destroy: destroy,
-			pause: pause,
-			resume: resume,
-			run: run
-		};
-		rv[SECRET_NODE_NAME] = node;
-		return rv;
-	};
-
-	var get_categorical_listeners = function (proto, events) {
-		proto._initialize_listeners = function () {
-			this._semaphore = 0;
-			this.__running_listeners = false;
-			this._queued_events = [];
-			var listeners = this._listeners = {};
-			each(events, function (arr_name, diff_event) {
-				listeners[arr_name] = [];
-			});
-		};
-		each(events, function (arr_name, diff_event) {
-			proto["on" + diff_event] = function (callback, context) {
-				var listener_info = {
-					callback: callback,
-					context: context || this
-				};
-				var arr = this._listeners[arr_name];
-				arr.push(listener_info);
-				return this;
-			};
-			proto["off" + diff_event] = function (callback) {
-				var arr = this._listeners[arr_name];
-
-				var listener_index = index_where(arr, function (listener_info) {
-					return listener_info.callback === callback;
-				});
-
-				if (listener_index >= 0) {
-					delete arr[listener_index];
-					arr.splice(listener_index, 1);
-				}
-
-				return this;
-			};
-		});
-
-		proto.wait = function () {
-			this._semaphore -= 1;
-			return this;
-		};
-
-		proto.signal = function () {
-			this._semaphore += 1;
-			if (this._semaphore >= 0 && !this.__running_listeners) {
-				this.__running_listeners = true;
-				this._run_listeners();
-				this.__running_listeners = false;
-			}
-			return this;
-		};
-
-		proto._run_listeners = function () {
-			var queued_events = this._queued_events,
-				run_listener = function (queued_event, listener_info) {
-					var callback = listener_info.callback;
-					var context = listener_info.context;
-					callback.apply(context, queued_event);
-				};
-			while (queued_events.length > 0) {
-				var queued_event = queued_events.shift();
-				var type = queued_event.shift();
-				var listeners = this._listeners[type];
-				each(listeners, bind(run_listener, this, queued_event));
-			}
-		};
-	};
-
-
-	//
-	// ============== ARRAYS ============== 
-	//
-
-	var ArrayConstraint = function (options) {
-		options = extend({
-			equals: eqeqeq,
-			value: []
-		}, options);
-		this._value = [];
-		this._unsubstantiated_items = [];
-
-		if (isArray(options.value)) {
-			var i, len = options.value.length;
-			for (i = 0; i < len; i += 1) {
-				var val = options.value[i];
-				this._value[i] = new SettableConstraint(val, true);
-			}
-		}
-		this.$len = new SettableConstraint(this._value.length);
-
-		this._equality_check = options.equals;
-
-		this._initialize_listeners();
-	};
-
-	(function (my) {
-		var proto = my.prototype;
-
-		var add_event_str = "add"; // value, index
-		var remove_event_str = "remove"; // value, index
-		var index_change_event_str = "index_change"; // value, to_index, from_index
-		var value_change_event_str = "value_change"; // to_value, from_value, index
-
-		get_categorical_listeners(proto, {
-			"Add":  add_event_str,
-			"Remove":  remove_event_str,
-			"IndexChange":  index_change_event_str,
-			"ValueChange":  value_change_event_str
-		});
-
-		proto.set_equality_check = function (equality_check) {
-			this._equality_check = equality_check;
-			return this;
-		};
-
-		proto.each = function (func, context) {
-			context = context || root;
-			var i, len = this.length();
-			for (i = 0; i < len; i += 1) {
-				if (func.call(context, this.get(i), i) === false) {
-					break;
-				}
-			}
-			return this;
-		};
-		proto.get = function (key) {
-			var val = this._value[key];
-			if (val === undefined) {
-				// Create a dependency so that if the value for this key changes
-				// later on, we can detect it in the constraint solver
-				val = new SettableConstraint(undefined);
-				this._unsubstantiated_items[key] = val;
-			}
-			return val.get();
-		};
-		proto.put = function (key, val) {
-			cjs.wait();
-			this.wait();
-			var $previous_value = this._value[key];
-			if ($previous_value === undefined && has(this._unsubstantiated_items, key)) {
-				$previous_value = this._unsubstantiated_items[key];
-				delete this._unsubstantiated_items[key];
-			}
-
-			if (cjs.is_$($previous_value)) {
-				var prev_val = $previous_value.get();
-				$previous_value.set(val, true);
-				this._queued_events.push([value_change_event_str, val, key, prev_val]);
-			} else {
-				this._value[key] = new SettableConstraint(val, true);
-				this._queued_events.push([add_event_str, val, key]);
-			}
-			this._update_len();
-			this.signal();
-			cjs.signal();
-			return this;
-		};
-		proto.i = proto.item = function (key, val) {
-			if (arguments.length === 1) {
-				return this.get(key);
-			} else if (arguments.length > 1) {
-				return this.put(key, val);
-			}
-		};
-		proto.destroy = function () {
-			this.$len.destroy();
-		};
-		proto.length = function () {
-			return this.$len.get();
-		};
-		proto.push = function () {
-			var i, len = arguments.length;
-			//Make operation atomic
-			cjs.wait();
-			this.wait();
-			for (i = 0; i < len; i += 1) {
-				this.put(this._value.length, arguments[i]);
-			}
-			this.signal();
-			cjs.signal();
-			return arguments.length;
-		};
-		proto.pop = function () {
-			cjs.wait();
-			this.wait();
-
-			var $value = this._value.pop();
-			var len = this._value.length;
-			var rv;
-			if (cjs.is_$($value)) {
-				rv = $value.get();
-				$value.destroy();
-				this._queued_events.push([remove_event_str, rv, len]);
-			}
-			this._update_len();
-
-			this.signal();
-			cjs.signal();
-			
-			return rv;
-		};
-		proto.clear = function () {
-			var $val;
-			cjs.wait();
-			this.wait();
-
-			while (this._value.length > 0) {
-				$val = this._value.pop();
-				var len = this._value.length;
-				if (cjs.is_constraint($val)) {
-					this._queued_events.push([remove_event_str, $val.get(), len]);
-					$val.destroy();
-				}
-			}
-			this._update_len();
-
-			this.signal();
-			cjs.signal();
-			return this;
-		};
-		proto.set = function (arr) {
-			cjs.wait();
-			this.wait();
-
-			this.clear();
-			this.push.apply(this, arr);
-
-			this.signal();
-			cjs.signal();
-			return this;
-		};
-		proto.toArray = function () {
-			var rv = [];
-			this.each(function (v, i) { rv[i] = v; });
-			return rv;
-		};
-		proto._update_len = function () {
-			this.$len.set(this._value.length);
-		};
-		proto.indexWhere = function (filter) {
-			var i, len = this._value.length, $val;
-
-			for (i = 0; i < len; i += 1) {
-				$val = this._value[i];
-				if (filter($val.get())) {
-					return i;
-				}
-			}
-			this.length(); // We want to depend on the length if not found
-
-			return -1;
-		};
-		proto.lastIndexWhere = function (filter) {
-			var i, len = this.length(), $val;
-
-			for (i = len - 1; i >= 0; i -= 1) {
-				$val = this._value[i];
-				if (filter($val.get())) { return i; }
-			}
-			return -1;
-		};
-		proto.indexOf = function (item, equality_check) {
-			equality_check = equality_check || this._equality_check;
-			var filter = function (x) { return equality_check(x, item); };
-			return this.indexWhere(filter);
-		};
-		proto.lastIndexOf = function (item, equality_check) {
-			equality_check = equality_check || this._equality_check;
-			var filter = function (x) { return equality_check(x, item); };
-			return this.lastIndexWhere(filter);
-		};
-		var isPositiveInteger = function (val) {
-			return isNumber(val) && Math.round(val) === val && val >= 0;
-		};
-		proto.splice = function (index, howmany) {
-			var i;
-			if (!isNumber(howmany)) { howmany = 0; }
-			if (!isPositiveInteger(index) || !isPositiveInteger(howmany)) {
-				throw new Error("index and howmany must be positive integers");
-			}
-			var to_insert = slice.call(arguments, 2);
-
-			cjs.wait();
-			this.wait();
-			var resulting_shift_size = to_insert.length - howmany;
-			var removed = [];
-
-			for (i = index; i < index + howmany; i += 1) {
-				removed.push(this.item(i));
-			}
-
-			if (resulting_shift_size < 0) {
-				for (i = index; i < this._value.length + resulting_shift_size; i += 1) {
-					if (i < index + to_insert.length) {
-						this.put(i, to_insert[i - index]);
-					} else {
-						this.put(i, this.get(i - resulting_shift_size));
-					}
-				}
-				for (i = 0; i < -resulting_shift_size; i += 1) {
-					this.pop();
-				}
-			} else {
-				for (i = this._value.length + resulting_shift_size - 1; i >= index; i -= 1) {
-					if (i - index < to_insert.length) {
-						this.put(i, to_insert[i - index]);
-					} else {
-						this.put(i, this.get(i - resulting_shift_size));
-					}
-				}
-			}
-
-			this._update_len();
-			this.signal();
-			cjs.signal();
-			return removed;
-		};
-		proto.shift = function () {
-			var rv_arr = this.splice(0, 1);
-			return rv_arr[0];
-		};
-		proto.unshift = function () {
-			var args = toArray(arguments);
-			this.splice.apply(this, ([0, 0]).concat(args));
-			return this._value.length;
-		};
-
-		proto.concat = function () {
-			var args = [], i, len = arguments.length;
-			for (i = 0; i < len; i += 1) {
-				var arg = arguments[i];
-				if (arg instanceof ArrayConstraint) {
-					args.push(arg.toArray());
-				} else {
-					args.push(arg);
-				}
-			}
-			var my_val = this.toArray();
-			return my_val.concat.apply(my_val, args);
-		};
-		each(["filter", "join", "slice", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
-			proto[fn_name] = function () {
-				var my_val = this.toArray();
-				return my_val[fn_name].apply(my_val, arguments);
-			};
-		});
-	}(ArrayConstraint));
-
-	cjs.array = function (value) { return new ArrayConstraint(value); };
-	cjs.is_array = function (obj) { return obj instanceof ArrayConstraint; };
-	cjs.ArrayConstraint = ArrayConstraint;
-
-	//
-	// ============== MAPS ============== 
-	//
-
-	var defaulthash = function (key) { return key.toString(); };
-	var get_str_hash_fn = function (prop_name) {
-		return function (key) {
-			return key[prop_name]();
-		};
-	};
-	var MapConstraint = function (options) {
-		options = extend({
-			hash: defaulthash,
-			valuehash: false,
-			equals: eqeqeq,
-			valueequals: eqeqeq,
-			value: {},
-			keys: [],
-			values: [],
-			literal_values: true
-		}, options);
-		each(options.value, function (v, k) {
-			options.keys.push(k);
-			options.values.push(v);
-		}, this);
-		this._default_literal_values = !!options.literal_values;
-		this._equality_check = options.equals;
-		this._vequality_check = options.valueequals;
-		this._hash = isString(options.hash) ? get_str_hash_fn(options.hash) : options.hash;
-
-		this._khash = {};
-		if (options.valuehash) {
-			this._vhash = {};
-			if (isFunction(options.valuehash)) {
-				this._valuehash = options.valuehash;
-			} else if (isString(options.valuehash)) {
-				this._valuehash = get_str_hash_fn(options.valuehash);
-			} else {
-				this._valuehash = defaulthash;
-			}
-		} else {
-			this._vhash = false;
-		}
-
-		this._ordered_values = [];
-		var index = 0;
-		var is_literal = this._default_literal_values;
-		each(options.keys, function (k, i) {
-			var v = options.values[i];
-			var info = { key: new SettableConstraint(k, true), value: new SettableConstraint(v, is_literal), index: new SettableConstraint(index, true) };
-			var hash = this._hash(k);
-			var hash_val = this._khash[hash];
-
-			if (hash_val) {
-				hash_val.push(info);
-			} else {
-				this._khash[hash] = [info];
-			}
-
-			if (this._vhash) {
-				var value_hash = this._valuehash(v);
-				var vhash_val = this._vhash[value_hash];
-				if (vhash_val) {
-					vhash_val.push(info);
-				} else {
-					this._vhash[value_hash] = [info];
-				}
-			}
-
-			this._ordered_values[index] = info;
-			index += 1;
-		}, this);
-
-		this._unsubstantiated_values = {};
-
-		this.$keys = new Constraint(bind(this._do_get_keys, this));
-		this.$values = new Constraint(bind(this._do_get_values, this));
-		this.$entries = new Constraint(bind(this._do_get_entries, this));
-		this.$size = new Constraint(bind(this._do_get_size, this));
-
-		this._initialize_listeners();
-	};
-
-	(function (my) {
-		var proto = my.prototype;
-
-		var index_change_event_str = "index_change"; // value, key, to, from
-		var put_event_str = "put"; // value, key, index
-		var remove_event_str = "remove"; // value, key, index
-		var value_change_event_str = "value_change"; // to_value, key, from_value, index
-		var move_event_str = "move"; // value, key, to_index, from_index
-
-		get_categorical_listeners(proto, {
-			"Put":  put_event_str,
-			"Remove":  remove_event_str,
-			"ValueChange":  value_change_event_str,
-			"IndexChange":  index_change_event_str,
-			"Move":  move_event_str
-		});
-
-		proto._find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
-			var hash = this._hash(key);
-			var rv = {
-				hv: false,
-				i: -1,
-				h: hash,
-				ui: -1,
-				uhv: false
-			};
-
-			var eq = this._equality_check;
-			var index_where_fn = function (a, b) {
-				return eq(a.key.get(), key);
-			};
-
-			var hash_values = this._khash[hash];
-			if (isArray(hash_values)) {
-				var key_index = index_where(hash_values, index_where_fn);
-				rv.hv = hash_values;
-				rv.i = key_index;
-			}
-
-			if (rv.i < 0 && fetch_unsubstantiated !== false) { //Not found
-				var unsubstantiated_values = this._unsubstantiated_values[hash];
-				var unsubstantiated_index = -1;
-				if (isArray(unsubstantiated_values)) {
-					unsubstantiated_index = index_where(unsubstantiated_values, index_where_fn);
-				} else {
-					if (create_unsubstantiated) {
-						unsubstantiated_values = this._unsubstantiated_values[hash] = [];
-					}
-				}
-
-				if (unsubstantiated_index < 0 && create_unsubstantiated === true) {
-					var is_literal = this._default_literal_values;
-					var unsubstantiated_info = { key: new SettableConstraint(key, true), value: new SettableConstraint(undefined, is_literal), index: new SettableConstraint(-1, true) };
-					unsubstantiated_values.push(unsubstantiated_info);
-					unsubstantiated_index = unsubstantiated_values.length - 1;
-				}
-				rv.uhv = unsubstantiated_values;
-				rv.ui = unsubstantiated_index;
-			}
-			return rv;
-		};
-		proto._do_set_item_ki = function (ki, key, value, index, literal, ignore_events) {
-			var key_index = ki.i,
-				hash_values = ki.hv,
-				hash = ki.h;
-			var i, value_hash, vhash_val;
-			if (!hash_values) {
-				hash_values = this._khash[hash] = [];
-			}
-
-			var is_literal = literal === undefined ? this._default_literal_values : !!literal;
-			var info;
-			if (key_index >= 0) {
-				info = hash_values[key_index];
-				var old_value = info.value.get();
-
-				if (this._vhash) {
-					var old_value_hash = this._valuehash(old_value);
-					value_hash = this._valuehash(value);
-					var old_vhash_val = this._vhash[old_value_hash];
-					vhash_val = this._vhash[value_hash];
-
-					if (old_vhash_val) {
-						var len = old_vhash_val.length;
-						for (i = 0; i < len; i += 1) {
-							if (old_vhash_val[i] === info) {
-								old_vhash_val.splice(i, 1);
-								break;
-							}
-						}
-						if (old_vhash_val.length === 0) {
-							delete this._vhash[old_value_hash];
-						}
-					}
-
-					if (vhash_val) {
-						vhash_val.push(info);
-					} else {
-						this._vhash[value_hash] = [info];
-					}
-				}
-
-				info.value.set(value, is_literal);
-				if (ignore_events !== true) {
-					this._queued_events.push([value_change_event_str, info.value, info.key, old_value, info.index]);
-				}
-			} else {
-				if (!isNumber(index) || index < 0) {
-					index = this._ordered_values.length;
-				}
-				var unsubstantiated_index = ki.ui;
-				if (unsubstantiated_index >= 0) {
-					var unsubstantiated_hash_values = ki.uhv,
-						unsubstantiated_info = unsubstantiated_hash_values[unsubstantiated_index];
-
-					unsubstantiated_hash_values.splice(unsubstantiated_index, 1);
-					if (unsubstantiated_hash_values.length === 0) {
-						delete this._unsubstantiated_values[hash];
-					}
-
-					info = unsubstantiated_info;
-					info.value.set(value, is_literal);
-					info.index.set(index, true);
-				} else {
-					info = { key: new SettableConstraint(key, true), value: new SettableConstraint(value, is_literal), index: new SettableConstraint(index, true) };
-				}
-
-				hash_values.push(info);
-
-				if (this._vhash) {
-					value_hash = this._valuehash(value);
-					vhash_val = this._vhash[value_hash];
-					if (vhash_val) {
-						vhash_val.push(info);
-					} else {
-						this._vhash[value_hash] = [info];
-					}
-				}
-
-				this._ordered_values.splice(index, 0, info);
-
-				if (ignore_events !== true) {
-					this._queued_events.push([put_event_str, value, key, index]);
-				}
-				for (i = index + 1; i < this._ordered_values.length; i += 1) {
-					this._set_index(this._ordered_values[i], i, ignore_events);
-				}
-				this.$size.invalidate();
-				this.$keys.invalidate();
-			}
-			this.$values.invalidate();
-			this.$entries.invalidate();
-		};
-
-		proto._set_index = function (info, to_index, ignore_events) {
-			var old_index = info.index.get;
-			info.index.set(to_index);
-			if (ignore_events !== false) {
-				this._queued_events.push([index_change_event_str, info.value, info.key, info.index, old_index]);
-			}
-		};
-		var _destroy_info = function (infos) {
-			each(infos, function (info) {
-				info.key.destroy();
-				info.value.destroy();
-				info.index.destroy();
-			});
-		};
-		proto._remove_index = function (index) {
-			var info = this._ordered_values[index];
-			this._queued_events.push([remove_event_str, info.value.get(), info.key.get(), info.index.get()]);
-			_destroy_info(this._ordered_values.splice(index, 1));
-			this.$size.invalidate();
-		};
-
-		proto.set = proto.put = function (key, value, index, literal) {
-			cjs.wait();
-			this.wait();
-			var ki = this._find_key(key, true, false);
-			this._do_set_item_ki(ki, key, value, index, literal);
-			this.signal();
-			cjs.signal();
-			return this;
-		};
-		proto.remove = function (key) {
-			var ki = this._find_key(key, false, false);
-			var key_index = ki.i,
-				hash_values = ki.hv;
-			var i;
-			if (key_index >= 0) {
-				cjs.wait();
-				this.wait();
-
-				var info = hash_values[key_index];
-				var ordered_index = info.index.get();
-
-				hash_values.splice(key_index, 1);
-				if (hash_values.length === 0) {
-					delete hash_values[key_index];
-				}
-
-				if (this._vhash) {
-					var value_hash = this._valuehash(info.value.get());
-					var vhash_val = this._vhash[value_hash];
-					if (vhash_val) {
-						var len = vhash_val.length;
-						for (i = 0; i < len; i += 1) {
-							if (vhash_val[i] === info) {
-								vhash_val.splice(i, 1);
-								break;
-							}
-						}
-						if (vhash_val.length === 0) {
-							delete this._vhash[value_hash];
-						}
-					}
-				}
-
-				this._remove_index(ordered_index);
-				for (i = ordered_index; i < this._ordered_values.length; i += 1) {
-					this._set_index(this._ordered_values[i], i);
-				}
-
-				this.$keys.invalidate();
-				this.$values.invalidate();
-				this.$entries.invalidate();
-
-				this.signal();
-				cjs.signal();
-			}
-			return this;
-		};
-		proto.get = function (key) {
-			var ki = this._find_key(key, true, true);
-			var key_index = ki.i,
-				hash_values = ki.hv;
-			if (key_index >= 0) {
-				var info = hash_values[key_index];
-				return info.value.get();
-			} else {
-				var unsubstantiated_info = ki.uhv[ki.ui];
-				return unsubstantiated_info.value.get();
-			}
-		};
-		proto.keys = function () {
-			return this.$keys.get();
-		};
-		proto._do_get_keys = function () {
-			var rv = [];
-			this.each(function (value, key) {
-				rv.push(key);
-			});
-			return rv;
-		};
-		proto.clear = function () {
-			if (this._do_get_size() > 0) {
-				cjs.wait();
-				this.wait();
-				while (this._ordered_values.length > 0) {
-					this._remove_index(0);
-				}
-				each(this._khash, function (arr, hash) {
-					delete this._khash[hash];
-				}, this);
-				if (this._vhash) {
-					each(this._vhash, function (arr, hash) {
-						delete this._vhash[hash];
-					}, this);
-				}
-
-				this.$keys.invalidate();
-				this.$values.invalidate();
-				this.$entries.invalidate();
-				this.$size.invalidate();
-
-				this.signal();
-				cjs.signal();
-			}
-			return this;
-		};
-		proto.values = function () {
-			return this.$values.get();
-		};
-		proto._do_get_values = function () {
-			var rv = [];
-			this.each(function (value, key) {
-				rv.push(value);
-			});
-			return rv;
-		};
-		proto._do_get_size = function () {
-			return this._ordered_values.length;
-		};
-		proto.size = function () {
-			return this.$size.get();
-		};
-		proto.entries = function () {
-			return this.$entries.get();
-		};
-		proto._do_get_entries = function () {
-			var rv = [];
-			this.each(function (value, key) {
-				rv.push({key: key, value: value});
-			});
-			return rv;
-		};
-		proto.each_key = function (func, context) {
-			context = context || root;
-			var i, len = this.size();
-			for (i = 0; i < len; i += 1) {
-				var info = this._ordered_values[i];
-				if (info) {
-					if (func.call(context, info.key.get(), i) === false) {
-						break;
-					}
-				}
-			}
-			return this;
-		};
-		proto.each = function (func, context) {
-			context = context || root;
-			var i, len = this.size();
-			for (i = 0; i < len; i += 1) {
-				var info = this._ordered_values[i];
-				if (info) {
-					if (func.call(context, info.value.get(), info.key.get(), info.index.get()) === false) {
-						break;
-					}
-				}
-			}
-			return this;
-		};
-		proto.set_equality_check = function (equality_check) {
-			this._equality_check = equality_check;
-			return this;
-		};
-		proto.set_value_equality_check = function (vequality_check) {
-			this._vequality_check = vequality_check;
-			return this;
-		};
-		proto.set_hash = function (hash) {
-			this._hash = isString(hash) ? get_str_hash_fn(hash) : hash;
-			this._khash = {};
-			this._unsubstantiated_values = {};
-			each(this._ordered_values, function (info) {
-				var key = info.key.get();
-				var hash = this._hash(key);
-				var hash_val = this._khash[hash];
-				if (hash_val) {
-					hash_val.push(info);
-				} else {
-					this._khash[hash] = [info];
-				}
-			}, this);
-			return this;
-		};
-		proto.set_value_hash = function (vhash) {
-			this._valuehash = isString(vhash) ? get_str_hash_fn(vhash) : vhash;
-
-			this._vhash = {};
-			if (this._valuehash) {
-				each(this._ordered_values, function (info) {
-					var value = info.value.get();
-					var hash = this._valuehash(value);
-					var hash_val = this._vhash[hash];
-					if (hash_val) {
-						hash_val.push(info);
-					} else {
-						this._vhash[hash] = [info];
-					}
-				}, this);
-			}
-			return this;
-		};
-		proto.item = function (arg0, arg1, arg2) {
-			if (arguments.length === 1) {
-				return this.get(arg0);
-			} else if (arguments.length >= 2) {
-				this.put(arg0, arg1, arg2);
-			}
-			return this;
-		};
-		proto.indexOf = function (key) {
-			var ki = this._find_key(key, true, true);
-			var key_index = ki.i,
-				hash_values = ki.hv;
-			if (key_index >= 0) {
-				var info = hash_values[key_index];
-				return info.index.get();
-			} else {
-				var unsubstantiated_info = ki.uhv[ki.ui];
-				return unsubstantiated_info.index.get();
-			}
-		};
-		proto.get_or_put = function (key, create_fn, create_fn_context, index, literal) {
-			var ki = this._find_key(key, true, false);
-			var key_index = ki.i,
-				hash_values = ki.hv,
-				hash = ki.h;
-			if (key_index >= 0) {
-				var info = hash_values[key_index];
-				return info.value.get();
-			} else {
-				cjs.wait();
-				this.wait();
-				var context = create_fn_context || root;
-				var value = create_fn.call(context, key);
-				this._do_set_item_ki(ki, key, value, index, literal);
-				this.signal();
-				cjs.signal();
-				return value;
-			}
-		};
-		proto.has = proto.containsKey = function (key) {
-			var ki = this._find_key(key, true, true);
-			var key_index = ki.i;
-			if (key_index >= 0) {
-				return true;
-			} else {
-				var unsubstantiated_info = ki.uhv[ki.ui];
-				unsubstantiated_info.value.update(); // Add a dependency
-				return false;
-			}
-		};
-
-		proto.move_index = function (old_index, new_index) {
-			var i;
-			cjs.wait();
-			this.wait();
-			var info = this._ordered_values[old_index];
-			this._ordered_values.splice(old_index, 1);
-			this._ordered_values.splice(new_index, 0, info);
-			this._queued_events.push([move_event_str, info.value.get(), info.key.get(), new_index, old_index]);
-
-			var low = Math.min(old_index, new_index);
-			var high = Math.max(old_index, new_index);
-			for (i = low; i <= high; i += 1) {
-				this._set_index(this._ordered_values[i], i);
-			}
-			this.$keys.invalidate();
-			this.$values.invalidate();
-			this.$entries.invalidate();
-			this.signal();
-			cjs.signal();
-			return this;
-		};
-		proto.move = function (key, to_index) {
-			var ki = this._find_key(key, false, false);
-			var key_index = ki.i;
-			if (key_index >= 0) {
-				var info = ki.hv[key_index];
-				this.move_index(info.index.get(), to_index);
-			}
-			return this;
-		};
-		proto.keyForValue = function (value, eq_check) {
-			eq_check = eq_check || this._vequality_check;
-			var i;
-			if (this._vhash) {
-				var value_hash = this._valuehash(value);
-				var vhash_val = this._vhash[value_hash];
-				if (vhash_val) {
-					var len = vhash_val.length;
-					for (i = 0; i < len; i += 1) {
-						var info = vhash_val[i];
-						if (eq_check(info.value.get(), value)) {
-							return info.key.get();
-						}
-					}
-				}
-				return undefined;
-			} else {
-				var key;
-				this.each(function (v, k) {
-					if (eq_check(value, v)) {
-						key = k;
-						return false;
-					}
-				});
-				return key;
-			}
-		};
-		proto.isEmpty = function () {
-			return this.size() === 0;
-		};
-		proto.set_cached_value = function (key, value) {
-			var ki = this._find_key(key, false, false);
-			var key_index = ki.i;
-			if (key_index >= 0) {
-				var info = ki.hv[key_index];
-				info.value.set_cached_value(value);
-			}
-			return this;
-		};
-		proto.destroy = function () {
-			this.wait();
-			cjs.wait();
-			this.clear();
-			this.$keys.destroy();
-			this.$values.destroy();
-			this.$entries.destroy();
-			cjs.signal();
-			this.signal();
-		};
-		proto.toObject = function (key_map_fn) {
-			key_map_fn = key_map_fn || identity;
-			var rv = {};
-			this.each(function (v, k) { rv[key_map_fn(k)] = v; });
-			return rv;
-		};
-	}(MapConstraint));
-
-	cjs.map = function (arg0, arg1) { return new MapConstraint(arg0, arg1); };
-	cjs.is_map = function (obj) { return obj instanceof MapConstraint; };
-	cjs.MapConstraint = MapConstraint;
-
-	var memoize_default_hash = function () {
-		var i, len = arguments.length;
-		var rv = "";
-		for (i = 0; i < len; i += 1) {
-			rv += arguments[i];
-		}
-		return rv;
-	};
-	var memoize_default_equals = function (args1, args2) {
-		var i,
-			len = args1.length;
-		if (len === args2.length) {
-			for (i = 0; i < len; i += 1) {
-				var arg1 = args1[i],
-					arg2 = args2[i];
-				if (arg1 !== arg2) {
-					return false;
-				}
-			}
-			return true;
-		} else {
-			return false;
-		}
-	};
-
-	cjs.memoize = function (getter_fn, options) {
-		options = extend({
-			hash: memoize_default_hash,
-			equals: memoize_default_equals,
-			context: false,
-			literal_values: false
-		}, options);
-
-		var args_map = cjs.map({
-			hash: options.hash,
-			equals: options.equals,
-			literal_values: options.literal_values
-		});
-
-		var get_constraint = function () {
-			var args = arguments,
-				my_context = options.context || this;
-			var constraint = args_map.get_or_put(args, function () {
-				return new Constraint(function () {
-					return getter_fn.apply(my_context, args);
-				});
-			});
-			return constraint;
-		};
-
-		var rv = function () {
-			var constraint = get_constraint.apply(this, arguments);
-			return constraint.get();
-		};
-		rv.destroy = function () {
-			args_map.each(function (constraint) {
-				constraint.destroy();
-			}).destroy();
-		};
-		rv.set_cached_value = function () {
-			var args = slice.call(arguments, 0, arguments.length - 1);
-
-			var constraint = get_constraint.apply(this, args);
-			var value = last(arguments);
-			constraint.set_cached_value(value);
-		};
-		return rv;
-	};
-
-	cjs.removeDependency = function (from, to) {
-		var fromNode = constraint_solver.getNode(from),
-			toNode = constraint_solver.getNode(to);
-		var outgoing = fromNode.getOutgoing();
-		var edge = outgoing[toNode.id];
-		if (edge) {
-			constraint_solver.removeEdge(edge);
-		}
-	};
-
-	cjs.addDependency = function (from, to) {
-		var fromNode = constraint_solver.getNode(from),
-			toNode = constraint_solver.getNode(to);
-		constraint_solver.addNodeDependency(fromNode, toNode);
-	};
-
-	return cjs;
-}(this));

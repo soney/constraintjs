@@ -1,7 +1,7 @@
 {
 	"name": "ConstraintJS",
 	"description": "Constraint library for JavaScript",
-	"version": "0.7.0",
+	"version": "0.8.0",
 	"author": "Stephen Oney (Carnegie Mellon)",
 	"maintainers": [
 		{
