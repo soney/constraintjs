@@ -1,7 +1,6 @@
 	//
 	// ============== CJS CORE ============== 
 	//
-	//
 	var SECRET_NODE_NAME = "__cjs_cs_node__";
 
 	//
@@ -627,4 +626,20 @@
 		each(values, function (value, key) {
 			Constraint.prototype[key] = value;
 		});
+	};
+
+	cjs.removeDependency = function (from, to) {
+		var fromNode = constraint_solver.getNode(from),
+			toNode = constraint_solver.getNode(to);
+		var outgoing = fromNode.getOutgoing();
+		var edge = outgoing[toNode.id];
+		if (edge) {
+			constraint_solver.removeEdge(edge);
+		}
+	};
+
+	cjs.addDependency = function (from, to) {
+		var fromNode = constraint_solver.getNode(from),
+			toNode = constraint_solver.getNode(to);
+		constraint_solver.addNodeDependency(fromNode, toNode);
 	};

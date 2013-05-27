@@ -1,9 +1,5 @@
 module.exports = function(grunt) {
-
-	var cjs_inc = require('./include_libs');
-
-	var package = grunt.file.readJSON('package.json');
-	// Project configuration.
+	var package = grunt.file.readJSON('package.json'); // Project configuration.
 	grunt.initConfig({
 		pkg: package,
 		jshint: {
@@ -35,7 +31,7 @@ module.exports = function(grunt) {
 				}
 			},
 			js: {
-				src: ["src/header.js", "src/cjs.js", "src/cjs_liven.js", "src/cjs_array.js", "src/cjs_map.js", "src/footer.js"],
+				src: ["src/header.js", "src/cjs.js", "src/cjs_memoize.js", "src/cjs_liven.js", "src/cjs_array.js", "src/cjs_map.js", "src/footer.js"],
 				dest: "build/cjs.js"
 			}
 		},

@@ -142,7 +142,7 @@
 			}
 			return rv;
 		};
-		proto._do_set_item_ki = function (ki, key, value, index, literal, ignore_events) {
+		var _do_set_item_ki = function (ki, key, value, index, literal, ignore_events) {
 			var key_index = ki.i,
 				hash_values = ki.hv,
 				hash = ki.h;
@@ -161,7 +161,6 @@
 					var old_value_hash = this._valuehash(old_value);
 					value_hash = this._valuehash(value);
 					var old_vhash_val = this._vhash[old_value_hash];
-					vhash_val = this._vhash[value_hash];
 
 					if (old_vhash_val) {
 						var len = old_vhash_val.length;
@@ -175,6 +174,8 @@
 							delete this._vhash[old_value_hash];
 						}
 					}
+
+					vhash_val = this._vhash[value_hash];
 
 					if (vhash_val) {
 						vhash_val.push(info);
@@ -260,7 +261,7 @@
 			cjs.wait();
 			this.wait();
 			var ki = this._find_key(key, true, false);
-			this._do_set_item_ki(ki, key, value, index, literal);
+			_do_set_item_ki.call(this, ki, key, value, index, literal);
 			this.signal();
 			cjs.signal();
 			return this;
@@ -488,7 +489,7 @@
 				this.wait();
 				var context = create_fn_context || root;
 				var value = create_fn.call(context, key);
-				this._do_set_item_ki(ki, key, value, index, literal);
+				_do_set_item_ki.call(this, ki, key, value, index, literal);
 				this.signal();
 				cjs.signal();
 				return value;
