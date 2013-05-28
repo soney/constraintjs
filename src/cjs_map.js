@@ -280,7 +280,7 @@
 
 				hash_values.splice(key_index, 1);
 				if (hash_values.length === 0) {
-					delete hash_values[key_index];
+					delete this._khash[ki.h];
 				}
 
 				if (this._vhash) {
