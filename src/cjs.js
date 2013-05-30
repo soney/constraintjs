@@ -44,11 +44,6 @@
 		return toString.call(obj) === '[object Array]';
 	};
 
-	// Is a given value a DOM element?
-	var isElement = function (obj) {
-		return !!(obj && (obj.nodeType === 1 || obj.nodeType === 8 || obj.nodeType === 3));
-	};
-
 	// Is a given value a function?
 	var isFunction = function (obj) {
 		return toString.call(obj) === '[object Function]';
@@ -119,24 +114,6 @@
 		if (obj.length === +obj.length) { results.length = obj.length; }
 		return results;
 	};
-		
-	// Retrieve the values of an object's properties.
-	var values = function (obj) {
-		return map(obj, identity);
-	};
-
-	// Safely convert anything iterable into a real, live array.
-	var toArray = function (obj) {
-		if (!obj) { return []; }
-		if (isArray(obj)) { return slice.call(obj); }
-		if (isArguments(obj)) { return slice.call(obj); }
-		if (obj.toArray && isFunction(obj.toArray)) { return obj.toArray(); }
-		return values(obj);
-	};
-
-	var last = function (arr) {
-		return arr[arr.length - 1];
-	};
 
 	var extend = function (obj) {
 		var i, prop, len = arguments.length;
@@ -183,19 +160,27 @@
 	};
 
 	// The star of the show!
-	var old_cjs = root.cjs;
-	var cjs = function (val) {
-		if (isArray(val)) {
-			return cjs.array({ value: val });
-		} else if (isObject(val) && !isFunction(val) && !isElement(val)) {
-			return cjs.map({ value: val });
-		} else {
-			return cjs.$.apply(cjs, arguments);
-		}
+	var cjs = function () {
+		return cjs.$.apply(cjs, arguments);
 	};
-	cjs.version = "<%= version %>";
 
-	cjs.noConflict = function () { root.cjs = old_cjs; return cjs; };
+	cjs.version = "<%= version %>"; // This template will be filled in by the builder
+
+	if(hOP.call(root, "cjs")) { // If there was a previous cjs property...
+		// ...then track it and allow cjs.noConflict to restore its previous value
+		var old_cjs = root.cjs;
+		cjs.noConflict = function() {
+			root.cjs = old_cjs;
+			return cjs; // and return a reference to cjs if the user wants it
+		};
+	} else {
+		// ...otherwise, cjs.noConflict will just delete the old value
+		cjs.noConflict = function() {
+			delete root.cjs;
+			return cjs;
+		};
+	}
+
 
 	//
 	// ============== CONSTRAINT SOLVER ============== 
@@ -207,31 +192,32 @@
 	//   Brad Vander Zanden, Brad A. Myers, Dario A. Giuse, and Pedro Szekely. 1994. Integrating pointer variables into one-way constraint models. ACM Trans. Comput.-Hum. Interact. 1, 2 (June 1994), 161-213. DOI=10.1145/180171.180174 http://doi.acm.org/10.1145/180171.180174
 
 	var constraint_solver = (function () {
-		var ConstraintNode = function (obj, options) {
-			this.outgoingEdges = {};
-			this.incomingEdges = {};
-			this.nullificationListeners = [];
-			this.obj = obj;
+		var constraint_node_id = 1; // This variable will be incremented to produce a unique ID for every constraint node
 
-			this.options = extend({
-					//cache_value: true,
-					//equals: eqeqeq,
-					//auto_add_outgoing_dependencies: true,
-					//auto_add_incoming_dependencies: true,
-					//check_on_nullify: false
-				}, options);
+		var ConstraintNode = function (cs_eval, options) {
+			this.id = constraint_node_id++; // Create a unique ID for this constraint node
+			this.outgoingEdges = {}; // The nodes that depend on me, key is link to edge object (with properties toNode, fromNode=this)
+			this.incomingEdges = {}; // The nodes that I depend on, key is link to edge object (with properties toNode=this, fromNode)
+			this.nullificationListeners = []; // A list of callbacks that will be called when I'm nullified
+			this.cs_eval = cs_eval; // My getter
 
-			this.valid = false;
-			this.obj[SECRET_NODE_NAME] = this;
-			this.timestamp = 0;
-			this.id = uniqueId();
+			/*
+			 * == OPTION DEFAULTS ==
+			 *
+			 * cache_value: whether or not to keep track of the current value, true by default
+			 * equals: the function to check if two values are equal, === by default
+			 * auto_add_outgoing_dependencies: allow the constraint solver to determine when things depend on me, true by default
+			 * auto_add_incoming_dependencies: allow the constraint solver to determine when things I depend on thigns, true by default
+			 * check_on_nullify: when nullified, check if my value has actually changed (requires immediately re-evaluating me), false by default
+			*/
+			this.options = extend({}, options); // keeps track of the above options
+
+			this.valid = false; // Tracks whether or not the cached value if valid
+			this.timestamp = 0; // Marks the last time I was updated
 		};
 		(function (my) {
 			var proto = my.prototype;
-			proto.cs_eval = function () { return this.obj.cjs_getter(); };
-			proto.mark_invalid = function () { this.valid = false; };
-			proto.mark_valid = function () { this.valid = true; };
-			proto.is_valid = function () { return this.valid; };
+
 			proto.update_value = function () {
 				if (this.options.cache_value !== false) {
 					this.set_cached_value(this.cs_eval());
@@ -273,7 +259,6 @@
 					var fromNode = edge.fromNode;
 					fromNode.removeOutgoingEdge(edge);
 				});
-
 				each(this.outgoingEdges, function (edge) {
 					var toNode = edge.toNode;
 					if (silent !== true) {
@@ -281,8 +266,7 @@
 					}
 					toNode.removeIncomingEdge(edge);
 				});
-
-				delete this.obj[SECRET_NODE_NAME];
+				delete this.value; // To avoid some leaks, let go of the value in case someone doesn't let go of me
 				cjs.signal();
 			};
 
@@ -301,19 +285,21 @@
 		(function (my) {
 			var proto = my.prototype;
 
-			proto.getNode = function (obj) { return obj[SECRET_NODE_NAME] || null; };
+			proto.getNode = function (obj) { return obj[SECRET_NODE_NAME]; };
 			proto.add = function (obj, options) {
-				return this.getNode(obj) || new ConstraintNode(obj, options);
+				if(hOP.call(obj, SECRET_NODE_NAME)) {
+					return obj[SECRET_NODE_NAME];
+				} else {
+					return obj[SECRET_NODE_NAME] = new ConstraintNode(bind(obj.cjs_getter, obj), options);
+				}
 			};
 
 			proto.removeObject = function (obj, silent) {
-				var node = this.getNode(obj);
-				if (node !== null) {
-					this.removeNode(node, silent);
+				if(hOP.call(obj, SECRET_NODE_NAME)) {
+					var node = obj[SECRET_NODE_NAME];
+					node.destroy(silent);
+					delete obj[SECRET_NODE_NAME];
 				}
-			};
-			proto.removeNode = function (node, silent) {
-				node.destroy(silent);
 			};
 
 			proto.addNodeDependency = function (fromNode, toNode) {
@@ -337,8 +323,8 @@
 				for (i = 0; i < to_nullify.length; i += 1) {
 					var curr_node = to_nullify[i];
 
-					if (curr_node.is_valid()) {
-						curr_node.mark_invalid();
+					if (curr_node.valid) {
+						curr_node.valid = false;
 						invalid = true;
 						if (curr_node.options.cache_value !== false && curr_node.options.check_on_nullify === true) {
 							var equals = curr_node.options.equals || eqeqeq;
@@ -417,7 +403,7 @@
 					}
 				}
 
-				if (!node.is_valid()) {
+				if (!node.valid) {
 					this.stack[stack_len] = node;
 					this.doEvalNode(node);
 					this.stack.length = stack_len;
@@ -427,7 +413,7 @@
 			};
 			
 			proto.doEvalNode = function (node) {
-				node.mark_valid();
+				node.valid = true;
 				node.update_value();
 				node.timestamp += 1;
 			};
@@ -479,12 +465,8 @@
 		return new ConstraintSolver();
 	}());
 
-	cjs.wait = function () {
-		constraint_solver.wait();
-	};
-	cjs.signal = function () {
-		constraint_solver.signal();
-	};
+	cjs.wait = bind(constraint_solver.wait, constraint_solver);
+	cjs.signal = bind(constraint_solver.signal, constraint_solver);
 
 	//
 	// ============== CORE CONSTRAINTS ============== 
@@ -512,27 +494,21 @@
 		};
 		proto.get = proto.update = function () { return constraint_solver.getValue(this); };
 		proto.onChange = function (callback) {
-			var self = this;
 			var listener = {
-				callback: callback,
-				on_nullify: function () {
-					callback();
-				}
+				callback: callback
 			};
 			var node = constraint_solver.getNode(this);
-			constraint_solver.on_nullify(node, listener.on_nullify);
+			constraint_solver.on_nullify(node, listener.callback);
 			this._change_listeners.push(listener);
 			return this;
 		};
 		proto.offChange = function (callback) {
-			var i, len = this._change_listeners.length;
-			for (i = 0; i < len; i += 1) {
+			var node = constraint_solver.getNode(this);
+			for (var i = this._change_listeners.length-1; i >= 0; i -= 1) {
 				var listener = this._change_listeners[i];
 				if (listener === callback) {
-					var node = constraint_solver.getNode(this);
-					constraint_solver.off_nullify(node, listener.on_nullify);
+					constraint_solver.off_nullify(node, listener.callback);
 					this._change_listeners.splice(i, 1);
-					i -= 1;
 				}
 			}
 			return this;
@@ -547,13 +523,6 @@
 		proto.invalidate = function () {
 			constraint_solver.nullifyNode(constraint_solver.getNode(this));
 		};
-		proto.validate = function () {
-			var node = constraint_solver.getNode(this);
-			if (node) {
-				node.mark_valid();
-			}
-			return this;
-		};
 		proto.set_cached_value = function (value) {
 			var node = constraint_solver.getNode(this);
 			if (node) {
@@ -563,7 +532,7 @@
 		};
 		proto.is_valid = function () {
 			var node = constraint_solver.getNode(this);
-			return node.is_valid();
+			return node.valid;
 		};
 	}(Constraint));
 	cjs.Constraint = Constraint;
@@ -596,17 +565,11 @@
 		return obj instanceof Constraint;
 	};
 
-	cjs.get = function (obj, recursive) {
-		if (cjs.is_$(obj)) {
-			return cjs.get(obj.get(), recursive);
-		} else if (cjs.is_array(obj)) {
-			return obj.toArray();
+	cjs.get = function (obj) {
+		if(obj instanceof Constraint) {
+			return obj.get();
 		} else {
-			if (recursive === true && isArray(obj)) {
-				return map(obj, function (x) { return cjs.get(x, true); });
-			} else {
-				return obj;
-			}
+			return obj;
 		}
 	};
 
