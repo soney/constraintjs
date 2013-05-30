@@ -61,7 +61,7 @@
 			var args = slice.call(arguments, 0, arguments.length - 1);
 
 			var constraint = get_constraint.apply(this, args);
-			var value = last(arguments);
+			var value = arguments[arguments.length-1];
 			constraint.set_cached_value(value);
 		};
 		return rv;
