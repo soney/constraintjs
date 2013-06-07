@@ -381,11 +381,11 @@
 					while (this.nullified_call_stack.length > 0) {
 						var nullified_callback = this.nullified_call_stack.shift();
 						delete nullified_callback.__in_cjs_call_stack__;
-						try {
+						//try {
 							nullified_callback();
-						} catch(e) {
-							console_error(e);
-						}
+						//} catch(e) {
+							//console_error(e);
+						//}
 					}
 					this.running_nullified_listeners = false;
 				}
