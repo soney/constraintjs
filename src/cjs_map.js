@@ -237,7 +237,7 @@
 		};
 
 		proto._set_index = function (info, to_index, ignore_events) {
-			var old_index = info.index.get;
+			var old_index = info.index.get();
 			info.index.set(to_index);
 			if (ignore_events !== false) {
 				this._queued_events.push([index_change_event_str, info.value, info.key, info.index, old_index]);
