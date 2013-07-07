@@ -203,12 +203,12 @@
 	var constraint_solver = (function () {
 		var constraint_node_id = 1; // This variable will be incremented to produce a unique ID for every constraint node
 
-		var ConstraintNode = function (cs_eval, options) {
+		var ConstraintNode = function (obj, options) {
 			this.id = constraint_node_id++; // Create a unique ID for this constraint node
 			this.outgoingEdges = {}; // The nodes that depend on me, key is link to edge object (with properties toNode, fromNode=this)
 			this.incomingEdges = {}; // The nodes that I depend on, key is link to edge object (with properties toNode=this, fromNode)
 			this.nullificationListeners = []; // A list of callbacks that will be called when I'm nullified
-			this.cs_eval = cs_eval; // My getter
+			this.obj = obj; // My getter
 
 			/*
 			 * == OPTION DEFAULTS ==
@@ -229,9 +229,9 @@
 
 			proto.update_value = function () {
 				if (this.options.cache_value !== false) {
-					this.set_cached_value(this.cs_eval());
+					this.set_cached_value(this.obj.cjs_getter());
 				} else {
-					this.cs_eval();
+					this.obj.cjs_getter();
 				}
 			};
 			proto.setOption = function (key, value) {
@@ -276,6 +276,7 @@
 					toNode.removeIncomingEdge(edge);
 				});
 				delete this.value; // To avoid some leaks, let go of the value in case someone doesn't let go of me
+				delete this.obj;
 				cjs.signal();
 			};
 
@@ -299,7 +300,7 @@
 				if(hOP.call(obj, SECRET_NODE_NAME)) {
 					return obj[SECRET_NODE_NAME];
 				} else {
-					return obj[SECRET_NODE_NAME] = new ConstraintNode(bind(obj.cjs_getter, obj), options);
+					return obj[SECRET_NODE_NAME] = new ConstraintNode(obj, options);
 				}
 			};
 
@@ -396,7 +397,6 @@
 			proto.getNodeValue = function (node) {
 				var stack_len = this.stack.length;
 
-
 				if (stack_len > 0) {
 					var demanding_var = this.stack[stack_len - 1];
 					var dependency_edge = this.getEdge(node, demanding_var);
@@ -488,7 +488,10 @@
 
 	(function (my) {
 		var proto = my.prototype;
-		proto.destroy = function (silent) { constraint_solver.removeObject(this, silent); };
+		proto.destroy = function (silent) {
+			constraint_solver.removeObject(this, silent);
+			delete this._change_listeners;
+		};
 		proto.cjs_getter = function () {
 			if (has(this, "value")) {
 				if (isFunction(this.value) && !this.literal) {
