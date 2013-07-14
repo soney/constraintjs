@@ -73,10 +73,10 @@
 
 		this._unsubstantiated_values = {};
 
-		this.$keys = new Constraint(bind(this._do_get_keys, this));
-		this.$values = new Constraint(bind(this._do_get_values, this));
-		this.$entries = new Constraint(bind(this._do_get_entries, this));
-		this.$size = new Constraint(bind(this._do_get_size, this));
+		this.$keys = new Constraint(this._do_get_keys, {context: this});
+		this.$values = new Constraint(this._do_get_values, {context: this});
+		this.$entries = new Constraint(this._do_get_entries, {context: this});
+		this.$size = new Constraint(this._do_get_size, {context: this});
 
 		this._initialize_listeners();
 	};
@@ -583,6 +583,11 @@
 			this.$keys.destroy();
 			this.$values.destroy();
 			this.$entries.destroy();
+			this.$size.destroy();
+			delete this.$keys;
+			delete this.$values;
+			delete this.$entries;
+			delete this.$size;
 			cjs.signal();
 			this.signal();
 		};

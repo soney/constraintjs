@@ -479,11 +479,18 @@
 	// ============== CORE CONSTRAINTS ============== 
 	//
 
-	var Constraint = function (value, literal, options) {
+	var Constraint = function (value, options) {
 		var node = constraint_solver.add(this, options);
 		this.value = value;
-		this.literal = literal === true;
 		this._change_listeners = [];
+
+		if(options) {
+			this.context = options.context || this;
+			this.literal = options.literal === true;
+		} else {
+			this.context = this;
+			this.literal = false;
+		}
 	};
 
 	(function (my) {
@@ -491,11 +498,12 @@
 		proto.destroy = function (silent) {
 			constraint_solver.removeObject(this, silent);
 			delete this._change_listeners;
+			delete this.context;
 		};
 		proto.cjs_getter = function () {
 			if (has(this, "value")) {
 				if (isFunction(this.value) && !this.literal) {
-					return this.value();
+					return this.value.call(this.context);
 				} else {
 					return this.value;
 				}
