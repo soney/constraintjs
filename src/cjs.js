@@ -246,13 +246,14 @@
 
 			proto.getOutgoing = function () { return this.outgoingEdges; };
 
-			proto.onNullify = function (callback) {
-				this.nullificationListeners.push(callback);
+			proto.onNullify = function (callback, context) {
+				this.nullificationListeners.push({callback: callback, context: context});
 			};
-			proto.offNullify = function (callback) {
+			proto.offNullify = function (callback, context) {
 				var ri;
 				for(var i = this.nullificationListeners.length-1; i>=0; i-=1) {
-					if(this.nullificationListeners[i] === callback) {
+					ri = this.nullificationListeners[i];
+					if(ri.callback === callback && (!ri.context || ri.context === context)) {
 						this.nullificationListeners.splice(i, 1);
 					}
 				}
@@ -327,7 +328,7 @@
 				var to_nullify = [node];
 				var to_nullify_len = 1, invalid;
 				var nullify_listener = function (nl) {
-					nl.__in_cjs_call_stack__ = true;
+					nl.callback.__in_cjs_call_stack__ = true;
 				};
 				var get_curr_node = function (curr_node) { return curr_node; };
 				for (i = 0; i < to_nullify.length; i += 1) {
@@ -377,13 +378,17 @@
 			};
 
 			proto.run_nullified_listeners = function () {
+				var nullified_info, callback, context;
 				if (!this.running_nullified_listeners) {
 					this.running_nullified_listeners = true;
 					while (this.nullified_call_stack.length > 0) {
-						var nullified_callback = this.nullified_call_stack.shift();
-						delete nullified_callback.__in_cjs_call_stack__;
+						nullified_info = this.nullified_call_stack.shift();
+						callback = nullified_info.callback;
+						context = nullified_info.context || this;
+
+						delete callback.__in_cjs_call_stack__;
 						//try {
-							nullified_callback();
+							callback.call(context);
 						//} catch(e) {
 							//console_error(e);
 						//}
@@ -426,16 +431,24 @@
 			};
 			proto.doEval = function (obj) { return this.doEvalNode(this.getNode(obj)); };
 
-			proto.on_nullify = function (node, callback) {
-				node.onNullify(callback);
+			proto.on_nullify = function (node, callback, context) {
+				node.onNullify(callback, context);
 			};
 
-			proto.off_nullify = function (node, callback) {
-				node.offNullify(callback);
+			proto.off_nullify = function (node, callback, context) {
+				node.offNullify(callback, context);
 
 				if (callback.__in_cjs_call_stack__) {
 					delete callback.__in_cjs_call_stack__;
-					remove(this.nullified_call_stack, callback);
+					var len = this.nullified_call_stack.length;
+					var ii;
+					for(var i = 0; i<len; i++) {
+						ii = this.nullified_call_stack[i];
+						if(ii.callback === callback && (!context || ii.context === context)) {
+							this.nullified_call_stack.splice(i, 1);
+							break;
+						}
+					}
 				}
 			};
 
@@ -511,21 +524,22 @@
 			return undefined;
 		};
 		proto.get = proto.update = function () { return constraint_solver.getValue(this); };
-		proto.onChange = function (callback) {
+		proto.onChange = function (callback, context) {
 			var listener = {
-				callback: callback
+				callback: callback,
+				context: context
 			};
 			var node = constraint_solver.getNode(this);
-			constraint_solver.on_nullify(node, listener.callback);
+			constraint_solver.on_nullify(node, callback, context);
 			this._change_listeners.push(listener);
 			return this;
 		};
-		proto.offChange = function (callback) {
+		proto.offChange = function (callback, context) {
 			var node = constraint_solver.getNode(this);
 			for (var i = this._change_listeners.length-1; i >= 0; i -= 1) {
 				var listener = this._change_listeners[i];
-				if (listener === callback) {
-					constraint_solver.off_nullify(node, listener.callback);
+				if (listener.callback === callback && (!context || listener.context === context)) {
+					constraint_solver.off_nullify(node, listener.callback, listener.context);
 					this._change_listeners.splice(i, 1);
 				}
 			}

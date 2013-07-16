@@ -55,7 +55,10 @@
 		rv.destroy = function () {
 			args_map.each(function (constraint) {
 				constraint.destroy();
-			}).destroy();
+			});
+			args_map.destroy();
+			args_map = null;
+			options = null;
 		};
 		rv.set_cached_value = function () {
 			var args = slice.call(arguments, 0, arguments.length - 1);

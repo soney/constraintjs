@@ -17,6 +17,7 @@
 			cache_value: false
 		});
 
+		var paused = false;
 		var do_get;
 		var destroy = function () {
 			constraint_solver.off_nullify(node, do_get);
@@ -24,13 +25,20 @@
 				options.on_destroy.call(options.context);
 			}
 			constraint_solver.removeObject(node);
+			node = null;
 		};
 		var pause = function () {
-			constraint_solver.off_nullify(node, do_get);
+			if(paused === false) {
+				paused = true;
+				constraint_solver.off_nullify(node, do_get);
+			}
 			return this;
 		};
 		var resume = function () {
-			constraint_solver.on_nullify(node, do_get);
+			if(paused === true) {
+				paused = false;
+				constraint_solver.on_nullify(node, do_get);
+			}
 			return this;
 		};
 		var run = function () {
@@ -51,7 +59,7 @@
 		constraint_solver.on_nullify(node, do_get);
 		if (options.run_on_create !== false) {
 			do_get.__in_cjs_call_stack__ = true;
-			constraint_solver.nullified_call_stack.push(do_get);
+			constraint_solver.nullified_call_stack.push({callback: do_get});
 
 			if (constraint_solver.semaphore >= 0 && constraint_solver.nullified_call_stack.length > 0) {
 				constraint_solver.run_nullified_listeners();
