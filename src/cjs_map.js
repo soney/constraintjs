@@ -576,14 +576,14 @@
 			}
 			return this;
 		};
-		proto.destroy = function () {
+		proto.destroy = function (silent) {
 			this.wait();
 			cjs.wait();
 			this.clear();
-			this.$keys.destroy();
-			this.$values.destroy();
-			this.$entries.destroy();
-			this.$size.destroy();
+			this.$keys.destroy(silent);
+			this.$values.destroy(silent);
+			this.$entries.destroy(silent);
+			this.$size.destroy(silent);
 			delete this.$keys;
 			delete this.$values;
 			delete this.$entries;

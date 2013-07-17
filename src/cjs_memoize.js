@@ -52,11 +52,11 @@
 			var constraint = get_constraint.apply(this, arguments);
 			return constraint.get();
 		};
-		rv.destroy = function () {
+		rv.destroy = function (silent) {
 			args_map.each(function (constraint) {
-				constraint.destroy();
+				constraint.destroy(silent);
 			});
-			args_map.destroy();
+			args_map.destroy(silent);
 			args_map = null;
 			options = null;
 		};

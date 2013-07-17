@@ -19,27 +19,29 @@
 
 		var paused = false;
 		var do_get;
-		var destroy = function () {
+		var destroy = function (silent) {
 			constraint_solver.off_nullify(node, do_get);
 			if(options.on_destroy) {
 				options.on_destroy.call(options.context);
 			}
-			constraint_solver.removeObject(node);
+			constraint_solver.removeObject(node, silent);
 			node = null;
 		};
 		var pause = function () {
 			if(paused === false) {
 				paused = true;
 				constraint_solver.off_nullify(node, do_get);
+				return true;
 			}
-			return this;
+			return false;
 		};
 		var resume = function () {
 			if(paused === true) {
 				paused = false;
 				constraint_solver.on_nullify(node, do_get);
+				return true;
 			}
-			return this;
+			return false;
 		};
 		var run = function () {
 			do_get();
