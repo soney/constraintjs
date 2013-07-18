@@ -60,8 +60,7 @@
 
 		constraint_solver.on_nullify(node, do_get);
 		if (options.run_on_create !== false) {
-			do_get.__in_cjs_call_stack__ = true;
-			constraint_solver.nullified_call_stack.push({callback: do_get});
+			constraint_solver.nullified_call_stack.push({callback: do_get, __in_cjs_call_stack__: true});
 
 			if (constraint_solver.semaphore >= 0 && constraint_solver.nullified_call_stack.length > 0) {
 				constraint_solver.run_nullified_listeners();

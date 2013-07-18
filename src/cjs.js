@@ -250,11 +250,15 @@
 				this.nullificationListeners.push({callback: callback, context: context});
 			};
 			proto.offNullify = function (callback, context) {
-				var ri;
+				var ri, listener;
 				for(var i = this.nullificationListeners.length-1; i>=0; i-=1) {
 					ri = this.nullificationListeners[i];
-					if(ri.callback === callback && (!ri.context || ri.context === context)) {
+					if(ri.callback === callback && (!context || ri.context === context)) {
+						listener = ri;
 						this.nullificationListeners.splice(i, 1);
+						if (listener.__in_cjs_call_stack__) {
+							constraint_solver.remove_from_call_stack(listener);
+						}
 					}
 				}
 			};
@@ -328,7 +332,7 @@
 				var to_nullify = [node];
 				var to_nullify_len = 1, invalid;
 				var nullify_listener = function (nl) {
-					nl.callback.__in_cjs_call_stack__ = true;
+					nl.__in_cjs_call_stack__ = true;
 				};
 				var get_curr_node = function (curr_node) { return curr_node; };
 				for (i = 0; i < to_nullify.length; i += 1) {
@@ -386,7 +390,7 @@
 						callback = nullified_info.callback;
 						context = nullified_info.context || this;
 
-						delete callback.__in_cjs_call_stack__;
+						delete nullified_info.__in_cjs_call_stack__;
 						//try {
 							callback.call(context);
 						//} catch(e) {
@@ -437,17 +441,19 @@
 
 			proto.off_nullify = function (node, callback, context) {
 				node.offNullify(callback, context);
+			};
+			proto.remove_from_call_stack = function(listener_info) {
+				var callback = listener_info.callback,
+					context = listener_info.context;
 
-				if (callback.__in_cjs_call_stack__) {
-					delete callback.__in_cjs_call_stack__;
-					var len = this.nullified_call_stack.length;
-					var ii;
-					for(var i = 0; i<len; i++) {
-						ii = this.nullified_call_stack[i];
-						if(ii.callback === callback && (!context || ii.context === context)) {
-							this.nullified_call_stack.splice(i, 1);
-							break;
-						}
+				delete listener_info.__in_cjs_call_stack__;
+				var len = this.nullified_call_stack.length;
+				var ii;
+				for(var i = 0; i<len; i++) {
+					ii = this.nullified_call_stack[i];
+					if(ii.callback === callback && (!context || ii.context === context)) {
+						this.nullified_call_stack.splice(i, 1);
+						break;
 					}
 				}
 			};
@@ -536,10 +542,10 @@
 		};
 		proto.offChange = function (callback, context) {
 			var node = constraint_solver.getNode(this);
+			constraint_solver.off_nullify(node, callback, context);
 			for (var i = this._change_listeners.length-1; i >= 0; i -= 1) {
 				var listener = this._change_listeners[i];
 				if (listener.callback === callback && (!context || listener.context === context)) {
-					constraint_solver.off_nullify(node, listener.callback, listener.context);
 					this._change_listeners.splice(i, 1);
 				}
 			}
