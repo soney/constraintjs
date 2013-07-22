@@ -243,18 +243,20 @@
 				this._queued_events.push([index_change_event_str, info.value, info.key, info.index, old_index]);
 			}
 		};
-		var _destroy_info = function (infos) {
+		var _destroy_info = function (infos, silent) {
 			each(infos, function (info) {
-				info.key.destroy();
-				info.value.destroy();
-				info.index.destroy();
+				info.key.destroy(silent);
+				info.value.destroy(silent);
+				info.index.destroy(silent);
 			});
 		};
-		proto._remove_index = function (index) {
+		proto._remove_index = function (index, silent) {
 			var info = this._ordered_values[index];
 			this._queued_events.push([remove_event_str, info.value.get(), info.key.get(), info.index.get()]);
-			_destroy_info(this._ordered_values.splice(index, 1));
-			this.$size.invalidate();
+			_destroy_info(this._ordered_values.splice(index, 1), silent);
+			if(silent !== true) {
+				this.$size.invalidate();
+			}
 		};
 
 		proto.set = proto.put = function (key, value, index, literal) {
@@ -336,12 +338,12 @@
 			});
 			return rv;
 		};
-		proto.clear = function () {
+		proto.clear = function (silent) {
 			if (this._do_get_size() > 0) {
 				cjs.wait();
 				this.wait();
 				while (this._ordered_values.length > 0) {
-					this._remove_index(0);
+					this._remove_index(0, silent);
 				}
 				each(this._khash, function (arr, hash) {
 					delete this._khash[hash];
@@ -352,10 +354,12 @@
 					}, this);
 				}
 
-				this.$keys.invalidate();
-				this.$values.invalidate();
-				this.$entries.invalidate();
-				this.$size.invalidate();
+				if(silent !== true) {
+					this.$keys.invalidate();
+					this.$values.invalidate();
+					this.$entries.invalidate();
+					this.$size.invalidate();
+				}
 
 				this.signal();
 				cjs.signal();
@@ -579,7 +583,7 @@
 		proto.destroy = function (silent) {
 			this.wait();
 			cjs.wait();
-			this.clear();
+			this.clear(silent);
 			this.$keys.destroy(silent);
 			this.$values.destroy(silent);
 			this.$entries.destroy(silent);
