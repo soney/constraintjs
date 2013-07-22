@@ -160,8 +160,8 @@
 				return this.put(key, val);
 			}
 		};
-		proto.destroy = function () {
-			this.$len.destroy();
+		proto.destroy = function (silent) {
+			this.$len.destroy(silent);
 		};
 		proto.length = function () {
 			return this.$len.get();
