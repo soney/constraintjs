@@ -408,8 +408,9 @@
 		proto.each = function (func, context) {
 			context = context || root;
 			var i, len = this.size();
+			var ov_clone = this._ordered_values.slice();
 			for (i = 0; i < len; i += 1) {
-				var info = this._ordered_values[i];
+				var info = ov_clone[i];
 				if (info) {
 					if (func.call(context, info.value.get(), info.key.get(), info.index.get()) === false) {
 						break;

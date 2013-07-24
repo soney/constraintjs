@@ -246,8 +246,8 @@
 
 			proto.getOutgoing = function () { return this.outgoingEdges; };
 
-			proto.onNullify = function (callback, context) {
-				this.nullificationListeners.push({callback: callback, context: context});
+			proto.onNullify = function (callback, context, args) {
+				this.nullificationListeners.push({callback: callback, context: context, args: args});
 			};
 			proto.offNullify = function (callback, context) {
 				var ri, listener;
@@ -392,7 +392,7 @@
 
 						delete nullified_info.__in_cjs_call_stack__;
 						//try {
-							callback.call(context);
+							callback.apply(context, nullified_info.args);
 						//} catch(e) {
 							//console_error(e);
 						//}
@@ -435,8 +435,8 @@
 			};
 			proto.doEval = function (obj) { return this.doEvalNode(this.getNode(obj)); };
 
-			proto.on_nullify = function (node, callback, context) {
-				node.onNullify(callback, context);
+			proto.on_nullify = function (node, callback, context, args) {
+				node.onNullify(callback, context, args);
 			};
 
 			proto.off_nullify = function (node, callback, context) {
@@ -531,12 +531,14 @@
 		};
 		proto.get = proto.update = function () { return constraint_solver.getValue(this); };
 		proto.onChange = function (callback, context) {
+			var args = slice.call(arguments, 2);
 			var listener = {
 				callback: callback,
-				context: context
+				context: context,
+				args: args
 			};
 			var node = constraint_solver.getNode(this);
-			constraint_solver.on_nullify(node, callback, context);
+			constraint_solver.on_nullify(node, callback, context, args);
 			this._change_listeners.push(listener);
 			return this;
 		};
