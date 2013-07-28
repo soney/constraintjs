@@ -391,11 +391,11 @@
 						context = nullified_info.context || this;
 
 						delete nullified_info.__in_cjs_call_stack__;
-						//try {
+						try {
 							callback.apply(context, nullified_info.args);
-						//} catch(e) {
-							//console_error(e);
-						//}
+						} catch(e) {
+							console_error(e);
+						}
 					}
 					this.running_nullified_listeners = false;
 				}
