@@ -67,5 +67,10 @@
 			var value = arguments[arguments.length-1];
 			constraint.set_cached_value(value);
 		};
+		rv.each = function(func, context) {
+			args_map.each(function(val, key) {
+				func.call(context, val.get(), key);
+			}, context);
+		};
 		return rv;
 	};
