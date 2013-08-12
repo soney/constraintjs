@@ -401,16 +401,18 @@
 				}
 			};
 
-			proto.getValue = function (obj) { return this.getNodeValue(this.getNode(obj)); };
+			proto.getValue = function (obj, auto_add_outgoing) { return this.getNodeValue(this.getNode(obj), auto_add_outgoing); };
 
-			proto.getNodeValue = function (node) {
+			proto.getNodeValue = function (node, auto_add_outgoing) {
 				var stack_len = this.stack.length;
 
 				if (stack_len > 0) {
 					var demanding_var = this.stack[stack_len - 1];
 					var dependency_edge = this.getEdge(node, demanding_var);
 					if (!dependency_edge) {
-						if (node.options.auto_add_outgoing_dependencies !== false && demanding_var.options.auto_add_incoming_dependencies !== false) {
+						if (node.options.auto_add_outgoing_dependencies !== false &&
+								demanding_var.options.auto_add_incoming_dependencies !== false &&
+								auto_add_outgoing !== false) {
 							dependency_edge = this.addNodeDependency(node, demanding_var);
 						}
 					}
@@ -529,7 +531,7 @@
 			}
 			return undefined;
 		};
-		proto.get = proto.update = function () { return constraint_solver.getValue(this); };
+		proto.get = proto.update = function (auto_add_outgoing) { return constraint_solver.getValue(this, auto_add_outgoing); };
 		proto.onChange = function (callback, context) {
 			var args = slice.call(arguments, 2);
 			var listener = {
