@@ -17,7 +17,8 @@
 			value: {},
 			keys: [],
 			values: [],
-			literal_values: true
+			literal_values: true,
+			create_unsubstantiated: true
 		}, options);
 		each(options.value, function (v, k) {
 			options.keys.push(k);
@@ -27,6 +28,7 @@
 		this._equality_check = options.equals;
 		this._vequality_check = options.valueequals;
 		this._hash = isString(options.hash) ? get_str_hash_fn(options.hash) : options.hash;
+		this._create_unsubstantiated = options.create_unsubstantiated;
 
 		this._khash = {};
 		if (options.valuehash) {
@@ -317,15 +319,17 @@
 			return this;
 		};
 		proto.get = function (key) {
-			var ki = this._find_key(key, true, true);
+			var ki = this._find_key(key, true, this._create_unsubstantiated);
 			var key_index = ki.i,
 				hash_values = ki.hv;
 			if (key_index >= 0) {
 				var info = hash_values[key_index];
 				return info.value.get();
-			} else {
+			} else if(this._create_unsubstantiated) {
 				var unsubstantiated_info = ki.uhv[ki.ui];
 				return unsubstantiated_info.value.get();
+			} else {
+				return undefined;
 			}
 		};
 		proto.keys = function () {
