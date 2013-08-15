@@ -44,15 +44,15 @@
 			return false;
 		};
 		var run = function () {
-			do_get();
+			do_get.apply(this, arguments);
 			return this;
 		};
 
-		do_get = function () {
+		do_get = function (enable_outgoing) {
 			if (options.pause_while_running) {
 				pause();
 			}
-			constraint_solver.getNodeValue(node);
+			constraint_solver.getNodeValue(node, enable_outgoing);
 			if (options.pause_while_running) {
 				resume();
 			}
