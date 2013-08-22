@@ -174,6 +174,7 @@
 	};
 
 	cjs.version = "<%= version %>"; // This template will be filled in by the builder
+	cjs.__debug = false;
 
 	if(hOP.call(root, "cjs")) { // If there was a previous cjs property...
 		// ...then track it and allow cjs.noConflict to restore its previous value
@@ -391,10 +392,14 @@
 						context = nullified_info.context || this;
 
 						delete nullified_info.__in_cjs_call_stack__;
-						try {
+						if(cjs.__debug) {
 							callback.apply(context, nullified_info.args);
-						} catch(e) {
-							console_error(e);
+						} else {
+							try {
+								callback.apply(context, nullified_info.args);
+							} catch(e) {
+								console_error(e);
+							}
 						}
 					}
 					this.running_nullified_listeners = false;
