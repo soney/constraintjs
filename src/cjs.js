@@ -306,7 +306,7 @@
 				if(hOP.call(obj, SECRET_NODE_NAME)) {
 					return obj[SECRET_NODE_NAME];
 				} else {
-					return obj[SECRET_NODE_NAME] = new ConstraintNode(obj, options);
+					return (obj[SECRET_NODE_NAME] = new ConstraintNode(obj, options));
 				}
 			};
 
