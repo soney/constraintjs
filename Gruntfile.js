@@ -4,7 +4,7 @@ module.exports = function(grunt) {
 		pkg: package,
 		jshint: {
 			build: {
-				src: "build/cjs.js"
+				src: ["src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js"],
 			}
 		},
 		uglify: {
@@ -31,7 +31,7 @@ module.exports = function(grunt) {
 				}
 			},
 			js: {
-				src: ["src/header.js", "src/cjs.js", "src/cjs_memoize.js", "src/cjs_liven.js", "src/cjs_array.js", "src/cjs_map.js", "src/footer.js"],
+				src: ["src/header.js", "src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js", "src/footer.js"],
 				dest: "build/cjs.js"
 			}
 		},
@@ -47,6 +47,6 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-clean');
 
 	// Default task(s).
-	grunt.registerTask('default', ['concat', 'uglify']);
+	grunt.registerTask('default', ['concat', 'jshint', 'uglify']);
 	grunt.registerTask('test', ['concat', 'jshint']);
 };

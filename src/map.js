@@ -49,7 +49,7 @@
 		var is_literal = this._default_literal_values;
 		each(options.keys, function (k, i) {
 			var v = options.values[i];
-			var info = { key: new SettableConstraint(k, true), value: new SettableConstraint(v, is_literal), index: new SettableConstraint(index, true) };
+			var info = { key: new Constraint(k, {literal: true}), value: new Constraint(v, is_literal), index: new Constraint(index, {literal: true}) };
 			var hash = this._hash(k);
 			var hash_val = this._khash[hash];
 
@@ -86,21 +86,7 @@
 	(function (my) {
 		var proto = my.prototype;
 
-		var index_change_event_str = "index_change"; // value, key, to, from
-		var put_event_str = "put"; // value, key, index
-		var remove_event_str = "remove"; // value, key, index
-		var value_change_event_str = "value_change"; // to_value, key, from_value, index
-		var move_event_str = "move"; // value, key, to_index, from_index
-
-		get_categorical_listeners(proto, {
-			"Put":  put_event_str,
-			"Remove":  remove_event_str,
-			"ValueChange":  value_change_event_str,
-			"IndexChange":  index_change_event_str,
-			"Move":  move_event_str
-		});
-
-		proto._find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
+		var _find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
 			var hash = this._hash(key);
 			var rv = {
 				hv: false,
@@ -135,7 +121,7 @@
 
 				if (unsubstantiated_index < 0 && create_unsubstantiated === true) {
 					var is_literal = this._default_literal_values;
-					var unsubstantiated_info = { key: new SettableConstraint(key, true), value: new SettableConstraint(undefined, is_literal), index: new SettableConstraint(-1, true) };
+					var unsubstantiated_info = { key: new Constraint(key, true), value: new Constraint(undefined, {literal: lis_literal}), index: new Constraint(-1, {literal: true}) };
 					unsubstantiated_values.push(unsubstantiated_info);
 					unsubstantiated_index = unsubstantiated_values.length - 1;
 				}
@@ -144,7 +130,7 @@
 			}
 			return rv;
 		};
-		var _do_set_item_ki = function (ki, key, value, index, literal, ignore_events) {
+		var _do_set_item_ki = function (ki, key, value, index, literal) {
 			var key_index = ki.i,
 				hash_values = ki.hv,
 				hash = ki.h;
@@ -187,9 +173,6 @@
 				}
 
 				info.value.set(value, is_literal);
-				if (ignore_events !== true) {
-					this._queued_events.push([value_change_event_str, info.value, info.key, old_value, info.index]);
-				}
 			} else {
 				if (!isNumber(index) || index < 0) {
 					index = this._ordered_values.length;
@@ -208,7 +191,7 @@
 					info.value.set(value, is_literal);
 					info.index.set(index, true);
 				} else {
-					info = { key: new SettableConstraint(key, true), value: new SettableConstraint(value, is_literal), index: new SettableConstraint(index, true) };
+					info = { key: new Constraint(key, {literal: true}), value: new Constraint(value, is_literal), index: new Constraint(index, {literal: true}) };
 				}
 
 				hash_values.push(info);
@@ -225,11 +208,8 @@
 
 				this._ordered_values.splice(index, 0, info);
 
-				if (ignore_events !== true) {
-					this._queued_events.push([put_event_str, value, key, index]);
-				}
 				for (i = index + 1; i < this._ordered_values.length; i += 1) {
-					this._set_index(this._ordered_values[i], i, ignore_events);
+					this._set_index(this._ordered_values[i], i);
 				}
 				this.$size.invalidate();
 				this.$keys.invalidate();
@@ -238,12 +218,9 @@
 			this.$entries.invalidate();
 		};
 
-		proto._set_index = function (info, to_index, ignore_events) {
+		proto._set_index = function (info, to_index) {
 			var old_index = info.index.get();
 			info.index.set(to_index);
-			if (ignore_events !== false) {
-				this._queued_events.push([index_change_event_str, info.value, info.key, info.index, old_index]);
-			}
 		};
 		var _destroy_info = function (infos, silent) {
 			each(infos, function (info) {
@@ -254,7 +231,6 @@
 		};
 		proto._remove_index = function (index, silent) {
 			var info = this._ordered_values[index];
-			this._queued_events.push([remove_event_str, info.value.get(), info.key.get(), info.index.get()]);
 			_destroy_info(this._ordered_values.splice(index, 1), silent);
 			if(silent !== true) {
 				this.$size.invalidate();
@@ -263,21 +239,18 @@
 
 		proto.set = proto.put = function (key, value, index, literal) {
 			cjs.wait();
-			this.wait();
-			var ki = this._find_key(key, true, false);
+			var ki = _find_key.call(this, key, true, false);
 			_do_set_item_ki.call(this, ki, key, value, index, literal);
-			this.signal();
 			cjs.signal();
 			return this;
 		};
 		proto.remove = function (key) {
-			var ki = this._find_key(key, false, false);
+			var ki = _find_key.call(this, key, false, false);
 			var key_index = ki.i,
 				hash_values = ki.hv;
 			var i;
 			if (key_index >= 0) {
 				cjs.wait();
-				this.wait();
 
 				var info = hash_values[key_index];
 				var ordered_index = info.index.get();
@@ -313,13 +286,12 @@
 				this.$values.invalidate();
 				this.$entries.invalidate();
 
-				this.signal();
 				cjs.signal();
 			}
 			return this;
 		};
 		proto.get = function (key) {
-			var ki = this._find_key(key, true, this._create_unsubstantiated);
+			var ki = _find_key.call(this, key, true, this._create_unsubstantiated);
 			var key_index = ki.i,
 				hash_values = ki.hv;
 			if (key_index >= 0) {
@@ -345,7 +317,6 @@
 		proto.clear = function (silent) {
 			if (this._do_get_size() > 0) {
 				cjs.wait();
-				this.wait();
 				while (this._ordered_values.length > 0) {
 					this._remove_index(0, silent);
 				}
@@ -365,7 +336,6 @@
 					this.$size.invalidate();
 				}
 
-				this.signal();
 				cjs.signal();
 			}
 			return this;
@@ -474,7 +444,7 @@
 			return this;
 		};
 		proto.indexOf = function (key) {
-			var ki = this._find_key(key, true, true);
+			var ki = _find_key.call(this, key, true, true);
 			var key_index = ki.i,
 				hash_values = ki.hv;
 			if (key_index >= 0) {
@@ -486,7 +456,7 @@
 			}
 		};
 		proto.get_or_put = function (key, create_fn, create_fn_context, index, literal) {
-			var ki = this._find_key(key, true, false);
+			var ki = _find_key.call(this, key, true, false);
 			var key_index = ki.i,
 				hash_values = ki.hv,
 				hash = ki.h;
@@ -495,23 +465,21 @@
 				return info.value.get();
 			} else {
 				cjs.wait();
-				this.wait();
 				var context = create_fn_context || root;
 				var value = create_fn.call(context, key);
 				_do_set_item_ki.call(this, ki, key, value, index, literal);
-				this.signal();
 				cjs.signal();
 				return value;
 			}
 		};
 		proto.has = proto.containsKey = function (key) {
-			var ki = this._find_key(key, true, true);
+			var ki = _find_key.call(this, key, true, true);
 			var key_index = ki.i;
 			if (key_index >= 0) {
 				return true;
 			} else {
 				var unsubstantiated_info = ki.uhv[ki.ui];
-				unsubstantiated_info.value.update(); // Add a dependency
+				unsubstantiated_info.value.get(); // Add a dependency
 				return false;
 			}
 		};
@@ -519,11 +487,9 @@
 		proto.move_index = function (old_index, new_index) {
 			var i;
 			cjs.wait();
-			this.wait();
 			var info = this._ordered_values[old_index];
 			this._ordered_values.splice(old_index, 1);
 			this._ordered_values.splice(new_index, 0, info);
-			this._queued_events.push([move_event_str, info.value.get(), info.key.get(), new_index, old_index]);
 
 			var low = Math.min(old_index, new_index);
 			var high = Math.max(old_index, new_index);
@@ -533,12 +499,11 @@
 			this.$keys.invalidate();
 			this.$values.invalidate();
 			this.$entries.invalidate();
-			this.signal();
 			cjs.signal();
 			return this;
 		};
 		proto.move = function (key, to_index) {
-			var ki = this._find_key(key, false, false);
+			var ki = _find_key.call(this, key, false, false);
 			var key_index = ki.i;
 			if (key_index >= 0) {
 				var info = ki.hv[key_index];
@@ -577,7 +542,7 @@
 			return this.size() === 0;
 		};
 		proto.set_cached_value = function (key, value) {
-			var ki = this._find_key(key, false, false);
+			var ki = _find_key.call(this, key, false, false);
 			var key_index = ki.i;
 			if (key_index >= 0) {
 				var info = ki.hv[key_index];
@@ -586,7 +551,6 @@
 			return this;
 		};
 		proto.destroy = function (silent) {
-			this.wait();
 			cjs.wait();
 			this.clear(silent);
 			this.$keys.destroy(silent);
@@ -598,7 +562,6 @@
 			delete this.$entries;
 			delete this.$size;
 			cjs.signal();
-			this.signal();
 		};
 		proto.toObject = function (key_map_fn) {
 			key_map_fn = key_map_fn || identity;
@@ -610,4 +573,4 @@
 
 	cjs.map = function (arg0, arg1) { return new MapConstraint(arg0, arg1); };
 	cjs.is_map = function (obj) { return obj instanceof MapConstraint; };
-	cjs.MapConstraint = MapConstraint;
+	cjs.Map = MapConstraint;

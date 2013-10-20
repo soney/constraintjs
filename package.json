@@ -1,12 +1,12 @@
 {
 	"name": "ConstraintJS",
 	"description": "Constraint library for JavaScript",
-	"version": "0.8.0",
+	"version": "0.9.0",
 	"author": "Stephen Oney (Carnegie Mellon)",
 	"maintainers": [
 		{
 		"name": "Stephen Oney",
-		"email": "soney@cs.cmu.edu",
+		"email": "swloney@gmail.com",
 		"web": "http://from.so/"
 		}
 	],
@@ -16,7 +16,6 @@
 	}],
 	"private": false,
 	"dependencies": {
-		"express": ">= 2.4.3",
 		"ejs": ">= 0.4.3"
 	},
 	"devDependencies": {

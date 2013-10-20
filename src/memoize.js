@@ -1,3 +1,4 @@
+	// A function to hash the arguments passed in. By default, just a concatenation of the arguments' string value
 	var memoize_default_hash = function () {
 		var i, len = arguments.length;
 		var rv = "";
@@ -6,6 +7,7 @@
 		}
 		return rv;
 	};
+	// A function to check if two sets of arguments are equal; by default just check every value
 	var memoize_default_equals = function (args1, args2) {
 		var i,
 			len = args1.length;
@@ -23,54 +25,46 @@
 		}
 	};
 
-	cjs.memoize = function (getter_fn, options) {
+	// Memoize takes a function and applies a getter_fn as a filter
+	var memoize = function (getter_fn, options) {
 		options = extend({
 			hash: memoize_default_hash,
 			equals: memoize_default_equals,
-			context: false,
+			context: root,
 			literal_values: false
 		}, options);
 
-		var args_map = cjs.map({
+		var _context = options.context;
+
+		// Map from args to value
+		var args_map = new MapConstraint({
 			hash: options.hash,
 			equals: options.equals,
 			literal_values: options.literal_values
 		});
 
-		var get_constraint = function () {
-			var args = arguments,
-				my_context = options.context || this;
-			var constraint = args_map.get_or_put(args, function () {
-				return new Constraint(function () {
-					return getter_fn.apply(my_context, args);
-				});
-			});
-			return constraint;
-		};
-
+		// When getting a value either create a constraint or return the existing value
 		var rv = function () {
-			var constraint = get_constraint.apply(this, arguments);
+			var args = arguments,
+				constraint = args_map.get_or_put(args, function() {
+					return new Constraint(function () {
+						return getter_fn.apply(_context, args);
+					});
+				});
 			return constraint.get();
 		};
+
+		// Clean up memory after self
 		rv.destroy = function (silent) {
 			args_map.each(function (constraint) {
 				constraint.destroy(silent);
 			});
 			args_map.destroy(silent);
+
 			args_map = null;
 			options = null;
 		};
-		rv.set_cached_value = function () {
-			var args = slice.call(arguments, 0, arguments.length - 1);
-
-			var constraint = get_constraint.apply(this, args);
-			var value = arguments[arguments.length-1];
-			constraint.set_cached_value(value);
-		};
-		rv.each = function(func, context) {
-			args_map.each(function(val, key) {
-				func.call(context, val.get(), key);
-			}, context);
-		};
 		return rv;
 	};
+
+	cjs.memoize = memoize;

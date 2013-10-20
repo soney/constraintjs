@@ -1,4 +1,4 @@
-/*jslint nomen: true, vars: true */
+/* jslint nomen: true, vars: true */
 /* jshint -W093 */
 
 var cjs = (function (root) {
