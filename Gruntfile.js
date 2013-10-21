@@ -11,12 +11,9 @@ module.exports = function(grunt) {
 			options: {
 				banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
 						'<%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */',
-				global_defs: {
-					DEBUG: false
-				}
 			},
 			build: {
-				src: "build/cjs.js",
+				src: "build/cjs.js", // Use concatenated files
 				dest: "build/cjs.min.js"
 			}
 		},
@@ -26,7 +23,7 @@ module.exports = function(grunt) {
 						'<%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */',
 				process: {
 					data: {
-						version: package.version
+						version: package.version // the updated version will be added to the concatenated file
 					}
 				}
 			},
@@ -48,5 +45,5 @@ module.exports = function(grunt) {
 
 	// Default task(s).
 	grunt.registerTask('default', ['concat', 'jshint', 'uglify']);
-	grunt.registerTask('test', ['concat', 'jshint']);
+	grunt.registerTask('test', ['concat', 'jshint']); // Skip uglification if just testing
 };

@@ -15,9 +15,7 @@
 		"url": "https://github.com/soney/ConstraintJS/blob/master/LICENSE"
 	}],
 	"private": false,
-	"dependencies": {
-		"ejs": ">= 0.4.3"
-	},
+	"dependencies": { },
 	"devDependencies": {
 		"grunt": "~0.4.1",
 		"grunt-contrib-jshint": "~0.1",
