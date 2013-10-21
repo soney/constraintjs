@@ -1,378 +1,350 @@
 	//
 	// ============== ARRAYS ============== 
 	//
+	
+	var isPositiveInteger = function (val) {
+		return isNumber(val) && Math.round(val) === val && val >= 0;
+	};
 
-	var ArrayConstraint = function (options) {
+
+	// This class is meant to emulate standard arrays, but with constraints
+	// It contains many of the standard array functions (push, pop, slice, etc)
+	// and makes them constraint-enabled.
+	// x[1] = y[2] + z[3] === x.item(1, y.item(2) + z.item(3))
+	ArrayConstraint = function (options) {
 		options = extend({
-			equals: eqeqeq,
-			value: []
+			equals: eqeqeq, // How to check for equality, useful for indexOf, etc
+			value: [] // starting value
 		}, options);
-		this._value = [];
 
-		// Every value in the array constraint is a constraint
+		// Every value in the array is a constraint
 		this._value = map(options.value, function(val) {
 			return new Constraint(val, {literal: true});
 		});
 
+		// When we fetch an item in the array that doesn't exist, it gets added to
+		// the unsubstantiated items list to create a dependency
 		this._unsubstantiated_items = [];
-		this.$len = new Constraint(this._value.length);
-		this._equality_check = options.equals;
+
+		this.$len = new Constraint(this._value.length); // Keep track of the array length in a constraint
+		this.$equality_check = new Constraint(options.equals, {literal: true}); // How to check for equality again...
 	};
 
 	(function (my) {
 		var proto = my.prototype;
+		// Any iterator in forEach can return this object to break the loop
 		my.BREAK = {};
 
-		proto.set_equality_check = function (equality_check) {
-			this._equality_check = equality_check;
-			return this;
-		};
-
-		// Run through every element of the array
-		proto.each = function (func, context) {
-			var i, len = this._value.length;
-			context = context || root;
-			for (i = 0; i < len; i += 1) {
-				if (func.call(context, this._get(i), i) === my.BREAK) {
-					break;
-				}
-			}
-			this.length(); // We want to depend on the length if we don't break beforehand
-			return this;
-		};
-
-		proto.map = function (func, context) {
-			var i, len = this.length(), rv = [];
-			context = context || root;
-			for (i = 0; i < len; i += 1) {
-				rv[i] = func.call(context, this._get(i), i);
-			}
-			return rv;
-		};
-
-		// Get a particular item or the whole array if key isn't specified
-		proto._get = function (key) {
-			var val = this._value[key];
-			if (val === undefined) {
+		// Get a particular item in the array
+		var _get = function (arr, key) {
+			var val = arr._value[key];
+			if (val === undefined) { // Even if arr[key] is set to undefined, it would be a constraint
 				// Create a dependency so that if the value for this key changes
 				// later on, we can detect it in the constraint solver
-				val = new Constraint(undefined);
-				this._unsubstantiated_items[key] = val;
+				val = new Constraint(undefined, {literal: true});
+				arr._unsubstantiated_items[key] = val;
 			}
 			return val.get();
 		};
 
-		// Replaces the whole value for arr
-		proto.setValue = function (arr) {
+		// For internal use; set a particular item in the array
+		var _put = function (arr, key, val) {
+			cjs.wait(); // Don't run any nullification listeners until this function is done running
+			var $previous_value = arr._value[key];
+
+			// If there's an unsubstantiated item; use that, so that dependencies still work
+			if ($previous_value === undefined && arr._unsubstantiated_items[key]) {
+				$previous_value = arr._unsubstantiated_items[key];
+				delete arr._unsubstantiated_items[key];
+			}
+
+			if (cjs.is_constraint($previous_value)) {
+				// If there was a previous value, just set it
+				var prev_val = $previous_value.get();
+				$previous_value.set(val);
+			} else {
+				// Otherwise, just create a new value
+				arr._value[key] = new Constraint(val, {literal: true});
+			}
+			_update_len(arr); // Make sure the length hasn't changed
+			cjs.signal(); // OK, run nullification listeners now if necessary
+		};
+
+		// Remove every element of the array
+		var _clear = function (arr) {
+			var $val;
 			cjs.wait();
 
-			this._clear();
-			this.push.apply(this, arr);
+			// Keep on popping and don't stop!
+			while (arr._value.length > 0) {
+				$val = arr._value.pop();
+				var len = arr._value.length;
+				if (cjs.is_constraint($val)) {
+					$val.destroy(); // Clear memory for every element
+				}
+			}
+			_update_len(arr);
 
 			cjs.signal();
 			return this;
 		};
 
-		// For internal use
-		proto._put = function (key, val) {
-			cjs.wait();
-			var $previous_value = this._value[key];
-			if ($previous_value === undefined && has(this._unsubstantiated_items, key)) {
-				$previous_value = this._unsubstantiated_items[key];
-				delete this._unsubstantiated_items[key];
-			}
+		var _update_len = function (arr) {
+			// The setter will automatically not update if the value is the same
+			arr.$len.set(arr._value.length);
+		};
 
-			if (cjs.is_constraint($previous_value)) {
-				var prev_val = $previous_value.get();
-				$previous_value.set(val, true);
-			} else {
-				this._value[key] = new Constraint(val, true);
+
+		// Change the equality check; useful for indexOf
+		proto.set_equality_check = function (equality_check) {
+			this.$equality_check.set(equality_check);
+			return this;
+		};
+
+		// Run through every element of the array and call func with 'this' === context or window
+		proto.forEach = function (func, context) {
+			var i, len = this.length();
+			context = context || root; // Set context to window if not specified
+			for (i = 0; i < len; i += 1) {
+				if (func.call(context, _get(this, i), i) === my.BREAK) { // "break" equivalent
+					return this;
+				}
 			}
-			this._update_len();
-			cjs.signal();
+			return this;
+		};
+
+		// Return a new JAVASCRIPT array with each element's value being the result of calling func
+		// on item i
+		proto.map = function (func, context) {
+			var rv = [];
+			this.forEach(function(val, i) {
+				rv[i] = val;
+			}, context);
+			return rv;
+		};
+
+		// Replaces the whole array
+		proto.setValue = function (arr) {
+			cjs.wait(); // Don't run nullified functions quite yet
+			this._clear();
+			this.push.apply(this, arr);
+			cjs.signal(); // OK, now run them
 			return this;
 		};
 
 		// Get or put item i
-		proto.i = proto.item = function (key, val) {
-			if (arguments.length === 1) {
-				return this._get(key);
-			} else if (arguments.length > 1) {
-				return this._put(key, val);
+		proto.item = function (key, val) {
+			if(arguments.length === 0) { // Just return an array if called with no arguments
+				return this.toArray();
+			} else if (arguments.length === 1) { // Get if called with one argument
+				return _get(this, key);
+			} else if (arguments.length > 1) { // Put if called with more than one argument
+				return _put(this, key, val);
 			}
 		};
+		// Clean up any allocated memory
 		proto.destroy = function (silent) {
-			this.clear();
+			this._clear();
 			this.$len.destroy(silent);
 		};
+
 		proto.length = function () {
-			return this.$len.get();
+			return this.$len.get(); // Remember that length is a constraint
 		};
 		
 		// add to the end of the array
 		proto.push = function () {
-			var i, len = arguments.length;
+			var i, len = arguments.length, value_len = this._value.length;
 			//Make operation atomic
 			cjs.wait();
+			// Add every item that was passed in
 			for (i = 0; i < len; i += 1) {
-				this._put(this._value.length, arguments[i]);
+				_put(this, value_len+i, arguments[i]);
 			}
 			cjs.signal();
-			return arguments.length;
+			return len; // And return the number of items that were added
 		};
 
 		// Remove from the end of the array
 		proto.pop = function () {
+			var rv, $value = this._value.pop(); // $value should be a constraint
 			cjs.wait();
 
-			var $value = this._value.pop();
-			var rv;
-			if (cjs.is_constraint($value)) {
+			if (cjs.is_constraint($value)) { // if it's a constraint return the value.
+											// otherwise, return undefined
 				rv = $value.get();
 				$value.destroy();
 			}
-			this._update_len();
+			// And set the proper length
+			_update_len(this);
 
+			// Ok, ready to go again
 			cjs.signal();
 			
 			return rv;
 		};
-
-		proto._clear = function () {
-			var $val;
-			cjs.wait();
-
-			while (this._value.length > 0) {
-				$val = this._value.pop();
-				var len = this._value.length;
-				if (cjs.is_constraint($val)) {
-					$val.destroy();
-				}
-			}
-			this._update_len();
-
-			cjs.signal();
-			return this;
-		};
+		// Converts to a JAVASCRIPT array
 		proto.toArray = function () {
-			return this.map(identity);
+			return this.map(identity); // just get every element
 		};
-		proto._update_len = function () {
-			this.$len.set(this._value.length);
-		};
-		proto.indexWhere = function (filter) {
-			var i, len = this._value.length, $val;
+
+		// Returns the first item where calling filter is truthy
+		proto.indexWhere = function (filter, context) {
+			var i, len = this.length(), $val;
+			context = context || this;
 
 			for (i = 0; i < len; i += 1) {
 				$val = this._value[i];
-				if (filter($val.get())) {
-					return i;
-				}
+				if (filter.call(context, $val.get(), i)) { return i; }
 			}
-			this.length(); // We want to depend on the length if not found
 
-			return -1;
+			return -1; // -1 if not found
 		};
-		proto.lastIndexWhere = function (filter) {
+		// Return the last item where calling filter is truthy
+		proto.lastIndexWhere = function (filter, context) {
 			var i, len = this.length(), $val;
+			context = context || this;
 
 			for (i = len - 1; i >= 0; i -= 1) {
 				$val = this._value[i];
-				if (filter($val.get())) { return i; }
+				if (filter.call(context, $val.get(), i)) { return i; }
 			}
-			return -1;
+
+			return -1; // -1 if not found
 		};
+
+		// First index of item, with either the supplied equality check or my equality check
 		proto.indexOf = function (item, equality_check) {
-			equality_check = equality_check || this._equality_check;
+			equality_check = equality_check || this.$equality_check.get();
 			var filter = function (x) { return equality_check(x, item); };
 			return this.indexWhere(filter);
 		};
+
+		// Last index of item, with either the supplied equality check or my equality check
 		proto.lastIndexOf = function (item, equality_check) {
-			equality_check = equality_check || this._equality_check;
+			equality_check = equality_check || this.$equality_check.get();
 			var filter = function (x) { return equality_check(x, item); };
 			return this.lastIndexWhere(filter);
 		};
-		var isPositiveInteger = function (val) {
-			return isNumber(val) && Math.round(val) === val && val >= 0;
+
+		// Return true if any item in the array is true
+		proto.some = function(filter, context) {
+			return this.indexWhere(filter, context) >= 0;
 		};
+
+		// Return true if every item in the array has a truty value
+		proto.every = function(filter, context) {
+			var rv = true;
+			this.forEach(function() {
+				if(!filter.apply(context, arguments)) { // break on the first non-obeying element
+					rv = false;
+					return my.BREAK;
+				}
+			});
+			return rv;
+		};
+
+		// Works just like the standard JavaScript array splice function
 		proto.splice = function (index, howmany) {
 			var i;
 			if (!isNumber(howmany)) { howmany = 0; }
 			if (!isPositiveInteger(index) || !isPositiveInteger(howmany)) {
 				throw new Error("index and howmany must be positive integers");
 			}
-			var to_insert = slice.call(arguments, 2);
+			var to_insert = slice.call(arguments, 2),
+				to_insert_len = to_insert.length;
 
-			// Don't run anyu listeners until we're done
+			// Don't run any listeners until we're done
 			cjs.wait();
-			var resulting_shift_size = to_insert.length - howmany;
-			var removed = [];
+			// It's useful to keep track of if the resulting shift size is negative because
+			// that will influence which direction we loop in
+			var resulting_shift_size = to_insert_len - howmany;
 
-			for (i = index; i < index + howmany; i += 1) {
-				removed.push(this.item(i));
-			}
+			// removed will hold the items that were removed
+			var removed = map(this._value.slice(index, index + howmany), function(x) {
+				return x ? x.get() : undefined;
+			});
 
 			// If we have to remove items
 			if (resulting_shift_size < 0) {
 				for (i = index; i < this._value.length + resulting_shift_size; i += 1) {
-					if (i < index + to_insert.length) {
-						this._put(i, to_insert[i - index]);
+					// If it's in the insertion range, use the user-specified insert
+					if (i < index + to_insert_len) {
+						_put(this, i, to_insert[i - index]);
 					} else {
-						this._put(i, this._get(i - resulting_shift_size));
+						// Otherwise, use put (don't use splice here to make sure that 
+						// item i has the same constraint object (for dependency purposes)
+						_put(this, i, _get(this, i - resulting_shift_size));
 					}
 				}
-				for (i = 0; i < -resulting_shift_size; i += 1) {
+				// Then, just get rid of the last resulting_shift_size elements
+				for (i = resuling_shift_size; i > 0; i -= 1) {
 					this.pop();
 				}
 			} else {
 				for (i = this._value.length + resulting_shift_size - 1; i >= index; i -= 1) {
-					if (i - index < to_insert.length) {
-						this._put(i, to_insert[i - index]);
+					if (i < index + to_insert_len) {
+						// If it's in the insertion range...
+						_put(this, i, to_insert[i - index]);
 					} else {
-						this._put(i, this._get(i - resulting_shift_size));
+						// If not...
+						_put(this, i, _get(this, i - resulting_shift_size));
 					}
 				}
 			}
 
-			this._update_len();
-			cjs.signal();
+			if(resulting_shift_size !== 0) { // Don't bother if no resulting shift
+				_update_len(this);
+			}
+
+			cjs.signal(); // And finally run any listeners
 			return removed;
 		};
+
+		// Remove the first item of the array
 		proto.shift = function () {
 			var rv_arr = this.splice(0, 1);
 			return rv_arr[0];
 		};
+
+		// Add a new item to the beginning of the array (any number of parameters)
 		proto.unshift = function () {
-			var args = toArray(arguments);
-			this.splice.apply(this, ([0, 0]).concat(args));
-			return this._value.length;
+			this.splice.apply(this, ([0, 0]).concat(toArray(arguments)));
+			return this.length();
 		};
 
+		// Like the standard js concat but return an array
 		proto.concat = function () {
-			var args = [], i, len = arguments.length;
-			for (i = 0; i < len; i += 1) {
-				var arg = arguments[i];
-				if (cjs.is_array(arg)) {
-					args.push(arg.toArray());
-				} else {
-					args.push(arg);
-				}
-			}
+			// Every argument could either be an array or constraint array
+			var args = map(arguments, function(arg) {
+				return is_array(arg) ? arg.toArray() : arg;
+			});
 			var my_val = this.toArray();
 			return my_val.concat.apply(my_val, args);
 		};
-		each(["filter", "join", "slice", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
+
+		// Just like the standard JS slice
+		proto.slice = function () {
+			// Just call the normal slice with the same arguments
+			var sliced_arr = this._value.slice.apply(this._value, arguments);
+			return map(sliced_arr, function(x) {
+				return x ? x.get() : undefined;
+			});
+		};
+
+		// All of these functions will just convert to an array and return that
+		each(["filter", "join", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
 			proto[fn_name] = function () {
 				var my_val = this.toArray();
 				return my_val[fn_name].apply(my_val, arguments);
 			};
 		});
-		proto.dynamicMap = function(map_func, options) {
-			options = extend({basis: this}, options);
-			return new DynamicArrayMap(options);
-		};
 	}(ArrayConstraint));
 
-	
-	var DynamicArrayMap = function(options) {
-		options = extend({
-			func: identity,
-			context: root,
-			equals: eqeqeq
-		}, options);
-		
-		this._basis = options.basis;
-		this._map_func = options.func;
-		this._context = options.context;
-		this._equality_check = options.equals;
-
-		this.item = cjs.memoize(function(i) {
-			var val = this._basis._get(i);
-			return this._map_func.call(this._context, val);
-		}, {
-			context: this
-		});
+	is_array = function() {
+		return obj instanceof ArrayConstraint;
 	};
 
-	(function(my) {
-		var proto = my.prototype;
-		my.BREAK = ArrayConstraint.BREAK;
-
-		proto.destroy = function() {
-			this.item.destroy();
-		};
-
-		// Run through every element of the array
-		proto.each = function (func, context) {
-			var i, len = this._value.length;
-			context = context || root;
-			for (i = 0; i < len; i += 1) {
-				if (func.call(context, this.item(i), i) === my.BREAK) {
-					break;
-				}
-			}
-			this.length(); // We want to depend on the length if we don't break beforehand
-			return this;
-		};
-
-		proto.map = function (func, context) {
-			var i, len = this.length(), rv = [];
-			context = context || root;
-			for (i = 0; i < len; i += 1) {
-				rv[i] = func.call(context, this.item(i), i);
-			}
-			return rv;
-		};
-		proto.length = function() {
-			return this._basis.length();
-		};
-		proto.indexWhere = function (filter) {
-			var i, len = this._value.length, $val;
-
-			for (i = 0; i < len; i += 1) {
-				if (filter(this.item(i))) {
-					return i;
-				}
-			}
-			this.length(); // We want to depend on the length if not found
-
-			return -1;
-		};
-		proto.lastIndexWhere = function (filter) {
-			var i, len = this.length(), $val;
-
-			for (i = len - 1; i >= 0; i -= 1) {
-				if (filter(this.item(i))) {
-					return i;
-				}
-			}
-			return -1;
-		};
-		proto.indexOf = function (item, equality_check) {
-			equality_check = equality_check || this._equality_check;
-			var filter = function (x) { return equality_check(x, item); };
-			return this.indexWhere(filter);
-		};
-		proto.lastIndexOf = function (item, equality_check) {
-			equality_check = equality_check || this._equality_check;
-			var filter = function (x) { return equality_check(x, item); };
-			return this.lastIndexWhere(filter);
-		};
-		each(["filter", "join", "slice", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
-			proto[fn_name] = function () {
-				var my_val = this.toArray();
-				return my_val[fn_name].apply(my_val, arguments);
-			};
-		});
-		proto.dynamicMap = function(map_func, options) {
-			options = extend({basis: this}, options);
-			return new DynamicArrayMap(options);
-		};
-		proto.toArray = function () {
-			return this.map(identity);
-		};
-	} (DynamicArrayMap));
-
 	cjs.array = function (value) { return new ArrayConstraint(value); };
-	cjs.is_array = function (obj) { return (obj instanceof ArrayConstraint) || (obj instanceof DynamicArrayMap); };
+	cjs.is_array = is_array;
 	cjs.Array = ArrayConstraint;

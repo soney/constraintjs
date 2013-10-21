@@ -32,7 +32,7 @@
 			if(paused === false) {
 				paused = true;
 				node.offChange(do_get);
-				return true;
+				return true; // successfully paused
 			}
 			return false;
 		};
@@ -42,7 +42,7 @@
 			if(paused === true) {
 				paused = false;
 				node.onChange(do_get);
-				return true;
+				return true; // successfully resumed
 			}
 			return false;
 		};

@@ -3,8 +3,24 @@
 	//
 
 	var Constraint, // Declare here, will be defined later
-		cjs = function (arg0, arg1, arg2) { // The star of the show!
-			return new Constraint(arg0, arg1, arg2);
+		ArrayConstraint,
+		MapConstraint,
+		is_constraint,
+		is_array,
+		is_map,
+		cjs = function (arg0, arg1) { // The star of the show!
+			// Utility function that will look at the type of the first argument an create the proper kind of value
+			if(isArray(arg0)) {
+				return new ArrayConstraint(extend({
+					value: arg0
+				}, arg1));
+			} else if(isObject(arg0)) {
+				return new MapConstraint(extend({
+					value: arg0
+				}, arg1));
+			} else {
+				return new Constraint(arg0, arg1);
+			}
 		};
 
 	cjs.version = "<%= version %>"; // This template will be filled in by the builder
@@ -58,9 +74,7 @@
 
 		// This function IS meant to be called directly. It asks the constraint solver for the value,
 		// which in turn can be cached
-		proto.get = function (auto_add_outgoing) {
-			return constraint_solver.getValue(this, auto_add_outgoing);
-		};
+		proto.get = bind(constraint_solver.getValue, this);
 
 		// Change the value of the constraint
 		proto.set = function (new_value, options) {
@@ -130,6 +144,7 @@
 				args: slice.call(arguments, 2), // arguments to pass into the callback
 				in_call_stack: false // for internal tracking; keeps track of if this function will be called in the near future
 			});
+			this.get(false); // Make sure my current value is up to date but don't add outgoing constraints. That way, when it changes the callback will be called
 			return this;
 		};
 		
@@ -376,7 +391,7 @@
 
 
 	// Create some exposed utility functions
-	var is_constraint = function(obj) {
+	is_constraint = function(obj) {
 		return obj instanceof Constraint;
 	};
 	cjs.is_constraint = is_constraint;
@@ -386,9 +401,9 @@
 	cjs.get = function (obj, arg0) {
 		if(is_constraint(obj)) {
 			return obj.get(arg0);
-		} else if(cjs.is_array(obj)) {
+		} else if(is_array(obj)) {
 			return obj.toArray();
-		} else if(cjs.is_map(obj)) {
+		} else if(is_map(obj)) {
 			return obj.toObject();
 		} else {
 			return obj;
