@@ -26,6 +26,9 @@
 	cjs.version = "<%= version %>"; // This template will be filled in by the builder
 	cjs.__debug = false;
 
+	cjs.array_diff = get_array_diff; // expose these two useful functions
+	cjs.map_diff = get_map_diff;
+
 	if(has(root, "cjs")) { // If there was a previous cjs property...
 		// ...then track it and allow cjs.noConflict to restore its previous value
 		var old_cjs = root.cjs;
@@ -40,136 +43,6 @@
 			return cjs;
 		};
 	}
-	//
-	// ============== CORE CONSTRAINTS ============== 
-	//
-	Constraint = function (value, options) {
-		/*
-		 * == OPTION DEFAULTS ==
-		 *
-		 * literal: if 'value' is a function, the value of the constraint should be the function itself (not its return value)
-		 * context: if 'value' is a function, the value of 'this', when that function is called 
-		 * cache_value: whether or not to keep track of the current value, true by default
-		 * equals: the function to check if two values are equal, === by default
-		 * auto_add_outgoing_dependencies: allow the constraint solver to determine when things depend on me, true by default
-		 * auto_add_incoming_dependencies: allow the constraint solver to determine when things I depend on thigns, true by default
-		 * check_on_nullify: when nullified, check if my value has actually changed (requires immediately re-evaluating me), false by default
-		*/
-		// These are all hidden values that should not be referred to directly
-		this._options = extend({
-			context: root
-		}, options); // keeps track of the above options
-		this._value = value; // Constant or a function
-		this._id = uniqueId(); // different for every constraint, helps with optimizing speed
-		this._outEdges = {}; // The nodes that depend on me, key is link to edge object (with properties toNode, fromNode=this)
-		this._inEdges = {}; // The nodes that I depend on, key is link to edge object (with properties toNode=this, fromNode)
-		this._changeListeners = []; // A list of callbacks that will be called when I'm nullified
-		this._tstamp = 0; // Marks the last time I was updated
-		this._valid = this._options.literal || !isFunction(this._value); // Tracks whether or not the cached value if valid
-		this._cached_value = undefined; // Caches thenode's value
-	};
-
-	(function(my) {
-		var proto = my.prototype;
-
-		// This function IS meant to be called directly. It asks the constraint solver for the value,
-		// which in turn can be cached
-		proto.get = bind(constraint_solver.getValue, this);
-
-		// Change the value of the constraint
-		proto.set = function (new_value, options) {
-			var old_value = this._value;
-			this._value = new_value;
-
-			// If it's a value
-			if (this._options.literal || !isFunction(new_value)) {
-				// Then use the specified equality check
-				var equality_check = this._options.equal || eqeqeq;
-				if(!equality_check(old_value, new_value)) {
-					// And nullify if they aren't equal
-					constraint_solver.nullify(this);
-				}
-			} else if(old_value !== new_value) { // Otherwise, check function equality
-				// And if they aren't the same function, nullify
-				constraint_solver.nullify(this);
-			}
-
-			return this;
-		};
-
-		// Can pass in either a string and value or an object with multiple keys and values
-		proto.setOption = function(arg0, arg1) {
-			if(isString(arg0)) {
-				this._options[arg0] = arg1;
-			} else {
-				extend(this._options, arg0);
-			}
-			// Nullify my value regardless of what changed
-			// changing context, literal, etc. might change my value
-			constraint_solver.nullify(this);
-			return this;
-		};
-
-		// Mark myself as invalid
-		proto.invalidate = function () {
-			constraint_solver.nullify(this);
-			return this;
-		};
-
-		// Removes every dependency to this node
-		proto.remove = function (nullifyDependents) {
-			constraint_solver.clearEdges(this, nullifyDependents);
-			this._valid = false;			// In case it gets used in the future, make sure this constraint is marked as invalid
-			this._cached_value = undefined; // and remove the cached value
-			return this;
-		};
-		
-		// Tries to clean up the constraint's allocated memory
-		proto.destroy = function (nullifyDependents) {
-			this.remove(nullifyDependents);
-			this._options = {};
-			this._changeListeners = [];
-			return this;
-		};
-
-		// Calls 'callback' when my value has changed
-		// context controls the value of 'this' when callback is being called and any number of additional
-		// arguments can be passed in that will be passed as parameters to 'callback'
-		
-		proto.onChange = function(callback, context) {
-			var args = slice.call(arguments, 2); // Additional arguments
-			this._changeListeners.push({
-				callback: callback, // function
-				context: context, // 'this' when called
-				args: slice.call(arguments, 2), // arguments to pass into the callback
-				in_call_stack: false // for internal tracking; keeps track of if this function will be called in the near future
-			});
-			this.get(false); // Make sure my current value is up to date but don't add outgoing constraints. That way, when it changes the callback will be called
-			return this;
-		};
-		
-		// Undoes the effect of onChange, removes the listener. 'context' is optional here
-		// only removes the last matching callback
-		proto.offChange = function (callback, context) {
-			var cl, i;
-			for(i = this._changeListeners.length-1; i>=0; i-=1) {
-				cl = this._changeListeners[i];
-				// Same callback and either the same context or context wasn't specified
-				if(cl.callback === callback && (!context || cl.context === context)) {
-					// Then get rid of it
-					this._changeListeners.splice(i, 1);
-					// And remove it if it's in the callback
-					if (cl.in_call_stack) {
-						constraint_solver.remove_from_call_stack(cl);
-					}
-					// Only searching for the last one
-					break;
-				}
-			}
-			return this;
-		};
-	} (Constraint));
-
 	//
 	// ============== CONSTRAINT SOLVER ============== 
 	//
@@ -388,6 +261,145 @@
 			}
 		}
 	};
+
+	//
+	// ============== CORE CONSTRAINTS ============== 
+	//
+	Constraint = function (value, options) {
+		/*
+		 * == OPTION DEFAULTS ==
+		 *
+		 * literal: if 'value' is a function, the value of the constraint should be the function itself (not its return value)
+		 * context: if 'value' is a function, the value of 'this', when that function is called 
+		 * cache_value: whether or not to keep track of the current value, true by default
+		 * equals: the function to check if two values are equal, === by default
+		 * auto_add_outgoing_dependencies: allow the constraint solver to determine when things depend on me, true by default
+		 * auto_add_incoming_dependencies: allow the constraint solver to determine when things I depend on thigns, true by default
+		 * check_on_nullify: when nullified, check if my value has actually changed (requires immediately re-evaluating me), false by default
+		*/
+		// These are all hidden values that should not be referred to directly
+		this._options = extend({
+			context: root
+		}, options); // keeps track of the above options
+		this._value = value; // Constant or a function
+		this._id = uniqueId(); // different for every constraint, helps with optimizing speed
+		this._outEdges = {}; // The nodes that depend on me, key is link to edge object (with properties toNode, fromNode=this)
+		this._inEdges = {}; // The nodes that I depend on, key is link to edge object (with properties toNode=this, fromNode)
+		this._changeListeners = []; // A list of callbacks that will be called when I'm nullified
+		this._tstamp = 0; // Marks the last time I was updated
+
+		if(this._options.literal || !isFunction(this._value)) { // We already have a value that doesn't need to be computed
+			this._valid = true; // Tracks whether or not the cached value if valid
+			this._cached_value = this._value; // Caches the node's value
+		} else {
+			this._valid = false;
+			this._cached_value = undefined;
+		}
+	};
+
+	(function(my) {
+		var proto = my.prototype;
+
+		// This function IS meant to be called directly. It asks the constraint solver for the value,
+		// which in turn can be cached
+		proto.get = function(auto_add_dependency) {
+			return constraint_solver.getValue(this, auto_add_dependency);
+		};
+
+		// Change the value of the constraint
+		proto.set = function (new_value, options) {
+			var old_value = this._value;
+			this._value = new_value;
+
+			// If it's a value
+			if (this._options.literal || !isFunction(new_value)) {
+				// Then use the specified equality check
+				var equality_check = this._options.equal || eqeqeq;
+				if(!equality_check(old_value, new_value)) {
+					// And nullify if they aren't equal
+					constraint_solver.nullify(this);
+				}
+			} else if(old_value !== new_value) { // Otherwise, check function equality
+				// And if they aren't the same function, nullify
+				constraint_solver.nullify(this);
+			}
+
+			return this;
+		};
+
+		// Can pass in either a string and value or an object with multiple keys and values
+		proto.setOption = function(arg0, arg1) {
+			if(isString(arg0)) {
+				this._options[arg0] = arg1;
+			} else {
+				extend(this._options, arg0);
+			}
+			// Nullify my value regardless of what changed
+			// changing context, literal, etc. might change my value
+			constraint_solver.nullify(this);
+			return this;
+		};
+
+		// Mark myself as invalid
+		proto.invalidate = function () {
+			constraint_solver.nullify(this);
+			return this;
+		};
+
+		// Removes every dependency to this node
+		proto.remove = function (nullifyDependents) {
+			constraint_solver.clearEdges(this, nullifyDependents);
+			this._valid = false;			// In case it gets used in the future, make sure this constraint is marked as invalid
+			this._cached_value = undefined; // and remove the cached value
+			return this;
+		};
+		
+		// Tries to clean up the constraint's allocated memory
+		proto.destroy = function (nullifyDependents) {
+			this.remove(nullifyDependents);
+			this._options = {};
+			this._changeListeners = [];
+			return this;
+		};
+
+		// Calls 'callback' when my value has changed
+		// context controls the value of 'this' when callback is being called and any number of additional
+		// arguments can be passed in that will be passed as parameters to 'callback'
+		
+		proto.onChange = function(callback, context) {
+			var args = slice.call(arguments, 2); // Additional arguments
+			this._changeListeners.push({
+				callback: callback, // function
+				context: context, // 'this' when called
+				args: slice.call(arguments, 2), // arguments to pass into the callback
+				in_call_stack: false // for internal tracking; keeps track of if this function will be called in the near future
+			});
+			this.get(false); // Make sure my current value is up to date but don't add outgoing constraints. That way, when it changes the callback will be called
+			return this;
+		};
+		
+		// Undoes the effect of onChange, removes the listener. 'context' is optional here
+		// only removes the last matching callback
+		proto.offChange = function (callback, context) {
+			var cl, i;
+			for(i = this._changeListeners.length-1; i>=0; i-=1) {
+				cl = this._changeListeners[i];
+				// Same callback and either the same context or context wasn't specified
+				if(cl.callback === callback && (!context || cl.context === context)) {
+					// Then get rid of it
+					this._changeListeners.splice(i, 1);
+					// And remove it if it's in the callback
+					if (cl.in_call_stack) {
+						constraint_solver.remove_from_call_stack(cl);
+					}
+					// Only searching for the last one
+					break;
+				}
+			}
+			return this;
+		};
+	} (Constraint));
+
 
 
 	// Create some exposed utility functions

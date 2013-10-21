@@ -1,16 +1,21 @@
 module.exports = function(grunt) {
 	var package = grunt.file.readJSON('package.json'); // Project configuration.
+
+	var src_files = ["src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js"];
+	var enclosed_src_files = (["src/header.js"]).concat(src_files, "src/footer.js");
+
 	grunt.initConfig({
 		pkg: package,
 		jshint: {
 			build: {
-				src: ["src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js"],
+				src: src_files
 			}
 		},
 		uglify: {
 			options: {
 				banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
-						'<%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */',
+						'<%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */\n',
+				report: 'gzip'
 			},
 			build: {
 				src: "build/cjs.js", // Use concatenated files
@@ -20,7 +25,7 @@ module.exports = function(grunt) {
 		concat: {
 			options: {
 				banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
-						'<%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */',
+						'<%= grunt.template.today("yyyy-mm-dd h:MM:ss TT") %> */\n',
 				process: {
 					data: {
 						version: package.version // the updated version will be added to the concatenated file
@@ -28,7 +33,7 @@ module.exports = function(grunt) {
 				}
 			},
 			js: {
-				src: ["src/header.js", "src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js", "src/footer.js"],
+				src: enclosed_src_files,
 				dest: "build/cjs.js"
 			}
 		},

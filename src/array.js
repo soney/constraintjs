@@ -126,7 +126,7 @@
 		// Replaces the whole array
 		proto.setValue = function (arr) {
 			cjs.wait(); // Don't run nullified functions quite yet
-			this._clear();
+			_clear(this);
 			this.push.apply(this, arr);
 			cjs.signal(); // OK, now run them
 			return this;
@@ -144,7 +144,7 @@
 		};
 		// Clean up any allocated memory
 		proto.destroy = function (silent) {
-			this._clear();
+			_clear(this);
 			this.$len.destroy(silent);
 		};
 

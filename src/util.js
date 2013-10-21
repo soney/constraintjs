@@ -296,12 +296,7 @@
 		var b_item = b === undefined ? b : b.item;
 		return equality_check(a_item, b_item);
 	};
-	var indexed_common_subsequence = map(indexed_lcs(from, to), function (info) { 
-		return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
-	});
 
-	var indexed_from = map(from, function (x,i) { return {item: x, index: i}; });
-	var indexed_to = map(to, function (x,i) { return {item: x, index: i}; });
 
 	var get_index_moved = function(info) {
 		var from = info[0].index,
@@ -317,7 +312,12 @@
 
 		var indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
 			indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
-			indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check), get_index_moved);
+			indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check), get_index_moved),
+			indexed_from = map(from, function (x,i) { return {item: x, index: i}; }),
+			indexed_to = map(to, function (x,i) { return {item: x, index: i}; }),
+			indexed_common_subsequence = map(indexed_lcs(from, to), function (info) { 
+				return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
+			});
 
 		indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
 		indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
@@ -503,6 +503,3 @@
 
 		return get_map_diff(key_diff, value_diff);
 	};
-
-	cjs.array_diff = get_array_diff;
-	cjs.map_diff = get_map_diff;
