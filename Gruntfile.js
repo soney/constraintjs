@@ -37,8 +37,15 @@ module.exports = function(grunt) {
 				dest: "build/cjs.js"
 			}
 		},
+		qunit: {
+			files: ['test/unit_tests.html']
+		},
 		clean: {
 			build: ["build/"]
+		},
+		watch: {
+			files: src_files.concat(['test/unit_tests.js']),
+			tasks: ['jshint', 'qunit']
 		}
 	});
 
@@ -47,8 +54,10 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-clean');
+	grunt.loadNpmTasks('grunt-contrib-qunit');
+	grunt.loadNpmTasks('grunt-contrib-watch');
 
 	// Default task(s).
-	grunt.registerTask('default', ['concat', 'jshint', 'uglify']);
-	grunt.registerTask('test', ['concat', 'jshint']); // Skip uglification if just testing
+	grunt.registerTask('default', ['concat', 'jshint', 'qunit', 'uglify']);
+	grunt.registerTask('test', ['concat', 'jshint', 'qunit']); // Skip uglification if just testing
 };

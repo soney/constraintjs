@@ -14,7 +14,7 @@
 				return new ArrayConstraint(extend({
 					value: arg0
 				}, arg1));
-			} else if(isObject(arg0)) {
+			} else if(isObject(arg0) && !isFunction(arg0)) {
 				return new MapConstraint(extend({
 					value: arg0
 				}, arg1));
