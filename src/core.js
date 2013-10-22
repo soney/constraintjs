@@ -209,8 +209,8 @@
 		// Tracks whether we are in the middle of running the nullification listeners
 		running_listeners: false,
 		// Clear all of the dependencies
-		clearEdges: function(node, also_nullify) {
-			if(also_nullify) {
+		clearEdges: function(node, silent) {
+			if(silent !== true) {
 				this.wait();
 			}
 			var node_id = node._id;
@@ -224,13 +224,13 @@
 			each(node._outEdges, function (edge, key) {
 				var toNode = edge.to;
 				
-				if (also_nullify) {
+				if (silent !== true) {
 					constraint_solver.nullify(toNode);
 				}
 				delete toNode._inEdges[node_id];
 				delete node._outEdges[key];
 			});
-			if(also_nullify) {
+			if(silent !== true) {
 				this.signal();
 			}
 		},
@@ -347,16 +347,16 @@
 		};
 
 		// Removes every dependency to this node
-		proto.remove = function (nullifyDependents) {
-			constraint_solver.clearEdges(this, nullifyDependents);
+		proto.remove = function (silent) {
+			constraint_solver.clearEdges(this, silent);
 			this._valid = false;			// In case it gets used in the future, make sure this constraint is marked as invalid
 			this._cached_value = undefined; // and remove the cached value
 			return this;
 		};
 		
 		// Tries to clean up the constraint's allocated memory
-		proto.destroy = function (nullifyDependents) {
-			this.remove(nullifyDependents);
+		proto.destroy = function (silent) {
+			this.remove(silent);
 			this._options = {};
 			this._changeListeners = [];
 			return this;

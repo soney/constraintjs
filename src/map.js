@@ -157,7 +157,7 @@
 					var is_literal = this._default_literal_values;
 					var unsubstantiated_info = {
 						key: new Constraint(key, {literal: true}),
-						value: new Constraint(undefined, {literal: lis_literal}), // will be undefined
+						value: new Constraint(undefined, {literal: is_literal}), // will be undefined
 						index: new Constraint(-1, {literal: true}) // with a negative index
 					};
 
@@ -424,6 +424,7 @@
 				for (i = ordered_index; i < this._ordered_values.length; i += 1) {
 					_set_index(this._ordered_values[i], i); // and update the index for every item
 				}
+				console.log(this.item());
 
 				// And now all of these constraint variables are invalid.
 				this.$size.invalidate();

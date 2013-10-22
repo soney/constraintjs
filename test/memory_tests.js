@@ -41,7 +41,7 @@
 
 		connected = false;
 		QUnit.start();
-	}, 500);
+	}, 1000);
 
 	do_command("ping", {}, function() {
 		clearTimeout(timeout_id);
@@ -54,7 +54,7 @@
 		};
 
 		connected = true;
-		QUnit.init();
+		QUnit.start();
 	});
 
 	module("Debugger");
@@ -65,4 +65,19 @@
 			ok(true, "Could not connect to debugger");
 		}
 	});
+
+	root.dt = function(name, num_tests, callback) {
+		asyncTest(name, function() {
+			expect(num_tests + 1);
+			clear_snapshots(function() {
+				take_snapshot([], function(response) {
+					callback();
+					take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint"], function(response) {
+						ok(!response.illegal_strs, "Make sure nothing was allocated");
+						start();
+					});
+				});
+			});
+		});
+	};
 }(this));

@@ -117,9 +117,10 @@
 		// on item i
 		proto.map = function (func, context) {
 			var rv = [];
+			context = context || root;
 			this.forEach(function(val, i) {
-				rv[i] = val;
-			}, context);
+				rv[i] = func.call(context, val, i);
+			});
 			return rv;
 		};
 
@@ -162,7 +163,7 @@
 				_put(this, value_len+i, arguments[i]);
 			}
 			cjs.signal();
-			return len; // And return the number of items that were added
+			return this.length(); // return the new length
 		};
 
 		// Remove from the end of the array
@@ -267,19 +268,27 @@
 
 			// If we have to remove items
 			if (resulting_shift_size < 0) {
-				for (i = index; i < this._value.length + resulting_shift_size; i += 1) {
-					// If it's in the insertion range, use the user-specified insert
-					if (i < index + to_insert_len) {
-						_put(this, i, to_insert[i - index]);
-					} else {
-						// Otherwise, use put (don't use splice here to make sure that 
-						// item i has the same constraint object (for dependency purposes)
-						_put(this, i, _get(this, i - resulting_shift_size));
-					}
+				var value_len = this._value.length,
+					insertion_max = index + to_insert_len,
+					movement_max = value_len + resulting_shift_size;
+
+				// If it's in the insertion range, use the user-specified insert
+				for (i = index; i<insertion_max; i += 1) {
+					_put(this, i, to_insert[i - index]);
 				}
+
+				// Otherwise, use put (don't use splice here to make sure that 
+				// item i has the same constraint object (for dependency purposes)
+				for (; i<movement_max; i += 1) {
+					_put(this, i, _get(this, i - resulting_shift_size));
+				}
+
 				// Then, just get rid of the last resulting_shift_size elements
-				for (i = resuling_shift_size; i > 0; i -= 1) {
-					this.pop();
+				for (; i<value_len; i += 1) {
+					var $value = this._value.pop(); // $value should be a constraint
+					if (cjs.is_constraint($value)) {  // and dealocate
+						$value.destroy();
+					}
 				}
 			} else {
 				for (i = this._value.length + resulting_shift_size - 1; i >= index; i -= 1) {
@@ -341,7 +350,7 @@
 		});
 	}(ArrayConstraint));
 
-	is_array = function() {
+	is_array = function(obj) {
 		return obj instanceof ArrayConstraint;
 	};
 
