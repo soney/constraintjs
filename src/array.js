@@ -54,7 +54,7 @@
 
 			// If there's an unsubstantiated item; use that, so that dependencies still work
 			if ($previous_value === undefined && arr._unsubstantiated_items[key]) {
-				$previous_value = arr._unsubstantiated_items[key];
+				$previous_value = arr._value[key] = arr._unsubstantiated_items[key];
 				delete arr._unsubstantiated_items[key];
 			}
 
@@ -96,7 +96,7 @@
 
 
 		// Change the equality check; useful for indexOf
-		proto.set_equality_check = function (equality_check) {
+		proto.setEqualityCheck = function (equality_check) {
 			this.$equality_check.set(equality_check);
 			return this;
 		};

@@ -130,8 +130,8 @@
 
 			if (hash_values) { // We found a potential hash array
 				var key_index = index_where(hash_values, index_where_fn);
+				rv.hv = hash_values;
 				if(key_index >= 0) { // Wohoo! we also found the key in there
-					rv.hv = hash_values;
 					rv.i = key_index;
 					return rv;
 				}
@@ -424,7 +424,6 @@
 				for (i = ordered_index; i < this._ordered_values.length; i += 1) {
 					_set_index(this._ordered_values[i], i); // and update the index for every item
 				}
-				console.log(this.item());
 
 				// And now all of these constraint variables are invalid.
 				this.$size.invalidate();
@@ -499,17 +498,17 @@
 			return this;
 		};
 		// Change rules for key lookup
-		proto.set_equality_check = function (equality_check) {
+		proto.setEqualityCheck = function (equality_check) {
 			this.$equality_check.set(equality_check);
 			return this;
 		};
 		// Change rules for value lookup
-		proto.set_value_equality_check = function (vequality_check) {
+		proto.setValueEqualityCheck = function (vequality_check) {
 			this.$vequality_check.set(vequality_check);
 			return this;
 		};
 		// Change how hashing is done
-		proto.set_hash = function (hash) {
+		proto.setHash = function (hash) {
 			cjs.wait();
 			// First, empty out the old key hash and unsubstantiated values
 			this._hash = isString(hash) ? get_str_hash_fn(hash) : hash;
@@ -547,7 +546,7 @@
 		};
 
 		// Change how value hashing is done
-		proto.set_value_hash = function (vhash) {
+		proto.setValueHash = function (vhash) {
 			this._valuehash = isString(vhash) ? get_str_hash_fn(vhash) : vhash;
 			// Empty out the old value hash
 			this._vhash = {};
@@ -629,7 +628,7 @@
 		};
 
 		//Move an item from one index to another given the item's index
-		proto.move_index = function (old_index, new_index) {
+		proto.moveIndex = function (old_index, new_index) {
 			var i;
 			cjs.wait();
 			var info = this._ordered_values[old_index];
@@ -662,7 +661,7 @@
 			if (key_index >= 0) {
 				var info = ki.hv[key_index];
 				// leverage the previous move_index function
-				this.move_index(info.index.get(), to_index);
+				this.moveIndex(info.index.get(), to_index);
 			}
 			return this;
 		};
