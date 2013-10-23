@@ -143,7 +143,7 @@
 						// Only mark as invalid if the old value is different from the current value.
 						equals = curr_node._options.equals || eqeqeq;
 						old_value = curr_node._cached_value;
-						new_value = this.getNodeValue(curr_node);
+						new_value = this.getValue(curr_node);
 
 						if (equals(old_value, new_value)) {
 							invalid = false;
