@@ -259,6 +259,15 @@
 				}
 				this.running_listeners = false;
 			}
+		},
+		remove_from_call_stack: function(info) {
+			var i = 0, len = this.nullified_call_stack.length;
+			for(; i < len ; i += 1) {
+				if(this.nullified_call_stack[i] === info) {
+					this.nullified_call_stack.splice(i, 1);
+					return;
+				}
+			}
 		}
 	};
 
