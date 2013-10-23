@@ -27,4 +27,20 @@ dt("Basic Liven", 7, function() {
 
 	equal(x.get(), x_clone);
 	equal(y.get(), y_clone);
+	live_fn.destroy();
+});
+
+dt("Liven Context", 2, function() {
+	var me = {prop1: 1};
+	var p1_val;
+	var x = cjs(1);
+	var live_fn = cjs.liven(function() {
+		p1_val = this.prop1+x.get();
+	}, {
+		context: me
+	});
+	equal(p1_val, 2);
+	x.set(2);
+	equal(p1_val, 3);
+	live_fn.destroy();
 });

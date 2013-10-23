@@ -50,3 +50,12 @@ dt("Invalidation and change listening", 10, function() {
 	x.invalidate();
 	equal(x.get(), "World");
 });
+
+dt("Constraint context", 1, function() {
+	var x = cjs(function() {
+		return this.prop1;
+	}, {
+		context: {prop1: 1}
+	});
+	equal(x.get(), 1);
+});

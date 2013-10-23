@@ -48,11 +48,11 @@
 		};
 
 		// The actual getter, will call the constraint's getter
-		do_get = function (enable_outgoing) {
+		do_get = function () {
 			if (options.pause_while_running) {
 				pause();
 			}
-			node.get(enable_outgoing);
+			node.get();
 			if (options.pause_while_running) {
 				resume();
 			}
