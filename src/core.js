@@ -191,6 +191,12 @@
 				delete this._is_nullifying;
 			}
 		},
+		
+		// Remove the edge going from fromNode to toNode
+		removeDependency: function(fromNode, toNode) {
+			delete fromNode._outEdges[toNode._id];
+			delete toNode._inEdges[fromNode._id];
+		},
 
 		// Use a semaphore-like system to decide when running the nullification listeners is appropriate
 		semaphore: 0,
@@ -285,6 +291,7 @@
 		 * auto_add_outgoing_dependencies: allow the constraint solver to determine when things depend on me, true by default
 		 * auto_add_incoming_dependencies: allow the constraint solver to determine when things I depend on thigns, true by default
 		 * check_on_nullify: when nullified, check if my value has actually changed (requires immediately re-evaluating me), false by default
+		 * run_on_add_listener: when onChange is called, whether or not immediately validate the value, true by default
 		*/
 		// These are all hidden values that should not be referred to directly
 		this._options = extend({
@@ -383,7 +390,9 @@
 				args: slice.call(arguments, 2), // arguments to pass into the callback
 				in_call_stack: false // for internal tracking; keeps track of if this function will be called in the near future
 			});
-			this.get(false); // Make sure my current value is up to date but don't add outgoing constraints. That way, when it changes the callback will be called
+			if(this._options.run_on_add_listener !== false) {
+				this.get(false); // Make sure my current value is up to date but don't add outgoing constraints. That way, when it changes the callback will be called
+			}
 			return this;
 		};
 		
@@ -437,3 +446,4 @@
 
 	cjs.wait = bind(constraint_solver.wait, constraint_solver); // Wait tells the constraint solver to delay before running any onChange listeners
 	cjs.signal = bind(constraint_solver.signal, constraint_solver); // Signal tells the constraint solver that it can run onChange listeners
+	cjs.removeDependency = constraint_solver.removeDependency;

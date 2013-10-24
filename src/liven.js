@@ -14,7 +14,8 @@
 		var node = new Constraint(func, {
 			context: options.context,
 			cache_value: false,
-			auto_add_outgoing_dependencies: false
+			auto_add_outgoing_dependencies: false,
+			run_on_add_listener: !!options.run_on_create
 		});
 
 		// check if running
@@ -61,6 +62,7 @@
 		// When the value changes, call do_get
 		node.onChange(do_get);
 
+/*
 		if (options.run_on_create !== false) {
 			// Add to the constraint to the list of things to call
 			constraint_solver.nullified_call_stack.push(node._changeListeners[0]);
@@ -70,6 +72,7 @@
 				constraint_solver.run_nullified_listeners();
 			}
 		}
+		*/
 
 		var rv = {
 			destroy: destroy,

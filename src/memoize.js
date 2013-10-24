@@ -56,7 +56,7 @@
 
 		// Clean up memory after self
 		rv.destroy = function (silent) {
-			args_map.each(function (constraint) {
+			args_map.forEach(function (constraint) {
 				constraint.destroy(silent);
 			});
 			args_map.destroy(silent);
