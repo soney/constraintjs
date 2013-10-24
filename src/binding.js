@@ -26,18 +26,17 @@
 
 	var Binding = function(options) {
 		var targets = options.targets,
-			value = options.value,
 			initialValue = options.initialValue,
 			onAdd = isFunction(options.onAdd) ? options.onAdd : false,
 			onRemove = isFunction(options.onRemove) ? options.onRemove : false,
 			onMove = isFunction(options.onMove) ? options.onMove : false,
-			setter = options.setter;
+			setter = options.setter,
+			getter = options.getter;
 
 		this._throttle_delay = false;
 		this._timeout_id = false;
 
-		var curr_value = value.get();
-
+		var curr_value;
 		var old_targets = [];
 		this._do_update = function() {
 			this._timeout_id = false;
@@ -60,7 +59,7 @@
 		};
 
 		this.$live_fn = cjs.liven(function() {
-			curr_value = value.get();
+			curr_value = getter();
 			if(this._throttle_delay && !this._timeout_id) {
 				this._timeout_id = root.setTimeout(bind(this._do_update, this), this._throttle_delay);
 			} else {
@@ -105,11 +104,106 @@
 
 		var binding = new Binding({
 			targets: elements,
+			getter: function() { return val.get(); },
 			setter: function(element, value) {
 				element.textContent = value;
-			},
-			value: val
+			}
 		});
 		return binding;
 	};
+
+	var attr_binding = function(elements) {
+		var vals = slice.call(arguments, 1);
+		if(vals.length === 0) {
+			return;
+		} else if(vals.length > 1) {
+			var args = vals;
+			vals = {};
+			vals[args[0]] = vals[args[1]];
+		}
+
+		var binding = new Binding({
+			targets: elements,
+			setter: function(element, value) {
+				each(value, function(v, k) {
+					element.setAttribute(k, v);
+				});
+			},
+			getter: function() {
+				var obj_vals;
+				if(cjs.is_map(vals)) {
+					obj_vals = vals.toObject();
+				} else {
+					obj_vals = vals;
+				}
+				var rv = {};
+				each(vals, function(v, k) {
+					rv[k] = cjs.get(v);
+				});
+				return rv;
+			}
+		});
+
+		return binding;
+	};
+
+	var css_binding = function(elements) {
+		var vals = slice.call(arguments, 1);
+		if(vals.length === 0) {
+			return;
+		} else if(vals.length > 1) {
+			var args = vals;
+			vals = {};
+			vals[args[0]] = vals[args[1]];
+		}
+
+		var binding = new Binding({
+			targets: elements,
+			setter: function(element, value) {
+				each(value, function(v, k) {
+					element.style[camel_case(k)] = v;
+				});
+			},
+			getter: function() {
+				var obj_vals;
+				if(cjs.is_map(vals)) {
+					obj_vals = vals.toObject();
+				} else {
+					obj_vals = vals;
+				}
+				var rv = {};
+				each(vals, function(v, k) {
+					rv[k] = cjs.get(v);
+				});
+				return rv;
+			}
+		});
+
+		return binding;
+	};
+
+	var class_binding = function(elements) {
+		var args = slice.call(arguments, 1);
+		var val = cjs(function() {
+			var arg_val_arr = map(args, function(arg) {
+				return cjs.get(arg) + "";
+			});
+
+			return arg_val_arr.join(" ");
+		});
+		var old_value = val.get();
+
+		var binding = new Binding({
+			targets: elements,
+			getter: function() { return val.get(); },
+			setter: function(element, value) {
+				element.textContent = value;
+			}
+		});
+		return binding;
+	};
+
 	cjs.text = text_binding;
+	cjs.attr = attr_binding;
+	cjs.css = css_binding;
+	cjs["class"] = class_binding;

@@ -522,3 +522,13 @@
 
 		return get_map_diff(key_diff, value_diff);
 	};
+
+	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/;
+	var fcamelCase = function(all, letter) {
+		return String(letter).toUpperCase();
+	};
+	// Convert dashed to camelCase; used by the css and data modules
+	// Microsoft forgot to hump their vendor prefix (#9572)
+	var camel_case = function(string) {
+		return string.replace( rmsPrefix, "ms-" ).replace(rdashAlpha, fcamelCase);
+	};
