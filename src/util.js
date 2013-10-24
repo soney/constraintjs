@@ -6,6 +6,7 @@
 		toString = ObjProto.toString,
 		nativeForEach      = ArrayProto.forEach,
 		nativeKeys         = Object.keys,
+		nativeFilter       = ArrayProto.filter,
 		nativeMap          = ArrayProto.map;
 
 	// Establish the object that gets returned to break out of a loop iteration.
@@ -72,6 +73,11 @@
 	// Is a given variable an object?
 	var isObject = function (obj) {
 		return obj === Object(obj);
+	};
+
+	// Is a given value a DOM element?
+	var isElement = function(obj) {
+		return !!(obj && obj.nodeType === 1);
 	};
 
 	// Is a given variable an arguments object?
@@ -141,6 +147,19 @@
 			results[results.length] = iterator.call(context, value, index, list);
 		});
 		if (obj.length === +obj.length) { results.length = obj.length; }
+		return results;
+	};
+
+	// Return all the elements that pass a truth test.
+	// Delegates to **ECMAScript 5**'s native `filter` if available.
+	// Aliased as `select`.
+	var filter = function(obj, iterator, context) {
+		var results = [];
+		if (!obj) { return results; }
+		if (nativeFilter && obj.filter === nativeFilter) { return obj.filter(iterator, context); }
+		each(obj, function(value, index, list) {
+			if (iterator.call(context, value, index, list)) { results.push(value); }
+		});
 		return results;
 	};
 
@@ -275,8 +294,7 @@
 
 		equality_check = equality_check || eqeqeq;
 		for (i = 0; i < x_len; i += 1) {
-			found = false;
-			xi = x_clone[i];
+			xi = x[i];
 			for (j = 0; j < y_len; j += 1) {
 				yj = y_clone[j];
 				if (equality_check(xi, yj)) {
@@ -288,13 +306,6 @@
 			}
 		}
 		return intersection;
-	};
-
-	//Utility functions for array_source_map below
-	var item_aware_equality_check = function (a, b) {
-		var a_item = a === undefined ? a : a.item;
-		var b_item = b === undefined ? b : b.item;
-		return equality_check(a_item, b_item);
 	};
 
 
@@ -310,14 +321,22 @@
 	var array_source_map = function (from, to, equality_check) {
 		equality_check = equality_check || eqeqeq;
 
-		var indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
-			indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
-			indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check), get_index_moved),
-			indexed_from = map(from, function (x,i) { return {item: x, index: i}; }),
+		var indexed_from = map(from, function (x,i) { return {item: x, index: i}; }),
 			indexed_to = map(to, function (x,i) { return {item: x, index: i}; }),
 			indexed_common_subsequence = map(indexed_lcs(from, to), function (info) { 
 				return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
-			});
+			}),
+			indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
+			indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
+			indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check), get_index_moved);
+
+		//Utility functions for array_source_map below
+		var item_aware_equality_check = function (a, b) {
+			var a_item = a === undefined ? a : a.item;
+			var b_item = b === undefined ? b : b.item;
+			return equality_check(a_item, b_item);
+		};
+
 
 		indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
 		indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);

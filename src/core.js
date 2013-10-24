@@ -418,6 +418,10 @@
 	cjs.is_constraint = is_constraint;
 	cjs.Constraint = Constraint;
 
+	cjs.constraint = function(value, options) {
+		return new Constraint(value, options);
+	};
+
 	// Gets the value of an object regardless of if it's a constraint or not
 	cjs.get = function (obj, arg0) {
 		if(is_constraint(obj)) {

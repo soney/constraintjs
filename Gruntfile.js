@@ -1,7 +1,7 @@
 module.exports = function(grunt) {
 	var package = grunt.file.readJSON('package.json'); // Project configuration.
 
-	var src_files = ["src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js"];
+	var src_files = ["src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js", "src/binding.js"];
 	var enclosed_src_files = (["src/header.js"]).concat(src_files, "src/footer.js");
 
 	grunt.initConfig({
