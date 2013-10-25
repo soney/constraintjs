@@ -4,6 +4,9 @@
 	var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
 	var slice = ArrayProto.slice,
 		toString = ObjProto.toString,
+		concat             = ArrayProto.concat,
+		push               = ArrayProto.push,
+		nativeEvery        = ArrayProto.every,
 		nativeForEach      = ArrayProto.forEach,
 		nativeKeys         = Object.keys,
 		nativeFilter       = ArrayProto.filter,
@@ -33,6 +36,50 @@
 			}
 		}
 		return keys;
+	};
+
+	// If every object obeys iterator
+	var every = function(obj, iterator, context) {
+		iterator = iterator || identity;
+		var result = true;
+		if (!obj) {
+			return result;
+		}
+
+		if (nativeEvery && obj.every === nativeEvery) {
+			return obj.every(iterator, context);
+		}
+
+		each(obj, function(value, index, list) {
+			if (!(result = result && iterator.call(context, value, index, list))) {
+				return breaker;
+			}
+		});
+		return !!result;
+	};
+
+	// Recursive call for flatten (from underscore)
+	var recursiveFlatten = function(input, shallow, output) {
+		if (shallow && every(input, isArray)) {
+			return concat.apply(output, input);
+		}
+		each(input, function(value) {
+			if (isArray(value) || isArguments(value)) {
+				if(shallow) {
+					push.apply(output, value);
+				} else {
+					recursiveFlatten(value, shallow, output);
+				}
+			} else {
+				output.push(value);
+			}
+		});
+		return output;
+	};
+
+	// Initial call to the recursive flatten function
+	var flatten = function(input, shallow) {
+		return recursiveFlatten(input, shallow, []);
 	};
 
 	// Retrieve the values of an object's properties.
