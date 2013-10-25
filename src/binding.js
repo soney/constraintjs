@@ -1,3 +1,40 @@
+	var insert_at = function(child_node, parent_node, index) {
+		var children = parent_node.childNodes;
+		if(children.length <= index) {
+			parent_node.appendChild(child_node);
+		} else {
+			var before_child = children[index];
+			parent_node.insertBefore(child_node, before_child);
+		}
+	};
+	var remove = function(child_node) {
+		var parentNode = child_node.parentNode;
+		if(parentNode !== null) {
+			parentNode.removeChild(child_node);
+		}
+	};
+
+	var remove_index = function(parent_node, index) {
+		var children = parent_node.childNodes;
+		if(children.length > index) {
+			var child_node = children[index];
+			remove(child_node);
+		}
+	};
+
+	var move_child = function(parent_node, to_index, from_index) {
+		var children = parent_node.childNodes;
+		if(children.length > from_index) {
+			var child_node = children[from_index];
+			if(parent_node) {
+				if(from_index < to_index) { //If it's less than the index we're inserting at...
+					to_index++; //Increase the index by 1, to make up for the fact that we're removing me at the beginning
+				}
+				insert_at(child_node, parent_node, to_index);
+			}
+		}
+	};
+
 	// Check if jQuery is available
 	var is_jquery_obj = function(x) {
 		return has(root, "jQuery") ? (x instanceof root.jQuery) : false;
