@@ -26,11 +26,13 @@
 		proto.getFrom = function() { return this._from; }; // from getter
 		proto.getTo = function() { return this._to; }; // to getter
 		proto.getName = function() { return this._name; }; // name getter
+		proto.getFSM = function() { return this._fsm; }; // FSM getter
 		proto.run = function() {
 			var args = toArray(arguments);
 			args.unshift(this);
 			args.unshift(this.getTo());
-			this._fsm._setState.apply(this._fsm, args);
+			var fsm = this.getFSM();
+			fsm._setState.apply(fsm, args);
 		};
 	}(Transition));
 
@@ -235,19 +237,48 @@
 		
 		// Add a transition from the last state that was added (the chain state) to a given state
 		// add_transition_fn will be called with the code to do a transition as a parameter
-		proto.addTransition = function(add_transition_fn, to_state_name) {
-			// Transition from the last state that was added
-			var from_state = this.chain_state;
-			// do_transition is a functiont that can be called to activate the transition
-			var do_transition = this.getTransition(from_state, to_state_name);
-			// call the supplied function with the code to actually perform the transition
-			add_transition_fn.call(this, do_transition, this);
+		proto.addTransition = function(a, b, c) {
+			var from_state, to_state, do_transition, add_transition_fn, return_transition_func = false;
 
-			return this;
+			if(arguments.length === 0) {
+				throw new Error("addTransition expects at least one argument");
+			} else if(arguments.length === 1) { // make a transition from the last entered state to the next state
+				return_transition_func = true;
+				from_state = this._chain_state;
+				to_state = a;
+			} else if(arguments.length === 2) {
+				if(isFunction(b) || b instanceof CJSEvent) { // b is the function to add the transition
+					from_state = this._chain_state;
+					to_state = a;
+					add_transition_fn = b;
+				} else { // from and to states specified
+					from_state = a;
+					to_state = b;
+					return_transition_func = true;
+				}
+			} else if(arguments.length > 2) {
+				from_state = a;
+				to_state = b;
+				add_transition_fn = c;
+			}
+
+			// do_transition is a function that can be called to activate the transition
+			do_transition = this._getTransition(from_state, to_state);
+			if(return_transition_func) {
+				return do_transition;
+			} else {
+				if(add_transition_fn instanceof CJSEvent) {
+					add_transition_fn._setTransitionFN(do_transition, this);
+				} else {
+					// call the supplied function with the code to actually perform the transition
+					add_transition_fn.call(this, do_transition, this);
+				}
+				return this;
+			}
 		};
 
 		// Creates a new transition that will go from from_state to to_state
-		proto.getTransition = function(from_state, to_state) {
+		proto._getTransition = function(from_state, to_state) {
 			var from_state_name = from_state;
 			var to_state_name = to_state;
 
@@ -259,14 +290,15 @@
 			}
 			
 			var transition = new Transition(this, from_state_name, to_state_name);
-			var do_transition = bind(function() {
+			var do_transition = function() {
+				var fsm = transition.getFSM();
 				// do_transition should be called by the user's code
-				if(this.is(from_state_name)) {
+				if(fsm.is(from_state_name)) {
 					var args = toArray(arguments);
 					transition.run.apply(transition, args);
 				}
-			}, this);
-			this.transitions.push(transition);
+			};
+			this._transitions.push(transition);
 			return do_transition;
 		};
 		// This function should, ideally, be called by a transition instead of directly
@@ -285,7 +317,7 @@
 				}
 			});
 			this._curr_state = to_state;
-			this.state.nullify();
+			this._state.invalidate();
 			// Look for post-transition callbacks..
 			// and also callbacks that are interested in state entrance
 			each(this.listeners, function(listener) {
@@ -312,6 +344,7 @@
 				// If no transitions have occured, set the current state to the one they specified
 				this._curr_state = state;
 			}
+			this._chain_state = state;
 			return this;
 		};
 		proto.is = function(state_name) {

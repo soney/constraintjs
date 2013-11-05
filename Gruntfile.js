@@ -2,7 +2,7 @@ module.exports = function(grunt) {
 	var package = grunt.file.readJSON('package.json'); // Project configuration.
 
 	var src_files = ["src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js", "src/memoize.js", "src/binding.js",
-					"src/state_machine/cjs_fsm.js"];/*, "src/state_machine/cjs_fsm_binding.js", "src/state_machine/cjs_fsm_constraint.js",
+					"src/state_machine/cjs_fsm.js", "src/state_machine/cjs_events.js"];/*, "src/state_machine/cjs_fsm_binding.js", "src/state_machine/cjs_fsm_constraint.js",
 					"src/template/cjs_template.js", "src/template/handlebars_template.js", "src/ir_builder/handlebars_ir.js",
 					"src/template/parser/handlebars_parser.js", "src/template/parser/html_parser.js", "src/template/parser/jsep.js"];*/
 	var enclosed_src_files = (["src/header.js"]).concat(src_files, "src/footer.js");
