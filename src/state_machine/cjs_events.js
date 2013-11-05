@@ -1,6 +1,7 @@
-	var CJSEvent = function(parent, filter) {
+	var CJSEvent = function(parent, filter, onSetDoTransition) {
 		this._do_transition = false;
 		this._listeners = [];
+		this._on_set_do_transition = onSetDoTransition;
 		if(parent) {
 			parent._listeners.push(this);
 		}
@@ -13,6 +14,9 @@
 		};
 		proto._setTransitionFN = function(do_transition, fsm) {
 			this._do_transition = do_transition;
+			if(this._on_set_do_transition) {
+				this._on_set_do_transition(do_transition, fsm);
+			}
 		};
 		proto._fire = function() {
 			var args = arguments;
