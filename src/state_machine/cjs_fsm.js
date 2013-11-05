@@ -28,11 +28,14 @@
 		proto.getName = function() { return this._name; }; // name getter
 		proto.getFSM = function() { return this._fsm; }; // FSM getter
 		proto.run = function() {
-			var args = toArray(arguments);
-			args.unshift(this);
-			args.unshift(this.getTo());
 			var fsm = this.getFSM();
-			fsm._setState.apply(fsm, args);
+			// do_transition should be called by the user's code
+			if(fsm.is(this.getFrom())) {
+				var args = toArray(arguments);
+				args.unshift(this);
+				args.unshift(this.getTo());
+				fsm._setState.apply(fsm, args);
+			}
 		};
 	}(Transition));
 
@@ -238,7 +241,7 @@
 		// Add a transition from the last state that was added (the chain state) to a given state
 		// add_transition_fn will be called with the code to do a transition as a parameter
 		proto.addTransition = function(a, b, c) {
-			var from_state, to_state, do_transition, add_transition_fn, return_transition_func = false;
+			var from_state, to_state, transition, add_transition_fn, return_transition_func = false;
 
 			if(arguments.length === 0) {
 				throw new Error("addTransition expects at least one argument");
@@ -263,15 +266,15 @@
 			}
 
 			// do_transition is a function that can be called to activate the transition
-			do_transition = this._getTransition(from_state, to_state);
+			transition = this._getTransition(from_state, to_state);
 			if(return_transition_func) {
-				return do_transition;
+				return bind(transition.run, transition);
 			} else {
 				if(add_transition_fn instanceof CJSEvent) {
-					add_transition_fn._setTransitionFN(do_transition, this);
+					add_transition_fn._addTransition(transition);
 				} else {
 					// call the supplied function with the code to actually perform the transition
-					add_transition_fn.call(this, do_transition, this);
+					add_transition_fn.call(this, bind(transition.run, transition), this);
 				}
 				return this;
 			}
@@ -290,16 +293,9 @@
 			}
 			
 			var transition = new Transition(this, from_state_name, to_state_name);
-			var do_transition = function() {
-				var fsm = transition.getFSM();
-				// do_transition should be called by the user's code
-				if(fsm.is(from_state_name)) {
-					var args = toArray(arguments);
-					transition.run.apply(transition, args);
-				}
-			};
 			this._transitions.push(transition);
-			return do_transition;
+
+			return transition;
 		};
 		// This function should, ideally, be called by a transition instead of directly
 		proto._setState = function(state, transition) {
@@ -320,7 +316,7 @@
 			this._state.invalidate();
 			// Look for post-transition callbacks..
 			// and also callbacks that are interested in state entrance
-			each(this.listeners, function(listener) {
+			each(this._listeners, function(listener) {
 				if(listener.interested_in(transition, false)) {
 					listener.run(transition, to_state, from_state); // and run 'em
 				} else if(listener.interested_in(to_state)) {
@@ -372,13 +368,13 @@
 				selector = spec_str;
 			}
 			var listener = new StateListener(selector, callback, context);
-			this.listeners.push(listener);
+			this._listeners.push(listener);
 			return this;
 		};
 
 		// Remove the listener specified by an on call; pass in just the callback
 		proto.off = proto.removeEventListener = function(listener_callback) {
-			this.listeners = filter(this.listeners, function(listener) {
+			this._listeners = filter(this._listeners, function(listener) {
 				return listener.callback !== listener_callback;
 			});
 			return this;
