@@ -372,6 +372,12 @@
 		
 		// Tries to clean up the constraint's allocated memory
 		proto.destroy = function (silent) {
+			each(this._changeListeners, function(cl) {
+				// remove it from the call stack
+				if (cl.in_call_stack) {
+					constraint_solver.remove_from_call_stack(cl);
+				}
+			});
 			this.remove(silent);
 			this._options = {};
 			this._changeListeners = [];
