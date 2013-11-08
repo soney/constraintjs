@@ -58,7 +58,7 @@
 		var proto = my.prototype;
 		proto.matches = function(state) {
 			// Supplied object should be a State object with the given name
-			return state instanceof State && this._state_name === state.getName();
+			return state instanceof State && (this._state_name === state || this._state_name === state.getName());
 		};
 	}(StateSelector));
 
@@ -81,8 +81,8 @@
 		// Make sure that the supplied object is a transition with the same timing
 		proto.matches = function(transition, pre) {
 			if(transition instanceof Transition && this.is_pre === pre) { 
-				var from_state = transition.get_from();
-				var to_state = transition.get_to();
+				var from_state = transition.getFrom();
+				var to_state = transition.getTo();
 				// And then make sure both of the states match as well
 				return this.from_state_selector.matches(from_state) &&
 						this.to_state_selector.matches(to_state);
@@ -205,6 +205,10 @@
 		}, {
 			context: this
 		});
+
+		// Option to pass in state names as arguments
+		var state_names = flatten(arguments, true);
+		each(state_names, this.addState, this);
 	};
 	(function(my) {
 		var proto = my.prototype;
@@ -282,17 +286,14 @@
 
 		// Creates a new transition that will go from from_state to to_state
 		proto._getTransition = function(from_state, to_state) {
-			var from_state_name = from_state;
-			var to_state_name = to_state;
-
-			if(!isString(from_state)) {
-				from_state_name = from_state.getName();
+			if(isString(from_state)) {
+				from_state = this.stateWithName(from_state);
 			}
-			if(!isString(to_state)) {
-				to_state_name = to_state.getName();
+			if(isString(to_state)) {
+				to_state = this.stateWithName(to_state);
 			}
 			
-			var transition = new Transition(this, from_state_name, to_state_name);
+			var transition = new Transition(this, from_state, to_state);
 			this._transitions.push(transition);
 
 			return transition;
@@ -307,7 +308,7 @@
 			this.did_transition = true;
 
 			// Look for pre-transition callbacks
-			each(this.listeners, function(listener) {
+			each(this._listeners, function(listener) {
 				if(listener.interested_in(transition, true)) {
 					listener.run(transition, to_state, from_state); // and run 'em
 				}
@@ -352,7 +353,7 @@
 				if(isString(state_name)) {
 					return state === state_name;
 				} else {
-					return state.getName() === state_name;
+					return state === state_name.getName();
 				}
 			}
 		};
@@ -382,7 +383,7 @@
 	}(FSM));
 
 	cjs.fsm = function() {
-		return new FSM();
+		return new FSM(arguments);
 	};
 	cjs.is_fsm = function(obj) {
 		return obj instanceof FSM;

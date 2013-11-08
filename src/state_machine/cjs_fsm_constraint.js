@@ -1,3 +1,20 @@
+	var create_fsm_constraint = function(state_machines, state_values) {
+		console.log(state_machines, state_values);
+	};
+
+	/*
+	var FSMConstraint = function(state_machines, state_values) {
+		this.state_machines = state_machines;
+		this.state_values = state_values;
+	};
+	(function(my) {
+		proto._getter = function() {
+		};
+	}(FSMConstraint));
+
+
+	console.log("abc");
+	/*
 	var create_fsm_constraint = function(fsm, specs) {
 		var state_spec_strs = _.keys(specs),
 			selectors = [],
@@ -73,3 +90,4 @@
 
 		return constraint;
 	};
+	*/

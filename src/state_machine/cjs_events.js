@@ -22,7 +22,8 @@
 		proto._fire = function() {
 			var args = arguments;
 			each(this._transitions, function(transition) {
-				transition.apply(transition, args);
+				console.log(transition);
+				transition.run.apply(transition, args);
 			});
 			each(this._listeners, function(listener_info) {
 				var listener = listener_info.event,
@@ -39,11 +40,11 @@
 		var rv;
 		if(event_type === "timeout") {
 			rv = new CJSEvent(false, false, function(transition) {
-				var fsm = transition.getFSM();
-				var from = transition.getFrom();
-				var selector = new StateSelector(from);
-				var curr_timeout_id = false;
-				var on_selector = function() {
+				var fsm = transition.getFSM(),
+					from = transition.getFrom(),
+					selector = new StateSelector(from),
+					curr_timeout_id = false,
+					on_selector = function() {
 					if(curr_timeout_id) {
 						root.clearTimeout(curr_timeout_id);
 					}
@@ -58,8 +59,30 @@
 				}
 			});
 		} else {
-			rv = new CJSEvent();
-			target.addEventListener(event_type, bind(rv._fire, rv));
+			if(!target) { target = window; }
+
+			var listener;
+
+			rv = new CJSEvent(false, false, function(transition) {
+				var fsm = transition.getFSM(),
+					from = transition.getFrom(),
+					state_selector = new StateSelector(from),
+					from_state_selector = new TransitionSelector(true, state_selector, new AnyStateSelector()),
+					on_selector = function() {
+						target.addEventListener(event_type, listener);
+					},
+					off_selector = function() {
+						target.removeEventListener(event_type, listener);
+					};
+
+				fsm	.on(state_selector, on_selector)
+					.on(from_state_selector, off_selector);
+
+				if(fsm.is(from)) {
+					on_selector();
+				}
+			});
+			listener = bind(rv._fire, rv);
 		}
 
 		return rv;
