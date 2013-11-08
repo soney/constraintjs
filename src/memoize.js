@@ -64,6 +64,11 @@
 			args_map = null;
 			options = null;
 		};
+
+		// Run through every argument and call fn on it
+		rv.each = function (fn) {
+			args_map.forEach(fn);
+		};
 		return rv;
 	};
 
