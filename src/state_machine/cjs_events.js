@@ -1,8 +1,10 @@
-	var CJSEvent = function(parent, filter, onAddTransition) {
+	var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		this._do_transition = false;
 		this._listeners = [];
 		this._transitions = [];
 		this._on_add_transition = onAddTransition;
+		this._on_remove_transition = onRemoveTransition;
+		this._live_fns = {};
 		if(parent) {
 			parent._listeners.push({event:this, filter: filter});
 		}
@@ -16,7 +18,19 @@
 		proto._addTransition = function(transition) {
 			this._transitions.push(transition);
 			if(this._on_add_transition) {
-				this._on_add_transition(transition);
+				this._live_fns[transition.id()] = this._on_add_transition(transition);
+			}
+		};
+		proto._removeTransition = function(transition) {
+			var index = indexOf(this._transitions, transition);
+			if(index >= 0) {
+				this._transitions.splice(index, 1);
+				if(this._on_remove_transition) {
+					this._on_remove_transition(transition);
+				}
+				var tid = transition.id();
+				this._live_fns[tid].destroy();
+				delete this._live_fns[tid];
 			}
 		};
 		proto._fire = function() {
@@ -36,54 +50,69 @@
 		};
 	}(CJSEvent));
 
-	cjs.on = function(event_type, target) {
-		var rv;
-		if(event_type === "timeout") {
-			rv = new CJSEvent(false, false, function(transition) {
-				var fsm = transition.getFSM(),
-					from = transition.getFrom(),
-					selector = new StateSelector(from),
-					curr_timeout_id = false,
-					on_selector = function() {
-					if(curr_timeout_id) {
-						root.clearTimeout(curr_timeout_id);
-					}
-					curr_timeout_id = root.setTimeout(function() {
-						curr_timeout_id = false;
-						transition.run();
-					}, target);
-				};
-				fsm.on(selector, on_selector);
-				if(fsm.is(from)) {
-					on_selector();
-				}
-			});
-		} else {
-			if(!target) { target = window; }
+	var isElementOrWindow = function(elem) { return elem === window || isElement(elem); };
+	var do_trim = function(x) { return x.trim(); };
+	var split_and_trim = function(x) { return map(x.split(" "), do_trim); };
 
-			var listener;
-
-			rv = new CJSEvent(false, false, function(transition) {
-				var fsm = transition.getFSM(),
+	cjs.on = function(event_type) {
+		var rest_args = arguments.length > 1 ? slice.call(arguments, 1) : window,
+			event = new CJSEvent(false, false, function(transition) {
+				var targets = [],
+					timeout_id = false,
+					event_type_val = [],
+					listener = bind(transition.run, transition),
+					fsm = transition.getFSM(),
 					from = transition.getFrom(),
 					state_selector = new StateSelector(from),
 					from_state_selector = new TransitionSelector(true, state_selector, new AnyStateSelector()),
-					on_selector = function() {
-						target.addEventListener(event_type, listener);
+					on_listener = function() {
+						each(event_type_val, function(event_type) {
+							if(event_type === "timeout") {
+								if(timeout_id) {
+									clearTimeout(timeout_id);
+									timeout_id = false;
+								}
+
+								var delay = cjs.get(rest_args[0]);
+								if(!isNumber(delay) || delay < 0) {
+									delay = 0;
+								}
+
+								timeout_id = setTimeout(listener, delay);
+							} else {
+								each(targets, function(target) {
+									target.addEventListener(event_type, listener);
+								});
+							}
+						});
 					},
-					off_selector = function() {
-						target.removeEventListener(event_type, listener);
-					};
+					off_listener = function() {
+						each(event_type_val, function(event_type) {
+							each(targets, function(target) {
+								if(event_type === "timeout") {
+									if(timeout_id) {
+										clearTimeout(timeout_id);
+										timeout_id = false;
+									}
+								} else {
+									target.removeEventListener(event_type, listener);
+								}
+							});
+						});
+					},
+					live_fn = cjs.liven(function() {
+						off_listener();
 
-				fsm	.on(state_selector, on_selector)
-					.on(from_state_selector, off_selector);
+						event_type_val = split_and_trim(cjs.get(event_type));
+						targets = filter(get_dom_array(rest_args), isElementOrWindow);
 
-				if(fsm.is(from)) {
-					on_selector();
-				}
+						fsm	.on(state_selector, on_listener)
+							.on(from_state_selector, off_listener);
+						if(fsm.is(from)) {
+							on_listener();
+						}
+					});
+				return live_fn;
 			});
-			listener = bind(rv._fire, rv);
-		}
-
-		return rv;
+		return event;
 	};

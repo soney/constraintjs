@@ -7,7 +7,8 @@
 		options = extend({
 			context: root, // what to equate 'this' to
 			run_on_create: true, // whether it should run immediately
-			pause_while_running: false // whether to allow the function to be called recursively (indirectly)
+			pause_while_running: false, // whether to allow the function to be called recursively (indirectly)
+			on_destroy: false // a function to call when this liven function is destroyed
 		}, options);
 
 		//Make constraint-aware values just by calling func in a constraint
@@ -24,6 +25,9 @@
 
 		// Destroy the node and make sure no memory is allocated
 		var destroy = function (silent) {
+			if(options.on_destroy) {
+				options.on_destroy.call(options.context);
+			}
 			node.destroy();
 			node = null;
 		};
@@ -61,18 +65,6 @@
 
 		// When the value changes, call do_get
 		node.onChange(do_get);
-
-/*
-		if (options.run_on_create !== false) {
-			// Add to the constraint to the list of things to call
-			constraint_solver.nullified_call_stack.push(node._changeListeners[0]);
-
-			// And if we're ready, then runn the nullification listeners
-			if (constraint_solver.semaphore >= 0) {
-				constraint_solver.run_nullified_listeners();
-			}
-		}
-		*/
 
 		var rv = {
 			destroy: destroy,

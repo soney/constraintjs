@@ -6,11 +6,13 @@
 	var State = function(fsm, name) {
 		this._fsm = fsm; // parent fsm
 		this._name = name; // state name (fetch with getName)
+		this._id = uniqueId(); // useful for storage
 	};
 
 	(function(my) {
 		var proto = my.prototype;
 		proto.getName = function() { return this._name; }; // getter for name
+		proto.id = function() { return this._id; }; // getter for id
 	}(State));
 
 	// Simple transition representation (again, the containing FSM does most of the work)
@@ -19,6 +21,7 @@
 		this._from = from_state; // from state (fetch with getFrom)
 		this._to = to_state; // to state (fetch with getTo)
 		this._name = name; // name (fetch with getName)
+		this._id = uniqueId(); // useful for storage
 	};
 
 	(function(my) {
@@ -27,6 +30,7 @@
 		proto.getTo = function() { return this._to; }; // to getter
 		proto.getName = function() { return this._name; }; // name getter
 		proto.getFSM = function() { return this._fsm; }; // FSM getter
+		proto.id = function() { return this._id; }; // getter for id
 		proto.run = function() {
 			var fsm = this.getFSM();
 			// do_transition should be called by the user's code
