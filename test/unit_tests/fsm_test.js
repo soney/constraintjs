@@ -64,3 +64,26 @@ asyncTest("cjs.on", function() {
 		});
 	});
 });
+
+dt("FSM Constraint", 5, function() {
+	var do_transition;
+	var fsm = cjs	.fsm()
+					.addState("state_1")
+					.addState("state_2")
+					.startsAt("state_1");
+	var t12 = fsm.addTransition("state_1", "state_2"),
+		t21 = fsm.addTransition("state_2", "state_1");
+	var s2val = cjs(2);
+	var fsmc = cjs.inFSM(fsm, {
+		"state_1": 1,
+		"state_2": function() { return s2val.get(); }
+	});
+
+	ok(fsm.is("state_1"));
+	equal(fsmc.get(), 1);
+	t12();
+	ok(fsm.is("state_2"));
+	equal(fsmc.get(), 2);
+	s2val.set(3);
+	equal(fsmc.get(), 3);
+});

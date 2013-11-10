@@ -158,7 +158,7 @@
 		} else { return null; } // There shouldn't be any way to get here...
 	};
 
-	var transition_separator_regex = new RegExp("^([\\sa-zA-Z0-9,\\-*]+)((<->|>-<|->|>-|<-|-<)([\\sa-zA-Z0-9,\\-*]+))?$");
+	var transition_separator_regex = new RegExp("^([\\sa-zA-Z0-9,\\-_*]+)((<->|>-<|->|>-|<-|-<)([\\sa-zA-Z0-9,\\-_*]+))?$");
 	// Given a string specifying a state or set of states, return a selector object
 	var parse_spec = function(str) {
 		var matches = str.match(transition_separator_regex);
