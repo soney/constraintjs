@@ -40,7 +40,7 @@
 
 	// Get the last element of an array. Passing **n** will return the last N
 	// values in the array. The **guard** check allows it to work with `_.map`.
-	last = function(array, n, guard) {
+	var last = function(array, n, guard) {
 		if (array == null) {
 			return void 0;
 		} else if ((n == null) || guard) {
@@ -51,7 +51,7 @@
 	};
 
 	// Return the number of elements in an object.
-	size = function(obj) {
+	var size = function(obj) {
 		if (obj == null) { return 0; }
 		return (obj.length === +obj.length) ? obj.length : keys(obj).length;
 	};
@@ -60,15 +60,14 @@
 	// Especially useful on the arguments object. Passing an **n** will return
 	// the rest N values in the array. The **guard**
 	// check allows it to work with `_.map`.
-	rest = function(array, n, guard) {
+	var rest = function(array, n, guard) {
 		return slice.call(array, (n == null) || guard ? 1 : n);
 	};
 
 	// Trim out all falsy values from an array.
-	compact = function(array) {
+	var compact = function(array) {
 		return filter(array, identity);
 	};
-	
 
 	// If every object obeys iterator
 	var every = function(obj, iterator, context) {
