@@ -23,11 +23,11 @@
 		} 
 
 		var matches = str.match(script_regex);
-		if(!_.isNull(matches)) {
+		if(matches) {
 			var script_id = matches[1];
 			var scripts = document.getElementsByTagName("script");
 			var template_script = null;
-			_.forEach(scripts, function(script) {
+			each(scripts, function(script) {
 				var type = script.getAttribute("type");
 				if(type === "cjs/template") {
 					var id = script.getAttribute("id");
@@ -36,10 +36,10 @@
 					}
 				}
 			});
-			if(_.isNull(template_script)) {
-				str = "Could not find &lt;script type='cjs/template' id='" + script_id + "'&gt;(...)&lt;/script&gt;";
-			} else {
+			if(template_script) {
 				str = template_script.innerText;
+			} else {
+				str = "Could not find &lt;script type='cjs/template' id='" + script_id + "'&gt;(...)&lt;/script&gt;";
 			}
 		}
 

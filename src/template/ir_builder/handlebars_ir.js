@@ -18,7 +18,7 @@
 			}
 		};
 		proto.insert_child_at = function(child, index) {
-			_.insert_at(this.children, child, index);
+			this.children.splice(index, 0, child);
 			
 			if(child instanceof my) {
 				child.set_parent(this);
@@ -27,14 +27,14 @@
 		proto.set_children = function(children) {
 			this.children = children;
 			var self = this;
-			_.forEach(this.children, function(child) {
+			each(this.children, function(child) {
 				if(child instanceof my) {
 					child.set_parent(self);
 				}
 			});
 		};
 		proto.child_index = function(child) {
-			return _.index_of(this.children, child);
+			return indexOf(this.children, child);
 		};
 		proto.set_value = function(value) {
 			this.value = value;
@@ -43,14 +43,17 @@
 			this.parent = parent;
 		};
 		proto.remove_child = function(child) {
-			_.remove(this.children, child);
+			var index = this.children.indexOf(child);
+			if(index >= 0) {
+				this.children.splice(index, 1);
+			}
 			if(child.parent === this) {
 				child.set_parent(null);
 			}
 			return child;
 		};
 		proto.to_str = function(transformer) {
-			if(!_.isFunction(transformer)) {
+			if(!isFunction(transformer)) {
 				transformer = function(child) {
 					if(child instanceof my) {
 						return child.to_str(transformer);
@@ -60,7 +63,7 @@
 				};
 			}
 
-			var rv = _.map(this.children, function(child) {
+			var rv = map(this.children, function(child) {
 				return transformer(child);
 			});
 			return rv.join("");
@@ -69,9 +72,9 @@
 
 	var build_ir = function(parse_tree_root, ir_root) {
 		var type = parse_tree_root[0];
-		var args = _.rest(parse_tree_root);
+		var args = parse_tree_root.slice(1);
 		if(type === "multi") {
-			var children = _.map(args, function(arg) {
+			var children = map(args, function(arg) {
 				return build_ir(arg, ir_root);
 			});
 			ir_root.set_children(children);
@@ -80,7 +83,7 @@
 			return args[0];
 		} else if(type === "mustache") {
 			var subtype = args[0];
-			args = _.rest(args);
+			args = rest(args);
 			if(subtype === "etag" || subtype === "utag") {
 				var rv = new IRNode("mustache/variable", args[1]);
 				rv.set_value({
@@ -142,21 +145,21 @@
 			}
 			var if_parent = ir_root.parent;
 			var curr_index = if_parent.child_index(ir_root) + 1;
-			_.forEach(children_to_elevate, function(child) {
+			each(children_to_elevate, function(child) {
 				ir_root.remove_child(child);
 				if_parent.insert_child_at(child, curr_index);
 				curr_index+=1;
 			});
 		}
 
-		_.forEach(ir_root.children, function(child) {
+		each(ir_root.children, function(child) {
 			extract_elses(child);
 		});
 	};
 
 	var integrate_expressions = function(ir_root) {
-		if(_.has(ir_root, "value") && !_.isNull(ir_root.value)) {
-			if(_.has(ir_root.value, "attributes") && !_.isNull(ir_root.value.attributes)) {
+		if(has(ir_root, "value") && !_.isNull(ir_root.value)) {
+			if(has(ir_root.value, "attributes") && !_.isNull(ir_root.value.attributes)) {
 				var attributes = ir_root.value.attributes;
 				var parsed_attributes = cjs.__parsers.expression(attributes);
 				ir_root.value.parsed_attributes = parsed_attributes;
@@ -166,7 +169,7 @@
 				ir_root.value.parsed_var_name = parsed_var_name;
 			}
 		}
-		_.forEach(ir_root.children, function(child) {
+		each(ir_root.children, function(child) {
 			integrate_expressions(child);
 		});
 	};
@@ -265,10 +268,10 @@
 
 				var new_node;
 				node.attrs = [];
-				_.forEach(attrs, function(attr, attr_name) {
+				each(attrs, function(attr, attr_name) {
 					var attr_name = attr.name;
 					var attr_value = _.map(extract_handlebars(attr.value), function(child) {
-						if(_.isString(child)) {
+						if(isString(child)) {
 							return child;
 						} else {
 							new_node = handlebars_map[child.handlebar_id];
@@ -285,7 +288,7 @@
 					});
 					node.attrs.push({
 						name: attr_name
-						, value: _.compact(attr_value)
+						, value: compact(attr_value)
 					});
 				});
 			}
@@ -297,15 +300,15 @@
 			}
 			, chars: function(text) {
 				var new_node;
-				_.forEach(extract_handlebars(text), function(child) {
-					if(_.isString(child)) {
-						var parent = _.last(stack);
+				each(extract_handlebars(text), function(child) {
+					if(isString(child)) {
+						var parent = last(stack);
 						parent.push_child(child);
 					} else {
 						new_node = handlebars_map[child.handlebar_id];
 						if(child.modifier === "#") {
 							new_node.set_children([]);
-							var parent = _.last(stack);
+							var parent = last(stack);
 							parent.push_child(new_node);
 							stack.push(new_node);
 						} else if(child.modifier === "/") {
@@ -314,20 +317,19 @@
 								throw new Exception("Out of order: ", node.text, new_node.text);
 							}
 						} else {
-							var parent = _.last(stack);
+							var parent = last(stack);
 							parent.push_child(new_node);
 						}
 					}
 				});
 			}
 			, comment: function(text) {
-				var parent = _.last(stack);
+				var parent = last(stack);
 				var new_node = new IRNode("html/comment", text);
 				parent.push_child(new_node);
 			}
 		});
 	};
-
 
 	cjs.__ir_builders.handlebars = function (parse_tree, options) {
 		var root = new IRNode("root", parse_tree.content);

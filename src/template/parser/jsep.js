@@ -1,5 +1,5 @@
 	var unary_ops = ["-", "!"], // Permissible unary operations
-		binary_ops = ["+", "-", "*", "/", "&&", "||", "&", "|", "<<", ">>", "===", "==", ">=", "<=",  "<", ">"]; //Permissible binary operations
+		binary_ops = ["+", "-", "*", "/", "&&", "||", "&", "|", "<<", ">>", "===", "==", "!==", "!=", ">=", "<=",  "<", ">"]; //Permissible binary operations
 
 	//Trim the left hand side of a string
 	var ltrim_regex = /^\s+/,
