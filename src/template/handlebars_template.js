@@ -128,8 +128,9 @@
 	var parser = cjs.__parsers.handlebars;
 	var ir_builder = cjs.__ir_builders.handlebars;
 	var build_handlebars_template = function(str, data) {
-		var parse_tree = parser(str),
-			ir = ir_builder(parse_tree),
+		var parse_tree = parser(str);
+		console.log(parse_tree);
+		var ir = ir_builder(parse_tree),
 			fn_string = "with (obj) {\n" +
 						to_fn_str(ir) +
 						"\n}";
