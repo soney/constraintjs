@@ -71,8 +71,9 @@
 	}(IRNode));
 
 	var build_ir = function(parse_tree_root, ir_root) {
-		var type = parse_tree_root[0];
-		var args = parse_tree_root.slice(1);
+		var type = parse_tree_root[0],
+			args = parse_tree_root.slice(1),
+			rv, tag, tag_content;
 		if(type === "multi") {
 			var children = map(args, function(arg) {
 				return build_ir(arg, ir_root);
@@ -85,19 +86,19 @@
 			var subtype = args[0];
 			args = rest(args);
 			if(subtype === "etag" || subtype === "utag") {
-				var rv = new IRNode("mustache/variable", args[1]);
+				rv = new IRNode("mustache/variable", args[1]);
 				rv.set_value({
-					var_name: args[0]
-					, escaped: subtype === "etag"
+					var_name: args[0],
+					escaped: subtype === "etag"
 				});
 				return rv;
 			} else if(subtype === "section" || subtype === "inverted_section") {
-				var tag = args[0]
-					, tag_content = args[1]
-					, text_content = args[2]
-					, sub_trees = args[3];
+				tag = args[0];
+				tag_content = args[1];
+				var text_content = args[2],
+					sub_trees = args[3];
 
-				var rv = new IRNode("mustache/"+subtype, text_content);
+				rv = new IRNode("mustache/"+subtype, text_content);
 				var attribute_start_index = tag_content.indexOf(" ");
 				var attributes;
 				if(attribute_start_index<0) {
@@ -106,17 +107,17 @@
 					attributes = tag_content.substring(attribute_start_index+1);
 				}
 				rv.set_value({
-					tag: tag
-					, attributes: attributes
+					tag: tag,
+					attributes: attributes
 				});
 
 				build_ir(sub_trees, rv);
 
 				return rv;
 			} else if(subtype === "partial") {
-				var tag = args[0];
-				var tag_content = args[1];
-				var rv = new IRNode("mustache/partial", tag_content);
+				tag = args[0];
+				tag_content = args[1];
+				rv = new IRNode("mustache/partial", tag_content);
 				rv.set_value(tag);
 				return rv;
 			} else {
@@ -189,12 +190,12 @@
 				}
 				buffer = buffer.substr(str_index + match[0].length);
 				var modifier = match[1];
-				var handlebar_id = parseInt(match[2]);
+				var handlebar_id = parseInt(match[2], 10);
 
 				rv.push({
-					type: "handlebars"
-					, modifier: modifier
-					, handlebar_id: handlebar_id
+					type: "handlebars",
+					modifier: modifier,
+					handlebar_id: handlebar_id
 				});
 			} else {
 				rv.push(buffer);
@@ -221,23 +222,22 @@
 	var integrate_html = function(ir_root) {
 		var handlebars_map = [];
 		var id = 0;
-
-		var transformer;
+		var transformer, unique_id, rv;
 		transformer = function(child) {
 			if(child instanceof IRNode) {
 				if(child.value) {
 					if(child.type === "mustache") {
 						if(child.subtype === "section") {
-							var unique_id = id;
+							unique_id = id;
 							handlebars_map[unique_id] = child;
 							id++;
-							var rv = get_unique_handlebars_opening(unique_id) + child.to_str(transformer) + get_unique_handlebars_closing(unique_id);
+							rv = get_unique_handlebars_opening(unique_id) + child.to_str(transformer) + get_unique_handlebars_closing(unique_id);
 							return rv;
 						} else {
-							var unique_id = id;
+							unique_id = id;
 							handlebars_map[unique_id] = child;
 							id++;
-							var rv = get_unique_handlebars_str(unique_id);
+							rv = get_unique_handlebars_str(unique_id);
 							return rv;
 						}
 					} else {
@@ -268,7 +268,7 @@
 
 				var new_node;
 				node.attrs = [];
-				each(attrs, function(attr, attr_name) {
+				each(attrs, function(attr) {
 					var attr_name = attr.name;
 					var attr_value = _.map(extract_handlebars(attr.value), function(child) {
 						if(isString(child)) {
@@ -287,28 +287,28 @@
 						}
 					});
 					node.attrs.push({
-						name: attr_name
-						, value: compact(attr_value)
+						name: attr_name,
+						value: compact(attr_value)
 					});
 				});
-			}
-			, end: function(tag_name) {
+			},
+			end: function(tag_name) {
 				var node = stack.pop();
 				if(node.value.tag_name !== tag_name) {
 					throw new Exception("Could not resolve", tag_name, node);
 				}
-			}
-			, chars: function(text) {
-				var new_node;
+			},
+			chars: function(text) {
+				var new_node, parent;
 				each(extract_handlebars(text), function(child) {
 					if(isString(child)) {
-						var parent = last(stack);
+						parent = last(stack);
 						parent.push_child(child);
 					} else {
 						new_node = handlebars_map[child.handlebar_id];
 						if(child.modifier === "#") {
 							new_node.set_children([]);
-							var parent = last(stack);
+							parent = last(stack);
 							parent.push_child(new_node);
 							stack.push(new_node);
 						} else if(child.modifier === "/") {
@@ -317,13 +317,13 @@
 								throw new Exception("Out of order: ", node.text, new_node.text);
 							}
 						} else {
-							var parent = last(stack);
+							parent = last(stack);
 							parent.push_child(new_node);
 						}
 					}
 				});
-			}
-			, comment: function(text) {
+			},
+			comment: function(text) {
 				var parent = last(stack);
 				var new_node = new IRNode("html/comment", text);
 				parent.push_child(new_node);

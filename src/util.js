@@ -1,3 +1,4 @@
+	/*jslint eqnull: true */
 	//
 	// ============== UTILITY FUNCTIONS ============== 
 	//

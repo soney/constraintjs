@@ -1,5 +1,5 @@
-/* jslint nomen: true, vars: true */
-/* jshint -W093 */
+/*jslint nomen: true, vars: true */
+/*jshint -W093 */
 
 var cjs = (function (root) {
 	"use strict";
