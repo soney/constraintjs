@@ -1,16 +1,43 @@
+	var empty_fn = function(){};
 	var create_template = function(template_str) {
+		var stack = [], last_pop = false;
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
-				console.log("Start HTML", arguments);
+				last_pop = {
+					create: function() {
+						var element = document.createElement(tag);
+						each(attributes, function(attr) {
+							element.setAttribute(attr.name, attr.value);
+						});
+
+						each(this.children, function(child) {
+							element.appendChild(child.create());
+						});
+						return element;
+					},
+					children: [],
+					destroy: empty_fn
+				};
+				if(stack.length > 0) {
+					last(stack).children.push(last_pop);
+				}
+
+				if(!unary) {
+					stack.push(last_pop);
+				}
 			},
 			endHTML: function(tag) {
-				console.log("End HTML", arguments);
+				last_pop = stack.pop();
 			},
 			chars: function(str) {
-				console.log("Chars", arguments);
-			},
-			HTMLcomment: function(text) {
-				console.log("HTML Comment", arguments);
+				last_pop = {
+					create: function() {
+						return document.createTextNode(str);
+					}
+				};
+				if(stack.length > 0) {
+					last(stack).children.push(last_pop);
+				}
 			},
 			startHB: function() {
 				console.log("Start Handlebars", arguments);
@@ -19,9 +46,23 @@
 				console.log("End Handlebars", arguments);
 			},
 			HBComment: function(text) {
-				console.log("Handlebars Comment", arguments);
+				last_pop = {
+					create: function() {
+						return document.createComment(text);
+					}
+				};
+				if(stack.length > 0) {
+					last(stack).children.push(last_pop);
+				}
 			}
 		});
+		if(last_pop === false) {
+			return function() {
+				return document.createTextNode("");
+			};
+		} else {
+			return bind(last_pop.create, last_pop);
+		}
 	};
 
 	var template_strs = [],

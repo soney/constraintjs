@@ -254,7 +254,7 @@
 	};
 		
 	// Return the first item in arr where test is true
-	var index_where = function (arr, test, start_index) {
+	var indexWhere = function (arr, test, start_index) {
 		var i, len = arr.length;
 		if (isNumber(start_index)) {
 			start_index = Math.round(start_index);
@@ -269,14 +269,14 @@
 		
 	var eqeqeq = function (a, b) { return a === b; };
 	// Return the first item in arr equal to item (where equality is defined in equality_check)
-	var index_of = function (arr, item, start_index, equality_check) {
+	var indexOf = function (arr, item, start_index, equality_check) {
 		equality_check = equality_check || eqeqeq;
-		return index_where(arr, function (x) { return equality_check(item, x); }, start_index);
+		return indexWhere(arr, function (x) { return equality_check(item, x); }, start_index);
 	};
 		
 	// Remove an item in an array
 	var remove = function (arr, obj) {
-		var index = index_of(arr, obj);
+		var index = indexOf(arr, obj);
 		if (index >= 0) { arr.splice(index, 1); }
 		return index;
 	};
@@ -287,7 +287,7 @@
 		var popsym = function (index, x, y, symbols, r, n, equality_check) {
 			var s = x[index],
 				pos = symbols[s] + 1;
-			pos = index_of(y, s, pos > r ? pos : r, equality_check);
+			pos = indexOf(y, s, pos > r ? pos : r, equality_check);
 			if (pos === -1) { pos = n; }
 			symbols[s] = pos;
 			return pos;
@@ -423,7 +423,7 @@
 		var to_mappings = map(to, function (item, index) {
 				var info;
 
-				var info_index = index_where(indexed_added, function (info) {
+				var info_index = indexWhere(indexed_added, function (info) {
 					return info.index === index;
 				});
 				if (info_index >= 0) {
@@ -431,7 +431,7 @@
 					return { to: index, to_item: item, item: item };
 				}
 
-				info_index = index_where(indexed_moved, function (info) {
+				info_index = indexWhere(indexed_moved, function (info) {
 					return info.to === index;
 				});
 				if (info_index >= 0) {
@@ -439,7 +439,7 @@
 					return { to: index, to_item: item, item: item, from: info.from, from_item: info.from_item };
 				}
 
-				info_index = index_where(indexed_common_subsequence, function (info) {
+				info_index = indexWhere(indexed_common_subsequence, function (info) {
 					return info.to === index;
 				});
 				if (info_index >= 0) {
@@ -476,7 +476,7 @@
 		each(source_map, function (info, index) {
 			if (has(info, "from") && has(info, "to")) {
 				if (rearranged_array[index] !== info) {
-					var rearranged_array_info_index = index_of(rearranged_array, info, index);
+					var rearranged_array_info_index = indexOf(rearranged_array, info, index);
 					rearranged_array.splice(index, 0, rearranged_array.splice(rearranged_array_info_index, 1)[0]);
 					moved.push({move_from: rearranged_array_info_index, insert_at: index, item: info.item, from: info.from, to: info.to});
 				}
