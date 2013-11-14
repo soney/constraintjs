@@ -5,13 +5,14 @@
 			startHTML: function(tag, attributes, unary) {
 				last_pop = {
 					create: function() {
+						var args = arguments;
 						var element = document.createElement(tag);
 						each(attributes, function(attr) {
 							element.setAttribute(attr.name, attr.value);
 						});
 
 						each(this.children, function(child) {
-							element.appendChild(child.create());
+							element.appendChild(child.create.apply(child, args));
 						});
 						return element;
 					},
@@ -39,11 +40,21 @@
 					last(stack).children.push(last_pop);
 				}
 			},
-			startHB: function() {
-				console.log("Start Handlebars", arguments);
+			startHB: function(tag, args, unary) {
+				if(unary) {
+					last_pop = {
+						create: function(context) {
+							var elem = document.createTextNode("");
+							cjs.text(elem, context[tag]);
+							return elem;
+						}
+					};
+					if(stack.length > 0) {
+						last(stack).children.push(last_pop);
+					}
+				}
 			},
 			endHB: function() {
-				console.log("End Handlebars", arguments);
 			},
 			HBComment: function(text) {
 				last_pop = {

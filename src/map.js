@@ -129,7 +129,7 @@
 				hash_values = this._khash[hash];
 
 			if (hash_values) { // We found a potential hash array
-				var key_index = index_where(hash_values, index_where_fn);
+				var key_index = indexWhere(hash_values, index_where_fn);
 				rv.hv = hash_values;
 				if(key_index >= 0) { // Wohoo! we also found the key in there
 					rv.i = key_index;
@@ -144,7 +144,7 @@
 				var unsubstantiated_index = -1;
 				if (unsubstantiated_values) {
 					rv.uhv = unsubstantiated_values;
-					unsubstantiated_index = index_where(unsubstantiated_values, index_where_fn);
+					unsubstantiated_index = indexWhere(unsubstantiated_values, index_where_fn);
 					if(unsubstantiated_index >= 0) {
 						rv.ui = unsubstantiated_index;
 						return rv;

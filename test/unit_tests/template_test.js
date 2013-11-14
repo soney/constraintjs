@@ -19,3 +19,14 @@ dt("Static Templates", 7, function() {
 	var classed_template = cjs.template("<div class='my_class'>yo</div>", {});
 	equal(classed_template.className, "my_class");
 });
+
+dt("Dynamic Templates", 3, function() {
+	var t1 = cjs.template("{{x}}", {x: "hello world"});
+	equal(t1.textContent, "hello world");
+
+	var greet = cjs("hello");
+	var t2 = cjs.template("{{x}}", {x: greet});
+	equal(t2.textContent, "hello");
+	greet.set("bye");
+	equal(t2.textContent, "bye");
+})

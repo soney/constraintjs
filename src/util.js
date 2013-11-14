@@ -158,6 +158,20 @@
 	var isElement = function(obj) {
 		return !!(obj && obj.nodeType === 1);
 	};
+	
+	// Is a given value a DOM element?
+	var isCommentElement = function(obj) {
+		return !!(obj && obj.nodeType === 8);
+	};
+
+	// Is a given value a DOM element?
+	var isTextElement = function(obj) {
+		return !!(obj && obj.nodeType === 3);
+	};
+
+	var isAnyElement = function(obj) {
+		return !!(obj && (obj.nodeType > 0));
+	};
 
 	// Is a given variable an arguments object?
 	var isArguments = function (obj) {

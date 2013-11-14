@@ -1,5 +1,5 @@
 	var make_node = function(item) {
-		if(_.isElement(item) || _.isTextElement(item) || _.isCommentElement(item)) {
+		if(isAnyElement(item)) {
 			return item;
 		} else {
 			var node = document.createTextNode(item);
@@ -92,7 +92,7 @@
 		var old_targets = [];
 		this._do_update = function() {
 			this._timeout_id = false;
-			var new_targets = filter(get_dom_array(targets), isElement);
+			var new_targets = filter(get_dom_array(targets), isAnyElement);
 
 			if(onAdd || onRemove || onMove) {
 				var diff = get_array_diff(old_targets, new_targets);
@@ -145,8 +145,6 @@
 		};
 	}(Binding));
 
-
-
 	var create_list_binding = function(list_binding_getter, list_binding_setter, list_binding_init_value) {
 		return function(elements) {
 			var args = slice.call(arguments, 1);
@@ -174,7 +172,7 @@
 
 			return arg_val_arr.join("");
 		}, function(element, value) {
-			element.textContent = value;
+			setter(element, value);
 		});
 	};
 	var text_binding = create_textual_binding(function(element, value) {
