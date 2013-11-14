@@ -1,47 +1,57 @@
-	cjs.__parsers = {};
-	cjs.__ir_builders = {};
-	cjs.__template_builders = {};
+	var create_template = function(template_str) {
+		parseTemplate(template_str, {
+			startHTML: function(tag, attributes, unary) {
+				console.log("Start HTML", arguments);
+			},
+			endHTML: function(tag) {
+				console.log("End HTML", arguments);
+			},
+			chars: function(str) {
+				console.log("Chars", arguments);
+			},
+			HTMLcomment: function(text) {
+				console.log("HTML Comment", arguments);
+			},
+			startHB: function() {
+				console.log("Start Handlebars", arguments);
+			},
+			endHB: function() {
+				console.log("End Handlebars", arguments);
+			},
+			HBComment: function(text) {
+				console.log("Handlebars Comment", arguments);
+			}
+		});
+	};
 
-	var script_regex = /^#(\w+)$/;
-	cjs.template = function(a,b,c,d) {
-		var template_type = "handlebars", str, data, options = {};
+	var template_strs = [],
+		template_values = [];
 
-		if(arguments.length === 1) {
-			str = a;
-		} else if(arguments.length === 2) {
-			str = a;
-			data = b;
-		} else if(arguments.length === 3) {
-			str = a;
-			data = b;
-			options = c;
-		} else  {
-			template_type = a;
-			str = b;
-			data = c;
-			options = d;
-		} 
-
-		var matches = str.match(script_regex);
-		if(matches) {
-			var script_id = matches[1];
-			var scripts = document.getElementsByTagName("script");
-			var template_script = null;
-			each(scripts, function(script) {
-				var type = script.getAttribute("type");
-				if(type === "cjs/template") {
-					var id = script.getAttribute("id");
-					if(id === script_id) {
-						template_script = script;
-					}
-				}
-			});
-			if(template_script) {
-				str = template_script.innerText;
+	cjs.template = function(template_str, template_variables) {
+		if(!isString(template_str)) {
+			if(is_jquery_obj(template_obj)) {
+				template_str = template_str.length > 0 ? template_str[0].innerText : "";
+			} else if(nList && template_str instanceof nList) {
+				template_str = template_str.length > 0 ? template_str[0].innerText : "";
+			} else if(isElement(template_str)) {
+				template_str = template_str.innerText;
 			} else {
-				str = "Could not find &lt;script type='cjs/template' id='" + script_id + "'&gt;(...)&lt;/script&gt;";
+				template_str = "" + template_str;
 			}
 		}
 
-		return cjs.__template_builders[template_type](str, data, options);
+		var template, template_index = indexOf(template_strs, template_str);
+		if(template_index < 0) {
+			template = create_template(template_str);
+			template_strs.push(template_str);
+			template_values.push(template);
+		} else {
+			template = template_values[template_index];
+		}
+
+		if(arguments.length >= 2) { // Create and use the template immediately
+			return template(template_variables);
+		} else { // create the template as a function that can be called with a context
+			return template;
+		}
 	};
