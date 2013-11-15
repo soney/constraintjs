@@ -265,13 +265,13 @@
 			switch (prefix) {
 				case undefined: // unary
 					if(handler.startHB) {
-						handler.startHB(tagName, params, true);
+						handler.startHB(tagName, params, true, false);
 					}
 					break;
 
 				case '{': // literal
 					if(handler.startHB) {
-						handler.startHB(tagName, params, true);
+						handler.startHB(tagName, params, true, true);
 					}
 					break;
 

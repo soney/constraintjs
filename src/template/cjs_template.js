@@ -1,23 +1,107 @@
-	var empty_fn = function(){};
+	function escapeHTML(unsafe) {
+		return unsafe	.replace(/&/g, "&amp;")
+						.replace(/</g, "&lt;")
+						.replace(/>/g, "&gt;")
+						.replace(/"/g, "&quot;")
+						.replace(/'/g, "&#039;");
+	}
+	var child_is_dynamic_html = function(child) {
+		return child.isDynamicHTML;
+	};
+	var child_is_text = function(child) {
+		return child.isText;
+	};
+	var every_child_is_text = function(arr) {
+		return every(arr, child_is_text);
+	};
+	var any_child_is_dynamic_html = function(arr) {
+		return indexWhere(arr, child_is_dynamic_html) >= 0;
+	};
+	var get_concatenated_constraint = function(children, context) {
+		return cjs(function() {
+			return map(children, function(child) {
+				if(has(child, "text")) {
+					return child.text;
+				} else {
+					return cjs.get(context[child.tag]);
+				}
+			}).join("");
+		});
+	};
+	var get_concatenated_inner_html_constraint = function(children, context) {
+		return cjs(function() {
+			return map(children, function(child) {
+				if(child.isDynamicHTML) {
+					return cjs.get(context[child.tag]);
+				} else if(has(child, "text")) {
+					return escapeHTML(child.text);
+				} else if(has(child, "tag")) {
+					return escapeHTML(cjs.get(context[child.tag]));
+				} {
+					var child_val = child.create(context);
+					return child_val.outerHTML;
+				}
+			}).join("");
+		});
+	};
+	var default_template_create = function(context) {
+		if(every_child_is_text(this.children)) {
+			var concatenated_text = get_concatenated_constraint(this.children, context);
+			var textNode = document.createTextNode("");
+			cjs.text(textNode, concatenated_text);
+			return textNode;
+		} else {
+			var args = arguments;
+			if(this.children.length === 1) {
+				var first_child = this.children[0];
+				if(first_child.isHTML) {
+					return first_child.create.apply(first_child, args);
+				}
+			}
+
+			var container = document.createElement("span");
+			if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
+				var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
+				cjs.html(container, concatenated_html);
+				return container;
+			} else {
+				each(this.children, function(child) {
+					container.appendChild(child.create.apply(child, args));
+				});
+				return container;
+			}
+		}
+		return document.createTextNode("");
+	};
+
 	var create_template = function(template_str) {
-		var stack = [], last_pop = false;
+		var stack = [{
+			children: [],
+			create: default_template_create
+		}], last_pop = false, has_container = false;
+
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
 				last_pop = {
-					create: function() {
+					create: function(context) {
 						var args = arguments;
 						var element = document.createElement(tag);
 						each(attributes, function(attr) {
 							element.setAttribute(attr.name, attr.value);
 						});
 
-						each(this.children, function(child) {
-							element.appendChild(child.create.apply(child, args));
-						});
+						if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
+							var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
+							cjs.html(element, concatenated_html);
+						} else {
+							each(this.children, function(child) {
+								element.appendChild(child.create.apply(child, args));
+							});
+						}
 						return element;
 					},
 					children: [],
-					destroy: empty_fn
+					isHTML: true
 				};
 				if(stack.length > 0) {
 					last(stack).children.push(last_pop);
@@ -34,21 +118,38 @@
 				last_pop = {
 					create: function() {
 						return document.createTextNode(str);
-					}
+					},
+					isText: true,
+					text: str
 				};
 				if(stack.length > 0) {
 					last(stack).children.push(last_pop);
 				}
 			},
-			startHB: function(tag, args, unary) {
+			startHB: function(tag, args, unary, literal) {
 				if(unary) {
-					last_pop = {
-						create: function(context) {
-							var elem = document.createTextNode("");
-							cjs.text(elem, context[tag]);
-							return elem;
-						}
-					};
+					if(literal) {
+						last_pop = {
+							create: function(context) {
+								var elem = document.createTextNode("");
+								cjs.text(elem, context[tag]);
+								return elem;
+							},
+							isDynamicHTML: true,
+							tag: tag
+						};
+					} else {
+						last_pop = {
+							create: function(context) {
+								var elem = document.createTextNode("");
+								cjs.text(elem, context[tag]);
+								return elem;
+							},
+							isText: true,
+							tag: tag
+						};
+					}
+
 					if(stack.length > 0) {
 						last(stack).children.push(last_pop);
 					}
@@ -67,13 +168,8 @@
 				}
 			}
 		});
-		if(last_pop === false) {
-			return function() {
-				return document.createTextNode("");
-			};
-		} else {
-			return bind(last_pop.create, last_pop);
-		}
+		last_pop = stack.pop();
+		return bind(last_pop.create, last_pop);
 	};
 
 	var template_strs = [],
