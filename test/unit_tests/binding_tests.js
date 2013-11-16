@@ -78,3 +78,12 @@ dt("Class Bindings", 15, function() {
 	ok(dom_elem.className.indexOf("class2") < 0, "No class 2");
 	ok(dom_elem.className.indexOf("existing_class") >= 0, "Old class still there");
 });
+
+dt("Attr Bindings", 2, function() {
+	var dom_elem = document.createElement("div");
+	var attr_val = cjs("abc");
+	cjs.attr(dom_elem, "class", attr_val);
+	equal(dom_elem.className, "abc");
+	attr_val.set("def");
+	equal(dom_elem.className, "def");
+});

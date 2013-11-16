@@ -37,7 +37,7 @@
 					return escapeHTML(child.text);
 				} else if(has(child, "tag")) {
 					return escapeHTML(cjs.get(context[child.tag]));
-				} {
+				} else {
 					var child_val = child.create(context);
 					return child_val.outerHTML;
 				}
@@ -74,6 +74,52 @@
 		return document.createTextNode("");
 	};
 
+	var hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/;
+
+	var get_constraint = function(str, context) {
+		var has_constraint = false,
+			strs = [],
+			index, match_val, len, context_val;
+		while(str.length > 0) {
+			index =  str.indexOf("{");
+			if(index < 0) {
+				strs.push(str);
+				break;
+			} else {
+				match_val = str.match(hb_regex);
+				if(match_val) {
+					len = match_val[0].length;
+					context_val = context[match_val[1]];
+					str = str.substr(len);
+					strs.push(context_val);
+
+					if(!has_constraint && (is_constraint(context_val) || is_array(context_val))) {
+						has_constraint = true;
+					}
+				} else {
+					strs.push(str.substr(0, index));
+					str = str.substr(index);
+				}
+			}
+		}
+
+		if(has_constraint) {
+			return cjs(function() {
+				return map(strs, function(str) {
+					if(is_constraint(str)) {
+						return str.get();
+					} else if(is_array(str)) {
+						return str.join(" ");
+					} else {
+						return "" + str;
+					}
+				}).join("");
+			});
+		} else {
+			return strs.join("");
+		}
+	};
+
 	var create_template = function(template_str) {
 		var stack = [{
 			children: [],
@@ -86,8 +132,14 @@
 					create: function(context) {
 						var args = arguments;
 						var element = document.createElement(tag);
+
 						each(attributes, function(attr) {
-							element.setAttribute(attr.name, attr.value);
+							var constraint = get_constraint(attr.value, context);
+							if(is_constraint(constraint)) {
+								cjs.attr(element, attr.name, constraint);
+							} else {
+								element.setAttribute(attr.name, constraint);
+							}
 						});
 
 						if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
@@ -103,6 +155,7 @@
 					children: [],
 					isHTML: true
 				};
+
 				if(stack.length > 0) {
 					last(stack).children.push(last_pop);
 				}

@@ -237,7 +237,7 @@
 				vals = args[0];
 			} else if(args.length > 1) {
 				vals = {};
-				vals[args[0]] = vals[args[1]];
+				vals[args[0]] = args[1];
 			}
 
 			var binding = new Binding({

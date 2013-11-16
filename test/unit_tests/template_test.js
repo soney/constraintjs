@@ -51,3 +51,18 @@ dt("HTMLized Templates", 7, function() {
 	equal(strong_content.textContent, "X");
 	equal(t2.tagName.toLowerCase(), "div");
 });
+
+dt("Attributes", 4, function() {
+	var the_class = cjs("class1");
+	var t1 = cjs.template("<span class={{x}}>yo</span>", {x: the_class});
+
+	equal(t1.className, "class1");
+	the_class.set("classX");
+	equal(t1.className, "classX");
+
+	var second_class = cjs("class2");
+	var t2 = cjs.template("<span class='{{x}} {{y}} another_class'>yo</span>", {x: the_class, y: second_class});
+	equal(t2.className, "classX class2 another_class");
+	second_class.set("classY");
+	equal(t2.className, "classX classY another_class");
+});
