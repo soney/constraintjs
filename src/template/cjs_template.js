@@ -228,6 +228,10 @@
 					}
 				} else {
 					if(tag === "each") {
+						var memoized_args = [];
+						var memoized_vals = [];
+						var memoized_dom_elems = [];
+
 						var arg = args[0];
 						last_pop = {
 							create: function(context, lineage) {
@@ -244,12 +248,46 @@
 								if(!lineage) {
 									lineage = [];
 								}
-								each(this.children, function(child) {
-									each(val, function(v) {
-										rv.push(child.create(context, lineage.concat(v)));
-									});
+
+								var memo_index = indexWhere(memoized_args, function(margs) {
+									return margs[0]=== context &&
+											margs[1].length === lineage.length &&
+											every(margs[1], function(l, i) {
+												return l === lineage[i];
+											});
 								});
-								return rv;
+									
+								var mvals, mdom;
+								if(memo_index < 0) {
+									memo_index = memoized_args.length;
+									memoized_args.push([context, lineage]);
+									mdom = memoized_dom_elems[memo_index] = [];
+									mvals = [];
+								} else {
+									mvals = memoized_vals[memo_index];
+									mdom = memoized_dom_elems[memo_index];
+								}
+								memoized_vals[memo_index] = val;
+
+								var val_diff = get_array_diff(mvals, val);
+								each(val_diff.removed, function(removed_info) {
+									mdom.splice(removed_info.from, 1);
+								});
+								each(val_diff.added, function(added_info) {
+									var v = added_info.item,
+										concated_lineage = lineage.concat(v);
+									var vals = map(this.children, function(child) {
+										var dom_child = child.create(context, concated_lineage);
+										return dom_child;
+									});
+									mdom.splice(added_info.to, 0, vals);
+								}, this);
+								each(val_diff.moved, function(moved_info) {
+									var dom_elem = mdom[moved_info.from_index];
+									mdom.splice(moved_info.from_index, 1);
+									mdom.splice(moved_info.to_index, 0, dom_elem);
+								});
+								return flatten(mdom, true);
 							},
 							children: [],
 							isArray: true

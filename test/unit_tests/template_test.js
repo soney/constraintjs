@@ -79,5 +79,5 @@ dt("Each", 3, function() {
 	elems.push(4);
 	equal(t1.childNodes.length, 4);
 	equal(elem0, t1.childNodes[0]);
-	console.log(elem0, t1.childNodes[0]);
+	//console.log(elem0, t1.childNodes[0]);
 });
