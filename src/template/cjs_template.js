@@ -5,6 +5,13 @@
 						.replace(/"/g, "&quot;")
 						.replace(/'/g, "&#039;");
 	}
+	var compute_val = function(tag, context, lineage) {
+		if(tag === "this" && lineage) {
+			return last(lineage);
+		} else {
+			return context[tag];
+		}
+	};
 	var child_is_dynamic_html = function(child) {
 		return child.isDynamicHTML;
 	};
@@ -17,7 +24,7 @@
 	var any_child_is_dynamic_html = function(arr) {
 		return indexWhere(arr, child_is_dynamic_html) >= 0;
 	};
-	var get_concatenated_constraint = function(children, context) {
+	var get_concatenated_constraint = function(children, context, lineage) {
 		return cjs(function() {
 			return map(children, function(child) {
 				if(has(child, "text")) {
@@ -28,7 +35,7 @@
 			}).join("");
 		});
 	};
-	var get_concatenated_inner_html_constraint = function(children, context) {
+	var get_concatenated_inner_html_constraint = function(children, context, lineage) {
 		return cjs(function() {
 			return map(children, function(child) {
 				if(child.isDynamicHTML) {
@@ -38,7 +45,7 @@
 				} else if(has(child, "tag")) {
 					return escapeHTML(cjs.get(context[child.tag]));
 				} else {
-					var child_val = child.create(context);
+					var child_val = child.create(context, lineage);
 					return child_val.outerHTML;
 				}
 			}).join("");
@@ -76,7 +83,7 @@
 
 	var hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/;
 
-	var get_constraint = function(str, context) {
+	var get_constraint = function(str, context, lineage) {
 		var has_constraint = false,
 			strs = [],
 			index, match_val, len, context_val;
@@ -129,12 +136,12 @@
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
 				last_pop = {
-					create: function(context) {
+					create: function(context, lineage) {
 						var args = arguments;
 						var element = document.createElement(tag);
 
 						each(attributes, function(attr) {
-							var constraint = get_constraint(attr.value, context);
+							var constraint = get_constraint(attr.value, context, lineage);
 							if(is_constraint(constraint)) {
 								cjs.attr(element, attr.name, constraint);
 							} else {
@@ -143,12 +150,23 @@
 						});
 
 						if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
-							var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
+							var concatenated_html = get_concatenated_inner_html_constraint(this.children, context, lineage);
 							cjs.html(element, concatenated_html);
 						} else {
-							each(this.children, function(child) {
-								element.appendChild(child.create.apply(child, args));
-							});
+							var children_constraint = cjs(function() {
+								var rv = [];
+								each(this.children, function(child) {
+									if(child.isArray) {
+										var c_plural = child.create.apply(child, args);
+										rv.push.apply(rv, c_plural);
+									} else {
+										rv.push(child.create.apply(child, args));
+									}
+								});
+								return rv;
+							}, {context: this});
+
+							cjs.children(element, children_constraint);
 						}
 						return element;
 					},
@@ -183,9 +201,10 @@
 				if(unary) {
 					if(literal) {
 						last_pop = {
-							create: function(context) {
-								var elem = document.createTextNode("");
-								cjs.text(elem, context[tag]);
+							create: function(context, lineage) {
+								var elem = document.createTextNode(""),
+									val = compute_val(tag, context, lineage);
+								cjs.text(elem, val);
 								return elem;
 							},
 							isDynamicHTML: true,
@@ -193,9 +212,10 @@
 						};
 					} else {
 						last_pop = {
-							create: function(context) {
-								var elem = document.createTextNode("");
-								cjs.text(elem, context[tag]);
+							create: function(context, lineage) {
+								var elem = document.createTextNode(""),
+									val = compute_val(tag, context, lineage);
+								cjs.text(elem, val);
 								return elem;
 							},
 							isText: true,
@@ -206,6 +226,42 @@
 					if(stack.length > 0) {
 						last(stack).children.push(last_pop);
 					}
+				} else {
+					if(tag === "each") {
+						var arg = args[0];
+						last_pop = {
+							create: function(context, lineage) {
+								var val;
+								if(has(context, arg)) {
+									val = cjs.get(context[arg]);
+									if(!isArray(val)) {
+										val = [val];
+									}
+								} else {
+									val = [];
+								}
+								var rv = [];
+								if(!lineage) {
+									lineage = [];
+								}
+								each(this.children, function(child) {
+									each(val, function(v) {
+										rv.push(child.create(context, lineage.concat(v)));
+									});
+								});
+								return rv;
+							},
+							children: [],
+							isArray: true
+						};
+					} else {
+						return;
+					}
+
+					if(stack.length > 0) {
+						last(stack).children.push(last_pop);
+					}
+					stack.push(last_pop);
 				}
 			},
 			endHB: function() {

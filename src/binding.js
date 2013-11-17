@@ -153,7 +153,7 @@
 			});
 
 			var binding = new Binding({
-				targets: elements,
+				targets: get_dom_array(elements),
 				getter: function() { return val.get(); },
 				setter: function(element, value, old_value) {
 					list_binding_setter(element, value, old_value);
@@ -215,10 +215,10 @@
 	}, function(element, value, old_value) {
 		var ad = get_array_diff(old_value, value);
 		each(ad.removed, function(removed_info) {
-			remove_index(element, removed_info.index);
+			remove_index(element, removed_info.from);
 		});
 		each(ad.added, function(added_info) {
-			insert_at(added_info.item, elem, x.index);
+			insert_at(added_info.item, element, added_info.to);
 		});
 		each(ad.moved, function(moved_info) {
 			move_child(element, moved_info.to_index, moved_info.from_index);

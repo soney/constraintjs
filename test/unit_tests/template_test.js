@@ -66,3 +66,18 @@ dt("Attributes", 4, function() {
 	second_class.set("classY");
 	equal(t2.className, "classX classY another_class");
 });
+
+dt("Each", 3, function() {
+	var elems = cjs([1,2,3]);
+	var t1 = cjs.template("<div>" +
+		"{{#each elems}}" +
+		"<span>{{this}}</span>" +
+		"{{/each}}"+
+	"</div>", {elems: elems});
+	equal(t1.childNodes.length, 3);
+	var elem0 = t1.childNodes[0];
+	elems.push(4);
+	equal(t1.childNodes.length, 4);
+	equal(elem0, t1.childNodes[0]);
+	console.log(elem0, t1.childNodes[0]);
+});

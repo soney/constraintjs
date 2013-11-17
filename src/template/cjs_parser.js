@@ -259,8 +259,8 @@
 			}
 		}
 		function parseHandlebar(tag, prefix, tagName, rest) {
-			var pos, stack_i;
-			var params = rest.trim() === "" ? [] : map(rest.split(" "), function(x) { return x.trim(); });
+			var pos, stack_i, i, trimmed_rest = rest.trim(),
+				params = trimmed_rest === "" ? [] : map(trimmed_rest.split(" "), function(x) { return x.trim(); });
 
 			switch (prefix) {
 				case undefined: // unary
@@ -316,7 +316,7 @@
 					}
 
 					if(handler.endHB) {
-						handle.endHB(tagName);
+						handler.endHB(tagName);
 					}
 					break;
 			}
