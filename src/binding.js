@@ -85,7 +85,7 @@
 
 		var curr_value, last_value;
 		if(isFunction(init_val)) {
-			last_value = init_val(targets[0]);
+			last_value = init_val(get_dom_array(targets[0]));
 		} else {
 			last_value = init_val;
 		}
@@ -153,7 +153,7 @@
 			});
 
 			var binding = new Binding({
-				targets: get_dom_array(elements),
+				targets: elements,
 				getter: function() { return val.get(); },
 				setter: function(element, value, old_value) {
 					list_binding_setter(element, value, old_value);

@@ -414,6 +414,13 @@
 	var array_source_map = function (from, to, equality_check) {
 		equality_check = equality_check || eqeqeq;
 
+		//Utility functions for array_source_map below
+		var item_aware_equality_check = function (a, b) {
+			var a_item = a === undefined ? a : a.item;
+			var b_item = b === undefined ? b : b.item;
+			return equality_check(a_item, b_item);
+		};
+
 		var indexed_from = map(from, function (x,i) { return {item: x, index: i}; }),
 			indexed_to = map(to, function (x,i) { return {item: x, index: i}; }),
 			indexed_common_subsequence = map(indexed_lcs(from, to), function (info) { 
@@ -422,14 +429,6 @@
 			indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
 			indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
 			indexed_moved = map(dualized_intersection(indexed_removed, indexed_added, item_aware_equality_check), get_index_moved);
-
-		//Utility functions for array_source_map below
-		var item_aware_equality_check = function (a, b) {
-			var a_item = a === undefined ? a : a.item;
-			var b_item = b === undefined ? b : b.item;
-			return equality_check(a_item, b_item);
-		};
-
 
 		indexed_added = diff(indexed_added, indexed_moved, item_aware_equality_check);
 		indexed_removed = diff(indexed_removed, indexed_moved, item_aware_equality_check);
@@ -440,6 +439,7 @@
 				var info_index = indexWhere(indexed_added, function (info) {
 					return info.index === index;
 				});
+
 				if (info_index >= 0) {
 					info = indexed_added[info_index];
 					return { to: index, to_item: item, item: item };
