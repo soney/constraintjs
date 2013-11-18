@@ -79,5 +79,47 @@ dt("Each", 3, function() {
 	elems.push(4);
 	equal(t1.childNodes.length, 4);
 	equal(elem0, t1.childNodes[0]);
-	//console.log(elem0, t1.childNodes[0]);
+});
+
+dt("Conditionals", 10, function() {
+	var cond = cjs(true);
+	var t1 = cjs.template("<div>" +
+		"{{#if cond}}" +
+		"1" +
+		"{{#else}}" +
+		"2" +
+		"{{/if}}"+
+	"</div>", {cond: cond});
+	equal(t1.textContent, "1")
+	cond.set(false);
+	equal(t1.textContent, "2")
+	cond.set(true);
+	equal(t1.textContent, "1")
+
+	var cond2 = cjs(true);
+	var t2 = cjs.template("<div>" +
+		"{{#if cond}}" +
+		"<span>A</span>" +
+		"{{#elif cond2}}" +
+		"<span>B</span>" +
+		"{{#else}}" +
+		"<span>C</span>" +
+		"{{/if}}"+
+	"</div>", {cond: cond, cond2: cond2});
+	var cna1 = t2.childNodes[0];
+	equal(cna1.textContent, "A")
+	cond.set(false);
+	var cnb1 = t2.childNodes[0];
+	equal(cnb1.textContent, "B")
+	cond.set(true);
+	var cna2 = t2.childNodes[0];
+	equal(cna2.textContent, "A")
+	cond.set(false);
+	var cnb2 = t2.childNodes[0];
+	equal(cnb2.textContent, "B")
+	equal(cna1, cna2);
+	equal(cnb1, cnb2);
+	cond2.set(false);
+	var cnc2 = t2.childNodes[0];
+	equal(cnc2.textContent, "C")
 });

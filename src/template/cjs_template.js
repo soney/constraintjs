@@ -292,6 +292,24 @@
 							children: [],
 							isArray: true
 						};
+					} else if(tag === "if") {
+						last_pop = {
+							create: function(context, lineage) {
+							},
+							children: []
+						};
+					} else if(tag === "elif") {
+						last_pop = {
+							create: function(context, lineage) {
+							},
+							children: []
+						};
+					} else if(tag === "else") {
+						last_pop = {
+							create: function(context, lineage) {
+							},
+							children: []
+						};
 					} else {
 						return;
 					}
