@@ -1,3 +1,21 @@
+	var binary_operators = {
+		"===":	function (a, b) { return a === b;}, "!==":	function (a, b) { return a !== b; },
+		"==":	function (a, b) { return a == b; }, "!=":	function (a, b) { return a != b; },
+		">":	function (a, b) { return a > b;  }, ">=":	function (a, b) { return a >= b; },
+		"<":	function (a, b) { return a < b;  }, "<=":	function (a, b) { return a <= b; },
+		"+":	function (a, b) { return a + b;  }, "-":	function (a, b) { return a - b; },
+		"*":	function (a, b) { return a * b;  }, "/":	function (a, b) { return a / b; },
+		"%":	function (a, b) { return a % b;  }, "^":	function (a, b) { return a ^ b; },
+		"&&":	function (a, b) { return a && b; }, "||":	function (a, b) { return a || b; },
+		"&":	function (a, b) { return a & b;  }, "|":	function (a, b) { return a | b; },
+		"<<":	function (a, b) { return a << b; }, ">>":	function (a, b) { return a >> b; },
+		">>>":  function (a, b) { return a >>> b;}
+	};
+	var unary_operators = {
+		"-":	function (a) { return -a; }, "!":	function (a) { return !a; },
+		"~":	function (a) { return ~a; }
+	};
+
 	function escapeHTML(unsafe) {
 		return unsafe	.replace(/&/g, "&amp;")
 						.replace(/</g, "&lt;")
@@ -5,13 +23,78 @@
 						.replace(/"/g, "&quot;")
 						.replace(/'/g, "&#039;");
 	}
-	var compute_val = function(tag, context, lineage) {
-		if(tag === "this" && lineage) {
-			return last(lineage);
-		} else {
-			return context[tag];
-		}
+	var compute_object_property = function(object, prop_node, context, lineage) {
+		return object ? object[property.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
+						undefined;
 	};
+
+	var ELSE_COND = {};
+
+	var get_node_value = function(node, context, lineage) {
+		var op, object, call_context, args;
+		if(!node) { return undefined; }
+		switch(node.type) {
+			case THIS_EXP: return last(lineage);
+			case LITERAL: return node.value;
+			case UNARY_EXP:
+				op = unary_operators[node.operator];
+				return op ? op(get_node_value(node.argument, context, lineage)) :
+							undefined;
+			case BINARY_EXP:
+			case LOGICAL_EXP:
+				return op ? op(get_node_value(node.left, context, lineage), get_node_value(node.right, context, lineage)) :
+							undefined;
+			case IDENTIFIER:
+				return context[node.name];
+			case MEMBER_EXP:
+				object = get_node_value(node.object, context, lineage);
+				return compute_object_property(object, node.property, context, lineage);
+			case COMPOUND:
+				return compute_object_property(node.body[0], node.property, context, lineage);
+			case CURR_LEVEL_EXP:
+				object = last(lineage);
+				return compute_object_property(object, node.argument, context, lineage);
+			case PARENT_EXP:
+				object = lineage ? lineage[lineage.length - 2] : undefined;
+				return compute_object_property(object, node.argument, context, lineage);
+			case CALL_EXP:
+				if(node.callee.type === MEMBER_EXP) {
+					call_context = get_node_value(node.callee.object, context, lineage);
+					object = compute_object_property(call_context, node.callee.property, context, lineage);
+				} else {
+					call_context = root;
+					object = get_node_value(node.callee, context, lineage);
+				}
+
+				if(object && isFunction(object)) {
+					args = map(node['arguments'], function(arg) {
+						return get_node_value(arg, context, lineage);
+					});
+					return object.apply(call_context, args);
+				}
+		}
+		return undefined;
+	};
+
+	var create_node_constraint = function(node, context, lineage) {
+		var args = arguments;
+		while(node.type === MEMBER_EXP) {
+			if(node.object.name === PARENT_LEVEL) {
+				lineage.pop();
+				node = node.property;
+			} else if(node.object.name === SAME_LEVEL) {
+				node = node.property;
+			} else { break; }
+		}
+		switch(node.type) {
+			case THIS_EXP: case LITERAL: case IDENTIFIER:
+				return get_node_value.apply(root, args);
+		}
+		return cjs(function() {
+			return get_node_value.apply(root, args);
+		});
+	};
+
 	var child_is_dynamic_html = function(child) {
 		return child.isDynamicHTML;
 	};
@@ -51,6 +134,7 @@
 			}).join("");
 		});
 	};
+
 	var default_template_create = function(context) {
 		if(every_child_is_text(this.children)) {
 			var concatenated_text = get_concatenated_constraint(this.children, context);
@@ -131,7 +215,7 @@
 		var stack = [{
 			children: [],
 			create: default_template_create
-		}], last_pop = false, has_container = false;
+		}], last_pop = false, has_container = false, condition_stack = [];
 
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
@@ -159,6 +243,8 @@
 									if(child.isArray) {
 										var c_plural = child.create.apply(child, args);
 										rv.push.apply(rv, c_plural);
+									} else if(child.isConditional) {
+										rv.push
 									} else {
 										rv.push(child.create.apply(child, args));
 									}
@@ -197,13 +283,13 @@
 					last(stack).children.push(last_pop);
 				}
 			},
-			startHB: function(tag, args, unary, literal) {
+			startHB: function(tag, rest, unary, literal) {
 				if(unary) {
 					if(literal) {
 						last_pop = {
 							create: function(context, lineage) {
 								var elem = document.createTextNode(""),
-									val = compute_val(tag, context, lineage);
+									val = get_node_value(jsep(tag), context, lineage);
 								cjs.text(elem, val);
 								return elem;
 							},
@@ -214,7 +300,7 @@
 						last_pop = {
 							create: function(context, lineage) {
 								var elem = document.createTextNode(""),
-									val = compute_val(tag, context, lineage);
+									val = get_node_value(jsep(tag), context, lineage);
 								cjs.text(elem, val);
 								return elem;
 							},
@@ -232,12 +318,11 @@
 						var memoized_vals = [];
 						var memoized_dom_elems = [];
 
-						var arg = args[0];
 						last_pop = {
 							create: function(context, lineage) {
 								var val;
-								if(has(context, arg)) {
-									val = cjs.get(context[arg]);
+								if(has(context, rest)) {
+									val = cjs.get(context[rest]);
 									if(!isArray(val)) {
 										val = [val];
 									}
@@ -292,24 +377,53 @@
 							children: [],
 							isArray: true
 						};
-					} else if(tag === "if") {
+					} else if(tag === "if" || tag === "unless") {
 						last_pop = {
 							create: function(context, lineage) {
+								var children = cjs(function() {
+									var i, len = this.sub_conditions.length,
+										cond = !!get_node_value(this.condition, context, lineage);
+
+									if(this.reverse) {
+										cond = !initial_condition;
+									}
+									if(cond) {
+										return this.children;
+									} else {
+										for(i = 0; i<len; i++) {
+											cond = this.sub_conditions[i];
+
+											if(cond.condition === ELSE_COND) {
+												return cond.children;
+											} else if(get_node_value(cond.condition, context, lineage)) {
+												return cond.children;
+											}
+										}
+										return [];
+									}
+								});
+								return children;
 							},
-							children: []
+							children: [],
+							sub_conditions: [],
+							condition: jsep(rest),
+							reverse: tag === "unless",
+							isConditional: true
 						};
+
+						condition_stack.push(last_pop);
 					} else if(tag === "elif") {
 						last_pop = {
-							create: function(context, lineage) {
-							},
-							children: []
+							children: [],
+							condition: jsep(rest)
 						};
+						last(condition_stack).sub_conditions.push(last_pop);
 					} else if(tag === "else") {
 						last_pop = {
-							create: function(context, lineage) {
-							},
-							children: []
+							children: [],
+							condition: ELSE_COND
 						};
+						last(condition_stack).sub_conditions.push(last_pop);
 					} else {
 						return;
 					}
@@ -320,7 +434,10 @@
 					stack.push(last_pop);
 				}
 			},
-			endHB: function() {
+			endHB: function(tag) {
+				if(tag === "if") {
+					condition_stack.pop();
+				}
 			},
 			HBComment: function(text) {
 				last_pop = {

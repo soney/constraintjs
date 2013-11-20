@@ -259,8 +259,7 @@
 			}
 		}
 		function parseHandlebar(tag, prefix, tagName, rest) {
-			var pos, stack_i, i, trimmed_rest = rest.trim(),
-				params = trimmed_rest === "" ? [] : map(trimmed_rest.split(" "), function(x) { return x.trim(); });
+			var pos, stack_i, i, params = rest.trim();
 
 			switch (prefix) {
 				case undefined: // unary
