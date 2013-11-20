@@ -60,6 +60,6 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 
 	// Default task(s).
-	grunt.registerTask('default', ['concat', 'uglify']);
+	grunt.registerTask('default', ['concat', 'jshint', 'qunit', 'uglify']);
 	grunt.registerTask('test', ['concat', 'jshint', 'qunit']); // Skip uglification if just testing
 };

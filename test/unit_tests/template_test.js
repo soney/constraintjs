@@ -80,7 +80,6 @@ dt("Each", 3, function() {
 	equal(t1.childNodes.length, 4);
 	equal(elem0, t1.childNodes[0]);
 });
-/*
 
 dt("Conditionals", 10, function() {
 	var cond = cjs(true);
@@ -124,4 +123,3 @@ dt("Conditionals", 10, function() {
 	var cnc2 = t2.childNodes[0];
 	equal(cnc2.textContent, "C")
 });
-*/
