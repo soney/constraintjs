@@ -53,50 +53,46 @@
 
 	// Special Elements (can contain anything)
 	var special = makeMap("script,style");
-	/*
 
-	//These are nodes that don't have to be closed.
-	// For instance: 
-	// {{#diagram d}}
-	//	{{#state A}} a
-	//	{{#state B}} b
-	// {{/diagram}}
-	//
-	// doesn't require closing {{#state}}
-	var unclosed_nodes = {
-		"diagram": {
-			sub_nodes: ["state"]
-		},
-		"if": {
-			sub_nodes: ["elif", "else"]
-		}
-	};
 
+	// HANDLEBARS RULES
+	
 	// Dictates what parents children must have; state must be a direct descendent of diagram
 	var parent_rules = {
+		"state": { parent: "fsm" },
+		"elif": { parent: "if" },
+		"else": { parent: "if" }
+	};
+
+	var autoclose_nodes = {
+		"elif": {
+			when_open_sibling: ["elif", "else"]
+		},
+		"else": {
+			when_close_parent: ["if"]
+		},
 		"state": {
-			parent: "diagram",
-			direct: true
+			when_open_sibling: ["state"]
 		}
 	};
 
 	// elsif and else must come after either if or elsif
 	var sibling_rules = {
 		"elif": {
-			follows: ["if", "elif"], //what it may follow
-			direct: true, //that it must directly follow
+			follows: ["elif"], //what it may follow
 			or_parent: ["if"] //or the parent can be 'if'
 		},
 		"else": {
-			follows: ["if", "elif"],
-			direct: true,
-			or_parent: ["if"]
+			follows: ["elif"]
+		},
+		"state": {
+			follows: ["state"],
+			or_parent: ["fsm"]
 		}
 	};
-	*/
 
 	var parseTemplate = function(input_str, handler) {
-		var html_index, hb_index, index, chars, match, stack = [], last = input_str;
+		var html_index, hb_index, last_closed_hb_tag, index, chars, match, stack = [], last = input_str;
 		stack.last = function(){
 			return this[this.length - 1];
 		};
@@ -258,8 +254,18 @@
 				stack.length = pos;
 			}
 		}
+		function getLatestHandlebarParent() {
+			var i, stack_i;
+			for(i = this.stack.length - 1; i>= 0; i--) {
+				stack_i = this.stack[i];
+				if(stack_i.type === "hb") {
+					return stack_i;
+				}
+			}
+			return undefined;
+		}
 		function parseHandlebar(tag, prefix, tagName, rest) {
-			var pos, stack_i, i, params = rest.trim();
+			var pos, stack_i, i, last_stack, params = rest.trim();
 
 			switch (prefix) {
 				case undefined: // unary
@@ -282,6 +288,34 @@
 					break;
 
 				case '#': // start block
+					last_stack = getLatestHandlebarParent();
+					if(has(parent_rules, tagName)) {
+						var parent_rule = parent_rules[tagName];
+						if(!last_stack || parent_rule.parent !== last_stack.tag) {
+							throw new Error("'" + tagName + "' must be inside of a '"+parent_rule.parent+"' block");
+						}
+					}
+
+					if(last_stack && has(autoclose_nodes, last_stack.tag)) {
+						var autoclose_node = autoclose_nodes[last_stack.tag];
+						if(autoclose_node.when_open_sibling.indexOf(tagName) >= 0) {
+							pop_stack(last_stack.tag);
+						}
+					}
+
+					if(has(sibling_rules, tagName)) {
+						var sibling_rule = sibling_rules[tagName];
+						if(sibling_rule.follows.indexOf(last_closed_hb_tag) < 0) {
+							if(!sibling_rule.or_parent || sibling_rule.or_parent.indexOf(last_stack.tag) < 0) {
+								var error_message = "'" + tagName + "' must follow a '" + sibling_rule.follows[0] + "'";
+								if(sibling_rule.or_parent) {
+									error_message += " or be inside of a '" + sibling_rule.or_parent[0] + "' tag";
+								}
+								throw new Error(error_message);
+							}
+						}
+					}
+
 					stack.push({type: "hb", tag: tagName});
 					if(handler.startHB) {
 						handler.startHB(tagName, params, false);
@@ -289,35 +323,40 @@
 					break;
 
 				case '/': // end block
-					for (pos = stack.length - 1; pos >= 0; pos -= 1) {
-						if(stack[pos].type === "hb" && stack[pos].tag === tagName) {
-							break;
-						}
-					}
-					
-					if (pos >= 0) {
-						// Close all the open elements, up the stack
-						for (i = stack.length - 1; i >= pos; i-- ) {
-							stack_i = stack[i];
-							if(stack_i.type === "hb") {
-								if (handler.endHB) {
-									handler.endHB(stack_i.tag);
-								}
-							} else {
-								if (handler.endHTML) {
-									handler.endHTML(stack_i.tag);
-								}
-							}
-						}
-						
-						// Remove the open elements from the stack
-						stack.length = pos;
-					}
-
-					if(handler.endHB) {
-						handler.endHB(tagName);
-					}
+					popStack(tagName);
 					break;
 			}
 		}
 	};
+
+	function pop_stack(tagName) {
+		for (pos = stack.length - 1; pos >= 0; pos -= 1) {
+			if(stack[pos].type === "hb" && stack[pos].tag === tagName) {
+				break;
+			}
+		}
+		
+		if (pos >= 0) {
+			// Close all the open elements, up the stack
+			for (i = stack.length - 1; i >= pos; i-- ) {
+				stack_i = stack[i];
+				if(stack_i.type === "hb") {
+					if (handler.endHB) {
+						handler.endHB(stack_i.tag);
+					}
+				} else {
+					if (handler.endHTML) {
+						handler.endHTML(stack_i.tag);
+					}
+				}
+			}
+			
+			// Remove the open elements from the stack
+			stack.length = pos;
+		}
+
+		if(handler.endHB) {
+			handler.endHB(tagName);
+		}
+		last_closed_hb_tag = tagName;
+	}
