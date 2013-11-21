@@ -24,7 +24,7 @@
 		};
 
 	cjs.version = "<%= version %>"; // This template will be filled in by the builder
-	cjs.__debug = false;
+	cjs.__debug = true;
 
 	cjs.array_diff = get_array_diff; // expose these two useful functions
 	cjs.map_diff = get_map_diff;

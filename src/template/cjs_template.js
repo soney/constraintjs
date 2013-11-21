@@ -45,7 +45,7 @@
 				return op ? op(get_node_value(node.left, context, lineage), get_node_value(node.right, context, lineage)) :
 							undefined;
 			case IDENTIFIER:
-				return context[node.name];
+				return cjs.get(context[node.name]);
 			case MEMBER_EXP:
 				object = get_node_value(node.object, context, lineage);
 				return compute_object_property(object, node.property, context, lineage);
@@ -86,9 +86,8 @@
 				node = node.property;
 			} else { break; }
 		}
-		switch(node.type) {
-			case THIS_EXP: case LITERAL: case IDENTIFIER:
-				return get_node_value.apply(root, args);
+		if(node.type === LITERAL) {
+			return get_node_value.apply(root, args);
 		}
 		return cjs(function() {
 			return get_node_value.apply(root, args);
@@ -333,6 +332,7 @@
 						last(stack).children.push(last_pop);
 					}
 				} else {
+					var push_onto_children = true;
 					if(tag === "each") {
 						memoized_elems = memoize_dom_elems();
 
@@ -389,6 +389,9 @@
 						memoized_elems = memoize_dom_elems();
 						last_pop = {
 							create: function(context, lineage) {
+								if(!lineage) {
+									lineage = [];
+								}
 								var memoized_val = memoized_elems.get(context, lineage),
 									len = this.sub_conditions.length,
 									cond = !!get_node_value(this.condition, context, lineage),
@@ -422,10 +425,13 @@
 
 									if(!memoized_children[i]) {
 										if(i === 0) {
-											memoized_children[i] = this.children;
+											children = this.children;
 										} else {
-											memoized_children[i] = this.sub_conditions[i-1].children;
+											children = this.sub_conditions[i-1].children;
 										}
+										memoized_children[i] = flatten(map(children, function(child) {
+											return child.create(context, lineage);
+										}), true);
 									}
 
 									return memoized_children[i];
@@ -434,8 +440,7 @@
 							children: [],
 							sub_conditions: [],
 							condition: jsep(rest),
-							reverse: tag === "unless",
-							isConditional: true
+							reverse: tag === "unless"
 						};
 
 						condition_stack.push(last_pop);
@@ -445,11 +450,12 @@
 							condition: tag === "else" ? ELSE_COND : jsep(rest)
 						};
 						last(condition_stack).sub_conditions.push(last_pop);
+						push_onto_children = false;
 					} else {
 						return;
 					}
 
-					if(stack.length > 0) {
+					if(push_onto_children && stack.length > 0) {
 						last(stack).children.push(last_pop);
 					}
 					stack.push(last_pop);
@@ -459,6 +465,7 @@
 				if(tag === "if") {
 					condition_stack.pop();
 				}
+				stack.pop();
 			},
 			HBComment: function(text) {
 				last_pop = {

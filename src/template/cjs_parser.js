@@ -83,7 +83,8 @@
 			or_parent: ["if"] //or the parent can be 'if'
 		},
 		"else": {
-			follows: ["elif"]
+			follows: ["elif"],
+			or_parent: ["if"]
 		},
 		"state": {
 			follows: ["state"],
@@ -223,41 +224,12 @@
 		}
 
 		function parseEndTag(tag, tagName) {
-			var i, pos, stack_i;
-			// If no tag name is provided, clean shop
-			if (!tagName) {
-				pos = 0;
-			} else { // Find the closest opened tag of the same type
-				for (pos = stack.length - 1; pos >= 0; pos -= 1) {
-					if(stack[pos].type === "html" && stack[pos].tag === tagName) {
-						break;
-					}
-				}
-			}
-			
-			if (pos >= 0) {
-				// Close all the open elements, up the stack
-				for (i = stack.length - 1; i >= pos; i-- ) {
-					stack_i = stack[i];
-					if(stack_i.type === "hb") {
-						if (handler.endHB) {
-							handler.endHB(stack_i.tag);
-						}
-					} else {
-						if (handler.endHTML) {
-							handler.endHTML(stack_i.tag);
-						}
-					}
-				}
-				
-				// Remove the open elements from the stack
-				stack.length = pos;
-			}
+			popStackUntilTag(tagName, "html");
 		}
 		function getLatestHandlebarParent() {
 			var i, stack_i;
-			for(i = this.stack.length - 1; i>= 0; i--) {
-				stack_i = this.stack[i];
+			for(i = stack.length - 1; i>= 0; i--) {
+				stack_i = stack[i];
 				if(stack_i.type === "hb") {
 					return stack_i;
 				}
@@ -265,7 +237,7 @@
 			return undefined;
 		}
 		function parseHandlebar(tag, prefix, tagName, rest) {
-			var pos, stack_i, i, last_stack, params = rest.trim();
+			var last_stack, params = rest.trim();
 
 			switch (prefix) {
 				case undefined: // unary
@@ -289,17 +261,19 @@
 
 				case '#': // start block
 					last_stack = getLatestHandlebarParent();
-					if(has(parent_rules, tagName)) {
-						var parent_rule = parent_rules[tagName];
-						if(!last_stack || parent_rule.parent !== last_stack.tag) {
-							throw new Error("'" + tagName + "' must be inside of a '"+parent_rule.parent+"' block");
-						}
-					}
 
 					if(last_stack && has(autoclose_nodes, last_stack.tag)) {
 						var autoclose_node = autoclose_nodes[last_stack.tag];
 						if(autoclose_node.when_open_sibling.indexOf(tagName) >= 0) {
-							pop_stack(last_stack.tag);
+							popStackUntilTag(last_stack.tag, "hb");
+							last_stack = getLatestHandlebarParent();
+						}
+					}
+
+					if(has(parent_rules, tagName)) {
+						var parent_rule = parent_rules[tagName];
+						if(!last_stack || parent_rule.parent !== last_stack.tag) {
+							throw new Error("'" + tagName + "' must be inside of a '"+parent_rule.parent+"' block");
 						}
 					}
 
@@ -323,40 +297,39 @@
 					break;
 
 				case '/': // end block
-					popStack(tagName);
+					popStackUntilTag(tagName, "hb");
 					break;
 			}
 		}
-	};
-
-	function pop_stack(tagName) {
-		for (pos = stack.length - 1; pos >= 0; pos -= 1) {
-			if(stack[pos].type === "hb" && stack[pos].tag === tagName) {
-				break;
-			}
-		}
-		
-		if (pos >= 0) {
-			// Close all the open elements, up the stack
-			for (i = stack.length - 1; i >= pos; i-- ) {
-				stack_i = stack[i];
-				if(stack_i.type === "hb") {
-					if (handler.endHB) {
-						handler.endHB(stack_i.tag);
-					}
-				} else {
-					if (handler.endHTML) {
-						handler.endHTML(stack_i.tag);
-					}
+		function popStackUntilTag(tagName, type) {
+			var i, pos, stack_i;
+			for (pos = stack.length - 1; pos >= 0; pos -= 1) {
+				if(stack[pos].type === type && stack[pos].tag === tagName) {
+					break;
 				}
 			}
 			
-			// Remove the open elements from the stack
-			stack.length = pos;
-		}
+			if (pos >= 0) {
+				// Close all the open elements, up the stack
+				for (i = stack.length - 1; i >= pos; i-- ) {
+					stack_i = stack[i];
+					if(stack_i.type === "hb") {
+						if (handler.endHB) {
+							handler.endHB(stack_i.tag);
+						}
+					} else {
+						if (handler.endHTML) {
+							handler.endHTML(stack_i.tag);
+						}
+					}
+				}
+				
+				// Remove the open elements from the stack
+				stack.length = pos;
+			}
 
-		if(handler.endHB) {
-			handler.endHB(tagName);
+			if(type === "hb") {
+				last_closed_hb_tag = tagName;
+			}
 		}
-		last_closed_hb_tag = tagName;
-	}
+	};
