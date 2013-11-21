@@ -235,7 +235,7 @@
 		var stack = [{
 			children: [],
 			create: default_template_create
-		}], last_pop = false, has_container = false, condition_stack = [];
+		}], last_pop = false, has_container = false, condition_stack = [], fsm_stack = [];
 
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
@@ -451,6 +451,49 @@
 						};
 						last(condition_stack).sub_conditions.push(last_pop);
 						push_onto_children = false;
+					} else if(tag === "fsm") {
+						memoized_elems = memoize_dom_elems();
+						var fsm_target = jsep(rest);
+						last_pop = {
+							create: function(context, lineage) {
+								var fsm = get_node_value(fsm_target, context, lineage);
+								var state = fsm.getState();
+								if(!lineage) {
+									lineage = [];
+								}
+								var do_child_create = function(child) {
+									return child.create(context, lineage);
+								};
+								for(var state_name in this.sub_states) {
+									if(this.sub_states.hasOwnProperty(state_name)) {
+										if(state === state_name) {
+											var memoized_children = memoized_elems.get(context, lineage);
+											if(!memoized_children) {
+												memoized_children = {};
+												memoized_elems.set(context, lineage, memoized_children);
+											}
+
+											if(!has(memoized_children, state_name)) {
+												memoized_children[state_name] = map(this.sub_states[state_name].children, do_child_create);
+											}
+											return memoized_children[state_name];
+										}
+									}
+								}
+								return [];
+							},
+							children: [],
+							sub_states: {}
+						};
+						fsm_stack.push(last_pop);
+					} else if(tag === "state") {
+						memoized_elems = memoize_dom_elems();
+						last_pop = {
+							children: [],
+							condition: rest
+						};
+						last(fsm_stack).sub_states[rest] = last_pop;
+						push_onto_children = false;
 					} else {
 						return;
 					}
@@ -464,6 +507,8 @@
 			endHB: function(tag) {
 				if(tag === "if") {
 					condition_stack.pop();
+				} else if(tag === "fsm") {
+					fsm_stack.pop();
 				}
 				stack.pop();
 			},

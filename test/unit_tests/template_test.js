@@ -123,3 +123,23 @@ dt("Conditionals", 10, function() {
 	var cnc2 = t2.childNodes[0];
 	equal(cnc2.textContent, "C")
 });
+
+dt("FSM", 3, function() {
+	var my_fsm = cjs.fsm("s1", "s2")
+					.startsAt("s1");
+	var s1s2 = my_fsm.addTransition("s1", "s2");
+	var s2s1 = my_fsm.addTransition("s2", "s1");
+	var t1 = cjs.template("<div>" +
+		"{{#fsm my_fsm}}" +
+		"{{#state s1}}" +
+		"1" +
+		"{{#state s2}}" +
+		"2" +
+		"{{/if}}"+
+	"</div>", {my_fsm: my_fsm});
+	equal(t1.textContent, "1")
+	s1s2();
+	equal(t1.textContent, "2")
+	s2s1();
+	equal(t1.textContent, "1")
+});
