@@ -475,10 +475,12 @@
 				}
 
 				// and everything should be invalid
-				this.$keys.invalidate();
-				this.$values.invalidate();
-				this.$entries.invalidate();
-				this.$size.invalidate();
+				if(!silent) {
+					this.$keys.invalidate();
+					this.$values.invalidate();
+					this.$entries.invalidate();
+					this.$size.invalidate();
+				}
 
 				cjs.signal(); // ready to run nullification listeners
 			}

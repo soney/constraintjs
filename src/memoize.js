@@ -34,8 +34,6 @@
 			literal_values: false
 		}, options);
 
-		var _context = options.context;
-
 		// Map from args to value
 		var args_map = new MapConstraint({
 			hash: options.hash,
@@ -48,7 +46,7 @@
 			var args = toArray(arguments),
 				constraint = args_map.get_or_put(args, function() {
 					return new Constraint(function () {
-						return getter_fn.apply(_context, args);
+						return getter_fn.apply(options.context, args);
 					});
 				});
 			return constraint.get();

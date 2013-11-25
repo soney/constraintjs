@@ -71,7 +71,7 @@
 		};
 
 		// Remove every element of the array
-		var _clear = function (arr) {
+		var _clear = function (arr, silent) {
 			var $val;
 			cjs.wait();
 
@@ -80,7 +80,7 @@
 				$val = arr._value.pop();
 				var len = arr._value.length;
 				if (cjs.is_constraint($val)) {
-					$val.destroy(); // Clear memory for every element
+					$val.destroy(silent); // Clear memory for every element
 				}
 			}
 			_update_len(arr);
@@ -145,7 +145,7 @@
 		};
 		// Clean up any allocated memory
 		proto.destroy = function (silent) {
-			_clear(this);
+			_clear(this, silent);
 			this.$len.destroy(silent);
 		};
 

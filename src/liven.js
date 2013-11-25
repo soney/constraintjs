@@ -26,9 +26,9 @@
 		// Destroy the node and make sure no memory is allocated
 		var destroy = function (silent) {
 			if(options.on_destroy) {
-				options.on_destroy.call(options.context);
+				options.on_destroy.call(options.context, silent);
 			}
-			node.destroy();
+			node.destroy(silent);
 			node = null;
 		};
 
