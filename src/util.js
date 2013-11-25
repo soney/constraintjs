@@ -3,15 +3,19 @@
 	// ============== UTILITY FUNCTIONS ============== 
 	//
 	var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
-	var slice = ArrayProto.slice,
-		toString = ObjProto.toString,
-		concat             = ArrayProto.concat,
-		push               = ArrayProto.push,
-		nativeEvery        = ArrayProto.every,
-		nativeForEach      = ArrayProto.forEach,
-		nativeKeys         = Object.keys,
-		nativeFilter       = ArrayProto.filter,
-		nativeMap          = ArrayProto.map;
+	var slice			= ArrayProto.slice,
+		toString		= ObjProto.toString,
+		concat			= ArrayProto.concat,
+		push			= ArrayProto.push,
+		nativeSome		= ArrayProto.some,
+		nativeEvery		= ArrayProto.every,
+		nativeForEach	= ArrayProto.forEach,
+		nativeKeys		= Object.keys,
+		nativeFilter	= ArrayProto.filter,
+		nativeMap		= ArrayProto.map,
+		doc				= root.document,
+		sTO				= root.setTimeout,
+		cTO				= root.clearTimeout;
 
 	// Establish the object that gets returned to break out of a loop iteration.
 	var breaker = {};
@@ -25,6 +29,12 @@
 	//Bind a function to a context
 	var bind = function (func, context) {
 		return function () { return func.apply(context, arguments); };
+	};
+
+	// Create a (shallow-cloned) duplicate of an object.
+	var clone = function(obj) {
+		if (!isObject(obj)) { return obj; }
+		return isArray(obj) ? obj.slice() : extend({}, obj);
 	};
 
 	var keys = nativeKeys || function (obj) {
@@ -55,6 +65,19 @@
 	var size = function(obj) {
 		if (obj == null) { return 0; }
 		return (obj.length === +obj.length) ? obj.length : keys(obj).length;
+	};
+
+	// Determine if at least one element in the object matches a truth test.
+	// Delegates to **ECMAScript 5**'s native `some` if available.
+	// Aliased as `any`.
+	var any = function(obj, iterator, context) {
+		var result = false;
+		if (obj == null) { return result; }
+		if (nativeSome && obj.some === nativeSome) { return obj.some(iterator, context); }
+		each(obj, function(value, index, list) {
+			if (result || (result = iterator.call(context, value, index, list))) { return breaker; }
+		});
+		return !!result;
 	};
 
 	// Returns everything but the first entry of the array. Aliased as `tail` and `drop`.
@@ -336,7 +359,7 @@
 	// "Subtracts" y from x (takes x-y) and returns a list of items in x that aren't in y
 	var diff = function (x, y, equality_check) {
 		var i, j, xi, yj,
-			y_clone = slice.call(y),
+			y_clone = clone(y),
 			x_len = x.length,
 			y_len = y.length,
 			diff = [],
@@ -358,7 +381,7 @@
 					y_len -= 1;
 					// If there's nothing left to subtract, just add the rest of x to diff and return
 					if(y_len === 0) {
-						diff.push.apply(diff, x.slice(i + 1));
+						diff.push.apply(diff, rest(x, i+1));
 						break outer;
 					} else {
 						// Otherwise, keep going
@@ -375,7 +398,7 @@
 	// Returns the items that are in both x and y
 	var dualized_intersection = function (x, y, equality_check) {
 		var i, j, xi, yj,
-			y_clone = slice.call(y),
+			y_clone = clone(y),
 			x_len = x.length,
 			y_len = y.length,
 			intersection = [];
@@ -471,7 +494,7 @@
 	var get_array_diff = function (from_val, to_val, equality_check) {
 		equality_check = equality_check || eqeqeq;
 		var source_map = array_source_map(from_val, to_val, equality_check);
-		var rearranged_array = source_map.slice().sort(function (a,b) {
+		var rearranged_array = clone(source_map).sort(function (a,b) {
 			var a_has_from = has(a, "from"),
 				b_has_from = has(b, "from");
 			if (a_has_from && b_has_from) { return a.from - b.from; }
@@ -500,7 +523,7 @@
 		return { added: added, removed: removed, moved: moved, index_changed: index_changed , mapping: source_map};
 	};
 
-	var get_map_diff = function (key_diff, value_diff) {
+	var compute_map_diff = function (key_diff, value_diff) {
 		key_diff = clone(key_diff);
 		value_diff = clone(value_diff);
 		var set = [], unset = [], key_change = [], value_change = [], index_changed = [], moved = [];
@@ -613,7 +636,7 @@
 		var key_diff = get_array_diff(from_keys, to_keys, equality_check),
 			value_diff = get_array_diff(from_values, to_values, equality_check);
 
-		return get_map_diff(key_diff, value_diff);
+		return compute_map_diff(key_diff, value_diff);
 	};
 
 	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/;

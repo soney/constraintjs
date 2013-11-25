@@ -2,7 +2,7 @@
 		if(isAnyElement(item)) {
 			return item;
 		} else {
-			var node = document.createTextNode(item);
+			var node = doc.createTextNode(item);
 			return node;
 		}
 	};
@@ -16,7 +16,7 @@
 			parent_node.insertBefore(child_node, before_child);
 		}
 	};
-	var remove = function(child_node) {
+	var remove_node = function(child_node) {
 		var parentNode = child_node.parentNode;
 		if(parentNode !== null) {
 			parentNode.removeChild(child_node);
@@ -27,7 +27,7 @@
 		var children = parent_node.childNodes;
 		if(children.length > index) {
 			var child_node = children[index];
-			remove(child_node);
+			remove_node(child_node);
 		}
 	};
 

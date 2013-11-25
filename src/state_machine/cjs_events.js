@@ -36,7 +36,6 @@
 		proto._fire = function() {
 			var args = arguments;
 			each(this._transitions, function(transition) {
-				console.log(transition);
 				transition.run.apply(transition, args);
 			});
 			each(this._listeners, function(listener_info) {
@@ -50,12 +49,12 @@
 		};
 	}(CJSEvent));
 
-	var isElementOrWindow = function(elem) { return elem === window || isElement(elem); };
+	var isElementOrWindow = function(elem) { return elem === root || isElement(elem); };
 	var do_trim = function(x) { return x.trim(); };
 	var split_and_trim = function(x) { return map(x.split(" "), do_trim); };
 
 	cjs.on = function(event_type) {
-		var rest_args = arguments.length > 1 ? slice.call(arguments, 1) : window,
+		var rest_args = arguments.length > 1 ? slice.call(arguments, 1) : root,
 			event = new CJSEvent(false, false, function(transition) {
 				var targets = [],
 					timeout_id = false,
@@ -69,7 +68,7 @@
 						each(event_type_val, function(event_type) {
 							if(event_type === "timeout") {
 								if(timeout_id) {
-									clearTimeout(timeout_id);
+									cTO(timeout_id);
 									timeout_id = false;
 								}
 
@@ -78,7 +77,7 @@
 									delay = 0;
 								}
 
-								timeout_id = setTimeout(listener, delay);
+								timeout_id = sTO(listener, delay);
 							} else {
 								each(targets, function(target) {
 									target.addEventListener(event_type, listener);
@@ -91,7 +90,7 @@
 							each(targets, function(target) {
 								if(event_type === "timeout") {
 									if(timeout_id) {
-										clearTimeout(timeout_id);
+										cTO(timeout_id);
 										timeout_id = false;
 									}
 								} else {

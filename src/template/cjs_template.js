@@ -24,7 +24,7 @@
 						.replace(/'/g, "&#039;");
 	}
 	var compute_object_property = function(object, prop_node, context, lineage) {
-		return object ? object[property.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
+		return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
 						undefined;
 	};
 
@@ -78,14 +78,6 @@
 
 	var create_node_constraint = function(node, context, lineage) {
 		var args = arguments;
-		while(node.type === MEMBER_EXP) {
-			if(node.object.name === PARENT_LEVEL) {
-				lineage.pop();
-				node = node.property;
-			} else if(node.object.name === SAME_LEVEL) {
-				node = node.property;
-			} else { break; }
-		}
 		if(node.type === LITERAL) {
 			return get_node_value.apply(root, args);
 		}
@@ -137,7 +129,7 @@
 	var default_template_create = function(context) {
 		if(every_child_is_text(this.children)) {
 			var concatenated_text = get_concatenated_constraint(this.children, context);
-			var textNode = document.createTextNode("");
+			var textNode = doc.createTextNode("");
 			cjs.text(textNode, concatenated_text);
 			return textNode;
 		} else {
@@ -149,7 +141,7 @@
 				}
 			}
 
-			var container = document.createElement("span");
+			var container = doc.createElement("span");
 			if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
 				var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
 				cjs.html(container, concatenated_html);
@@ -161,7 +153,7 @@
 				return container;
 			}
 		}
-		return document.createTextNode("");
+		return doc.createTextNode("");
 	};
 
 	var hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/;
@@ -242,7 +234,7 @@
 				last_pop = {
 					create: function(context, lineage) {
 						var args = arguments;
-						var element = document.createElement(tag);
+						var element = doc.createElement(tag);
 
 						each(attributes, function(attr) {
 							var constraint = get_constraint(attr.value, context, lineage);
@@ -292,7 +284,7 @@
 			chars: function(str) {
 				last_pop = {
 					create: function() {
-						return document.createTextNode(str);
+						return doc.createTextNode(str);
 					},
 					isText: true,
 					text: str
@@ -307,7 +299,7 @@
 					if(literal) {
 						last_pop = {
 							create: function(context, lineage) {
-								var elem = document.createTextNode(""),
+								var elem = doc.createTextNode(""),
 									val = get_node_value(jsep(tag), context, lineage);
 								cjs.text(elem, val);
 								return elem;
@@ -318,7 +310,7 @@
 					} else {
 						last_pop = {
 							create: function(context, lineage) {
-								var elem = document.createTextNode(""),
+								var elem = doc.createTextNode(""),
 									val = get_node_value(jsep(tag), context, lineage);
 								cjs.text(elem, val);
 								return elem;
@@ -398,7 +390,7 @@
 									i = -1, children, memo_index;
 
 								if(this.reverse) {
-									cond = !initial_condition;
+									cond = !cond;
 								}
 
 								if(cond) {
@@ -515,7 +507,7 @@
 			HBComment: function(text) {
 				last_pop = {
 					create: function() {
-						return document.createComment(text);
+						return doc.createComment(text);
 					}
 				};
 				if(stack.length > 0) {
@@ -532,7 +524,7 @@
 
 	cjs.template = function(template_str, template_variables) {
 		if(!isString(template_str)) {
-			if(is_jquery_obj(template_obj)) {
+			if(is_jquery_obj(template_str)) {
 				template_str = template_str.length > 0 ? template_str[0].innerText : "";
 			} else if(nList && template_str instanceof nList) {
 				template_str = template_str.length > 0 ? template_str[0].innerText : "";

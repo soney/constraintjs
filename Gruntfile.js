@@ -9,8 +9,11 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: package,
 		jshint: {
-			build: {
+			source: {
 				src: src_files
+			},
+			post_concat: {
+				src: "build/cjs.js"
 			}
 		},
 		uglify: {
@@ -76,7 +79,7 @@ module.exports = function(grunt) {
 		watch: {
 			test: {
 				files: src_files.concat(['test/unit_tests.js', 'test/unit_tests/*.js']),
-				tasks: ['concat_sourcemap', 'jshint', 'qunit']
+				tasks: ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit']
 			},
 			quickdev: {
 				files: src_files,
@@ -84,7 +87,7 @@ module.exports = function(grunt) {
 			},
 			full: {
 				files: src_files.concat(['test/unit_tests.js', 'test/unit_tests/*.js']),
-				tasks: ['concat_sourcemap', 'jshint', 'qunit', 'uglify']
+				tasks: ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify']
 			}
 		},
 		compress: {
@@ -113,8 +116,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-compress');
 
 	// Default task(s).
-	grunt.registerTask('default', ['concat_sourcemap', 'jshint', 'qunit', 'uglify:development']);
-	grunt.registerTask('dev', ['concat_sourcemap', 'jshint', 'qunit', 'uglify:development', 'watch:full']);
+	grunt.registerTask('default', ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development']);
+	grunt.registerTask('dev', ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development', 'watch:full']);
 	grunt.registerTask('quickdev', ['concat_sourcemap', 'watch:quickdev']);
-	grunt.registerTask('package', ['clean', 'jshint', 'concat', 'qunit', 'uglify:production', 'compress']);
+	grunt.registerTask('package', ['clean', 'jshint:source', 'concat', 'jshint:post_concat', 'qunit', 'uglify:production', 'compress']);
 };
