@@ -45,7 +45,7 @@
 
 		// When getting a value either create a constraint or return the existing value
 		var rv = function () {
-			var args = arguments,
+			var args = toArray(arguments),
 				constraint = args_map.get_or_put(args, function() {
 					return new Constraint(function () {
 						return getter_fn.apply(_context, args);
