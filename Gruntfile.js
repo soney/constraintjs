@@ -19,7 +19,7 @@ module.exports = function(grunt) {
 		uglify: {
 			development: {
 				options: {
-					banner: '// v<%= pkg.version %>',
+					banner: '/*<%= pkg.version %>*/',
 					report: 'gzip',
 					sourceMapIn: "build/cjs.js.map",
 					sourceMap: "build/cjs.min.js.map",
@@ -30,7 +30,7 @@ module.exports = function(grunt) {
 			},
 			production: {
 				options: {
-					banner: '//<%= pkg.version %>',
+					banner: '/*<%= pkg.version %>*/',
 					sourceMap: "build/cjs.min.js.map",
 					sourceMappingURL: "cjs.min.js.map",
 					sourceMapRoot: '..'

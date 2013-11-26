@@ -89,14 +89,13 @@
 			if (!node._valid) {
 				// Push node onto the stack to make it clear that it's being fetched
 				this.stack[stack_len] = node;
-				//if(node._id === 2285) {
-					//debugger;
-				//}
 				// Mark it as valid
 				node._valid = true;
-				//TODO: Check this
-				// Set the timestamp down here instead of before fetching in case a constraint depends on itself
+
+				// Set the timestamp before fetching in case a constraint depends on itself
+				// TODO: Check the logic on this...
 				node._tstamp += 1;
+
 				if (node._options.cache_value !== false) {
 					// Check if dynamic value. If it is, then call it. If not, just fetch it
 					// set this to the node's cached value, which will be returned
@@ -137,9 +136,6 @@
 
 				// We only care to nullify if the current node is actually valid
 				if (curr_node._valid) {
-					//if(curr_node._id === 2285) {
-						//debugger;
-					//}
 					curr_node._valid = false; // Mark it as invalid...
 					invalid = true;
 

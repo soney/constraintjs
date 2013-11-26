@@ -59,3 +59,13 @@ dt("Constraint context", 1, function() {
 	});
 	equal(x.get(), 1);
 });
+
+dt("Self Referring", 3, function() {
+	var x = cjs(1);
+	equal(x.get(), 1);
+	x.set(function() {
+		return x.get() + 1;
+	});
+	equal(x.get(), 2);
+	equal(x.get(), 2);
+});
