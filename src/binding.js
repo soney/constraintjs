@@ -1,74 +1,70 @@
 	var make_node = function(item) {
-		if(isAnyElement(item)) {
-			return item;
-		} else {
-			var node = doc.createTextNode(item);
-			return node;
-		}
-	};
-
-	var insert_at = function(child_node, parent_node, index) {
-		var children = parent_node.childNodes;
-		if(children.length <= index) {
-			parent_node.appendChild(child_node);
-		} else {
-			var before_child = children[index];
-			parent_node.insertBefore(child_node, before_child);
-		}
-	};
-	var remove_node = function(child_node) {
-		var parentNode = child_node.parentNode;
-		if(parentNode !== null) {
-			parentNode.removeChild(child_node);
-		}
-	};
-
-	var remove_index = function(parent_node, index) {
-		var children = parent_node.childNodes;
-		if(children.length > index) {
-			var child_node = children[index];
-			remove_node(child_node);
-		}
-	};
-
-	var move_child = function(parent_node, to_index, from_index) {
-		var children = parent_node.childNodes;
-		if(children.length > from_index) {
-			var child_node = children[from_index];
-			if(parent_node) {
-				if(from_index < to_index) { //If it's less than the index we're inserting at...
-					to_index++; //Increase the index by 1, to make up for the fact that we're removing me at the beginning
-				}
-				insert_at(child_node, parent_node, to_index);
+			if(isAnyElement(item)) {
+				return item;
+			} else {
+				var node = doc.createTextNode(item);
+				return node;
 			}
-		}
-	};
-
-	// Check if jQuery is available
-	var is_jquery_obj = function(x) {
-		return has(root, "jQuery") ? (x instanceof root.jQuery) : false;
-	};
-
-	var nList = root.NodeList || false; // a node list is what is returned when you call getElementsByTagName, etc.
-
-	// Convert an object that can be passed into a binding into an array of dom elements
-	var get_dom_array = function(obj) {
-		if(isArray(obj)) { // already an array
-			return obj;
-		} else if (is_constraint(obj)) { // regular constraint
-			return get_dom_array(obj.get());
-		} else if(is_array(obj)) { // array constraint
-			return obj.toArray();
-		} else if(is_map(obj)) { // map constraint
-			return obj.values();
-		} else if(is_jquery_obj(obj)) { // jquery object
-			return root.jQuery.makeArray(obj);
-		} else if(nList && obj instanceof nList) { // node list
-			return toArray(obj);
-		} else { // hopefully just an element; return its value as an array
-			return [obj];
-		}
-	};
+		},
+		insert_at = function(child_node, parent_node, index) {
+			var children = parent_node.childNodes;
+			if(children.length <= index) {
+				parent_node.appendChild(child_node);
+			} else {
+				var before_child = children[index];
+				parent_node.insertBefore(child_node, before_child);
+			}
+		},
+		remove_node = function(child_node) {
+			var parentNode = child_node.parentNode;
+			if(parentNode !== null) {
+				parentNode.removeChild(child_node);
+			}
+		},
+		remove_index = function(parent_node, index) {
+			var children = parent_node.childNodes, child_node;
+			if(children.length > index) {
+				child_node = children[index];
+				remove_node(child_node);
+			}
+		},
+		move_child = function(parent_node, to_index, from_index) {
+			var children = parent_node.childNodes;
+			if(children.length > from_index) {
+				var child_node = children[from_index];
+				if(parent_node) {
+					if(from_index < to_index) { //If it's less than the index we're inserting at...
+						to_index++; //Increase the index by 1, to make up for the fact that we're removing me at the beginning
+					}
+					insert_at(child_node, parent_node, to_index);
+				}
+			}
+		},
+		// Check if jQuery is available
+		is_jquery_obj = function(x) {
+			return has(root, "jQuery") ? (x instanceof root.jQuery) : false;
+		},
+		nList = root.NodeList || false,
+		// a node list is what is returned when you call getElementsByTagName, etc.
+		isNList = nList ? function(x) { return x instanceof nList; } : function() { return false; },
+		// Convert an object that can be passed into a binding into an array of dom elements
+		get_dom_array = function(obj) {
+			if(isArray(obj)) { // already an array
+				return obj;
+			} else if (is_constraint(obj)) { // regular constraint
+				return get_dom_array(obj.get());
+			} else if(is_array(obj)) { // array constraint
+				return obj.toArray();
+			} else if(is_map(obj)) { // map constraint
+				return obj.values();
+			} else if(is_jquery_obj(obj)) { // jquery object
+				return root.jQuery.makeArray(obj);
+			} else if(isNList(obj)) { // node list
+				return toArray(obj);
+			} else { // hopefully just an element; return its value as an array
+				return [obj];
+			}
+		};
 
 	var Binding = function(options) {
 		var targets = options.targets,
@@ -176,19 +172,17 @@
 		});
 	};
 	var text_binding = create_textual_binding(function(element, value) {
-		element.textContent = value;
-	});
-	var html_binding = create_textual_binding(function(element, value) {
-		element.innerHTML = value;
-	});
-	var val_binding = create_textual_binding(function(element, value) {
-		element.val = value;
-	});
-
-
-	var class_binding = create_list_binding(function(args) {
-		var arg_val_arr = map(args, function(arg) {
-			return cjs.get(arg);
+			element.textContent = value;
+		}),
+		html_binding = create_textual_binding(function(element, value) {
+			element.innerHTML = value;
+		}),
+		val_binding = create_textual_binding(function(element, value) {
+			element.val = value;
+		}),
+		class_binding = create_list_binding(function(args) {
+			var arg_val_arr = map(args, function(arg) {
+				return cjs.get(arg);
 		});
 
 		return flatten(arg_val_arr, true);
@@ -266,11 +260,11 @@
 		};
 	};
 	var css_binding = create_obj_binding(function(element, key, value) {
-		element.style[camel_case(key)] = value;
-	});
-	var attr_binding = create_obj_binding(function(element, key, value) {
-		element.setAttribute(key, value);
-	});
+			element.style[camel_case(key)] = value;
+		}),
+		attr_binding = create_obj_binding(function(element, key, value) {
+			element.setAttribute(key, value);
+		});
 
 	extend(cjs, {
 		"text": text_binding,
@@ -281,3 +275,45 @@
 		"attr": attr_binding,
 		"css": css_binding
 	});
+
+	var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"];
+	cjs.inputValue = function(inps) {
+		var arr_inp;
+		if(isElement(inps)) {
+			inps = [inps];
+			arr_inp = false;
+		} else {
+			arr_inp = true;
+		}
+        var constraint = cjs(function() {
+				if(arr_inp) {
+					return map(inps, function(inp) { return inp.value; });
+				} else {
+					return inps[0].value;
+				}
+			}),
+			len = inps.length,
+			on_change = bind(constraint.invalidate, constraint),
+			activate = function() {
+				each(inp_change_events, function(event_type) {
+					each(inps, function(inp) {
+						inp.addEventListener(event_type, on_change);
+					});
+				});
+			},
+			deactivate = function() {
+				each(inp_change_events, function(event_type) {
+					each(inps, function(inp) {
+						inp.removeEventListener(event_type, on_change);
+					});
+				});
+			},
+			oldDestroy = constraint.destroy;
+
+		constraint.destroy = function() {
+			deactivate();
+			oldDestroy.call(constraint);
+		};
+        activate();
+        return constraint;
+	};
