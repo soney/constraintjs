@@ -242,13 +242,12 @@
 					});
 				},
 				getter: function() {
-					var obj_vals;
+					var obj_vals, rv = {};
 					if(cjs.is_map(vals)) {
 						obj_vals = vals.toObject();
 					} else {
 						obj_vals = vals;
 					}
-					var rv = {};
 					each(obj_vals, function(v, k) {
 						rv[k] = cjs.get(v);
 					});
