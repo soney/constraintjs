@@ -1,28 +1,26 @@
-	var binary_operators = {
-		"===":	function (a, b) { return a === b;}, "!==":	function (a, b) { return a !== b; },
-		"==":	function (a, b) { return a == b; }, "!=":	function (a, b) { return a != b; },
-		">":	function (a, b) { return a > b;  }, ">=":	function (a, b) { return a >= b; },
-		"<":	function (a, b) { return a < b;  }, "<=":	function (a, b) { return a <= b; },
-		"+":	function (a, b) { return a + b;  }, "-":	function (a, b) { return a - b; },
-		"*":	function (a, b) { return a * b;  }, "/":	function (a, b) { return a / b; },
-		"%":	function (a, b) { return a % b;  }, "^":	function (a, b) { return a ^ b; },
-		"&&":	function (a, b) { return a && b; }, "||":	function (a, b) { return a || b; },
-		"&":	function (a, b) { return a & b;  }, "|":	function (a, b) { return a | b; },
-		"<<":	function (a, b) { return a << b; }, ">>":	function (a, b) { return a >> b; },
-		">>>":  function (a, b) { return a >>> b;}
-	};
 	var unary_operators = {
-		"-":	function (a) { return -a; }, "!":	function (a) { return !a; },
-		"~":	function (a) { return ~a; }
-	};
+			"-":	function (a) { return -a; }, "!":	function (a) { return !a; },
+			"~":	function (a) { return ~a; }
+		},
+		binary_operators = {
+			"===":	function (a, b) { return a === b;}, "!==":	function (a, b) { return a !== b; },
+			"==":	function (a, b) { return a == b; }, "!=":	function (a, b) { return a != b; },
+			">":	function (a, b) { return a > b;  }, ">=":	function (a, b) { return a >= b; },
+			"<":	function (a, b) { return a < b;  }, "<=":	function (a, b) { return a <= b; },
+			"+":	function (a, b) { return a + b;  }, "-":	function (a, b) { return a - b; },
+			"*":	function (a, b) { return a * b;  }, "/":	function (a, b) { return a / b; },
+			"%":	function (a, b) { return a % b;  }, "^":	function (a, b) { return a ^ b; },
+			"&&":	function (a, b) { return a && b; }, "||":	function (a, b) { return a || b; },
+			"&":	function (a, b) { return a & b;  }, "|":	function (a, b) { return a | b; },
+			"<<":	function (a, b) { return a << b; }, ">>":	function (a, b) { return a >> b; },
+			">>>":  function (a, b) { return a >>> b;}
+		},
+		escapeHTML = function (unsafe) {
+			return unsafe	.replace(/&/g, "&amp;")	.replace(/</g, "&lt;")
+							.replace(/>/g, "&gt;")	.replace(/"/g, "&quot;")
+							.replace(/'/g, "&#039;");
+		};
 
-	function escapeHTML(unsafe) {
-		return unsafe	.replace(/&/g, "&amp;")
-						.replace(/</g, "&lt;")
-						.replace(/>/g, "&gt;")
-						.replace(/"/g, "&quot;")
-						.replace(/'/g, "&#039;");
-	}
 	var compute_object_property = function(object, prop_node, context, lineage) {
 		return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
 						undefined;
@@ -98,17 +96,6 @@
 	var any_child_is_dynamic_html = function(arr) {
 		return indexWhere(arr, child_is_dynamic_html) >= 0;
 	};
-	var get_concatenated_constraint = function(children, context, lineage) {
-		return cjs(function() {
-			return map(children, function(child) {
-				if(has(child, "text")) {
-					return child.text;
-				} else {
-					return cjs.get(context[child.tag]);
-				}
-			}).join("");
-		});
-	};
 	var get_concatenated_inner_html_constraint = function(children, context, lineage) {
 		return cjs(function() {
 			return map(children, function(child) {
@@ -125,35 +112,37 @@
 			}).join("");
 		});
 	};
-
-	var default_template_create = function(context) {
-		if(every_child_is_text(this.children)) {
-			var concatenated_text = get_concatenated_constraint(this.children, context);
-			var textNode = doc.createTextNode("");
-			cjs.text(textNode, concatenated_text);
-			return textNode;
-		} else {
-			var args = arguments;
-			if(this.children.length === 1) {
-				var first_child = this.children[0];
-				if(first_child.isHTML) {
-					return first_child.create.apply(first_child, args);
-				}
-			}
-
-			var container = doc.createElement("span");
-			if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
-				var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
-				cjs.html(container, concatenated_html);
-				return container;
-			} else {
-				each(this.children, function(child) {
-					container.appendChild(child.create.apply(child, args));
+	var get_concatenated_children_constraint = function(children, args) {
+		return cjs(function() {
+					var rv = [];
+					each(children, function(child) {
+						var c_plural = child.create.apply(child, args);
+						if(isArray(c_plural)) {
+							rv.push.apply(rv, c_plural);
+						} else {
+							rv.push(c_plural);
+						}
+					});
+					return rv;
 				});
-				return container;
-			}
+	};
+
+	var default_template_create = function(context, parent_dom_node) {
+		var args = [context, [context]], // context & lineage
+			container = parent_dom_node || doc.createElement("span"),
+			first_child;
+		if(this.children.length === 1 && (first_child = this.children[0]) && first_child.isHTML) {
+			return first_child.create.apply(first_child, args);
 		}
-		return doc.createTextNode("");
+
+		if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
+			var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
+			cjs.html(container, concatenated_html);
+		} else {
+			var children_constraint = get_concatenated_children_constraint(this.children, args);
+			cjs.children(container, children_constraint);
+		}
+		return container;
 	};
 
 	var hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/;
@@ -202,8 +191,8 @@
 		}
 	};
 	var memoize_dom_elems = function() {
-		var memoized_args = [];
-		var memoized_vals = [];
+		var memoized_args = [],
+			memoized_vals = [];
 
 		return {
 			get: function(context, lineage) {
@@ -233,8 +222,8 @@
 			startHTML: function(tag, attributes, unary) {
 				last_pop = {
 					create: function(context, lineage) {
-						var args = arguments;
-						var element = doc.createElement(tag);
+						var args = arguments,
+							element = doc.createElement(tag);
 
 						each(attributes, function(attr) {
 							var constraint = get_constraint(attr.value, context, lineage);
@@ -249,19 +238,7 @@
 							var concatenated_html = get_concatenated_inner_html_constraint(this.children, context, lineage);
 							cjs.html(element, concatenated_html);
 						} else {
-							var children_constraint = cjs(function() {
-								var rv = [];
-								each(this.children, function(child) {
-									var c_plural = child.create.apply(child, args);
-									if(isArray(c_plural)) {
-										rv.push.apply(rv, c_plural);
-									} else {
-										rv.push(c_plural);
-									}
-								});
-								return rv;
-							}, {context: this});
-
+							var children_constraint = get_concatenated_children_constraint(this.children, args);
 							cjs.children(element, children_constraint);
 						}
 						return element;
@@ -296,29 +273,19 @@
 			startHB: function(tag, rest, unary, literal) {
 				var memoized_elems;
 				if(unary) {
-					if(literal) {
-						last_pop = {
-							create: function(context, lineage) {
-								var elem = doc.createTextNode(""),
-									val = get_node_value(jsep(tag), context, lineage);
-								cjs.text(elem, val);
-								return elem;
-							},
-							isDynamicHTML: true,
-							tag: tag
-						};
-					} else {
-						last_pop = {
-							create: function(context, lineage) {
-								var elem = doc.createTextNode(""),
-									val = get_node_value(jsep(tag), context, lineage);
-								cjs.text(elem, val);
-								return elem;
-							},
-							isText: true,
-							tag: tag
-						};
-					}
+					var setter_name, type_name;
+					if(literal) { type_name = "isDynamicHTML"; setter_name = "html"; }
+					else { type_name = "isText"; setter_name = "text"; }
+					last_pop = {
+						create: function(context, lineage) {
+							var elem = doc.createTextNode(""),
+								val = get_node_value(jsep(tag), context, lineage);
+							cjs[setter_name](elem, val);
+							return elem;
+						},
+						tag: tag
+					};
+					last_pop[type_name] = true;
 
 					if(stack.length > 0) {
 						last(stack).children.push(last_pop);
@@ -341,9 +308,6 @@
 								}
 
 								var rv = [];
-								if(!lineage) {
-									lineage = [];
-								}
 
 								var memoized_val = memoized_elems.get(context, lineage);
 								if(memoized_val) {
@@ -361,11 +325,11 @@
 								});
 								each(val_diff.added, function(added_info) {
 									var v = added_info.item,
-										concated_lineage = lineage.concat(v);
-									var vals = map(this.children, function(child) {
-										var dom_child = child.create(context, concated_lineage);
-										return dom_child;
-									});
+										concated_lineage = lineage.concat(v),
+										vals = map(this.children, function(child) {
+											var dom_child = child.create(context, concated_lineage);
+											return dom_child;
+										});
 									mdom.splice(added_info.to, 0, vals);
 								}, this);
 								each(val_diff.moved, function(moved_info) {
@@ -381,9 +345,6 @@
 						memoized_elems = memoize_dom_elems();
 						last_pop = {
 							create: function(context, lineage) {
-								if(!lineage) {
-									lineage = [];
-								}
 								var memoized_val = memoized_elems.get(context, lineage),
 									len = this.sub_conditions.length,
 									cond = !!get_node_value(this.condition, context, lineage),
@@ -448,18 +409,18 @@
 						var fsm_target = jsep(rest);
 						last_pop = {
 							create: function(context, lineage) {
-								var fsm = get_node_value(fsm_target, context, lineage);
-								var state = fsm.getState();
+								var fsm = get_node_value(fsm_target, context, lineage),
+									state = fsm.getState(),
+									do_child_create = function(child) {
+										return child.create(context, lineage);
+									}, state_name, memoized_children;
 								if(!lineage) {
 									lineage = [];
 								}
-								var do_child_create = function(child) {
-									return child.create(context, lineage);
-								};
-								for(var state_name in this.sub_states) {
+								for(state_name in this.sub_states) {
 									if(this.sub_states.hasOwnProperty(state_name)) {
 										if(state === state_name) {
-											var memoized_children = memoized_elems.get(context, lineage);
+											memoized_children = memoized_elems.get(context, lineage);
 											if(!memoized_children) {
 												memoized_children = {};
 												memoized_elems.set(context, lineage, memoized_children);
@@ -521,8 +482,21 @@
 
 	var template_strs = [],
 		template_values = [];
+	
+	var isPolyDOM = function(x) {
+		return is_jquery_obj(x) || isNList(x) || isAnyElement(x);
+	};
+	var getFirstDOMChild = function(x) {
+		if(is_jquery_obj(x) || isNList(x)) {
+			return x[0];
+		} else if(isAnyElement(x)) {
+			return x;
+		} else {
+			return false;
+		}
+	};
 
-	cjs.template = function(template_str, template_variables) {
+	cjs.template = function(template_str) {
 		if(!isString(template_str)) {
 			if(is_jquery_obj(template_str)) {
 				template_str = template_str.length > 0 ? template_str[0].innerText : "";
@@ -545,7 +519,7 @@
 		}
 
 		if(arguments.length >= 2) { // Create and use the template immediately
-			return template(template_variables);
+			return template.apply(this, rest(arguments));
 		} else { // create the template as a function that can be called with a context
 			return template;
 		}

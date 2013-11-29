@@ -14,7 +14,7 @@
 				return new ArrayConstraint(extend({
 					value: arg0
 				}, arg1));
-			} else if(is_jquery_obj(arg0) || isNList(arg0) || isElement(arg0)) {
+			} else if(isPolyDOM(arg0)) {
 				return cjs.inputValue(arg0);
 			} else if(isObject(arg0) && !isFunction(arg0)) {
 				return new MapConstraint(extend({

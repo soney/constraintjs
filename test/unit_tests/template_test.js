@@ -143,3 +143,14 @@ dt("FSM", 3, function() {
 	s2s1();
 	equal(t1.textContent, "1")
 });
+
+dt("Provided Parent", 4, function() {
+	var elem = document.createElement("div");
+	var x = cjs(1);
+	var template = cjs.template("{{this}}", x, elem);
+	equal(template, elem);
+	equal(template.textContent, "1");
+	x.set(2);
+	equal(template.textContent, "2");
+	equal(template, elem);
+});
