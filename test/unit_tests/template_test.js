@@ -155,8 +155,8 @@ dt("Provided Parent", 4, function() {
 	equal(template, elem);
 });
 
-dt("FN Calls", 4, function() {
-	//var plus_world = cjs.template("{{this}} world");
-	var abc = cjs.template("{{#each x}} {{plus_one}} {{/each}}", {x: [1,2,3], plus_one: function(x){ return x+1; }});
-	console.log(abc);
+dt("FN Calls", 2, function() {
+	var abc = cjs.template("{{#each x}}{{plus_one(this)}}{{/each}}", {x: [1,2,3], plus_one: function(x){ return x+1; }});
+	equal(abc.childNodes.length, 3);
+	equal(abc.textContent, "234");
 });

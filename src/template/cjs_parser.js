@@ -32,7 +32,7 @@
 	// Regular Expressions for parsing tags and attributes
 	var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
 		endTag = /^<\/([\-A-Za-z0-9_]+)[^>]*>/,
-		handlebar = /^\{\{([#=!@|{\/])?([\-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)\}?\}\}/,
+		handlebar = /^\{\{([#=!@|{\/])?\s*([^\}]*)\s*(\/?)\}?\}\}/,
 		attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 		
 	// Empty Elements - HTML 4.01
@@ -236,19 +236,29 @@
 			}
 			return undefined;
 		}
-		function parseHandlebar(tag, prefix, tagName, rest) {
-			var last_stack, params = rest.trim();
+		function parseHandlebar(tag, prefix, content) {
+			var last_stack, tagName, parsed_content = jsep(content);
+
+			if(parsed_content.type === COMPOUND) {
+				if(parsed_content.body.length > 0 && parsed_content.body[0].type === IDENTIFIER) {
+					tagName = parsed_content.body[0].name;
+				}
+			} else {
+				if(parsed_content.type === IDENTIFIER) {
+					tagName = parsed_content.name;
+				}
+			}
 
 			switch (prefix) {
 				case undefined: // unary
 					if(handler.startHB) {
-						handler.startHB(tagName, params, true, false);
+						handler.startHB(tagName, parsed_content, true, false);
 					}
 					break;
 
 				case '{': // literal
 					if(handler.startHB) {
-						handler.startHB(tagName, params, true, true);
+						handler.startHB(tagName, parsed_content, true, true);
 					}
 					break;
 
@@ -292,7 +302,7 @@
 
 					stack.push({type: "hb", tag: tagName});
 					if(handler.startHB) {
-						handler.startHB(tagName, params, false);
+						handler.startHB(tagName, parsed_content, false);
 					}
 					break;
 

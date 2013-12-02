@@ -29,6 +29,13 @@
 							undefined;
 		},
 		ELSE_COND = {},
+		first_body = function(node) {
+			return node.type === COMPOUND ? node.body[0] : node;
+		},
+		rest_body = function(node) {
+			return {type: COMPOUND,
+					body: node.type === COMPOUND ? rest(node.body) : [] };
+		},
 		get_node_value = function(node, context, lineage) {
 			var op, object, call_context, args;
 			if(!node) { return; }
@@ -49,7 +56,7 @@
 					object = get_node_value(node.object, context, lineage);
 					return compute_object_property(object, node.property, context, lineage);
 				case COMPOUND:
-					return compute_object_property(node.body[0], node.property, context, lineage);
+					return get_node_value(node.body[0], context, lineage);
 				case CURR_LEVEL_EXP:
 					object = last(lineage);
 					return compute_object_property(object, node.argument, context, lineage);
@@ -256,7 +263,7 @@
 						last(stack).children.push(last_pop);
 					}
 				},
-				startHB: function(tag, rest, unary, literal) {
+				startHB: function(tag, parsed_content, unary, literal) {
 					var memoized_elems, setter_name, type_name, push_onto_children;
 					if(unary) {
 						if(literal) { type_name = "isDynamicHTML"; setter_name = "html"; }
@@ -264,7 +271,7 @@
 						last_pop = {
 							create: function(context, lineage) {
 								var elem = doc.createTextNode(""),
-									val = get_node_value(jsep(tag), context, lineage);
+									val = get_node_value(first_body(parsed_content), context, lineage);
 								cjs[setter_name](elem, val);
 								return elem;
 							},
@@ -282,16 +289,12 @@
 
 							last_pop = {
 								create: function(context, lineage) {
-									var val, mvals, mdom, val_diff, rv = [],
+									var mvals, mdom, val_diff, rv = [],
+										val = get_node_value(rest_body(parsed_content), context, lineage),
 										memoized_val = memoized_elems.get(context, lineage);
 
-									if(has(context, rest)) {
-										val = cjs.get(context[rest]);
-										if(!isArray(val)) {
-											val = [val];
-										}
-									} else {
-										val = [];
+									if(!isArray(val)) {
+										val = [val];
 									}
 
 									if(memoized_val) {
@@ -376,7 +379,7 @@
 								},
 								children: [],
 								sub_conditions: [],
-								condition: jsep(rest),
+								condition: rest_body(parsed_content),
 								reverse: tag === "unless"
 							};
 
@@ -384,13 +387,13 @@
 						} else if(tag === "elif" || tag === "else") {
 							last_pop = {
 								children: [],
-								condition: tag === "else" ? ELSE_COND : jsep(rest)
+								condition: tag === "else" ? ELSE_COND : rest_body(parsed_content)
 							};
 							last(condition_stack).sub_conditions.push(last_pop);
 							push_onto_children = false;
 						} else if(tag === "fsm") {
 							memoized_elems = memoize_dom_elems();
-							var fsm_target = jsep(rest);
+							var fsm_target = rest_body(parsed_content);
 							last_pop = {
 								create: function(context, lineage) {
 									var fsm = get_node_value(fsm_target, context, lineage),
@@ -424,13 +427,12 @@
 							};
 							fsm_stack.push(last_pop);
 						} else if(tag === "state") {
-							memoized_elems = memoize_dom_elems();
-							last_pop = {
-								children: [],
-								condition: rest
-							};
-							last(fsm_stack).sub_states[rest] = last_pop;
-							push_onto_children = false;
+							if(parsed_content.body.length > 1) {
+								var state_name = parsed_content.body[1].name;
+								last_pop = { children: [] };
+								last(fsm_stack).sub_states[state_name] = last_pop;
+								push_onto_children = false;
+							}
 							/*
 						} else if(tag === "with") {
 							last_pop = {
