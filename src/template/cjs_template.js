@@ -79,7 +79,6 @@
 						return object.apply(call_context, args);
 					}
 			}
-			return;
 		},
 		create_node_constraint = function(node, context, lineage) {
 			var args = arguments;
@@ -271,7 +270,7 @@
 						last_pop = {
 							create: function(context, lineage) {
 								var elem = doc.createTextNode(""),
-									val = get_node_value(first_body(parsed_content), context, lineage);
+									val = create_node_constraint(first_body(parsed_content), context, lineage);
 								cjs[setter_name](elem, val);
 								return elem;
 							},

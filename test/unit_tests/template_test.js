@@ -160,3 +160,10 @@ dt("FN Calls", 2, function() {
 	equal(abc.childNodes.length, 3);
 	equal(abc.textContent, "234");
 });
+
+dt("Nested Templates", 2, function() {
+	var hi_template = cjs.template("Hello, {{this}}");
+	var abc = cjs.template("{{hi_template('world')}}", {hi_template: hi_template});
+	equal(abc.childNodes.length, 1);
+	equal(abc.textContent, "Hello, world");
+});
