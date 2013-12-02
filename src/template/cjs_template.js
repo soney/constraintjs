@@ -270,7 +270,7 @@
 						last_pop = {
 							create: function(context, lineage) {
 								var elem = doc.createTextNode(""),
-									val = create_node_constraint(first_body(parsed_content), context, lineage);
+									val = get_node_value(first_body(parsed_content), context, lineage);
 								cjs[setter_name](elem, val);
 								return elem;
 							},
@@ -470,6 +470,21 @@
 					if(stack.length > 0) {
 						last(stack).children.push(last_pop);
 					}
+				},
+				partialHB: function(tagName, parsed_content) {
+					var partial = partials[tagName];
+					if(partial) {
+						last_pop = {
+							create: function(context, lineage) {
+								var new_context = get_node_value(rest_body(parsed_content), context, lineage);
+								return partial(new_context);
+							}
+						};
+
+						if(stack.length > 0) {
+							last(stack).children.push(last_pop);
+						}
+					}
 				}
 			});
 			last_pop = stack.pop();
@@ -517,4 +532,9 @@
 		} else { // create the template as a function that can be called with a context
 			return template;
 		}
+	};
+
+	var partials = {};
+	cjs.template.registerPartial = function(name, value) {
+		partials[name] = value;
 	};

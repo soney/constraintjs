@@ -163,7 +163,8 @@ dt("FN Calls", 2, function() {
 
 dt("Nested Templates", 2, function() {
 	var hi_template = cjs.template("Hello, {{this}}");
-	var abc = cjs.template("{{hi_template('world')}}", {hi_template: hi_template});
+	cjs.template.registerPartial("hello", hi_template);
+	var abc = cjs.template("{{> hello this}}", "world");
 	equal(abc.childNodes.length, 1);
 	equal(abc.textContent, "Hello, world");
 });

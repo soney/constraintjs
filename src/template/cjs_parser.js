@@ -32,7 +32,7 @@
 	// Regular Expressions for parsing tags and attributes
 	var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
 		endTag = /^<\/([\-A-Za-z0-9_]+)[^>]*>/,
-		handlebar = /^\{\{([#=!@|{\/])?\s*([^\}]*)\s*(\/?)\}?\}\}/,
+		handlebar = /^\{\{([#=!@>|{\/])?\s*([^\}]*)\s*(\/?)\}?\}\}/,
 		attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 		
 	// Empty Elements - HTML 4.01
@@ -259,6 +259,11 @@
 				case '{': // literal
 					if(handler.startHB) {
 						handler.startHB(tagName, parsed_content, true, true);
+					}
+					break;
+				case '>': // partial
+					if(handler.partialHB) {
+						handler.partialHB(tagName, parsed_content);
 					}
 					break;
 
