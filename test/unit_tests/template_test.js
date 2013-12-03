@@ -168,3 +168,9 @@ dt("Nested Templates", 2, function() {
 	equal(abc.childNodes.length, 1);
 	equal(abc.textContent, "Hello, world");
 });
+
+dt("Template Comments", 2, function() {
+	var tmplate = cjs.template("{{! comment 1 }}{{!comment2}}{{#each num}}<!--some html comment-->{{/each}}", {num: [1,2,3]});
+	equal(tmplate.childNodes.length, 3);
+	equal(tmplate.childNodes[0].nodeType, 8);
+});

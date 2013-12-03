@@ -250,6 +250,18 @@
 				endHTML: function(tag) {
 					last_pop = stack.pop();
 				},
+				HTMLcomment: function(str) {
+					last_pop = {
+						create: function() {
+							return doc.createComment(str);
+						},
+						isText: true,
+						text: str
+					};
+					if(stack.length > 0) {
+						last(stack).children.push(last_pop);
+					}
+				},
 				chars: function(str) {
 					last_pop = {
 						create: function() {
@@ -460,16 +472,6 @@
 						fsm_stack.pop();
 					}
 					stack.pop();
-				},
-				HBComment: function(text) {
-					last_pop = {
-						create: function() {
-							return doc.createComment(text);
-						}
-					};
-					if(stack.length > 0) {
-						last(stack).children.push(last_pop);
-					}
 				},
 				partialHB: function(tagName, parsed_content) {
 					var partial = partials[tagName];
