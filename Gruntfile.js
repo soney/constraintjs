@@ -103,6 +103,20 @@ module.exports = function(grunt) {
 		}
 	});
 
+	grunt.registerTask('usetheforce_on', 'force the force option on if needed', 
+		function() {
+			if (!grunt.option('force')) {
+				grunt.config.set('usetheforce_set', true);
+				grunt.option( 'force', true );
+			}
+		});
+	grunt.registerTask('usetheforce_restore', 'turn force option off if we have previously set it', 
+			function() {
+			if (grunt.config.get('usetheforce_set')) {
+				grunt.option( 'force', false );
+			}
+		});
+
 	// Load the plugin that provides the "uglify" task.
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -115,7 +129,7 @@ module.exports = function(grunt) {
 
 	// Default task(s).
 	grunt.registerTask('default', ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development']);
-	grunt.registerTask('dev', ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development', 'watch:full']);
-	grunt.registerTask('quickdev', ['concat_sourcemap', 'watch:quickdev']);
+	grunt.registerTask('dev', ['usetheforce_on', 'jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development', 'watch:full', 'usetheforce_restore']);
+	grunt.registerTask('quickdev', ['usetheforce_on', 'concat_sourcemap', 'watch:quickdev', 'usetheforce_restore']);
 	grunt.registerTask('package', ['clean', 'jshint:source', 'concat', 'jshint:post_concat', 'qunit', 'uglify:production', 'compress']);
 };
