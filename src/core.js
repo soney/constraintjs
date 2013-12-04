@@ -30,6 +30,7 @@
 
 	cjs.array_diff = get_array_diff; // expose these two useful functions
 	cjs.map_diff = get_map_diff;
+	cjs.toString = function() { return "ConstraintJS v" + cjs.version; };
 
 	if(has(root, "cjs")) { // If there was a previous cjs property...
 		// ...then track it and allow cjs.noConflict to restore its previous value
