@@ -22,10 +22,6 @@
 			return new Constraint(val, {literal: true});
 		});
 
-		// When we fetch an item in the array that doesn't exist, it gets added to
-		// the unsubstantiated items list to create a dependency
-		this._unsubstantiated_items = [];
-
 		this.$len = new Constraint(this._value.length); // Keep track of the array length in a constraint
 		this.$equality_check = new Constraint(options.equals, {literal: true}); // How to check for equality again...
 	};
@@ -41,8 +37,7 @@
 			if (val === undefined) { // Even if arr[key] is set to undefined, it would be a constraint
 				// Create a dependency so that if the value for this key changes
 				// later on, we can detect it in the constraint solver
-				val = new Constraint(undefined, {literal: true});
-				arr._unsubstantiated_items[key] = val;
+				val = arr._value[key] = new Constraint(undefined, {literal: true});
 			}
 			return val.get();
 		};
@@ -52,13 +47,7 @@
 			cjs.wait(); // Don't run any nullification listeners until this function is done running
 			var $previous_value = arr._value[key];
 
-			// If there's an unsubstantiated item; use that, so that dependencies still work
-			if ($previous_value === undefined && arr._unsubstantiated_items[key]) {
-				$previous_value = arr._value[key] = arr._unsubstantiated_items[key];
-				delete arr._unsubstantiated_items[key];
-			}
-
-			if (cjs.is_constraint($previous_value)) {
+			if ($previous_value) {
 				// If there was a previous value, just set it
 				var prev_val = $previous_value.get();
 				$previous_value.set(val);
