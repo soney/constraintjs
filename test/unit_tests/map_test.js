@@ -50,3 +50,54 @@ dt("Constraints on items", 5, function() {
 	ma.destroy();
 	m = ma = null;
 });
+
+dt("Map Optimization", 20, function() {
+	var m = cjs({});
+	var eval_count = 0;
+	var x = cjs(function() {
+		eval_count++;
+		if(m.has("a")) {
+			return m.get("a");
+		} else {
+			return 'no a';
+		}
+	});
+	equal(eval_count, 0);
+	equal(x.get(), 'no a');
+	equal(eval_count, 1);
+	m.set('b', 2);
+	equal(x.get(), 'no a');
+	equal(eval_count, 1);
+	m.set('a', 1);
+	equal(x.get(), 1);
+	equal(eval_count, 2);
+	m.set('c', 3);
+	equal(eval_count, 2);
+	m.set('a', 11);
+	equal(x.get(), 11);
+	equal(eval_count, 3);
+
+	eval_count = 0;
+	var m2 = cjs({}, {
+		hash: function(x) { return "nohash"; }
+	});
+	x.set(function() {
+		eval_count++;
+		return m2.get("a") || 'no a';
+	});
+
+	equal(eval_count, 0);
+	equal(x.get(), 'no a');
+	equal(eval_count, 1);
+	m2.set('b', 2);
+	equal(x.get(), 'no a');
+	equal(eval_count, 1);
+	m2.set('a', 1);
+	equal(x.get(), 1);
+	equal(eval_count, 2);
+	m2.set('c', 3);
+	equal(eval_count, 2);
+	m2.set('a', 11);
+	equal(x.get(), 11);
+	equal(eval_count, 3);
+});
