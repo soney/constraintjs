@@ -61,14 +61,17 @@
 
 		// node is the Constraint whose value we are fetching and auto_add_outgoing specifies whether dependencies FROM node should
 		// be automatically added
-		getValue: function (node, auto_add_outgoing) {
-			var stack_len = this.stack.length;
+		getValue: function (auto_add_outgoing) {
+			var node = this,
+				stack = constraint_solver.stack,
+				stack_len = stack.length,
+				demanding_var, dependency_edge;
 			
 			if (stack_len > 0) { // There's a constraint that's asking for my value
 				// Let's call it demanding_var
-				var demanding_var = this.stack[stack_len - 1];
+				demanding_var = stack[stack_len - 1];
+				dependency_edge = node._outEdges[demanding_var._id];
 
-				var dependency_edge = node._outEdges[demanding_var._id];
 				// If there's already a dependency set up, mark it as still being used by setting its timestamp to the demanding
 				// variable's timestamp 1 (because that variable's timestamp will be incrememted later on, so they will be equal)
 				// 
@@ -91,7 +94,7 @@
 			// If the node's cached value is invalid...
 			if (!node._valid) {
 				// Push node onto the stack to make it clear that it's being fetched
-				this.stack[stack_len] = node;
+				stack[stack_len] = node;
 				// Mark it as valid
 				node._valid = true;
 
@@ -108,7 +111,7 @@
 					node._value.call(node._options.context);
 				}
 				// Pop the item off the stack
-				this.stack.length = stack_len;
+				stack.length = stack_len;
 			}
 
 			return node._cached_value;
@@ -149,7 +152,7 @@
 						// Only mark as invalid if the old value is different from the current value.
 						equals = curr_node._options.equals || eqeqeq;
 						old_value = curr_node._cached_value;
-						new_value = this.getValue(curr_node);
+						new_value = curr_node.get();
 
 						if (equals(old_value, new_value)) {
 							invalid = false;
@@ -324,9 +327,7 @@
 
 		// This function IS meant to be called directly. It asks the constraint solver for the value,
 		// which in turn can be cached
-		proto.get = function(auto_add_dependency) {
-			return constraint_solver.getValue(this, auto_add_dependency);
-		};
+		proto.get = constraint_solver.getValue;
 
 		// Change the value of the constraint
 		proto.set = function (new_value, options) {
