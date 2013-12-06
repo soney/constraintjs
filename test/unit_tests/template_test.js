@@ -174,3 +174,8 @@ dt("Template Comments", 2, function() {
 	equal(tmplate.childNodes.length, 3);
 	equal(tmplate.childNodes[0].nodeType, 8);
 });
+
+dt("With", 1, function() {
+	var tmplate = cjs.template("{{#with x}}{{a}}{{b}}{{../y}}{{/with}}", {x: {a: "a", b: "b"}, y: "y"});
+	equal(tmplate.textContent, "aby");
+});

@@ -444,17 +444,17 @@
 								last(fsm_stack).sub_states[state_name] = last_pop;
 								push_onto_children = false;
 							}
-							/*
 						} else if(tag === "with") {
 							last_pop = {
 								create: function(context, lineage) {
-									var concatenated_lineage = lineage.concat();
-									return 
+									var new_context = get_node_value(rest_body(parsed_content), context, lineage),
+										concatenated_lineage = lineage.concat(new_context);
+									return map(this.children, function(child) {
+										return child.create(new_context, concatenated_lineage);
+									});
 								},
-								children: [],
-								condition: rest
+								children: []
 							};
-							*/
 						} else {
 							return;
 						}
