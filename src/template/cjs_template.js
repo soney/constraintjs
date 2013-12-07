@@ -51,6 +51,16 @@
 					return op ? op(get_node_value(node.left, context, lineage), get_node_value(node.right, context, lineage)) :
 								undefined;
 				case IDENTIFIER:
+					if(node.name[0] === "@") {
+						var name = node.name.slice(1);
+						for(var i = lineage.length-1; i>=0; i--) {
+							object = lineage[i].at;
+							if(object && has(object, name)) {
+								return cjs.get(object[name]);
+							}
+						}
+						return undefined;
+					}
 					return cjs.get(context[node.name]);
 				case MEMBER_EXP:
 					object = get_node_value(node.object, context, lineage);
@@ -58,10 +68,10 @@
 				case COMPOUND:
 					return get_node_value(node.body[0], context, lineage);
 				case CURR_LEVEL_EXP:
-					object = last(lineage);
+					object = last(lineage).this_exp;
 					return compute_object_property(object, node.argument, context, lineage);
 				case PARENT_EXP:
-					object = lineage ? lineage[lineage.length - 2] : undefined;
+					object = (lineage && lineage.length > 1) ? lineage[lineage.length - 2].this_exp : undefined;
 					return compute_object_property(object, node.argument, context, lineage);
 				case CALL_EXP:
 					if(node.callee.type === MEMBER_EXP) {
@@ -326,9 +336,10 @@
 									});
 									each(val_diff.added, function(added_info) {
 										var v = added_info.item,
-											concated_lineage = (v === ELSE_COND) ? lineage: lineage.concat({this_exp: v}),
+											index = added_info.to,
 											vals = map((v === ELSE_COND) ? this.else_child.children : this.children, function(child) {
-												var dom_child = child.create(context, concated_lineage);
+												var concated_lineage = (v === ELSE_COND) ? lineage : lineage.concat({this_exp: v, at: { index: cjs(index)}}),
+													dom_child = child.create(context, concated_lineage);
 												return dom_child;
 											});
 										mdom.splice(added_info.to, 0, vals);

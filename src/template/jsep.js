@@ -55,19 +55,19 @@ var COMPOUND = 'Compound',
 			},
 			// ch is a character code
 			isDecimalDigit = function(ch) {
-				return (ch >= 48 && ch <= 57);   // 0..9
+				return	(ch >= 48 && ch <= 57);   // 0..9
 			},
 			isIdentifierStart = function(ch) {
-				return (ch === 36) || (ch === 95) ||  // $ (dollar) and _ (underscore)
-						|| (ch === 64) || // @
+				return	(ch === 36) || (ch === 95) ||  // $ (dollar) and _ (underscore)
+						(ch === 64) || // @
 						(ch >= 65 && ch <= 90) ||     // A..Z
 						(ch >= 97 && ch <= 122);      // a..z
 			},
 			isIdentifierPart = function(ch) {
-				return (ch === 36) || (ch === 95) ||  // $ (dollar) and _ (underscore)
-					(ch >= 65 && ch <= 90) ||         // A..Z
-					(ch >= 97 && ch <= 122) ||        // a..z
-					(ch >= 48 && ch <= 57);           // 0..9
+				return	(ch === 36) || (ch === 95) ||  // $ (dollar) and _ (underscore)
+						(ch >= 65 && ch <= 90) ||         // A..Z
+						(ch >= 97 && ch <= 122) ||        // a..z
+						(ch >= 48 && ch <= 57);           // 0..9
 			},
 			DONE = {},
 
@@ -203,7 +203,7 @@ var COMPOUND = 'Compound',
 						} else if(ch === 39 || ch === 34) {
 							// Single or double quotes (' or ")
 							return gobbleStringLiteral();
-						} else if(isIdentifierPart(ch)) {
+						} else if(isIdentifierStart(ch)) {
 							return gobbleVariable();
 						} else if((op_index = unary_ops.indexOf(ch)) >= 0) {
 							index++;
@@ -286,7 +286,12 @@ var COMPOUND = 'Compound',
 					},
 					
 					gobbleIdentifier = function() {
-						var ch, start = index, identifier;
+						var ch = expr.charCodeAt(index), start = index, identifier;
+
+						if(isIdentifierStart(ch)) {
+							index++;
+						}
+
 						while(index < length) {
 							ch = expr.charCodeAt(index);
 							if(isIdentifierPart(ch)) {

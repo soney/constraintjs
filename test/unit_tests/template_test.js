@@ -210,3 +210,10 @@ dt("Parser test", 1, function() {
 	var tmplate = cjs.template("{{'{}'}}{{\"}{\"}}", {});
 	equal(tmplate.textContent, "{}}{");
 });
+
+dt("Each key/index", 1, function() {
+	var arr = cjs(["a", "b"]);
+	var obj = cjs({x: "x", y: "y"});
+	var tmplate = cjs.template("{{#each arr}}{{@index}}{{/each}}", {arr: arr});
+	equal(tmplate.textContent, "01");
+});
