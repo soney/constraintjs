@@ -40,7 +40,7 @@
 			var op, object, call_context, args;
 			if(!node) { return; }
 			switch(node.type) {
-				case THIS_EXP: return last(lineage);
+				case THIS_EXP: return last(lineage).this_exp;
 				case LITERAL: return node.value;
 				case UNARY_EXP:
 					op = unary_operators[node.operator];
@@ -120,7 +120,7 @@
 					});
 		},
 		default_template_create = function(context, parent_dom_node) {
-			var args = [context, [context]], // context & lineage
+			var args = [context, [{this_exp: context}]], // context & lineage
 				container = parent_dom_node || doc.createElement("span"),
 				first_child;
 			if(this.children.length === 1 && (first_child = this.children[0]) && first_child.isHTML) {
@@ -192,7 +192,7 @@
 						return margs[0]=== context &&
 								margs[1].length === lineage.length &&
 								every(margs[1], function(l, i) {
-									return l === lineage[i];
+									return l.this_exp === lineage[i].this_exp;
 								});
 					});
 					return memoized_vals[memo_index];
@@ -306,6 +306,8 @@
 
 									if(!isArray(val)) {
 										val = [val];
+									} else if(val.length === 0 && this.else_child) {
+										val = [ELSE_COND];
 									}
 
 									if(memoized_val) {
@@ -318,13 +320,14 @@
 									}
 
 									val_diff = get_array_diff(mvals, val);
+
 									each(val_diff.removed, function(removed_info) {
 										mdom.splice(removed_info.from, 1);
 									});
 									each(val_diff.added, function(added_info) {
 										var v = added_info.item,
-											concated_lineage = lineage.concat(v),
-											vals = map(this.children, function(child) {
+											concated_lineage = (v === ELSE_COND) ? lineage: lineage.concat({this_exp: v}),
+											vals = map((v === ELSE_COND) ? this.else_child.children : this.children, function(child) {
 												var dom_child = child.create(context, concated_lineage);
 												return dom_child;
 											});
@@ -335,9 +338,13 @@
 										mdom.splice(moved_info.from_index, 1);
 										mdom.splice(moved_info.to_index, 0, dom_elem);
 									});
+
+									mvals.splice.apply(mvals, ([0, mvals.length]).concat(val));
 									return flatten(mdom, true);
 								},
-								children: []
+								children: [],
+								isEach: true,
+								else_child: false 
 							};
 						} else if(tag === "if" || tag === "unless") {
 							memoized_elems = memoize_dom_elems();
@@ -354,13 +361,12 @@
 
 									if(cond) {
 										i = 0;
-									} else {
+									} else if(len > 0) {
 										for(i = 0; i<len; i++) {
 											cond = this.sub_conditions[i];
 
 											if(cond.condition === ELSE_COND || get_node_value(cond.condition, context, lineage)) {
-												i = i+1;
-												break;
+												i++; break;
 											}
 										}
 									}
@@ -400,7 +406,12 @@
 								children: [],
 								condition: tag === "else" ? ELSE_COND : rest_body(parsed_content)
 							};
-							last(condition_stack).sub_conditions.push(last_pop);
+							var last_stack = last(stack);
+							if(last_stack.isEach) {
+								last_stack.else_child = last_pop;
+							} else {
+								last(condition_stack).sub_conditions.push(last_pop);
+							}
 							push_onto_children = false;
 						} else if(tag === "fsm") {
 							memoized_elems = memoize_dom_elems();
@@ -448,7 +459,7 @@
 							last_pop = {
 								create: function(context, lineage) {
 									var new_context = get_node_value(rest_body(parsed_content), context, lineage),
-										concatenated_lineage = lineage.concat(new_context);
+										concatenated_lineage = lineage.concat({this_exp: new_context});
 									return map(this.children, function(child) {
 										return child.create(new_context, concatenated_lineage);
 									});
@@ -466,7 +477,7 @@
 					}
 				},
 				endHB: function(tag) {
-					if(tag === "if") {
+					if(tag === "if" || tag === "unless") {
 						condition_stack.pop();
 					} else if(tag === "fsm") {
 						fsm_stack.pop();

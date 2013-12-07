@@ -32,7 +32,7 @@
 	// Regular Expressions for parsing tags and attributes
 	var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+\w+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
 		endTag = /^<\/([\-A-Za-z0-9_]+)[^>]*>/,
-		handlebar = /^\{\{([#=!@>|{\/])?\s*([^\}]*)\s*(\/?)\}?\}\}/,
+		handlebar = /^\{\{([#=!>|{\/])?\s*((?:(?:"[^"]*")|(?:'[^']*')|[^\}])*)\s*(\/?)\}?\}\}/,
 		attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
 		
 	// Empty Elements - HTML 4.01
@@ -59,9 +59,9 @@
 	
 	// Dictates what parents children must have; state must be a direct descendent of diagram
 	var parent_rules = {
-		"state": { parent: "fsm" },
-		"elif": { parent: "if" },
-		"else": { parent: "if" }
+		"state": { parent: ["fsm"] },
+		"elif": { parent: ["if"] },
+		"else": { parent: ["if", "each"] }
 	};
 
 	var autoclose_nodes = {
@@ -69,7 +69,7 @@
 			when_open_sibling: ["elif", "else"]
 		},
 		"else": {
-			when_close_parent: ["if"]
+			when_close_parent: ["if", "each"]
 		},
 		"state": {
 			when_open_sibling: ["state"]
@@ -84,7 +84,7 @@
 		},
 		"else": {
 			follows: ["elif"],
-			or_parent: ["if"]
+			or_parent: ["if", "each"]
 		},
 		"state": {
 			follows: ["state"],
@@ -255,7 +255,13 @@
 						handler.startHB(tagName, parsed_content, true, false);
 					}
 					break;
-
+					/*
+				case "@": // each helper
+					if(handler.startHB) {
+						handler.startHB(tagName, parsed_content, true, false, true);
+					}
+					break;
+					*/
 				case '{': // literal
 					if(handler.startHB) {
 						handler.startHB(tagName, parsed_content, true, true);
@@ -287,7 +293,7 @@
 
 					if(has(parent_rules, tagName)) {
 						var parent_rule = parent_rules[tagName];
-						if(!last_stack || parent_rule.parent !== last_stack.tag) {
+						if(!last_stack || indexOf(parent_rule.parent, last_stack.tag)<0) {
 							throw new Error("'" + tagName + "' must be inside of a '"+parent_rule.parent+"' block");
 						}
 					}

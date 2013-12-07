@@ -59,6 +59,7 @@ var COMPOUND = 'Compound',
 			},
 			isIdentifierStart = function(ch) {
 				return (ch === 36) || (ch === 95) ||  // $ (dollar) and _ (underscore)
+						|| (ch === 64) || // @
 						(ch >= 65 && ch <= 90) ||     // A..Z
 						(ch >= 97 && ch <= 122);      // a..z
 			},

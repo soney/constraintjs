@@ -81,7 +81,7 @@ dt("Each", 3, function() {
 	equal(elem0, t1.childNodes[0]);
 });
 
-dt("Conditionals", 10, function() {
+dt("Conditionals", 13, function() {
 	var cond = cjs(true);
 	var t1 = cjs.template("<div>" +
 		"{{#if cond}}" +
@@ -122,6 +122,18 @@ dt("Conditionals", 10, function() {
 	cond2.set(false);
 	var cnc2 = t2.childNodes[0];
 	equal(cnc2.textContent, "C")
+
+	var cond2 = cjs(true);
+	var t3 = cjs.template("<div>" +
+		"{{#unless cond}}" +
+		"1" +
+		"{{/unless}}"+
+	"</div>", {cond: cond2});
+	equal(t3.textContent, "")
+	cond2.set(false);
+	equal(t3.textContent, "1")
+	cond2.set(true);
+	equal(t3.textContent, "")
 });
 
 dt("FSM", 3, function() {
@@ -178,4 +190,23 @@ dt("Template Comments", 2, function() {
 dt("With", 1, function() {
 	var tmplate = cjs.template("{{#with x}}{{a}}{{b}}{{../y}}{{/with}}", {x: {a: "a", b: "b"}, y: "y"});
 	equal(tmplate.textContent, "aby");
+});
+
+dt("Each/Else", 5, function() {
+	var x = cjs([1,2]);
+	var tmplate = cjs.template("{{#each x}}{{this}}{{#else}}nothing{{/each}}", {x: x});
+	equal(tmplate.textContent, "12");
+	x.splice(0, 1);
+	equal(tmplate.textContent, "2");
+	x.splice(0, 1);
+	equal(tmplate.textContent, "nothing");
+	x.splice(0, 0, 2, 3);
+	equal(tmplate.textContent, "23");
+	x.splice(0, 2);
+	equal(tmplate.textContent, "nothing");
+});
+
+dt("Parser test", 1, function() {
+	var tmplate = cjs.template("{{'{}'}}{{\"}{\"}}", {});
+	equal(tmplate.textContent, "{}}{");
 });
