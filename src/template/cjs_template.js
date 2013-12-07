@@ -56,7 +56,7 @@
 						for(var i = lineage.length-1; i>=0; i--) {
 							object = lineage[i].at;
 							if(object && has(object, name)) {
-								return cjs.get(object[name]);
+								return object[name];
 							}
 						}
 						return undefined;
@@ -213,6 +213,10 @@
 				}
 			};
 		},
+		IS_OBJ = {},
+		map_aware_array_eq = function(a, b) {
+			return a === b || (a && a.is_obj === IS_OBJ && a.key === b.key && a.value === b.value);
+		},
 		create_template = function(template_str) {
 			var stack = [{
 				children: [],
@@ -228,11 +232,15 @@
 								element = doc.createElement(tag);
 
 							each(attributes, function(attr) {
-								var constraint = get_constraint(attr.value, context, lineage);
-								if(is_constraint(constraint)) {
-									cjs.attr(element, attr.name, constraint);
+								if(attr.name === "data-cjs-out" || attr.name === "cjs-out") {
+									context[attr.value] = cjs.inputValue(element);
 								} else {
-									element.setAttribute(attr.name, constraint);
+									var constraint = get_constraint(attr.value, context, lineage);
+									if(is_constraint(constraint)) {
+										cjs.attr(element, attr.name, constraint);
+									} else {
+										element.setAttribute(attr.name, constraint);
+									}
 								}
 							});
 
@@ -310,12 +318,13 @@
 
 							last_pop = {
 								create: function(context, lineage) {
-									var mvals, mdom, val_diff, rv = [],
+									var mvals, mdom, mLastLineage, val_diff, rv = [],
 										val = get_node_value(rest_body(parsed_content), context, lineage),
 										memoized_val = memoized_elems.get(context, lineage);
 
 									if(!isArray(val)) {
-										val = [val];
+										// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
+										val = map(val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
 									} else if(val.length === 0 && this.else_child) {
 										val = [ELSE_COND];
 									}
@@ -323,31 +332,55 @@
 									if(memoized_val) {
 										mvals = memoized_val.val;
 										mdom = memoized_val.dom;
+										mLastLineage = memoized_val.lineage;
 									} else {
 										mvals = [];
 										mdom = [];
-										memoized_elems.set(context, lineage, {val: val, dom: mdom});
+										mLastLineage = [];
+										memoized_elems.set(context, lineage, {val: val, dom: mdom, lineage: mLastLineage});
 									}
 
-									val_diff = get_array_diff(mvals, val);
+									val_diff = get_array_diff(mvals, val, map_aware_array_eq);
 
+									each(val_diff.index_changed, function(ic_info) {
+										var lastLineageItem = mLastLineage[ic_info.from];
+										if(lastLineageItem && lastLineageItem.at && lastLineageItem.at.index) {
+											lastLineageItem.at.index.set(ic_info.to);
+										}
+									});
 									each(val_diff.removed, function(removed_info) {
+										var index = removed_info.from,
+											lastLineageItem = mLastLineage[index];
 										mdom.splice(removed_info.from, 1);
+										if(lastLineageItem && lastLineageItem.at) {
+											each(lastLineageItem.at, function(v) {
+												v.destroy(true);
+											});
+										}
 									});
 									each(val_diff.added, function(added_info) {
 										var v = added_info.item,
 											index = added_info.to,
-											vals = map((v === ELSE_COND) ? this.else_child.children : this.children, function(child) {
-												var concated_lineage = (v === ELSE_COND) ? lineage : lineage.concat({this_exp: v, at: { index: cjs(index)}}),
-													dom_child = child.create(context, concated_lineage);
+											is_else = v === ELSE_COND,
+											lastLineageItem = is_else ? false : {this_exp: v, at: ((v && v.is_obj === IS_OBJ) ? {key: cjs(v.key)} : { index: cjs(index)})},
+											concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
+											vals = map(is_else ? this.else_child.children : this.children, function(child) {
+												var dom_child = child.create(context, concated_lineage);
 												return dom_child;
 											});
-										mdom.splice(added_info.to, 0, vals);
+										mdom.splice(index, 0, vals);
+										mLastLineage.splice(index, 0, lastLineageItem);
 									}, this);
 									each(val_diff.moved, function(moved_info) {
-										var dom_elem = mdom[moved_info.from_index];
-										mdom.splice(moved_info.from_index, 1);
-										mdom.splice(moved_info.to_index, 0, dom_elem);
+										var from_index = moved_info.from_index,
+											to_index = moved_info.to_index,
+											dom_elem = mdom[from_index],
+											lastLineageItem = mLastLineage[from_index];
+
+										mdom.splice(from_index, 1);
+										mdom.splice(to_index, 0, dom_elem);
+										mLastLineage.splice(from_index, 1);
+										mLastLineage.splice(to_index, 0, lastLineageItem);
 									});
 
 									mvals.splice.apply(mvals, ([0, mvals.length]).concat(val));
@@ -511,9 +544,12 @@
 					}
 				}
 			});
-			last_pop = stack.pop();
-			return bind(last_pop.create, last_pop);
+			//last_pop = stack.pop();
+			//return bind(last_pop.create, last_pop);
+			return stack.pop();
 		},
+		created_template_values = [],
+		created_template_nodes = [],
 		template_strs = [],
 		template_values = [],
 		isPolyDOM = function(x) {
@@ -527,6 +563,13 @@
 			} else {
 				return false;
 			}
+		},
+		create_and_log_template = function() {
+			var template = this,
+				dom_node = template.create.apply(template, arguments);
+			created_template_nodes.push(dom_node);
+			created_template_values.push(template);
+			return dom_node;
 		};
 
 	cjs.template = function(template_str) {
@@ -552,13 +595,23 @@
 		}
 
 		if(arguments.length >= 2) { // Create and use the template immediately
-			return template.apply(this, rest(arguments));
+			return create_and_log_template.apply(template, rest(arguments));
 		} else { // create the template as a function that can be called with a context
-			return template;
+			return bind(create_and_log_template, template);
 		}
 	};
 
 	var partials = {};
 	cjs.template.registerPartial = function(name, value) {
 		partials[name] = value;
+	};
+	cjs.template.destroy = function(dom_node) {
+		var nodeIndex = indexOf(created_template_nodes, dom_node);
+		if(nodeIndex >= 0) {
+			var template = created_template_values[nodeIndex];
+			created_template_nodes.splice(nodeIndex, 1);
+			created_template_values.splice(nodeIndex, 1);
+			return true;
+		}
+		return false;
 	};

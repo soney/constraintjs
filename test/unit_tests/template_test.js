@@ -3,26 +3,32 @@ module("Templates");
 dt("Static Templates", 7, function() {
 	var empty_template = cjs.template("", {});
 	equal(empty_template.textContent, "");
+	cjs.template.destroy(empty_template);
 
 	var hello_template = cjs.template("hello world", {});
 	equal(hello_template.textContent, "hello world");
+	cjs.template.destroy(hello_template);
 
 	var div_template = cjs.template("<div>hi</div>", {});
 	equal(div_template.tagName.toLowerCase(), "div");
 	equal(div_template.textContent, "hi");
+	cjs.template.destroy(div_template);
 
 	var nested_div_template = cjs.template("<div>hi <strong>world</strong></div>", {});
 	equal(nested_div_template.tagName.toLowerCase(), "div");
 	var strong_content = nested_div_template.getElementsByTagName("strong")[0];
 	equal(strong_content.textContent, "world");
+	cjs.template.destroy(nested_div_template);
 
 	var classed_template = cjs.template("<div class='my_class'>yo</div>", {});
 	equal(classed_template.className, "my_class");
+	cjs.template.destroy(classed_template);
 });
 
-dt("Dynamic Templates", 4, function() {
+dt("Dynamic Templates", 5, function() {
 	var t1 = cjs.template("{{x}}", {x: "hello world"});
 	equal(t1.textContent, "hello world");
+	cjs.template.destroy(t1);
 
 	var greet = cjs("hello");
 	var city = cjs("pittsburgh");
@@ -32,6 +38,14 @@ dt("Dynamic Templates", 4, function() {
 	equal(t2.textContent, "bye, pittsburgh");
 	city.set("world");
 	equal(t2.textContent, "bye, world");
+	cjs.template.destroy(t2);
+	greet.destroy();
+	city.destroy();
+
+	var create_template_fn = cjs.template("{{x}}");
+	var template_instance = create_template_fn({x: 1});
+	equal(template_instance.textContent, "1");
+	cjs.template.destroy(template_instance);
 });
 
 dt("HTMLized Templates", 7, function() {
@@ -211,9 +225,22 @@ dt("Parser test", 1, function() {
 	equal(tmplate.textContent, "{}}{");
 });
 
-dt("Each key/index", 1, function() {
+dt("Each key/index", 3, function() {
 	var arr = cjs(["a", "b"]);
-	var obj = cjs({x: "x", y: "y"});
+	var obj = cjs({x: "x_val", y: "y_val"});
 	var tmplate = cjs.template("{{#each arr}}{{@index}}{{/each}}", {arr: arr});
 	equal(tmplate.textContent, "01");
+	arr.splice(0, 1);
+	equal(tmplate.textContent, "0");
+	tmplate = cjs.template("{{#each obj}}{{@key}}{{/each}}", {obj: obj});
+	equal(tmplate.textContent, "xy");
+});
+
+dt("Template out", 2, function() {
+	var context = {};
+	var tmplate = cjs.template("<input type='text' data-cjs-out='x' />", context);
+	equal(context.x.get(), "");
+	tmplate.value = "hello";
+	context.x.invalidate();
+	equal(context.x.get(), "hello");
 });
