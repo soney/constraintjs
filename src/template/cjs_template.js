@@ -568,35 +568,36 @@
 			return nodeIndex >= 0 ? memoized_template_bindings[nodeIndex] : false;
 		};
 
-	cjs.template = function(template_str) {
-		if(!isString(template_str)) {
-			if(is_jquery_obj(template_str) || isNList(template_str)) {
-				template_str = template_str.length > 0 ? template_str[0].innerText : "";
-			} else if(isElement(template_str)) {
-				template_str = template_str.innerText;
-			} else {
-				template_str = "" + template_str;
+	var createTemplate = function(template_str) {
+			if(!isString(template_str)) {
+				if(is_jquery_obj(template_str) || isNList(template_str)) {
+					template_str = template_str.length > 0 ? template_str[0].innerText : "";
+				} else if(isElement(template_str)) {
+					template_str = template_str.innerText;
+				} else {
+					template_str = "" + template_str;
+				}
 			}
-		}
 
-		var template, template_index = indexOf(template_strs, template_str);
-		if(template_index < 0) {
-			template = create_template(template_str);
-			template_strs.push(template_str);
-			template_values.push(template);
-		} else {
-			template = template_values[template_index];
-		}
+			var template, template_index = indexOf(template_strs, template_str);
+			if(template_index < 0) {
+				template = create_template(template_str);
+				template_strs.push(template_str);
+				template_values.push(template);
+			} else {
+				template = template_values[template_index];
+			}
 
-		if(arguments.length >= 2) { // Create and use the template immediately
-			return memoize_template.apply(template, rest(arguments));
-		} else { // create the template as a function that can be called with a context
-			return bind(memoize_template, template);
-		}
-	};
-	cjs.template.create = cjs.template;
-	cjs.template.registerPartial = function(name, value) { partials[name] = value; };
-	cjs.template.destroy = function(dom_node) {
+			if(arguments.length >= 2) { // Create and use the template immediately
+				return memoize_template.apply(template, rest(arguments));
+			} else { // create the template as a function that can be called with a context
+				return bind(memoize_template, template);
+			}
+		};
+	cjs.createTemplate = cjs.template = createTemplate;
+	cjs.registerPartial = function(name, value) { partials[name] = value; };
+	cjs.unregisterPartial = function(name, value) { delete partials[name]; };
+	cjs.destroyTemplate = function(dom_node) {
 		var nodeIndex = indexOf(memoized_template_nodes, dom_node);
 		if(nodeIndex >= 0) {
 			var bindings = memoized_template_bindings[nodeIndex];
@@ -607,12 +608,12 @@
 		}
 		return false;
 	};
-	cjs.template.pause = function(dom_node) {
+	cjs.pauseTemplate = function(dom_node) {
 		var bindings = get_template_bindings(dom_node);
 		each(bindings, function(binding) { if(has(binding, "pause")) { binding.pause(); } });
 		return !!bindings;
 	};
-	cjs.template.resume = function(dom_node) {
+	cjs.resumeTemplate = function(dom_node) {
 		var bindings = get_template_bindings(dom_node);
 		each(get_template_bindings(dom_node), function(binding) { if(has(binding, "resume")) { binding.resume(); } });
 		return !!bindings;

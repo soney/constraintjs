@@ -437,7 +437,7 @@
 	is_constraint = function(obj) {
 		return obj instanceof Constraint;
 	};
-	cjs.is_constraint = is_constraint;
+	cjs.isConstraint = is_constraint;
 	cjs.Constraint = Constraint;
 
 	cjs.constraint = function(value, options) {

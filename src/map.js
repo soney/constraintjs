@@ -726,5 +726,5 @@
 	};
 
 	cjs.map = function (arg0, arg1) { return new MapConstraint(arg0, arg1); };
-	cjs.is_map = is_map;
-	cjs.Map = MapConstraint;
+	cjs.isMapConstraint = is_map;
+	cjs.MapConstraint = MapConstraint;

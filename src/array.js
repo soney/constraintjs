@@ -58,7 +58,7 @@
 				delete arr._unsubstantiated_items[key];
 			}
 
-			if (cjs.is_constraint($previous_value)) {
+			if (is_constraint($previous_value)) {
 				// If there was a previous value, just set it
 				var prev_val = $previous_value.get();
 				$previous_value.set(val);
@@ -79,7 +79,7 @@
 			while (arr._value.length > 0) {
 				$val = arr._value.pop();
 				var len = arr._value.length;
-				if (cjs.is_constraint($val)) {
+				if (is_constraint($val)) {
 					$val.destroy(silent); // Clear memory for every element
 				}
 			}
@@ -171,7 +171,7 @@
 			var rv, $value = this._value.pop(); // $value should be a constraint
 			cjs.wait();
 
-			if (cjs.is_constraint($value)) { // if it's a constraint return the value.
+			if (is_constraint($value)) { // if it's a constraint return the value.
 											// otherwise, return undefined
 				rv = $value.get();
 				$value.destroy();
@@ -286,7 +286,7 @@
 				// Then, just get rid of the last resulting_shift_size elements
 				for (; i<value_len; i += 1) {
 					var $value = this._value.pop(); // $value should be a constraint
-					if (cjs.is_constraint($value)) {  // and dealocate
+					if (is_constraint($value)) {  // and dealocate
 						$value.destroy();
 					}
 				}
@@ -355,5 +355,5 @@
 	};
 
 	cjs.array = function (value) { return new ArrayConstraint(value); };
-	cjs.is_array = is_array;
-	cjs.Array = ArrayConstraint;
+	cjs.isArrayConstraint = is_array;
+	cjs.ArrayConstraint = ArrayConstraint;

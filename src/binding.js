@@ -239,7 +239,7 @@
 				},
 				getter: function() {
 					var obj_vals, rv = {};
-					if(cjs.is_map(vals)) {
+					if(is_map(vals)) {
 						obj_vals = vals.toObject();
 					} else {
 						obj_vals = vals;

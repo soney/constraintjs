@@ -203,7 +203,7 @@
 		this._did_transition = false; // keeps track of if any transition has run (so that when the user specifies
 									// a start state, it knows whether or not to change the current state
 
-		this._state = cjs(function() { // the name of the current state
+		this.state = cjs(function() { // the name of the current state
 			if(this._curr_state) { return this._curr_state.getName(); }
 			else { return null; }
 		}, {
@@ -243,7 +243,7 @@
 
 		// Returns the name of the state this machine is currently in
 		proto.getState = function() {
-			return this._state.get();
+			return this.state.get();
 		};
 		
 		// Add a transition from the last state that was added (the chain state) to a given state
@@ -318,7 +318,7 @@
 				}
 			});
 			this._curr_state = to_state;
-			this._state.invalidate();
+			this.state.invalidate();
 			// Look for post-transition callbacks..
 			// and also callbacks that are interested in state entrance
 			each(this._listeners, function(listener) {
@@ -330,7 +330,7 @@
 			});
 		};
 		proto.destroy = function() {
-			this._state.destroy();
+			this.state.destroy();
 			this._states = {};
 			this._transitions = [];
 			this._curr_state = null;

@@ -27,3 +27,4 @@
 		var constraint = new FSMConstraint();
 		return constraint.inFSM.apply(constraint, arguments);
 	};
+	cjs.FSMConstraint = FSMConstraint;

@@ -3,32 +3,32 @@ module("Templates");
 dt("Static Templates", 7, function() {
 	var empty_template = cjs.template("", {});
 	equal(empty_template.textContent, "");
-	cjs.template.destroy(empty_template);
+	cjs.destroyTemplate(empty_template);
 
 	var hello_template = cjs.template("hello world", {});
 	equal(hello_template.textContent, "hello world");
-	cjs.template.destroy(hello_template);
+	cjs.destroyTemplate(hello_template);
 
 	var div_template = cjs.template("<div>hi</div>", {});
 	equal(div_template.tagName.toLowerCase(), "div");
 	equal(div_template.textContent, "hi");
-	cjs.template.destroy(div_template);
+	cjs.destroyTemplate(div_template);
 
 	var nested_div_template = cjs.template("<div>hi <strong>world</strong></div>", {});
 	equal(nested_div_template.tagName.toLowerCase(), "div");
 	var strong_content = nested_div_template.getElementsByTagName("strong")[0];
 	equal(strong_content.textContent, "world");
-	cjs.template.destroy(nested_div_template);
+	cjs.destroyTemplate(nested_div_template);
 
 	var classed_template = cjs.template("<div class='my_class'>yo</div>", {});
 	equal(classed_template.className, "my_class");
-	cjs.template.destroy(classed_template);
+	cjs.destroyTemplate(classed_template);
 });
 
 dt("Dynamic Templates", 5, function() {
 	var t1 = cjs.template("{{x}}", {x: "hello world"});
 	equal(t1.textContent, "hello world");
-	cjs.template.destroy(t1);
+	cjs.destroyTemplate(t1);
 
 	var greet = cjs("hello");
 	var city = cjs("pittsburgh");
@@ -38,14 +38,14 @@ dt("Dynamic Templates", 5, function() {
 	equal(t2.textContent, "bye, pittsburgh");
 	city.set("world");
 	equal(t2.textContent, "bye, world");
-	cjs.template.destroy(t2);
+	cjs.destroyTemplate(t2);
 	greet.destroy();
 	city.destroy();
 
 	var create_template_fn = cjs.template("{{x}}");
 	var template_instance = create_template_fn({x: 1});
 	equal(template_instance.textContent, "1");
-	cjs.template.destroy(template_instance);
+	cjs.destroyTemplate(template_instance);
 });
 
 dt("HTMLized Templates", 7, function() {
@@ -189,7 +189,7 @@ dt("FN Calls", 2, function() {
 
 dt("Nested Templates", 2, function() {
 	var hi_template = cjs.template("Hello, {{this}}");
-	cjs.template.registerPartial("hello", hi_template);
+	cjs.registerPartial("hello", hi_template);
 	var abc = cjs.template("{{> hello this}}", "world");
 	equal(abc.childNodes.length, 1);
 	equal(abc.textContent, "Hello, world");
@@ -251,14 +251,14 @@ dt("Pause/Resume/Destroy templates", 7, function() {
 	equal(tmplate.textContent, "1");
 	x.set(2);
 	equal(tmplate.textContent, "2");
-	cjs.template.pause(tmplate);
+	cjs.pauseTemplate(tmplate);
 	equal(tmplate.textContent, "2");
 	x.set(3);
-	cjs.template.resume(tmplate);
+	cjs.resumeTemplate(tmplate);
 	equal(tmplate.textContent, "3");
 	x.set(4);
 	equal(tmplate.textContent, "4");
-	cjs.template.destroy(tmplate);
+	cjs.destroyTemplate(tmplate);
 	equal(tmplate.textContent, "4");
 	x.set(5);
 	equal(tmplate.textContent, "4");
