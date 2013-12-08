@@ -244,3 +244,22 @@ dt("Template out", 2, function() {
 	context.x.invalidate();
 	equal(context.x.get(), "hello");
 });
+
+dt("Pause/Resume/Destroy templates", 7, function() {
+	var x = cjs(1);
+	var tmplate = cjs.template("{{x}}", {x: x});
+	equal(tmplate.textContent, "1");
+	x.set(2);
+	equal(tmplate.textContent, "2");
+	cjs.template.pause(tmplate);
+	equal(tmplate.textContent, "2");
+	x.set(3);
+	cjs.template.resume(tmplate);
+	equal(tmplate.textContent, "3");
+	x.set(4);
+	equal(tmplate.textContent, "4");
+	cjs.template.destroy(tmplate);
+	equal(tmplate.textContent, "4");
+	x.set(5);
+	equal(tmplate.textContent, "4");
+});

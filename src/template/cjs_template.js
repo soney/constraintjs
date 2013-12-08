@@ -24,8 +24,8 @@
 							.replace(/>/g, "&gt;")	.replace(/"/g, "&quot;")
 							.replace(/'/g, "&#039;");
 		},
-		compute_object_property = function(object, prop_node, context, lineage) {
-			return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
+		compute_object_property = function(object, prop_node, context, lineage, curr_bindings) {
+			return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage, curr_bindings) : prop_node.name] :
 							undefined;
 		},
 		ELSE_COND = {},
@@ -36,7 +36,7 @@
 			return {type: COMPOUND,
 					body: node.type === COMPOUND ? rest(node.body) : [] };
 		},
-		get_node_value = function(node, context, lineage) {
+		get_node_value = function(node, context, lineage, curr_bindings) {
 			var op, object, call_context, args;
 			if(!node) { return; }
 			switch(node.type) {
@@ -44,11 +44,11 @@
 				case LITERAL: return node.value;
 				case UNARY_EXP:
 					op = unary_operators[node.operator];
-					return op ? op(get_node_value(node.argument, context, lineage)) :
+					return op ? op(get_node_value(node.argument, context, lineage, curr_bindings)) :
 								undefined;
 				case BINARY_EXP:
 				case LOGICAL_EXP:
-					return op ? op(get_node_value(node.left, context, lineage), get_node_value(node.right, context, lineage)) :
+					return op ? op(get_node_value(node.left, context, lineage, curr_bindings), get_node_value(node.right, context, lineage, curr_bindings)) :
 								undefined;
 				case IDENTIFIER:
 					if(node.name[0] === "@") {
@@ -63,34 +63,34 @@
 					}
 					return cjs.get(context[node.name]);
 				case MEMBER_EXP:
-					object = get_node_value(node.object, context, lineage);
-					return compute_object_property(object, node.property, context, lineage);
+					object = get_node_value(node.object, context, lineage, curr_bindings);
+					return compute_object_property(object, node.property, context, lineage, curr_bindings);
 				case COMPOUND:
-					return get_node_value(node.body[0], context, lineage);
+					return get_node_value(node.body[0], context, lineage, curr_bindings);
 				case CURR_LEVEL_EXP:
 					object = last(lineage).this_exp;
-					return compute_object_property(object, node.argument, context, lineage);
+					return compute_object_property(object, node.argument, context, lineage, curr_bindings);
 				case PARENT_EXP:
 					object = (lineage && lineage.length > 1) ? lineage[lineage.length - 2].this_exp : undefined;
-					return compute_object_property(object, node.argument, context, lineage);
+					return compute_object_property(object, node.argument, context, lineage, curr_bindings);
 				case CALL_EXP:
 					if(node.callee.type === MEMBER_EXP) {
-						call_context = get_node_value(node.callee.object, context, lineage);
-						object = compute_object_property(call_context, node.callee.property, context, lineage);
+						call_context = get_node_value(node.callee.object, context, lineage, curr_bindings);
+						object = compute_object_property(call_context, node.callee.property, context, lineage, curr_bindings);
 					} else {
 						call_context = root;
-						object = get_node_value(node.callee, context, lineage);
+						object = get_node_value(node.callee, context, lineage, curr_bindings);
 					}
 
 					if(object && isFunction(object)) {
 						args = map(node['arguments'], function(arg) {
-							return get_node_value(arg, context, lineage);
+							return get_node_value(arg, context, lineage, curr_bindings);
 						});
 						return object.apply(call_context, args);
 					}
 			}
 		},
-		create_node_constraint = function(node, context, lineage) {
+		create_node_constraint = function(node, context, lineage, curr_bindings) {
 			var args = arguments;
 			if(node.type === LITERAL) {
 				return get_node_value.apply(root, args);
@@ -99,7 +99,7 @@
 				return get_node_value.apply(root, args);
 			});
 		},
-		get_concatenated_inner_html_constraint = function(children, context, lineage) {
+		get_concatenated_inner_html_constraint = function(children, context, lineage, curr_bindings) {
 			return cjs(function() {
 				return map(children, function(child) {
 					if(child.isDynamicHTML) {
@@ -109,7 +109,7 @@
 					} else if(has(child, "tag")) {
 						return escapeHTML(cjs.get(context[child.tag]));
 					} else {
-						var child_val = child.create(context, lineage);
+						var child_val = child.create(context, lineage, curr_bindings);
 						return child_val.outerHTML;
 					}
 				}).join("");
@@ -129,8 +129,8 @@
 						return rv;
 					});
 		},
-		default_template_create = function(context, parent_dom_node) {
-			var args = [context, [{this_exp: context}]], // context & lineage
+		default_template_create = function(context, parent_dom_node, curr_bindings) {
+			var args = [context, [{this_exp: context}], curr_bindings], // context & lineage
 				container = parent_dom_node || doc.createElement("span"),
 				first_child;
 			if(this.children.length === 1 && (first_child = this.children[0]) && first_child.isHTML) {
@@ -139,17 +139,15 @@
 
 			if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
 				var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
-				cjs.html(container, concatenated_html);
+				curr_bindings.push(concatenated_html, cjs.html(container, concatenated_html));
 			} else {
 				var children_constraint = get_concatenated_children_constraint(this.children, args);
-				cjs.children(container, children_constraint);
+				curr_bindings.push(children_constraint, cjs.children(container, children_constraint));
 			}
 			return container;
 		},
-		default_template_destroy = function(context, parent_dom_node) {
-		},
 		hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/,
-		get_constraint = function(str, context, lineage) {
+		get_constraint = function(str, context, lineage, curr_bindings) {
 			var has_constraint = false,
 				strs = [],
 				index, match_val, len, context_val;
@@ -197,7 +195,7 @@
 				memoized_vals = [];
 
 			return {
-				get: function(context, lineage) {
+				get: function(context, lineage, curr_bindings) {
 					var memo_index = indexWhere(memoized_args, function(margs) {
 						return margs[0]=== context &&
 								margs[1].length === lineage.length &&
@@ -207,8 +205,8 @@
 					});
 					return memoized_vals[memo_index];
 				},
-				set: function(context, lineage, val) {
-					memoized_args.push([context, lineage]);
+				set: function(context, lineage, curr_bindings, val) {
+					memoized_args.push([context, lineage, curr_bindings]);
 					memoized_vals.push(val);
 				}
 			};
@@ -220,14 +218,13 @@
 		create_template = function(template_str) {
 			var stack = [{
 				children: [],
-				create: default_template_create,
-				destroy: default_template_destroy
+				create: default_template_create
 			}], last_pop = false, has_container = false, condition_stack = [], fsm_stack = [];
 
 			parseTemplate(template_str, {
 				startHTML: function(tag, attributes, unary) {
 					last_pop = {
-						create: function(context, lineage) {
+						create: function(context, lineage, curr_bindings) {
 							var args = arguments,
 								element = doc.createElement(tag);
 
@@ -235,7 +232,7 @@
 								if(attr.name === "data-cjs-out" || attr.name === "cjs-out") {
 									context[attr.value] = cjs.inputValue(element);
 								} else {
-									var constraint = get_constraint(attr.value, context, lineage);
+									var constraint = get_constraint(attr.value, context, lineage, curr_bindings);
 									if(is_constraint(constraint)) {
 										cjs.attr(element, attr.name, constraint);
 									} else {
@@ -245,11 +242,11 @@
 							});
 
 							if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
-								var concatenated_html = get_concatenated_inner_html_constraint(this.children, context, lineage);
-								cjs.html(element, concatenated_html);
+								var concatenated_html = get_concatenated_inner_html_constraint(this.children, context, lineage, curr_bindings);
+								curr_bindings.push(concatenated_html, cjs.html(element, concatenated_html));
 							} else {
 								var children_constraint = get_concatenated_children_constraint(this.children, args);
-								cjs.children(element, children_constraint);
+								curr_bindings.push(children_constraint, cjs.children(element, children_constraint));
 							}
 							return element;
 						},
@@ -270,9 +267,7 @@
 				},
 				HTMLcomment: function(str) {
 					last_pop = {
-						create: function() {
-							return doc.createComment(str);
-						},
+						create: function() { return doc.createComment(str); },
 						isText: true,
 						text: str
 					};
@@ -298,10 +293,10 @@
 						if(literal) { type_name = "isDynamicHTML"; setter_name = "html"; }
 						else { type_name = "isText"; setter_name = "text"; }
 						last_pop = {
-							create: function(context, lineage) {
+							create: function(context, lineage, curr_bindings) {
 								var elem = doc.createTextNode(""),
-									val = get_node_value(first_body(parsed_content), context, lineage);
-								cjs[setter_name](elem, val);
+									val = get_node_value(first_body(parsed_content), context, lineage, curr_bindings);
+								curr_bindings.push(cjs[setter_name](elem, val));
 								return elem;
 							},
 							tag: tag
@@ -317,10 +312,10 @@
 							memoized_elems = memoize_dom_elems();
 
 							last_pop = {
-								create: function(context, lineage) {
+								create: function(context, lineage, curr_bindings) {
 									var mvals, mdom, mLastLineage, val_diff, rv = [],
-										val = get_node_value(rest_body(parsed_content), context, lineage),
-										memoized_val = memoized_elems.get(context, lineage);
+										val = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings),
+										memoized_val = memoized_elems.get(context, lineage, curr_bindings);
 
 									if(!isArray(val)) {
 										// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
@@ -337,7 +332,7 @@
 										mvals = [];
 										mdom = [];
 										mLastLineage = [];
-										memoized_elems.set(context, lineage, {val: val, dom: mdom, lineage: mLastLineage});
+										memoized_elems.set(context, lineage, curr_bindings, {val: val, dom: mdom, lineage: mLastLineage});
 									}
 
 									val_diff = get_array_diff(mvals, val, map_aware_array_eq);
@@ -365,7 +360,7 @@
 											lastLineageItem = is_else ? false : {this_exp: v, at: ((v && v.is_obj === IS_OBJ) ? {key: cjs(v.key)} : { index: cjs(index)})},
 											concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
 											vals = map(is_else ? this.else_child.children : this.children, function(child) {
-												var dom_child = child.create(context, concated_lineage);
+												var dom_child = child.create(context, concated_lineage, curr_bindings);
 												return dom_child;
 											});
 										mdom.splice(index, 0, vals);
@@ -393,10 +388,10 @@
 						} else if(tag === "if" || tag === "unless") {
 							memoized_elems = memoize_dom_elems();
 							last_pop = {
-								create: function(context, lineage) {
-									var memoized_val = memoized_elems.get(context, lineage),
+								create: function(context, lineage, curr_bindings) {
+									var memoized_val = memoized_elems.get(context, lineage, curr_bindings),
 										len = this.sub_conditions.length,
-										cond = !!get_node_value(this.condition, context, lineage),
+										cond = !!get_node_value(this.condition, context, lineage, curr_bindings),
 										i = -1, children, memo_index;
 
 									if(this.reverse) {
@@ -409,7 +404,7 @@
 										for(i = 0; i<len; i++) {
 											cond = this.sub_conditions[i];
 
-											if(cond.condition === ELSE_COND || get_node_value(cond.condition, context, lineage)) {
+											if(cond.condition === ELSE_COND || get_node_value(cond.condition, context, lineage, curr_bindings)) {
 												i++; break;
 											}
 										}
@@ -418,10 +413,10 @@
 									if(i < 0) {
 										return [];
 									} else {
-										var memoized_children = memoized_elems.get(context, lineage);
+										var memoized_children = memoized_elems.get(context, lineage, curr_bindings);
 										if(!memoized_children) {
 											memoized_children = [];
-											memoized_elems.set(context, lineage, memoized_children);
+											memoized_elems.set(context, lineage, curr_bindings, memoized_children);
 										}
 
 										if(!memoized_children[i]) {
@@ -431,7 +426,7 @@
 												children = this.sub_conditions[i-1].children;
 											}
 											memoized_children[i] = flatten(map(children, function(child) {
-												return child.create(context, lineage);
+												return child.create(context, lineage, curr_bindings);
 											}), true);
 										}
 
@@ -461,11 +456,11 @@
 							memoized_elems = memoize_dom_elems();
 							var fsm_target = rest_body(parsed_content);
 							last_pop = {
-								create: function(context, lineage) {
-									var fsm = get_node_value(fsm_target, context, lineage),
+								create: function(context, lineage, curr_bindings) {
+									var fsm = get_node_value(fsm_target, context, lineage, curr_bindings),
 										state = fsm.getState(),
 										do_child_create = function(child) {
-											return child.create(context, lineage);
+											return child.create(context, lineage, curr_bindings);
 										}, state_name, memoized_children;
 									if(!lineage) {
 										lineage = [];
@@ -473,10 +468,10 @@
 									for(state_name in this.sub_states) {
 										if(this.sub_states.hasOwnProperty(state_name)) {
 											if(state === state_name) {
-												memoized_children = memoized_elems.get(context, lineage);
+												memoized_children = memoized_elems.get(context, lineage, curr_bindings);
 												if(!memoized_children) {
 													memoized_children = {};
-													memoized_elems.set(context, lineage, memoized_children);
+													memoized_elems.set(context, lineage, curr_bindings, memoized_children);
 												}
 
 												if(!has(memoized_children, state_name)) {
@@ -501,11 +496,11 @@
 							}
 						} else if(tag === "with") {
 							last_pop = {
-								create: function(context, lineage) {
-									var new_context = get_node_value(rest_body(parsed_content), context, lineage),
+								create: function(context, lineage, curr_bindings) {
+									var new_context = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings),
 										concatenated_lineage = lineage.concat({this_exp: new_context});
 									return map(this.children, function(child) {
-										return child.create(new_context, concatenated_lineage);
+										return child.create(new_context, concatenated_lineage, curr_bindings);
 									});
 								},
 								children: []
@@ -532,8 +527,8 @@
 					var partial = partials[tagName];
 					if(partial) {
 						last_pop = {
-							create: function(context, lineage) {
-								var new_context = get_node_value(rest_body(parsed_content), context, lineage);
+							create: function(context, lineage, curr_bindings) {
+								var new_context = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings);
 								return partial(new_context);
 							}
 						};
@@ -546,8 +541,8 @@
 			});
 			return stack.pop();
 		},
-		created_template_values = [],
 		created_template_nodes = [],
+		created_template_bindings = [],
 		template_strs = [],
 		template_values = [],
 		isPolyDOM = function(x) {
@@ -558,12 +553,17 @@
 			else if(isAnyElement(x))			{ return x; }
 			else								{ return false; }
 		},
-		create_and_log_template = function() {
+		create_and_log_template = function(context, parent_dom_node) {
 			var template = this,
-				dom_node = template.create.apply(template, arguments);
+				curr_bindings = [],
+				dom_node = template.create(context, parent_dom_node, curr_bindings);
 			created_template_nodes.push(dom_node);
-			created_template_values.push(template);
+			created_template_bindings.push(curr_bindings);
 			return dom_node;
+		},
+		get_template_bindings = function(dom_node) {
+			var nodeIndex = indexOf(created_template_nodes, dom_node);
+			return nodeIndex >= 0 ? created_template_bindings[nodeIndex] : false;
 		};
 
 	cjs.template = function(template_str) {
@@ -600,10 +600,21 @@
 	cjs.template.destroy = function(dom_node) {
 		var nodeIndex = indexOf(created_template_nodes, dom_node);
 		if(nodeIndex >= 0) {
-			var template = created_template_values[nodeIndex];
+			var bindings = created_template_bindings[nodeIndex];
 			created_template_nodes.splice(nodeIndex, 1);
-			created_template_values.splice(nodeIndex, 1);
+			created_template_bindings.splice(nodeIndex, 1);
+			each(bindings, function(binding) { binding.destroy(); });
 			return true;
 		}
 		return false;
+	};
+	cjs.template.pause = function(dom_node) {
+		var bindings = get_template_bindings(dom_node);
+		each(bindings, function(binding) { if(has(binding, "pause")) { binding.pause(); } });
+		return !!bindings;
+	};
+	cjs.template.resume = function(dom_node) {
+		var bindings = get_template_bindings(dom_node);
+		each(get_template_bindings(dom_node), function(binding) { if(has(binding, "resume")) { binding.resume(); } });
+		return !!bindings;
 	};
