@@ -544,8 +544,6 @@
 					}
 				}
 			});
-			//last_pop = stack.pop();
-			//return bind(last_pop.create, last_pop);
 			return stack.pop();
 		},
 		created_template_values = [],
@@ -556,13 +554,9 @@
 			return is_jquery_obj(x) || isNList(x) || isAnyElement(x);
 		},
 		getFirstDOMChild = function(x) {
-			if(is_jquery_obj(x) || isNList(x)) {
-				return x[0];
-			} else if(isAnyElement(x)) {
-				return x;
-			} else {
-				return false;
-			}
+			if(is_jquery_obj(x) || isNList(x))	{ return x[0]; }
+			else if(isAnyElement(x))			{ return x; }
+			else								{ return false; }
 		},
 		create_and_log_template = function() {
 			var template = this,
@@ -574,9 +568,7 @@
 
 	cjs.template = function(template_str) {
 		if(!isString(template_str)) {
-			if(is_jquery_obj(template_str)) {
-				template_str = template_str.length > 0 ? template_str[0].innerText : "";
-			} else if(nList && template_str instanceof nList) {
+			if(is_jquery_obj(template_str) || isNList(template_str)) {
 				template_str = template_str.length > 0 ? template_str[0].innerText : "";
 			} else if(isElement(template_str)) {
 				template_str = template_str.innerText;
