@@ -48,6 +48,7 @@
 								undefined;
 				case BINARY_EXP:
 				case LOGICAL_EXP:
+					op = binary_operators[node.operator];
 					return op ? op(get_node_value(node.left, context, lineage, curr_bindings), get_node_value(node.right, context, lineage, curr_bindings)) :
 								undefined;
 				case IDENTIFIER:
@@ -541,10 +542,11 @@
 			});
 			return stack.pop();
 		},
-		created_template_nodes = [],
-		created_template_bindings = [],
+		memoized_template_nodes = [],
+		memoized_template_bindings = [],
 		template_strs = [],
 		template_values = [],
+		partials = {},
 		isPolyDOM = function(x) {
 			return is_jquery_obj(x) || isNList(x) || isAnyElement(x);
 		},
@@ -553,17 +555,17 @@
 			else if(isAnyElement(x))			{ return x; }
 			else								{ return false; }
 		},
-		create_and_log_template = function(context, parent_dom_node) {
+		memoize_template = function(context, parent_dom_node) {
 			var template = this,
 				curr_bindings = [],
 				dom_node = template.create(context, parent_dom_node, curr_bindings);
-			created_template_nodes.push(dom_node);
-			created_template_bindings.push(curr_bindings);
+			memoized_template_nodes.push(dom_node);
+			memoized_template_bindings.push(curr_bindings);
 			return dom_node;
 		},
 		get_template_bindings = function(dom_node) {
-			var nodeIndex = indexOf(created_template_nodes, dom_node);
-			return nodeIndex >= 0 ? created_template_bindings[nodeIndex] : false;
+			var nodeIndex = indexOf(memoized_template_nodes, dom_node);
+			return nodeIndex >= 0 ? memoized_template_bindings[nodeIndex] : false;
 		};
 
 	cjs.template = function(template_str) {
@@ -587,22 +589,19 @@
 		}
 
 		if(arguments.length >= 2) { // Create and use the template immediately
-			return create_and_log_template.apply(template, rest(arguments));
+			return memoize_template.apply(template, rest(arguments));
 		} else { // create the template as a function that can be called with a context
-			return bind(create_and_log_template, template);
+			return bind(memoize_template, template);
 		}
 	};
-
-	var partials = {};
-	cjs.template.registerPartial = function(name, value) {
-		partials[name] = value;
-	};
+	cjs.template.create = cjs.template;
+	cjs.template.registerPartial = function(name, value) { partials[name] = value; };
 	cjs.template.destroy = function(dom_node) {
-		var nodeIndex = indexOf(created_template_nodes, dom_node);
+		var nodeIndex = indexOf(memoized_template_nodes, dom_node);
 		if(nodeIndex >= 0) {
-			var bindings = created_template_bindings[nodeIndex];
-			created_template_nodes.splice(nodeIndex, 1);
-			created_template_bindings.splice(nodeIndex, 1);
+			var bindings = memoized_template_bindings[nodeIndex];
+			memoized_template_nodes.splice(nodeIndex, 1);
+			memoized_template_bindings.splice(nodeIndex, 1);
 			each(bindings, function(binding) { binding.destroy(); });
 			return true;
 		}
