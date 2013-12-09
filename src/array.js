@@ -341,6 +341,14 @@
 			});
 		};
 
+		proto.getConstraint = function(key) {
+			return new Constraint(function() {
+				return this.item(cjs.get(key));
+			}, {
+				context: this
+			});
+		};
+
 		// All of these functions will just convert to an array and return that
 		each(["filter", "join", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
 			proto[fn_name] = function () {

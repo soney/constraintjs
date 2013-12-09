@@ -455,6 +455,14 @@
 			}
 		};
 
+		proto.getConstraint = function(key) {
+			return new Constraint(function() {
+				return this.get(cjs.get(key));
+			}, {
+				context: this
+			});
+		};
+
 		// Empty out every entry
 		proto.clear = function (silent) {
 			if (this.size() > 0) { // If I actually have something
