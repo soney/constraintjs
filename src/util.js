@@ -245,7 +245,7 @@
 		if (nativeForEach && obj.forEach === nativeForEach) {
 			obj.forEach(iterator, context);
 		} else if (obj.length === +obj.length) {
-			for (i = 0, l = obj.length; i < l; i += 1) {
+			for (i = 0, l = obj.length; i < l; i++) {
 				if (has(obj, i) && iterator.call(context, obj[i], i, obj) === breaker) { return; }
 			}
 		} else {
@@ -284,11 +284,11 @@
 	};
 
 	var extend = function (obj) {
-		var i, prop, len = arguments.length;
-		var on_each_func = function (val, prop) {
-			obj[prop] = val;
-		};
-		for (i = 1; i < len; i += 1) {
+		var i, prop, len = arguments.length,
+			on_each_func = function (val, prop) {
+				obj[prop] = val;
+			};
+		for (i = 1; i < len; i++) {
 			each(arguments[i], on_each_func);
 		}
 		return obj;
@@ -297,7 +297,7 @@
 	// Return the first item in arr where test is true
 	var indexWhere = function (arr, test, start_index) {
 		var i, len = arr.length;
-		for (i = start_index || 0; i < len; i += 1) {
+		for (i = start_index || 0; i < len; i++) {
 			if (test(arr[i], i)) { return i; }
 		}
 		return -1;
@@ -444,9 +444,9 @@
 
 	// Get where every item came from and went to
 	var array_source_map = function (from, to, equality_check) {
-		equality_check = equality_check || eqeqeq;
 		//Utility functions for array_source_map below
-		var item_aware_equality_check = function (a, b) { return equality_check(a ? a.item : a, b ? b.item : b); },
+		var eq = equality_check || eqeqeq,
+			item_aware_equality_check = function (a, b) { return eq(a ? a.item : a, b ? b.item : b); },
 			indexed_from = map(from, add_indicies),
 			indexed_to = map(to, add_indicies),
 			indexed_common_subsequence = map(indexed_lcs(from, to), add_from_to_indicies),
@@ -461,22 +461,15 @@
 			moved_indicies = map(indexed_moved, get_to),
 			ics_indicies = map(indexed_common_subsequence, get_to),
 			to_mappings = map(to, function (item, index) {
-					var info_index = indexOf(added_indicies, index),
-						info;
+					var info, info_index;
 
-					if (info_index >= 0) {
+					if ((info_index = indexOf(added_indicies, index)) >= 0) {
 						info = indexed_added[info_index];
 						return { to: index, to_item: item, item: item };
-					}
-
-					info_index = indexOf(moved_indicies, index);
-					if (info_index >= 0) {
+					} else if ((info_index = indexOf(moved_indicies, index)) >= 0) {
 						info = indexed_moved[info_index];
 						return { to: index, to_item: item, item: item, from: info.from, from_item: info.from_item };
-					}
-
-					info_index = indexOf(ics_indicies, index);
-					if (info_index >= 0) {
+					} else if ((info_index = indexOf(ics_indicies, index)) >= 0) {
 						info = indexed_common_subsequence[info_index];
 						return { to: index, to_item: item, item: item, from: info.from, from_item: from[info.from] };
 					}
@@ -485,10 +478,10 @@
 		return to_mappings.concat(map(indexed_removed, add_from_and_from_item));
 	};
 
-	var has_from = function(x) { return has(x, "from"); },
-		not_has_from = function(x) { return !has(x, "from"); },
-		has_to = function(x) { return has(x, "to"); },
-		not_has_to = function(x) { return !has(x, "to"); },
+	var has_from = function(x) { return x.hasOwnProperty("from"); },
+		not_has_from = function(x) { return !has_from(x); },
+		has_to = function(x) { return x.hasOwnProperty("to"); },
+		not_has_to = function(x) { return !has_to(x); },
 		has_from_and_to = function(x) { return has_from(x) && has_to(x); },
 		unequal_from_to = function(x) { return has_from_and_to(x) && x.from !== x.to; };
 
