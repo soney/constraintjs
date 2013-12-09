@@ -423,33 +423,34 @@
 			}
 			return this;
 		};
-
 		proto.and = function() {
-			var val = this.get(), i, len;
-			if(val) {
-				len = arguments.length;
-				for(i = 0; i<len; i++) {
-					val = cjs.get(arguments[i]);
-					if(!val) { return false; }
+			var args = ([this]).concat(toArray(arguments)),
+				len = args.length;
+
+			return new Constraint(function() {
+				var i = 0, val;
+				for(;i<len; i++) {
+					if(!(val = cjs.get(args[i]))) {
+						return false;
+					}
 				}
 				return val;
-			}
-			return false;
+			});
 		};
 		proto.or = function() {
-			var val = this.get(), i, len;
-			if(val) {
-				return val;
-			} else {
-				len = arguments.length;
-				for(i = 0; i<len; i++) {
-					val = cjs.get(arguments[i]);
-					if(val) { return val; }
+			var args = ([this]).concat(toArray(arguments)),
+				len = args.length;
+
+			return new Constraint(function() {
+				var i = 0, val;
+				for(;i<len; i++) {
+					if((val = cjs.get(args[i]))) {
+						return val;
+					}
 				}
 				return false;
-			}
+			});
 		};
-
 		var createConstraintModifier = function(modifier_fn) {
 			return function() {
 				var args = arguments;
@@ -460,6 +461,7 @@
 				return rv;
 			};
 		};
+
 		proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
 		proto.sub = createConstraintModifier(function() { return reduce(arguments, binary_operators["-"], 0); });
 		proto.mul = createConstraintModifier(function() { return reduce(arguments, binary_operators["*"], 1); });
