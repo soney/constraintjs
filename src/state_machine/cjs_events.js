@@ -49,9 +49,10 @@
 		};
 	}(CJSEvent));
 
-	var isElementOrWindow = function(elem) { return elem === root || isElement(elem); };
-	var do_trim = function(x) { return x.trim(); };
-	var split_and_trim = function(x) { return map(x.split(" "), do_trim); };
+	var isElementOrWindow = function(elem) { return elem === root || isElement(elem); },
+		do_trim = function(x) { return x.trim(); },
+		split_and_trim = function(x) { return map(x.split(" "), do_trim); },
+		timeout_event_type = "timeout";
 
 	cjs.on = function(event_type) {
 		var rest_args = arguments.length > 1 ? slice.call(arguments, 1) : root,
@@ -66,7 +67,7 @@
 					from_state_selector = new TransitionSelector(true, state_selector, new AnyStateSelector()),
 					on_listener = function() {
 						each(event_type_val, function(event_type) {
-							if(event_type === "timeout") {
+							if(event_type === timeout_event_type) {
 								if(timeout_id) {
 									cTO(timeout_id);
 									timeout_id = false;
@@ -88,7 +89,7 @@
 					off_listener = function() {
 						each(event_type_val, function(event_type) {
 							each(targets, function(target) {
-								if(event_type === "timeout") {
+								if(event_type === timeout_event_type) {
 									if(timeout_id) {
 										cTO(timeout_id);
 										timeout_id = false;

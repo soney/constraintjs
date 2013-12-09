@@ -199,6 +199,8 @@
 		map_aware_array_eq = function(a, b) {
 			return a === b || (a && a.is_obj === IS_OBJ && a.key === b.key && a.value === b.value);
 		},
+		name_regex = /^(data-)?cjs-out$/,
+		on_regex = /^(data-)?cjs-on-(\w+)$/,
 		create_template = function(template_str) {
 			var stack = [{
 				children: [],
@@ -210,11 +212,15 @@
 					last_pop = {
 						create: function(context, lineage, curr_bindings) {
 							var args = arguments,
-								element = doc.createElement(tag);
+								element = doc.createElement(tag),
+								on_regex_match;
 
 							each(attributes, function(attr) {
-								if(attr.name === "data-cjs-out" || attr.name === "cjs-out") {
+								if(attr.name.match(name_regex)) {
 									context[attr.value] = cjs.inputValue(element);
+								} else if((on_regex_match = attr.name.match(on_regex))) {
+									var event_name = on_regex_match[2];
+									element.addEventListener(event_name, context[attr.value]);
 								} else {
 									var constraint = get_constraint(attr.value, context, lineage, curr_bindings);
 									if(is_constraint(constraint)) {
