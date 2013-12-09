@@ -40,8 +40,8 @@
 
 	// Return a unique id when called
 	var uniqueId = (function () {
-		var id = -1;
-		return function () { id += 1; return id; };
+		var id = 0;
+		return function () { return id++; };
 	}());
 
 	// Create a (shallow-cloned) duplicate of an object.
