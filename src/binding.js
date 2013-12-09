@@ -92,12 +92,15 @@
 
 			if(onAdd || onRemove || onMove) {
 				var diff = get_array_diff(old_targets, new_targets);
-				each(diff.added, function(added) {
-				});
-				each(diff.removed, function(removed) {
-				});
-				each(diff.moved, function(moved) {
-				});
+				if(onRemove) {
+					each(onRemove && diff.removed, function(removed) { onRemove(removed.from_item, removed.from); });
+				}
+				if(onAdd) {
+					each(onAdd && diff.added, function(added) { onAdd(added.item, added.to); });
+				}
+				if(onMove) {
+					each(onMove && diff.moved, function(moved) { onMove(moved.item, moved.to_index, moved.from_index); });
+				}
 				old_targets = new_targets;
 			}
 
@@ -110,7 +113,7 @@
 		this.$live_fn = cjs.liven(function() {
 			curr_value = getter();
 			if(this._throttle_delay && !this._timeout_id) {
-				this._timeout_id = root.setTimeout(bind(this._do_update, this), this._throttle_delay);
+				this._timeout_id = sTO(bind(this._do_update, this), this._throttle_delay);
 			} else {
 				this._do_update();
 			}
@@ -130,7 +133,7 @@
 		proto.throttle = function(min_delay) {
 			this._throttle_delay = min_delay > 0 ? min_delay : false;
 			if(this._throttle_delay && this._timeout_id) {
-				root.clearTimeout(this._timeout_id);
+				cTO(this._timeout_id);
 				this._timeout_id = false;
 			}
 			this.$live_fn.run();

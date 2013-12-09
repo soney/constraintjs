@@ -347,7 +347,7 @@
 									each(val_diff.removed, function(removed_info) {
 										var index = removed_info.from,
 											lastLineageItem = mLastLineage[index];
-										mdom.splice(removed_info.from, 1);
+										mdom.splice(index, 1);
 										if(lastLineageItem && lastLineageItem.at) {
 											each(lastLineageItem.at, function(v) {
 												v.destroy(true);

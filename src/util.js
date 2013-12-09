@@ -13,9 +13,10 @@
 		nativeKeys		= Object.keys,
 		nativeFilter	= ArrayProto.filter,
 		nativeMap		= ArrayProto.map,
+		bind			= function (func, context) { return function () { return func.apply(context, arguments); }; }, //Bind a function to a context
 		doc				= root.document,
-		sTO				= root.setTimeout,
-		cTO				= root.clearTimeout;
+		sTO				= bind(root.setTimeout, root),
+		cTO				= bind(root.clearTimeout, root);
 
 	// Establish the object that gets returned to break out of a loop iteration.
 	var breaker = {};
@@ -25,11 +26,6 @@
 		var id = -1;
 		return function () { id += 1; return id; };
 	}());
-
-	//Bind a function to a context
-	var bind = function (func, context) {
-		return function () { return func.apply(context, arguments); };
-	};
 
 	// Create a (shallow-cloned) duplicate of an object.
 	var clone = function(obj) {
@@ -538,8 +534,8 @@
 					key_diff.added.splice(i, 1);
 					key_diff.removed.splice(j, 1);
 					
-					i -= 1;
-					j -= 1;
+					i--;
+					j--;
 					break;
 				}
 			}
@@ -554,8 +550,8 @@
 					value_diff.added.splice(i, 1);
 					value_diff.removed.splice(j, 1);
 					
-					i -= 1;
-					j -= 1;
+					i--;
+					j--;
 					break;
 				}
 			}
@@ -570,8 +566,8 @@
 					key_diff.added.splice(i, 1);
 					value_diff.added.splice(j, 1);
 					
-					i -= 1;
-					j -= 1;
+					i--;
+					j--;
 					break;
 				}
 			}
@@ -586,8 +582,8 @@
 					key_diff.removed.splice(i, 1);
 					value_diff.removed.splice(j, 1);
 					
-					i -= 1;
-					j -= 1;
+					i--;
+					j--;
 					break;
 				}
 			}
@@ -603,8 +599,8 @@
 					key_diff.moved.splice(i, 1);
 					value_diff.moved.splice(j, 1);
 					
-					i -= 1;
-					j -= 1;
+					i--;
+					j--;
 					break;
 				}
 			}
@@ -619,8 +615,8 @@
 					key_diff.index_changed.splice(i, 1);
 					value_diff.index_changed.splice(j, 1);
 					
-					i -= 1;
-					j -= 1;
+					i--;
+					j--;
 					break;
 				}
 			}
@@ -632,19 +628,15 @@
 		var from_keys = keys(from_obj),
 			to_keys = keys(to_obj),
 			from_values = values(from_obj),
-			to_values = values(to_obj);
-		var key_diff = get_array_diff(from_keys, to_keys, equality_check),
+			to_values = values(to_obj),
+			key_diff = get_array_diff(from_keys, to_keys, equality_check),
 			value_diff = get_array_diff(from_values, to_values, equality_check);
 
 		return compute_map_diff(key_diff, value_diff);
 	};
 
-	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/;
-	var fcamelCase = function(all, letter) {
-		return String(letter).toUpperCase();
-	};
 	// Convert dashed to camelCase; used by the css and data modules
 	// Microsoft forgot to hump their vendor prefix (#9572)
-	var camel_case = function(string) {
-		return string.replace( rmsPrefix, "ms-" ).replace(rdashAlpha, fcamelCase);
-	};
+	var rdashAlpha = /-([a-z]|[0-9])/ig, rmsPrefix = /^-ms-/,
+		fcamelCase = function(all, letter) { return String(letter).toUpperCase(); },
+		camel_case = function(string) { return string.replace( rmsPrefix, "ms-" ).replace(rdashAlpha, fcamelCase); };
