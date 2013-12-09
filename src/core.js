@@ -423,6 +423,66 @@
 			}
 			return this;
 		};
+
+		proto.and = function() {
+			var val = this.get(), i, len;
+			if(val) {
+				len = arguments.length;
+				for(i = 0; i<len; i++) {
+					val = cjs.get(arguments[i]);
+					if(!val) { return false; }
+				}
+				return val;
+			}
+			return false;
+		};
+		proto.or = function() {
+			var val = this.get(), i, len;
+			if(val) {
+				return val;
+			} else {
+				len = arguments.length;
+				for(i = 0; i<len; i++) {
+					val = cjs.get(arguments[i]);
+					if(val) { return val; }
+				}
+				return false;
+			}
+		};
+
+		var createConstraintModifier = function(modifier_fn) {
+			return function() {
+				var args = arguments;
+				var rv = new Constraint(function() {
+					return modifier_fn.apply(rv, map(args, cjs.get));
+				});
+				args = ([this]).concat(toArray(args));
+				return rv;
+			};
+		};
+		proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
+		proto.sub = createConstraintModifier(function() { return reduce(arguments, binary_operators["-"], 0); });
+		proto.mul = createConstraintModifier(function() { return reduce(arguments, binary_operators["*"], 1); });
+		proto.div = createConstraintModifier(function() { return reduce(arguments, binary_operators["/"], 1); });
+		each(["abs", "pow", "round", "floor", "ceil", "sqrt", "log", "exp"], function(op_name) {
+			proto[op_name] = createConstraintModifier(bind(Math[op_name], Math));
+		});
+		each({
+			u: {
+				plus: "+", minus: "-", not: "!", bitwiseNot: "~"
+			},
+			bi: {
+				eqeqeq: "===", neqeq: "!==", eqeq: "==", neq: "!=",
+				gt: ">", ge: ">=", lt: "<", le: "<=", mod: "%",
+				xor: "^", bitwiseAnd: "&", bitwiseOr: "|", rightShift: ">>",
+				leftShift: "<<", unsignedRightShift: ">>>"
+			}
+		},	function(ops, operator_prefix) {
+			var op_list = operator_prefix === "u" ? unary_operators : binary_operators;
+			each(ops, function(key, op_name) {
+				proto[op_name] = createConstraintModifier(op_list[key]);
+			});
+		});
 	} (Constraint));
 
 

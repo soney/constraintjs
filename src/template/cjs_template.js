@@ -1,21 +1,4 @@
-	var unary_operators = {
-			"+":	function (a) { return +a; }, "-":	function (a) { return -a; },
-			"~":	function (a) { return ~a; }, "!":	function (a) { return !a; }
-		},
-		binary_operators = {
-			"===":	function (a, b) { return a === b;}, "!==":	function (a, b) { return a !== b; },
-			"==":	function (a, b) { return a == b; }, "!=":	function (a, b) { return a != b; },
-			">":	function (a, b) { return a > b;  }, ">=":	function (a, b) { return a >= b; },
-			"<":	function (a, b) { return a < b;  }, "<=":	function (a, b) { return a <= b; },
-			"+":	function (a, b) { return a + b;  }, "-":	function (a, b) { return a - b; },
-			"*":	function (a, b) { return a * b;  }, "/":	function (a, b) { return a / b; },
-			"%":	function (a, b) { return a % b;  }, "^":	function (a, b) { return a ^ b; },
-			"&&":	function (a, b) { return a && b; }, "||":	function (a, b) { return a || b; },
-			"&":	function (a, b) { return a & b;  }, "|":	function (a, b) { return a | b; },
-			"<<":	function (a, b) { return a << b; }, ">>":	function (a, b) { return a >> b; },
-			">>>":  function (a, b) { return a >>> b;}
-		},
-		child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
+	var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		child_is_text				= function(child)	{ return child.isText; },
 		every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
 		any_child_is_dynamic_html	= function(arr)		{ return indexWhere(arr, child_is_dynamic_html) >= 0; },

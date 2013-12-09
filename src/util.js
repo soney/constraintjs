@@ -12,11 +12,27 @@
 		nativeForEach	= ArrayProto.forEach,
 		nativeKeys		= Object.keys,
 		nativeFilter	= ArrayProto.filter,
+		nativeReduce	= ArrayProto.reduce,
 		nativeMap		= ArrayProto.map,
 		bind			= function (func, context) { return function () { return func.apply(context, arguments); }; }, //Bind a function to a context
 		doc				= root.document,
 		sTO				= bind(root.setTimeout, root),
-		cTO				= bind(root.clearTimeout, root);
+		cTO				= bind(root.clearTimeout, root),
+		unary_operators = { "+":	function (a) { return +a; }, "-":	function (a) { return -a; },
+							"~":	function (a) { return ~a; }, "!":	function (a) { return !a; }
+			},
+		binary_operators = {"===":	function (a, b) { return a === b;}, "!==":	function (a, b) { return a !== b; },
+							"==":	function (a, b) { return a == b; }, "!=":	function (a, b) { return a != b; },
+							">":	function (a, b) { return a > b;  }, ">=":	function (a, b) { return a >= b; },
+							"<":	function (a, b) { return a < b;  }, "<=":	function (a, b) { return a <= b; },
+							"+":	function (a, b) { return a + b;  }, "-":	function (a, b) { return a - b; },
+							"*":	function (a, b) { return a * b;  }, "/":	function (a, b) { return a / b; },
+							"%":	function (a, b) { return a % b;  }, "^":	function (a, b) { return a ^ b; },
+							"&&":	function (a, b) { return a && b; }, "||":	function (a, b) { return a || b; },
+							"&":	function (a, b) { return a & b;  }, "|":	function (a, b) { return a | b; },
+							"<<":	function (a, b) { return a << b; }, ">>":	function (a, b) { return a >> b; },
+							">>>":  function (a, b) { return a >>> b;}
+			};
 
 	// Establish the object that gets returned to break out of a loop iteration.
 	var breaker = {};
@@ -306,6 +322,19 @@
 			if (index >= 0) { arr.splice(index, 1); }
 			return index;
 		};
+	
+	var reduce = function(obj, iterator, memo, context) {
+		var initial = arguments.length > 2;
+		if (!obj) obj = [];
+		if (nativeReduce && obj.reduce === nativeReduce) {
+			if (context) iterator = bind(iterator, context);
+			return initial ? obj.reduce(iterator, memo) : obj.reduce(iterator);
+		}
+		each(obj, function(value, index, list) {
+			memo = iterator.call(context, memo, value, index, list);
+		});
+		return memo;
+	};
 
 	//Longest common subsequence between two arrays, based on:
 	//http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript
