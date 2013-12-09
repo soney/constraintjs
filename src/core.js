@@ -469,10 +469,10 @@
 		});
 		each({
 			u: {
-				plus: "+", minus: "-", not: "!", bitwiseNot: "~"
+				pos: "+", neg: "-", not: "!", bitwiseNot: "~"
 			},
 			bi: {
-				eqeqeq: "===", neqeq: "!==", eqeq: "==", neq: "!=",
+				eqStrct: "===", neqStrict: "!==", eq: "==", neq: "!=",
 				gt: ">", ge: ">=", lt: "<", le: "<=", mod: "%",
 				xor: "^", bitwiseAnd: "&", bitwiseOr: "|", rightShift: ">>",
 				leftShift: "<<", unsignedRightShift: ">>>"

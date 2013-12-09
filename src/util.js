@@ -324,15 +324,14 @@
 		};
 	
 	// Fold down a list of values into a single value
-	var reduce = function(obj, iterator, memo, context) {
+	var reduce = function(obj, iterator, memo) {
 		var initial = arguments.length > 2;
 		if (!obj) obj = [];
 		if (nativeReduce && obj.reduce === nativeReduce) {
-			if (context) iterator = bind(iterator, context);
 			return initial ? obj.reduce(iterator, memo) : obj.reduce(iterator);
 		}
 		each(obj, function(value, index, list) {
-			memo = iterator.call(context, memo, value, index, list);
+			memo = iterator(memo, value, index, list);
 		});
 		return memo;
 	};
