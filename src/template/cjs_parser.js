@@ -33,7 +33,9 @@
 	var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+[a-zA-Z0-9_\-]+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
 		endTag = /^<\/([\-A-Za-z0-9_]+)[^>]*>/,
 		handlebar = /^\{\{([#=!>|{\/])?\s*((?:(?:"[^"]*")|(?:'[^']*')|[^\}])*)\s*(\/?)\}?\}\}/,
-		attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g;
+		attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g,
+		HB_TYPE = "hb",
+		HTML_TYPE = "html";
 		
 	// Empty Elements - HTML 4.01
 	var empty = makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed");
@@ -165,9 +167,7 @@
 					var text = index < 0 ? input_str : input_str.substring(0, index);
 					input_str = index < 0 ? "" : input_str.substring(index);
 					
-					if(handler.chars) {
-						handler.chars(text);
-					}
+					handler.chars(text);
 				}
 			} else {
 				input_str = input_str.replace(new RegExp("(.*)<\/" + stack.last() + "[^>]*>"), replace_fn);
@@ -200,7 +200,7 @@
 			unary = empty[ tagName ] || !!unary;
 
 			if ( !unary ) {
-				stack.push({type: "html", tag: tagName});
+				stack.push({type: HTML_TYPE, tag: tagName});
 			}
 			
 			if (handler.startHTML) {
@@ -224,13 +224,13 @@
 		}
 
 		function parseEndTag(tag, tagName) {
-			popStackUntilTag(tagName, "html");
+			popStackUntilTag(tagName, HTML_TYPE);
 		}
 		function getLatestHandlebarParent() {
 			var i, stack_i;
 			for(i = stack.length - 1; i>= 0; i--) {
 				stack_i = stack[i];
-				if(stack_i.type === "hb") {
+				if(stack_i.type === HB_TYPE) {
 					return stack_i;
 				}
 			}
@@ -251,42 +251,26 @@
 
 			switch (prefix) {
 				case undefined: // unary
-					if(handler.startHB) {
-						handler.startHB(tagName, parsed_content, true, false);
-					}
+					handler.startHB(tagName, parsed_content, true, false);
 					break;
-					/*
-				case "@": // each helper
-					if(handler.startHB) {
-						handler.startHB(tagName, parsed_content, true, false, true);
-					}
-					break;
-					*/
 				case '{': // literal
-					if(handler.startHB) {
-						handler.startHB(tagName, parsed_content, true, true);
-					}
+					handler.startHB(tagName, parsed_content, true, true);
 					break;
 				case '>': // partial
-					if(handler.partialHB) {
-						handler.partialHB(tagName, parsed_content);
-					}
+					handler.partialHB(tagName, parsed_content);
 					break;
 
-				case '!': // comment
-					if(handler.HBComment) {
-						var text = tag.replace(/\{\{!(--)?(.*?)(--)?\}\}/g, "$1");
-						handler.HBComment(text);
-					}
-					break;
-
+				//case '!': // comment
+					//var text = tag.replace(/\{\{!(--)?(.*?)(--)?\}\}/g, "$1");
+					//handler.HBComment(text);
+					//break;
 				case '#': // start block
 					last_stack = getLatestHandlebarParent();
 
 					if(last_stack && has(autoclose_nodes, last_stack.tag)) {
 						var autoclose_node = autoclose_nodes[last_stack.tag];
 						if(autoclose_node.when_open_sibling.indexOf(tagName) >= 0) {
-							popStackUntilTag(last_stack.tag, "hb");
+							popStackUntilTag(last_stack.tag, HB_TYPE);
 							last_stack = getLatestHandlebarParent();
 						}
 					}
@@ -311,14 +295,12 @@
 						}
 					}
 
-					stack.push({type: "hb", tag: tagName});
-					if(handler.startHB) {
-						handler.startHB(tagName, parsed_content, false);
-					}
+					stack.push({type: HB_TYPE, tag: tagName});
+					handler.startHB(tagName, parsed_content, false);
 					break;
 
 				case '/': // end block
-					popStackUntilTag(tagName, "hb");
+					popStackUntilTag(tagName, HB_TYPE);
 					break;
 			}
 		}
@@ -334,7 +316,7 @@
 				// Close all the open elements, up the stack
 				for (i = stack.length - 1; i >= pos; i-- ) {
 					stack_i = stack[i];
-					if(stack_i.type === "hb") {
+					if(stack_i.type === HB_TYPE) {
 						if (handler.endHB) {
 							handler.endHB(stack_i.tag);
 						}
@@ -349,7 +331,7 @@
 				stack.length = pos;
 			}
 
-			if(type === "hb") {
+			if(type === HB_TYPE) {
 				last_closed_hb_tag = tagName;
 			}
 		}

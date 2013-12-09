@@ -3,7 +3,7 @@ module.exports = function(grunt) {
 		src_files = ["src/util.js", "src/core.js", "src/array.js", "src/map.js", "src/liven.js",
 					"src/memoize.js", "src/binding.js", "src/state_machine/cjs_fsm.js",
 					"src/state_machine/cjs_events.js", "src/state_machine/cjs_fsm_constraint.js",
-					"src/template/jsep.js", "src/template/cjs_parser.js","src/template/cjs_template.js"],
+					"src/template/cjs_parser.js","src/template/cjs_template.js", "src/template/jsep.js"],
 		enclosed_src_files = (["src/header.js"]).concat(src_files, "src/footer.js");
 
 	grunt.initConfig({

@@ -10,9 +10,8 @@ var COMPOUND = 'Compound',
 	PARENT_EXP = 'ParentExpression',
 	CURR_LEVEL_EXP = 'CurrLevelExpression',
 	jsep = (function (root) {
-		var unary_ops = ['-', '!', '~', '+'],
-			binary_ops = ['+', '-', '*', '/', '%', '&&', '||', '&', '|', '<<', '>>',
-							'===', '==', '!==', '!=', '>=', '<=',  '<', '>'],
+		var unary_ops = keys(unary_operators),
+			binary_ops = keys(binary_operators),
 			binary_op_len = binary_ops.length,
 			literals = {
 				'true': true,

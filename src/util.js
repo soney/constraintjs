@@ -177,17 +177,8 @@
 	var isElement = function(obj) {
 		return !!(obj && obj.nodeType === 1);
 	};
-	
-	// Is a given value a DOM element?
-	var isCommentElement = function(obj) {
-		return !!(obj && obj.nodeType === 8);
-	};
 
-	// Is a given value a DOM element?
-	var isTextElement = function(obj) {
-		return !!(obj && obj.nodeType === 3);
-	};
-
+	// Any element of any type?
 	var isAnyElement = function(obj) {
 		return !!(obj && (obj.nodeType > 0));
 	};
@@ -309,10 +300,12 @@
 		
 	// Remove an item in an array
 	var remove = function (arr, obj) {
-		var index = indexOf(arr, obj);
-		if (index >= 0) { arr.splice(index, 1); }
-		return index;
-	};
+			return removeIndex(arr, indexOf(arr, obj));
+		},
+		removeIndex = function(arr, index) {
+			if (index >= 0) { arr.splice(index, 1); }
+			return index;
+		};
 
 	//Longest common subsequence between two arrays, based on:
 	//http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript
@@ -373,7 +366,7 @@
 			for(j = 0; j<y_len; j++) {
 				yj = y_clone[j];
 				if (equality_check(xi, yj)) {
-					y_clone.splice(j, 1);
+					removeIndex(y_clone, j);
 					y_len -= 1;
 					// If there's nothing left to subtract, just add the rest of x to diff and return
 					if(y_len === 0) {
@@ -411,7 +404,7 @@
 				yj = y_clone[j];
 				if (equality_check(xi, yj)) {
 					intersection.push([xi, yj]);
-					y_clone.splice(j, 1);
+					removeIndex(y_clone, j);
 					y_len -= 1;
 					break;
 				}
@@ -503,7 +496,7 @@
 			index_changed = filter(source_map, function (info) { return has(info, "from") && has(info, "to") && info.from !== info.to; }),
 			moved = [];
 
-		each(removed, function (info) { rearranged_array.splice(info.from, 1); });
+		each(removed, function (info) { removeIndex(rearranged_array, info.from); });
 		each(added, function (info) { rearranged_array.splice(info.to, 0, info); });
 		
 		each(source_map, function (info, index) {
@@ -519,6 +512,7 @@
 		return { added: added, removed: removed, moved: moved, index_changed: index_changed , mapping: source_map};
 	};
 
+/*
 	var compute_map_diff = function (key_diff, value_diff) {
 		key_diff = clone(key_diff);
 		value_diff = clone(value_diff);
@@ -531,11 +525,8 @@
 				if (added_key.to === removed_key.from) {
 					key_change.push({index: added_key.to, from: removed_key.from_item, to: added_key.item});
 					
-					key_diff.added.splice(i, 1);
-					key_diff.removed.splice(j, 1);
-					
-					i--;
-					j--;
+					removeIndex(key_diff.added, i--);
+					removeIndex(key_diff.removed, j);
 					break;
 				}
 			}
@@ -547,11 +538,8 @@
 				if (added_value.to === removed_value.from) {
 					value_change.push({index: added_value.to, from: removed_value.from_item, to: added_value.item});
 					
-					value_diff.added.splice(i, 1);
-					value_diff.removed.splice(j, 1);
-					
-					i--;
-					j--;
+					removeIndex(value_diff.added, i--);
+					removeIndex(value_diff.removed, j);
 					break;
 				}
 			}
@@ -563,11 +551,8 @@
 				if (added_key.to === added_val.to) {
 					set.push({index: added_key.to, key: added_key.item, value: added_val.item});
 		
-					key_diff.added.splice(i, 1);
-					value_diff.added.splice(j, 1);
-					
-					i--;
-					j--;
+					removeIndex(key_diff.added, i--);
+					removeIndex(value_diff.added, j);
 					break;
 				}
 			}
@@ -579,11 +564,8 @@
 				if (removed_key.to === removed_val.to) {
 					unset.push({from: removed_key.from, key: removed_key.from_item, value: removed_val.from_item});
 
-					key_diff.removed.splice(i, 1);
-					value_diff.removed.splice(j, 1);
-					
-					i--;
-					j--;
+					removeIndex(key_diff.removed, i--);
+					removeIndex(value_diff.removed, j);
 					break;
 				}
 			}
@@ -596,11 +578,8 @@
 				if (moved_key.to === moved_val.to && moved_key.from === moved_val.from) {
 					moved.push({from: moved_key.from, to: moved_key.to, key: moved_key.item, value: moved_val.item, insert_at: moved_key.insert_at});
 
-					key_diff.moved.splice(i, 1);
-					value_diff.moved.splice(j, 1);
-					
-					i--;
-					j--;
+					removeIndex(key_diff.moved, i--);
+					removeIndex(value_diff.moved, j);
 					break;
 				}
 			}
@@ -612,11 +591,9 @@
 				if (index_changed_key.to === index_changed_val.to && index_changed_key.from === index_changed_val.from) {
 					index_changed.push({from: index_changed_key.from, to: index_changed_key.to, key: index_changed_key.item, value: index_changed_val.item});
 
-					key_diff.index_changed.splice(i, 1);
-					value_diff.index_changed.splice(j, 1);
+					removeIndex(key_diff.index_changed, i--);
+					removeIndex(value_diff.index_changed, j);
 					
-					i--;
-					j--;
 					break;
 				}
 			}
@@ -634,6 +611,7 @@
 
 		return compute_map_diff(key_diff, value_diff);
 	};
+	*/
 
 	// Convert dashed to camelCase; used by the css and data modules
 	// Microsoft forgot to hump their vendor prefix (#9572)

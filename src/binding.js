@@ -69,9 +69,9 @@
 	var Binding = function(options) {
 		var targets = options.targets,
 			initialValue = options.initialValue,
-			onAdd = isFunction(options.onAdd) ? options.onAdd : false,
-			onRemove = isFunction(options.onRemove) ? options.onRemove : false,
-			onMove = isFunction(options.onMove) ? options.onMove : false,
+			onAdd = options.onAdd,
+			onRemove = options.onRemove,
+			onMove = options.onMove,
 			setter = options.setter,
 			getter = options.getter,
 			init_val = options.init_val;
@@ -92,15 +92,9 @@
 
 			if(onAdd || onRemove || onMove) {
 				var diff = get_array_diff(old_targets, new_targets);
-				if(onRemove) {
-					each(onRemove && diff.removed, function(removed) { onRemove(removed.from_item, removed.from); });
-				}
-				if(onAdd) {
-					each(onAdd && diff.added, function(added) { onAdd(added.item, added.to); });
-				}
-				if(onMove) {
-					each(onMove && diff.moved, function(moved) { onMove(moved.item, moved.to_index, moved.from_index); });
-				}
+				each(onRemove && diff.removed, function(removed) { onRemove(removed.from_item, removed.from); });
+				each(onAdd && diff.added, function(added) { onAdd(added.item, added.to); });
+				each(onMove && diff.moved, function(moved) { onMove(moved.item, moved.to_index, moved.from_index); });
 				old_targets = new_targets;
 			}
 
@@ -207,15 +201,9 @@
 		return map(flatten(arg_val_arr, true), make_node);
 	}, function(element, value, old_value) {
 		var ad = get_array_diff(old_value, value);
-		each(ad.removed, function(removed_info) {
-			remove_index(element, removed_info.from);
-		});
-		each(ad.added, function(added_info) {
-			insert_at(added_info.item, element, added_info.to);
-		});
-		each(ad.moved, function(moved_info) {
-			move_child(element, moved_info.to_index, moved_info.from_index);
-		});
+		each(ad.removed, function(removed_info) { remove_index(element, removed_info.from); });
+		each(ad.added, function(added_info) { insert_at(added_info.item, element, added_info.to); });
+		each(ad.moved, function(moved_info) { move_child(element, moved_info.to_index, moved_info.from_index); });
 	}, function(element) {
 		return toArray(element.childNodes);
 	});

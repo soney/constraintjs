@@ -28,8 +28,8 @@
 	cjs.version = "<%= version %>"; // This template will be filled in by the builder
 	cjs.__debug = false;
 
-	cjs.array_diff = get_array_diff; // expose these two useful functions
-	cjs.map_diff = get_map_diff;
+	cjs.arrayDiff = get_array_diff; // expose this useful function
+	//cjs.mapDiff = get_map_diff;
 	cjs.toString = function() { return "ConstraintJS v" + cjs.version; };
 
 	if(has(root, "cjs")) { // If there was a previous cjs property...
@@ -276,13 +276,7 @@
 			}
 		},
 		remove_from_call_stack: function(info) {
-			var i = 0, len = this.nullified_call_stack.length;
-			for(; i < len ; i += 1) {
-				if(this.nullified_call_stack[i] === info) {
-					this.nullified_call_stack.splice(i, 1);
-					return;
-				}
-			}
+			remove(this.nullified_call_stack, info);
 		}
 	};
 

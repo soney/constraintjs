@@ -1,6 +1,6 @@
 	var unary_operators = {
-			"-":	function (a) { return -a; }, "!":	function (a) { return !a; },
-			"~":	function (a) { return ~a; }
+			"+":	function (a) { return +a; }, "-":	function (a) { return -a; },
+			"~":	function (a) { return ~a; }, "!":	function (a) { return !a; }
 		},
 		binary_operators = {
 			"===":	function (a, b) { return a === b;}, "!==":	function (a, b) { return a !== b; },
