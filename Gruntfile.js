@@ -23,7 +23,8 @@ module.exports = function(grunt) {
 					report: 'gzip',
 					sourceMapIn: "build/cjs.js.map",
 					sourceMap: "build/cjs.min.js.map",
-					sourceMappingURL: "cjs.min.js.map"
+					sourceMappingURL: "cjs.min.js.map",
+					sourceMapPrefix: 1
 				},
 				src: "build/cjs.js", // Use concatenated files
 				dest: "build/cjs.min.js"
@@ -33,7 +34,8 @@ module.exports = function(grunt) {
 					banner: '/*<%= pkg.name %> - v<%= pkg.version %>*/\n',
 					sourceMap: "build/cjs.min.js.map",
 					sourceMappingURL: "cjs.min.js.map",
-					sourceMapRoot: '..'
+					sourceMapRoot: '..',
+					sourceMapPrefix: 1
 				},
 				src: "build/cjs.js", // Use concatenated files
 				dest: "build/cjs.min.js"
