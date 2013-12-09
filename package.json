@@ -2,7 +2,7 @@
 	"name": "ConstraintJS",
 	"description": "Constraint library for JavaScript",
 	"version": "0.9.0",
-	"author": "Stephen Oney (Carnegie Mellon)",
+	"author": "Stephen Oney",
 	"repository": {
 		"type" : "git",
 		"url" : "https://github.com/soney/ConstraintJS"
