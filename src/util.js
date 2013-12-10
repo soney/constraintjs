@@ -50,10 +50,10 @@
 		return isArray(obj) ? obj.slice() : extend({}, obj);
 	};
 
+	// Returns the keys of an object
 	var keys = nativeKeys || function (obj) {
 		if (obj !== Object(obj)) { throw new TypeError('Invalid object'); }
-		var keys = [];
-		var key;
+		var keys = [], key;
 		for (key in obj) {
 			if (obj.hasOwnProperty(key)) {
 				keys[keys.length] = key;
@@ -405,7 +405,10 @@
 		return diff;
 	};
 
-	// Returns the items that are in both x and y
+	// Returns the items that are in both x and y, but also accounts for the count of equivalent items (as defined by equality_check)
+	// Examples:
+	// x = [1,2,2,3] y = [1,2,4] -> [1,2]
+	// x = [1,1,1]   y = [1,1]   -> [1,1]
 	var dualized_intersection = function (x, y, equality_check) {
 		var i, j, xi,
 			y_clone = clone(y),
@@ -478,22 +481,23 @@
 		return to_mappings.concat(map(indexed_removed, add_from_and_from_item));
 	};
 
+	// These utility functions help compute the array diff (without having to re-declare them every time get_array_diff is called
 	var has_from = function(x) { return x.hasOwnProperty("from"); },
 		not_has_from = function(x) { return !has_from(x); },
 		has_to = function(x) { return x.hasOwnProperty("to"); },
 		not_has_to = function(x) { return !has_to(x); },
 		has_from_and_to = function(x) { return has_from(x) && has_to(x); },
-		unequal_from_to = function(x) { return has_from_and_to(x) && x.from !== x.to; };
-
-	var sort_by_from_fn = function(a, b) {
-		var a_has_from = has_from(a),
-			b_has_from = has_from(b);
-		if (a_has_from && b_has_from) { return a.from - b.from; }
-		else if (a_has_from && !b_has_from) { return -1; }
-		else if (!a_has_from && b_has_from) { return 1; }
-		else { return 0; }
-		// could alternatively return: b_has_from - a_has_from
-	};
+		unequal_from_to = function(x) { return has_from_and_to(x) && x.from !== x.to; },
+		sort_by_from_fn = function(a, b) {
+			/* This is equivalent to (but faster than):
+			 * if (a_has_from && b_has_from) { return a.from - b.from; }
+			 * else if (a_has_from && !b_has_from) { return -1; }
+			 * else if (!a_has_from && b_has_from) { return 1; }
+			 * else { return 0; }
+			 */
+			var a_has_from = has_from(a), b_has_from = has_from(b);
+			return a_has_from && b_has_from ? a.from - b.from : b_has_from - a_has_from;
+		};
 
 	/*
 	get_array_diff returns an object with attributes:

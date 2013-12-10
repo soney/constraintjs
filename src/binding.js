@@ -1,4 +1,4 @@
-	var make_node = function(item) {
+	var make_node = function(item) { // Check if the argument is a DOM node or create a new textual node with its contents
 			if(isAnyElement(item)) {
 				return item;
 			} else {
@@ -7,6 +7,7 @@
 			}
 		},
 		insert_at = function(child_node, parent_node, index) {
+			// Utility function to insert child_node as the index-th child of parent_node
 			var children = parent_node.childNodes;
 			if(children.length <= index) {
 				parent_node.appendChild(child_node);
@@ -16,12 +17,14 @@
 			}
 		},
 		remove_node = function(child_node) {
+			// Utility to remove a child DOM node
 			var parentNode = child_node.parentNode;
 			if(parentNode !== null) {
 				parentNode.removeChild(child_node);
 			}
 		},
 		remove_index = function(parent_node, index) {
+			// Utility to remove a child DOM node by index
 			var children = parent_node.childNodes, child_node;
 			if(children.length > index) {
 				child_node = children[index];
@@ -29,6 +32,7 @@
 			}
 		},
 		move_child = function(parent_node, to_index, from_index) {
+			// Utility to move a child DOM node by indicies
 			var children = parent_node.childNodes;
 			if(children.length > from_index) {
 				var child_node = children[from_index];
@@ -66,50 +70,62 @@
 			}
 		};
 
+	// A binding calls some arbitrary functions passed into options. It is responsible for keeping some aspect of a
+	// DOM node in line with a constraint value. For example, it might keep an element's class name in sync with a
+	// class_name constraint
 	var Binding = function(options) {
-		var targets = options.targets,
-			initialValue = options.initialValue,
-			onAdd = options.onAdd,
-			onRemove = options.onRemove,
-			onMove = options.onMove,
-			setter = options.setter,
-			getter = options.getter,
-			init_val = options.init_val;
+		var targets = options.targets, // the DOM nodes
+			onAdd = options.onAdd, // optional function to be called when a new target is added
+			onRemove = options.onRemove, // optional function to be called when a target is removed
+			onMove = options.onMove, // optional function to be called when a target is moved
+			setter = options.setter, // a function that sets the attribute value
+			getter = options.getter, // a function that gets the attribute value
+			init_val = options.init_val, // the value of the attribute before the binding was set
+			curr_value, // used in live fn
+			last_value, // used in live fn
+			old_targets = [], // used in live fn
+			onDestroy = options.onDestroy, // a function to be called when the binding is destroyed
+			// create a separate function to 
+			do_update = function() {
+				this._timeout_id = false; // Make it clear that I don't have a timeout set
+				var new_targets = filter(get_dom_array(targets), isAnyElement); // update the list of targets
 
-		this._throttle_delay = false;
-		this._timeout_id = false;
+				if(onAdd || onRemove || onMove) { // If the user passed in anything to call when targets change, call it
+					var diff = get_array_diff(old_targets, new_targets);
+					each(onRemove && diff.removed, function(removed) { onRemove(removed.from_item, removed.from); });
+					each(onAdd && diff.added, function(added) { onAdd(added.item, added.to); });
+					each(onMove && diff.moved, function(moved) { onMove(moved.item, moved.to_index, moved.from_index); });
+					old_targets = new_targets;
+				}
 
-		var curr_value, last_value;
-		if(isFunction(init_val)) {
+				// For every target, update the attribute
+				each(new_targets, function(target) {
+					setter(target, curr_value, last_value);
+				});
+
+				// track the last value so that next time we call diff
+				last_value = curr_value;
+			};
+
+		this.onDestroy = onDestroy;
+		this._throttle_delay = false; // Optional throtling to improve performance
+		this._timeout_id = false; // tracks the timeout that helps throttle
+
+		if(isFunction(init_val)) { // If init_val is a getter, call it on the first element
 			last_value = init_val(get_dom_array(targets[0]));
-		} else {
+		} else { // Otherwise, just take it as is
 			last_value = init_val;
 		}
-		var old_targets = [];
-		this._do_update = function() {
-			this._timeout_id = false;
-			var new_targets = filter(get_dom_array(targets), isAnyElement);
-
-			if(onAdd || onRemove || onMove) {
-				var diff = get_array_diff(old_targets, new_targets);
-				each(onRemove && diff.removed, function(removed) { onRemove(removed.from_item, removed.from); });
-				each(onAdd && diff.added, function(added) { onAdd(added.item, added.to); });
-				each(onMove && diff.moved, function(moved) { onMove(moved.item, moved.to_index, moved.from_index); });
-				old_targets = new_targets;
-			}
-
-			each(new_targets, function(target) {
-				setter(target, curr_value, last_value);
-			});
-			last_value = curr_value;
-		};
 
 		this.$live_fn = cjs.liven(function() {
-			curr_value = getter();
-			if(this._throttle_delay && !this._timeout_id) {
-				this._timeout_id = sTO(bind(this._do_update, this), this._throttle_delay);
-			} else {
-				this._do_update();
+			curr_value = getter(); // get the value once and inside of live fn to make sure a dependency is added
+
+			if(this._throttle_delay) { // We shouldn't update values right away
+				if(!this._timeout_id) { // If there isn't any timeout set yet, then set a timeout to delay the call to do update
+					this._timeout_id = sTO(bind(do_update, this), this._throttle_delay);
+				}
+			} else { // we can update the value right away if no throttle delay is set
+				do_update.call(this);
 			}
 		}, {
 			context: this
@@ -118,188 +134,191 @@
 
 	(function(my) {
 		var proto = my.prototype;
-		proto.pause = function() {
-			this.$live_fn.pause();
-		};
-		proto.resume = function() {
-			this.$live_fn.resume();
-		};
-		proto.throttle = function(min_delay) {
-			this._throttle_delay = min_delay > 0 ? min_delay : false;
-			if(this._throttle_delay && this._timeout_id) {
-				cTO(this._timeout_id);
+		proto.pause = function() { this.$live_fn.pause(); }; // Pause binding (no updates to the attribute until resume is called)
+		proto.resume = function() { this.$live_fn.resume(); }; // Resume the binding (after pause)
+		proto.throttle = function(min_delay) { // require at least min_delay ms between setting the attribute
+			this._throttle_delay = min_delay > 0 ? min_delay : false; // Make sure it's positive
+			if(this._timeout_id && !this._throttle_delay) { // If it was speicfied that there should be no delay and we are waiting for a re-eval
+				cTO(this._timeout_id); // then prevent that re-eval
 				this._timeout_id = false;
 			}
+			// regardless, run the live fn again
 			this.$live_fn.run();
 			return this;
 		};
 		proto.destroy = function() {
 			this.$live_fn.destroy();
+			if(this.onDestroy) {
+				this.onDestroy();
+			}
 		};
 	}(Binding));
 
+	// Creates a type of binding that accepts any number of arguments and then sets an attribute's value to depend on
+	// every element that was passed in
 	var create_list_binding = function(list_binding_getter, list_binding_setter, list_binding_init_value) {
-		return function(elements) {
-			var args = slice.call(arguments, 1);
-			var val = cjs(function() {
-				return list_binding_getter(args);
-			});
+			return function(elements) { // The first argument is a list of elements
+				var args = slice.call(arguments, 1), // and the rest are values
+					val = cjs(function() { // Create a constraint so that the binding knows of any changes
+						return list_binding_getter(args);
+					});
 
-			var binding = new Binding({
-				targets: elements,
-				getter: function() { return val.get(); },
-				setter: function(element, value, old_value) {
-					list_binding_setter(element, value, old_value);
-				},
-				init_val: list_binding_init_value
+				var binding = new Binding({
+					targets: elements,
+					getter: bind(val.get, val), // use the constraint's value as the getter
+					setter: list_binding_setter,
+					init_val: list_binding_init_value,
+					onDestroy: function() {
+						val.destroy(); // Clean up the constraint when we are done
+					}
+				});
+				return binding;
+			};
+		},
+		create_textual_binding = function(setter) { // the text value of a node is set to the concatenation of every argument
+			return create_list_binding(function(args) {
+				return map(args, cjs.get).join("");
+			}, function(element, value) {
+				setter(element, value);
 			});
-			return binding;
+		},
+		// a binding that accepts either a key and a value or an object with any number of keys and values
+		create_obj_binding = function(obj_binding_setter) {
+			return function(elements) {
+				var vals,
+					args = slice.call(arguments, 1);
+				if(args.length === 0) { // need at least one argument
+					return;
+				} else if(args.length === 1) { // an object with keys and values was passed in
+					vals = args[0];
+				} else if(args.length > 1) { // the first argument was the key, the second was a value
+					vals = {};
+					vals[args[0]] = args[1];
+				}
+
+				var binding = new Binding({
+					targets: elements,
+					setter: function(element, value) {
+						each(value, function(v, k) {
+							obj_binding_setter(element, k, v);
+						});
+					},
+					getter: function() {
+						if(is_map(vals)) {
+							return vals.toObject();
+						} else {
+							var rv = {};
+							each(vals, function(v, k) {
+								rv[k] = cjs.get(v);
+							});
+							return rv;
+						}
+					}
+				});
+
+				return binding;
+			};
 		};
-	};
-	
-	var create_textual_binding = function(setter) {
-		return create_list_binding(function(args) {
-			return map(args, cjs.get).join("");
-		}, function(element, value) {
-			setter(element, value);
-		});
-	};
-	var text_binding = create_textual_binding(function(element, value) {
+
+	var text_binding = create_textual_binding(function(element, value) { // set the escaped text of a node
 			element.textContent = value;
 		}),
-		html_binding = create_textual_binding(function(element, value) {
+		html_binding = create_textual_binding(function(element, value) { // set the non-escaped inner HTML of a node
 			element.innerHTML = value;
 		}),
-		val_binding = create_textual_binding(function(element, value) {
+		val_binding = create_textual_binding(function(element, value) { // set the value of a ndoe
 			element.val = value;
 		}),
-		class_binding = create_list_binding(function(args) {
-			var arg_val_arr = map(args, function(arg) {
-				return cjs.get(arg);
-			});
+		class_binding = create_list_binding(function(args) { // set the class of a node
+			return flatten(map(args, cjs.get), true);
+		}, function(element, value, old_value) {
+			// Compute difference so that old class values remain
+			var ad = get_array_diff(old_value, value),
+				curr_class_name = " " + element.className + " "; // add spaces so that the replace regex doesn't need extra logic
 
-			return flatten(arg_val_arr, true);
+			// take out all of the removed classes
+			each(ad.removed, function(removed_info) { curr_class_name = curr_class_name.replace(" " + removed_info.from_item + " ", " "); });
+			// and add all of the added classes
+			curr_class_name += map(ad.added, function(x) { return x.item; }).join(" ");
+
+			curr_class_name = curr_class_name.trim(); // and trim to remove extra spaces
+
+			element.className = curr_class_name; // finally, do the work of setting the class
+		}, []), // say that we don't have any classes to start with
+
+		children_binding = create_list_binding(function(args) {
+			var arg_val_arr = map(args, cjs.get);
+			return map(flatten(arg_val_arr, true), make_node);
 		}, function(element, value, old_value) {
 			var ad = get_array_diff(old_value, value);
-			var curr_class_name = " " + element.className + " ";
-			var added_classes = map(ad.added, function(added_info) {
-				return added_info.item;
-			}).join(" ");
-			each(ad.removed, function(removed_info) {
-				curr_class_name = curr_class_name.replace(" " + removed_info.from_item + " ", " ");
-			});
-			curr_class_name += added_classes;
-			curr_class_name = curr_class_name.trim();
-			element.className = curr_class_name;
-		}, []);
-
-	var children_binding = create_list_binding(function(args) {
-		var arg_val_arr = map(args, function(arg) {
-			return cjs.get(arg);
-		});
-
-		return map(flatten(arg_val_arr, true), make_node);
-	}, function(element, value, old_value) {
-		var ad = get_array_diff(old_value, value);
-		each(ad.removed, function(removed_info) { remove_index(element, removed_info.from); });
-		each(ad.added, function(added_info) { insert_at(added_info.item, element, added_info.to); });
-		each(ad.moved, function(moved_info) { move_child(element, moved_info.to_index, moved_info.from_index); });
-	}, function(element) {
-		return toArray(element.childNodes);
-	});
-
-	var create_obj_binding = function(obj_binding_setter) {
-		return function(elements) {
-			var vals,
-				args = slice.call(arguments, 1);
-			if(args.length === 0) {
-				return;
-			} else if(args.length === 1) {
-				vals = args[0];
-			} else if(args.length > 1) {
-				vals = {};
-				vals[args[0]] = args[1];
-			}
-
-			var binding = new Binding({
-				targets: elements,
-				setter: function(element, value) {
-					each(value, function(v, k) {
-						obj_binding_setter(element, k, v);
-					});
-				},
-				getter: function() {
-					var obj_vals, rv = {};
-					if(is_map(vals)) {
-						obj_vals = vals.toObject();
-					} else {
-						obj_vals = vals;
-					}
-					each(obj_vals, function(v, k) {
-						rv[k] = cjs.get(v);
-					});
-					return rv;
-				}
-			});
-
-			return binding;
-		};
-	};
-	var css_binding = create_obj_binding(function(element, key, value) {
+			each(ad.removed, function(removed_info) { remove_index(element, removed_info.from); });
+			each(ad.added, function(added_info) { insert_at(added_info.item, element, added_info.to); });
+			each(ad.moved, function(moved_info) { move_child(element, moved_info.to_index, moved_info.from_index); });
+		}, function(element) {
+			return toArray(element.childNodes);
+		}),
+		// set style attributes of a dom node
+		css_binding = create_obj_binding(function(element, key, value) {
 			element.style[camel_case(key)] = value;
 		}),
+		// set regular attributes of a dom node
 		attr_binding = create_obj_binding(function(element, key, value) {
 			element.setAttribute(key, value);
 		});
 
-	extend(cjs, {
-		"text": text_binding,
-		"html": html_binding,
-		"val": val_binding,
-		"class": class_binding,
-		"children": children_binding,
-		"attr": attr_binding,
-		"css": css_binding
-	});
-
-	var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"];
-	cjs.inputValue = function(inps) {
-		var arr_inp;
-		if(isElement(inps)) {
-			inps = [inps];
-			arr_inp = false;
-		} else {
-			arr_inp = true;
-		}
-        var constraint = cjs(function() {
-				if(arr_inp) {
-					return map(inps, function(inp) { return inp.value; });
-				} else {
-					return inps[0].value;
-				}
-			}),
-			len = inps.length,
-			on_change = bind(constraint.invalidate, constraint),
-			activate = function() {
-				each(inp_change_events, function(event_type) {
-					each(inps, function(inp) {
-						inp.addEventListener(event_type, on_change);
+	var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
+		// take an input element and create a constraint whose value is constrained to the value of that input element
+		getInputValueConstraint = function(inps) {
+			var arr_inp; // tracks if the input is a list of items
+			if(isElement(inps)) {
+				inps = [inps];
+				arr_inp = false;
+			} else {
+				arr_inp = true;
+			}
+			// the constraint should just return the value of the input element
+			var constraint = cjs(function() {
+					if(arr_inp) {
+						return map(inps, function(inp) { return inp.value; }); // if it's an array, return every value
+					} else {
+						return inps[0].value; // otherwise, just reutrn the first value
+					}
+				}),
+				len = inps.length,
+				on_change = bind(constraint.invalidate, constraint), // when any input event happens, invalidate the constraint
+				activate = function() { // add all the event listeners for every input and event type
+					each(inp_change_events, function(event_type) {
+						each(inps, function(inp) {
+							inp.addEventListener(event_type, on_change);
+						});
 					});
-				});
-			},
-			deactivate = function() {
-				each(inp_change_events, function(event_type) {
-					each(inps, function(inp) {
-						inp.removeEventListener(event_type, on_change);
+				},
+				deactivate = function() { // clear all the event listeners for every input and event type
+					each(inp_change_events, function(event_type) {
+						each(inps, function(inp) {
+							inp.removeEventListener(event_type, on_change);
+						});
 					});
-				});
-			},
-			oldDestroy = constraint.destroy;
+				},
+				oldDestroy = constraint.destroy;
 
-		constraint.destroy = function() {
-			deactivate();
-			oldDestroy.call(constraint);
+			// when the constraint is destroyed, remove the event listeners
+			constraint.destroy = function() {
+				deactivate();
+				oldDestroy.call(constraint);
+			};
+
+			activate();
+			return constraint;
 		};
-        activate();
-        return constraint;
-	};
+
+	extend(cjs, {
+		text: text_binding,
+		html: html_binding,
+		val: val_binding,
+		children: children_binding,
+		attr: attr_binding,
+		css: css_binding,
+		"class": class_binding,
+		inputValue: getInputValueConstraint
+	});

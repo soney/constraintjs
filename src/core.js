@@ -8,6 +8,7 @@
 		is_constraint,
 		is_array,
 		is_map,
+		old_cjs = root.cjs,
 		cjs = function (arg0, arg1) { // The star of the show!
 			// Utility function that will look at the type of the first argument an create the proper kind of value
 			if(isArray(arg0)) {
@@ -25,27 +26,6 @@
 			}
 		};
 
-	cjs.version = "<%= version %>"; // This template will be filled in by the builder
-	cjs.__debug = false;
-
-	cjs.arrayDiff = get_array_diff; // expose this useful function
-	//cjs.mapDiff = get_map_diff;
-	cjs.toString = function() { return "ConstraintJS v" + cjs.version; };
-
-	if(has(root, "cjs")) { // If there was a previous cjs property...
-		// ...then track it and allow cjs.noConflict to restore its previous value
-		var old_cjs = root.cjs;
-		cjs.noConflict = function() {
-			root.cjs = old_cjs;
-			return cjs; // and return a reference to cjs if the user wants it
-		};
-	} else {
-		// ...otherwise, cjs.noConflict will just delete the old value
-		cjs.noConflict = function() {
-			delete root.cjs;
-			return cjs;
-		};
-	}
 	//
 	// ============== CONSTRAINT SOLVER ============== 
 	//
@@ -423,6 +403,11 @@
 			}
 			return this;
 		};
+
+		// And/or was created separate from createConstraintModifier because we don't want every argument to always be evaluated. For instance:
+		// false && a() should not evaluate a(), just as
+		// true || b() should not evaluate b()
+		// Returns false if this or any passed in value is falsy. Otherwise, returns the lasat value passed in
 		proto.and = function() {
 			var args = ([this]).concat(toArray(arguments)),
 				len = args.length;
@@ -430,13 +415,17 @@
 			return new Constraint(function() {
 				var i = 0, val;
 				for(;i<len; i++) {
+					// If any value is falsy, return false
 					if(!(val = cjs.get(args[i]))) {
 						return false;
 					}
 				}
+				// Otherwise, return the last value fetched
 				return val;
 			});
 		};
+
+		// Returns this value or the value of the first argument that is truthy. Returns false if this and nothing else is truthy
 		proto.or = function() {
 			var args = ([this]).concat(toArray(arguments)),
 				len = args.length;
@@ -444,40 +433,53 @@
 			return new Constraint(function() {
 				var i = 0, val;
 				for(;i<len; i++) {
+					// Return the first value (including this) that is truthy
 					if((val = cjs.get(args[i]))) {
 						return val;
 					}
 				}
+				//Nothing was truthy, so return false
 				return false;
 			});
 		};
+
+		// Creates a new function that takes in any number of arguments and creates a constraint whose result is calling modifier_fn on
+		// 'this' plus every argument
 		var createConstraintModifier = function(modifier_fn) {
 			return function() {
-				var args = arguments;
-				var rv = new Constraint(function() {
-					return modifier_fn.apply(rv, map(args, cjs.get));
+				var args = ([this]).concat(toArray(arguments));
+				return new Constraint(function() {
+					return modifier_fn.apply(this, map(args, cjs.get));
 				});
-				args = ([this]).concat(toArray(args));
-				return rv;
 			};
 		};
 
+		// For all the arithmetic operators, allow any number of arguments to be passed in. For example:
+		// x = y.add(1,2,z); means x <- y + 1 + 2 + z
+		// x = y.sub(1,2,z); means x <- y - 1 - 2 - z
+		// x = y.mul(1,2,z); means x <- y * 1 * 2 * z
+		// x = y.div(1,2,z); means x <- y / 1 / 2 / z
+		// Use reduce with the binary operators to allow this
 		proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
 		proto.sub = createConstraintModifier(function() { return reduce(arguments, binary_operators["-"], 0); });
 		proto.mul = createConstraintModifier(function() { return reduce(arguments, binary_operators["*"], 1); });
 		proto.div = createConstraintModifier(function() { return reduce(arguments, binary_operators["/"], 1); });
+
+		// Expose some useful math functions as modifiers
 		each(["abs", "pow", "round", "floor", "ceil", "sqrt", "log", "exp"], function(op_name) {
 			proto[op_name] = createConstraintModifier(bind(Math[op_name], Math));
 		});
+
+		// And expose every other unary and binary operator as a modifier (declared in util.js)
 		each({
-			u: {
+			u: { // Unary operators
 				pos: "+", neg: "-", not: "!", bitwiseNot: "~"
 			},
-			bi: {
-				eqStrct: "===", neqStrict: "!==", eq: "==", neq: "!=",
-				gt: ">", ge: ">=", lt: "<", le: "<=", mod: "%",
-				xor: "^", bitwiseAnd: "&", bitwiseOr: "|", rightShift: ">>",
-				leftShift: "<<", unsignedRightShift: ">>>"
+			bi: { // Binary operators
+				eqStrct: "===",	neqStrict:  "!==",	eq:        "==",neq: "!=",
+				gt:      ">",	ge:         ">=",	lt:        "<",	le: "<=",
+				xor:     "^",	bitwiseAnd: "&",	bitwiseOr: "|",	mod: "%",
+				rightShift:">>",leftShift:  "<<",	unsignedRightShift: ">>>"
 			}
 		},	function(ops, operator_prefix) {
 			var op_list = operator_prefix === "u" ? unary_operators : binary_operators;
@@ -487,32 +489,43 @@
 		});
 	} (Constraint));
 
-
-
 	// Create some exposed utility functions
 	is_constraint = function(obj) {
 		return obj instanceof Constraint;
 	};
-	cjs.isConstraint = is_constraint;
-	cjs.Constraint = Constraint;
 
-	cjs.constraint = function(value, options) {
-		return new Constraint(value, options);
-	};
+	// =========== EXPOSE CORE FUNCTIONS: =========== 
+	
+	extend(cjs, {
+		constraint: function(value, options) { return new Constraint(value, options); },
+		Constraint: Constraint,
+		isConstraint: is_constraint,
 
-	// Gets the value of an object regardless of if it's a constraint or not
-	cjs.get = function (obj, arg0) {
-		if(is_constraint(obj)) {
-			return obj.get(arg0);
-		} else if(is_array(obj)) {
-			return obj.toArray();
-		} else if(is_map(obj)) {
-			return obj.toObject();
-		} else {
-			return obj;
-		}
-	};
+		// Gets the value of an object regardless of if it's a constraint or not
+		get: function (obj, arg0) {
+			if(is_constraint(obj))	{ return obj.get(arg0); }
+			else if(is_array(obj))	{ return obj.toArray(); }
+			else if(is_map(obj))	{ return obj.toObject(); }
+			else					{ return obj; }
+		},
 
-	cjs.wait = bind(constraint_solver.wait, constraint_solver); // Wait tells the constraint solver to delay before running any onChange listeners
-	cjs.signal = bind(constraint_solver.signal, constraint_solver); // Signal tells the constraint solver that it can run onChange listeners
-	cjs.removeDependency = constraint_solver.removeDependency;
+		wait: bind(constraint_solver.wait, constraint_solver), // Wait tells the constraint solver to delay before running any onChange listeners
+		signal: bind(constraint_solver.signal, constraint_solver), // Signal tells the constraint solver that it can run onChange listeners
+		removeDependency: constraint_solver.removeDependency,
+
+		arrayDiff: get_array_diff, // expose this useful function
+
+		version: "<%= version %>", // This template will be filled in by the builder
+		toString: function() { return "ConstraintJS v" + cjs.version; },
+
+		__debug: false,
+		noConflict: has(root, "cjs") ?  function() { // If there was a previous cjs property...
+											// ...then track it and allow cjs.noConflict to restore its previous value
+											root.cjs = old_cjs;
+											return cjs; // and return a reference to cjs if the user wants it
+										} :
+										function() { // ...otherwise, cjs.noConflict will just delete the old value
+											delete root.cjs;
+											return cjs;
+										}
+	});

@@ -455,8 +455,10 @@
 			}
 		};
 
+		// Return a constraint whose value is bound to my value for key
 		proto.getConstraint = function(key) {
 			return new Constraint(function() {
+				// Call cjs.get on the key so the key can also be a constraint
 				return this.get(cjs.get(key));
 			}, {
 				context: this
@@ -733,6 +735,8 @@
 		return obj instanceof MapConstraint;
 	};
 
-	cjs.map = function (arg0, arg1) { return new MapConstraint(arg0, arg1); };
-	cjs.isMapConstraint = is_map;
-	cjs.MapConstraint = MapConstraint;
+	extend(cjs, {
+		map: function (arg0, arg1) { return new MapConstraint(arg0, arg1); },
+		MapConstraint: MapConstraint,
+		isMapConstraint: is_map
+	});

@@ -386,9 +386,7 @@
 		};
 	}(FSM));
 
-	cjs.fsm = function() {
-		return new FSM(arguments);
-	};
-	cjs.is_fsm = function(obj) {
-		return obj instanceof FSM;
-	};
+	extend(cjs, {
+		fsm: function() { return new FSM(arguments); },
+		isFSM: function(obj) { return obj instanceof FSM; }
+	});

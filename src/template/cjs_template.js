@@ -123,10 +123,10 @@
 
 			if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
 				var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
-				curr_bindings.push(concatenated_html, cjs.html(container, concatenated_html));
+				curr_bindings.push(concatenated_html, html_binding(container, concatenated_html));
 			} else {
 				var children_constraint = get_concatenated_children_constraint(this.children, args);
-				curr_bindings.push(children_constraint, cjs.children(container, children_constraint));
+				curr_bindings.push(children_constraint, children_binding(container, children_constraint));
 			}
 			return container;
 		},
@@ -217,14 +217,14 @@
 
 							each(attributes, function(attr) {
 								if(attr.name.match(name_regex)) {
-									context[attr.value] = cjs.inputValue(element);
+									context[attr.value] = getInputValueConstraint(element);
 								} else if((on_regex_match = attr.name.match(on_regex))) {
 									var event_name = on_regex_match[2];
 									element.addEventListener(event_name, context[attr.value]);
 								} else {
 									var constraint = get_constraint(attr.value, context, lineage, curr_bindings);
 									if(is_constraint(constraint)) {
-										cjs.attr(element, attr.name, constraint);
+										attr_binding(element, attr.name, constraint);
 									} else {
 										element.setAttribute(attr.name, constraint);
 									}
@@ -233,10 +233,10 @@
 
 							if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
 								var concatenated_html = get_concatenated_inner_html_constraint(this.children, context, lineage, curr_bindings);
-								curr_bindings.push(concatenated_html, cjs.html(element, concatenated_html));
+								curr_bindings.push(concatenated_html, html_binding(element, concatenated_html));
 							} else {
 								var children_constraint = get_concatenated_children_constraint(this.children, args);
-								curr_bindings.push(children_constraint, cjs.children(element, children_constraint));
+								curr_bindings.push(children_constraint, children_binding(element, children_constraint));
 							}
 							return element;
 						},
@@ -557,53 +557,54 @@
 			return nodeIndex >= 0 ? memoized_template_bindings[nodeIndex] : false;
 		};
 
-	var createTemplate = function(template_str) {
-			if(!isString(template_str)) {
-				if(is_jquery_obj(template_str) || isNList(template_str)) {
-					template_str = template_str.length > 0 ? template_str[0].innerText : "";
-				} else if(isElement(template_str)) {
-					template_str = template_str.innerText;
-				} else {
-					template_str = "" + template_str;
-				}
-			}
+	extend(cjs, {
+		createTemplate:		function(template_str) {
+								if(!isString(template_str)) {
+									if(is_jquery_obj(template_str) || isNList(template_str)) {
+										template_str = template_str.length > 0 ? template_str[0].innerText : "";
+									} else if(isElement(template_str)) {
+										template_str = template_str.innerText;
+									} else {
+										template_str = "" + template_str;
+									}
+								}
 
-			var template, template_index = indexOf(template_strs, template_str);
-			if(template_index < 0) {
-				template = create_template(template_str);
-				template_strs.push(template_str);
-				template_values.push(template);
-			} else {
-				template = template_values[template_index];
-			}
+								var template, template_index = indexOf(template_strs, template_str);
+								if(template_index < 0) {
+									template = create_template(template_str);
+									template_strs.push(template_str);
+									template_values.push(template);
+								} else {
+									template = template_values[template_index];
+								}
 
-			if(arguments.length >= 2) { // Create and use the template immediately
-				return memoize_template.apply(template, rest(arguments));
-			} else { // create the template as a function that can be called with a context
-				return bind(memoize_template, template);
-			}
-		};
-	cjs.createTemplate = cjs.template = createTemplate;
-	cjs.registerPartial = function(name, value) { partials[name] = value; };
-	cjs.unregisterPartial = function(name, value) { delete partials[name]; };
-	cjs.destroyTemplate = function(dom_node) {
-		var nodeIndex = indexOf(memoized_template_nodes, dom_node);
-		if(nodeIndex >= 0) {
-			var bindings = memoized_template_bindings[nodeIndex];
-			memoized_template_nodes.splice(nodeIndex, 1);
-			memoized_template_bindings.splice(nodeIndex, 1);
-			each(bindings, function(binding) { binding.destroy(); });
-			return true;
-		}
-		return false;
-	};
-	cjs.pauseTemplate = function(dom_node) {
-		var bindings = get_template_bindings(dom_node);
-		each(bindings, function(binding) { if(has(binding, "pause")) { binding.pause(); } });
-		return !!bindings;
-	};
-	cjs.resumeTemplate = function(dom_node) {
-		var bindings = get_template_bindings(dom_node);
-		each(get_template_bindings(dom_node), function(binding) { if(has(binding, "resume")) { binding.resume(); } });
-		return !!bindings;
-	};
+								if(arguments.length >= 2) { // Create and use the template immediately
+									return memoize_template.apply(template, rest(arguments));
+								} else { // create the template as a function that can be called with a context
+									return bind(memoize_template, template);
+								}
+							},
+		registerPartial:	function(name, value) { partials[name] = value; },
+		unregisterPartial:	function(name) { delete partials[name]; },
+		destroyTemplate:	function(dom_node) {
+								var nodeIndex = indexOf(memoized_template_nodes, dom_node);
+								if(nodeIndex >= 0) {
+									var bindings = memoized_template_bindings[nodeIndex];
+									memoized_template_nodes.splice(nodeIndex, 1);
+									memoized_template_bindings.splice(nodeIndex, 1);
+									each(bindings, function(binding) { binding.destroy(); });
+									return true;
+								}
+								return false;
+							},
+		pauseTemplate:		function(dom_node) {
+								var bindings = get_template_bindings(dom_node);
+								each(bindings, function(binding) { if(has(binding, "pause")) { binding.pause(); } });
+								return !!bindings;
+							},
+		resumeTemplate:		function(dom_node) {
+								var bindings = get_template_bindings(dom_node);
+								each(get_template_bindings(dom_node), function(binding) { if(has(binding, "resume")) { binding.resume(); } });
+								return !!bindings;
+							}
+	});

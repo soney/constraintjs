@@ -341,8 +341,10 @@
 			});
 		};
 
+		// Return a constraint whose value is bound to my value for key
 		proto.getConstraint = function(key) {
 			return new Constraint(function() {
+				// Call cjs.get on the key so the key can also be a constraint
 				return this.item(cjs.get(key));
 			}, {
 				context: this
@@ -362,6 +364,8 @@
 		return obj instanceof ArrayConstraint;
 	};
 
-	cjs.array = function (value) { return new ArrayConstraint(value); };
-	cjs.isArrayConstraint = is_array;
-	cjs.ArrayConstraint = ArrayConstraint;
+	extend(cjs, {
+		array: function (value) { return new ArrayConstraint(value); },
+		ArrayConstraint: ArrayConstraint,
+		isArrayConstraint: is_array
+	});
