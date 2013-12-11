@@ -174,17 +174,34 @@
 				return strs.join("");
 			}
 		},
+		array_this_eq = function(a, b) {
+			return a.length === b.length && every(a, function(ai, i) { return ai.this_esp === b[i].this_esp; });
+		},
 		memoize_dom_elems = function() {
-			var memoized_vals = [],
-				lineage_id = 1;
-
+			var memoized_vals = [];
 			return {
 				get: function(lineage) {
-					return memoized_vals[lineage._id];
+					var hash = lineage.length,
+						mvals = memoized_vals[hash],
+						i = 0,
+						len = mvals ? mvals.length : 0,
+						mval;
+					for(; i<len; i++) {
+						mval = mvals[i];
+						if(array_this_eq(mval.lineage, lineage)) {
+							return mval.value;
+						}
+					}
 				},
-				set: function(lineage, val) {
-					lineage._id = lineage_id++;
-					memoized_vals[lineage._id] = val;
+				set: function(lineage, value) {
+					var hash = lineage.length,
+						value_info = {lineage: lineage, value: value};
+
+					if(memoized_vals.hasOwnProperty(hash)) {
+						memoized_vals[hash].push(value_info);
+					} else {
+						memoized_vals[hash] = [value_info];
+					}
 				}
 			};
 		},
@@ -238,6 +255,7 @@
 					};
 
 					last(stack).children.push(last_pop);
+
 					if(!unary) {
 						stack.push(last_pop);
 					}
@@ -361,8 +379,7 @@
 							memoized_elems = memoize_dom_elems();
 							last_pop = {
 								create: function(context, lineage, curr_bindings) {
-									var memoized_val = memoized_elems.get(lineage),
-										len = this.sub_conditions.length,
+									var len = this.sub_conditions.length,
 										cond = !!get_node_value(this.condition, context, lineage, curr_bindings),
 										i = -1, children, memo_index;
 
@@ -434,9 +451,11 @@
 										do_child_create = function(child) {
 											return child.create(context, lineage, curr_bindings);
 										}, state_name, memoized_children;
+
 									if(!lineage) {
 										lineage = [];
 									}
+
 									for(state_name in this.sub_states) {
 										if(this.sub_states.hasOwnProperty(state_name)) {
 											if(state === state_name) {
