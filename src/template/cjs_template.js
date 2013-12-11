@@ -181,7 +181,7 @@
 			return {
 				get: function(context, lineage, curr_bindings) {
 					var memo_index = indexWhere(memoized_args, function(margs) {
-						return margs[0]=== context &&
+						return margs[0] === context &&
 								margs[1].length === lineage.length &&
 								every(margs[1], function(l, i) {
 									return l.this_exp === lineage[i].this_exp;
