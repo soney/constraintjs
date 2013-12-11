@@ -2,6 +2,13 @@
 	// ============== CJS CORE ============== 
 	//
 
+	/**
+	 * Description
+	 * @method cjs
+	 * @param {} arg0
+	 * @param {} arg1
+	 * @return 
+	 */
 	var Constraint, // Declare here, will be defined later
 		ArrayConstraint,
 		MapConstraint,
@@ -41,6 +48,12 @@
 
 		// node is the Constraint whose value we are fetching and auto_add_outgoing specifies whether dependencies FROM node should
 		// be automatically added
+		/**
+		 * Description
+		 * @method getValue
+		 * @param {} auto_add_outgoing
+		 * @return MemberExpression
+		 */
 		getValue: function (auto_add_outgoing) {
 			var node = this,
 				stack = constraint_solver.stack,
@@ -98,9 +111,21 @@
 		},
 		
 		// Utility function to mark a listener as being in the call stack
+		/**
+		 * Description
+		 * @method add_in_call_stack
+		 * @param {} nl
+		 * @return 
+		 */
 		add_in_call_stack: function(nl) {
 			nl.in_call_stack = true;
 		},
+		/**
+		 * Description
+		 * @method nullify
+		 * @param {} node
+		 * @return 
+		 */
 		nullify: function(node) {
 			// Unfortunately, running nullification listeners can, in some cases cause nullify to be indirectly called by itself
 			// (as in while running nullify). The variable is_root will prevent another call to run_nullification_listeners at
@@ -182,6 +207,13 @@
 		},
 		
 		// Remove the edge going from fromNode to toNode
+		/**
+		 * Description
+		 * @method removeDependency
+		 * @param {} fromNode
+		 * @param {} toNode
+		 * @return 
+		 */
 		removeDependency: function(fromNode, toNode) {
 			delete fromNode._outEdges[toNode._id];
 			delete toNode._inEdges[fromNode._id];
@@ -189,9 +221,19 @@
 
 		// Use a semaphore-like system to decide when running the nullification listeners is appropriate
 		semaphore: 0,
+		/**
+		 * Description
+		 * @method wait
+		 * @return 
+		 */
 		wait: function() {
 			this.semaphore -= 1;
 		},
+		/**
+		 * Description
+		 * @method signal
+		 * @return 
+		 */
 		signal: function () {
 			this.semaphore += 1;
 			// When we signal that we're ready, try running the call stack
@@ -204,6 +246,13 @@
 		// Tracks whether we are in the middle of running the nullification listeners
 		running_listeners: false,
 		// Clear all of the dependencies
+		/**
+		 * Description
+		 * @method clearEdges
+		 * @param {} node
+		 * @param {} silent
+		 * @return 
+		 */
 		clearEdges: function(node, silent) {
 			if(silent !== true) {
 				this.wait();
@@ -229,6 +278,11 @@
 				this.signal();
 			}
 		},
+		/**
+		 * Description
+		 * @method run_nullified_listeners
+		 * @return 
+		 */
 		run_nullified_listeners: function () {
 			var nullified_info, callback, context;
 			// Make sure run_nullified_listeners isn't indirectly called by itself
@@ -255,6 +309,12 @@
 				this.running_listeners = false;
 			}
 		},
+		/**
+		 * Description
+		 * @method remove_from_call_stack
+		 * @param {} info
+		 * @return 
+		 */
 		remove_from_call_stack: function(info) {
 			remove(this.nullified_call_stack, info);
 		}
@@ -263,6 +323,12 @@
 	//
 	// ============== CORE CONSTRAINTS ============== 
 	//
+	/**
+	 * Description
+	 * @param {} value
+	 * @param {} options
+	 * @return 
+	 */
 	Constraint = function (value, options) {
 		/*
 		 * == OPTION DEFAULTS ==
@@ -304,6 +370,13 @@
 		proto.get = constraint_solver.getValue;
 
 		// Change the value of the constraint
+		/**
+		 * Description
+		 * @method set
+		 * @param {} new_value
+		 * @param {} options
+		 * @return ThisExpression
+		 */
 		proto.set = function (new_value, options) {
 			var old_value = this._value;
 			this._value = new_value;
@@ -325,6 +398,13 @@
 		};
 
 		// Can pass in either a string and value or an object with multiple keys and values
+		/**
+		 * Description
+		 * @method setOption
+		 * @param {} arg0
+		 * @param {} arg1
+		 * @return ThisExpression
+		 */
 		proto.setOption = function(arg0, arg1) {
 			if(isString(arg0)) {
 				this._options[arg0] = arg1;
@@ -338,12 +418,23 @@
 		};
 
 		// Mark myself as invalid
+		/**
+		 * Description
+		 * @method invalidate
+		 * @return ThisExpression
+		 */
 		proto.invalidate = function () {
 			constraint_solver.nullify(this);
 			return this;
 		};
 
 		// Removes every dependency to this node
+		/**
+		 * Description
+		 * @method remove
+		 * @param {} silent
+		 * @return ThisExpression
+		 */
 		proto.remove = function (silent) {
 			constraint_solver.clearEdges(this, silent);
 			this._valid = false;			// In case it gets used in the future, make sure this constraint is marked as invalid
@@ -352,6 +443,12 @@
 		};
 		
 		// Tries to clean up the constraint's allocated memory
+		/**
+		 * Description
+		 * @method destroy
+		 * @param {} silent
+		 * @return ThisExpression
+		 */
 		proto.destroy = function (silent) {
 			each(this._changeListeners, function(cl) {
 				// remove it from the call stack
@@ -369,6 +466,13 @@
 		// context controls the value of 'this' when callback is being called and any number of additional
 		// arguments can be passed in that will be passed as parameters to 'callback'
 		
+		/**
+		 * Description
+		 * @method onChange
+		 * @param {} callback
+		 * @param {} context
+		 * @return ThisExpression
+		 */
 		proto.onChange = function(callback, context) {
 			var args = slice.call(arguments, 2); // Additional arguments
 			this._changeListeners.push({
@@ -384,6 +488,13 @@
 		};
 
 		// extend the standard constraint constructor so that any constraint can have its values depend on an fsm
+		/**
+		 * Description
+		 * @method inFSM
+		 * @param {} fsm
+		 * @param {} values
+		 * @return ThisExpression
+		 */
 		proto.inFSM = function(fsm, values) {
 			each(values, function(v, k) {
 				// add listeners to the fsm for that state that will set my getter's value
@@ -401,6 +512,13 @@
 		
 		// Undoes the effect of onChange, removes the listener. 'context' is optional here
 		// only removes the last matching callback
+		/**
+		 * Description
+		 * @method offChange
+		 * @param {} callback
+		 * @param {} context
+		 * @return ThisExpression
+		 */
 		proto.offChange = function (callback, context) {
 			var cl, i;
 			for(i = this._changeListeners.length-1; i>=0; i-=1) {
@@ -424,6 +542,11 @@
 		// false && a() should not evaluate a(), just as
 		// true || b() should not evaluate b()
 		// Returns false if this or any passed in value is falsy. Otherwise, returns the lasat value passed in
+		/**
+		 * Description
+		 * @method and
+		 * @return NewExpression
+		 */
 		proto.and = function() {
 			var args = ([this]).concat(toArray(arguments)),
 				len = args.length;
@@ -442,6 +565,11 @@
 		};
 
 		// Returns this value or the value of the first argument that is truthy. Returns false if this and nothing else is truthy
+		/**
+		 * Description
+		 * @method or
+		 * @return NewExpression
+		 */
 		proto.or = function() {
 			var args = ([this]).concat(toArray(arguments)),
 				len = args.length;
@@ -461,6 +589,12 @@
 
 		// Creates a new function that takes in any number of arguments and creates a constraint whose result is calling modifier_fn on
 		// 'this' plus every argument
+		/**
+		 * Description
+		 * @method createConstraintModifier
+		 * @param {} modifier_fn
+		 * @return FunctionExpression
+		 */
 		var createConstraintModifier = function(modifier_fn) {
 			return function() {
 				var args = ([this]).concat(toArray(arguments));
@@ -506,6 +640,11 @@
 	} (Constraint));
 
 	// Create some exposed utility functions
+	/**
+	 * Description
+	 * @param {} obj
+	 * @return BinaryExpression
+	 */
 	is_constraint = function(obj) {
 		return obj instanceof Constraint;
 	};
@@ -513,15 +652,36 @@
 	// =========== EXPOSE CORE FUNCTIONS: =========== 
 	
 	extend(cjs, {
+		/**
+		 * Description
+		 * @method constraint
+		 * @param {} value
+		 * @param {} options
+		 * @return NewExpression
+		 */
 		constraint: function(value, options) { return new Constraint(value, options); },
 		Constraint: Constraint,
 		isConstraint: is_constraint,
 
+		/**
+		 * Description
+		 * @method inFSM
+		 * @param {} fsm
+		 * @param {} values
+		 * @return CallExpression
+		 */
 		inFSM: function(fsm, values) {
 			return (new Constraint()).inFSM(fsm, values);
 		},
 
 		// Gets the value of an object regardless of if it's a constraint or not
+		/**
+		 * Description
+		 * @method get
+		 * @param {} obj
+		 * @param {} arg0
+		 * @return 
+		 */
 		get: function (obj, arg0) {
 			if(is_constraint(obj))	{ return obj.get(arg0); }
 			else if(is_array(obj))	{ return obj.toArray(); }
@@ -536,6 +696,11 @@
 		arrayDiff: get_array_diff, // expose this useful function
 
 		version: "<%= version %>", // This template will be filled in by the builder
+		/**
+		 * Description
+		 * @method toString
+		 * @return BinaryExpression
+		 */
 		toString: function() { return "ConstraintJS v" + cjs.version; },
 
 		__debug: false,

@@ -2,6 +2,12 @@
 	// ============== ARRAYS ============== 
 	//
 	
+	/**
+	 * Description
+	 * @method isPositiveInteger
+	 * @param {} val
+	 * @return LogicalExpression
+	 */
 	var isPositiveInteger = function (val) {
 		return isNumber(val) && Math.round(val) === val && val >= 0;
 	};
@@ -11,6 +17,11 @@
 	// It contains many of the standard array functions (push, pop, slice, etc)
 	// and makes them constraint-enabled.
 	// x[1] = y[2] + z[3] === x.item(1, y.item(2) + z.item(3))
+	/**
+	 * Description
+	 * @param {} options
+	 * @return 
+	 */
 	ArrayConstraint = function (options) {
 		options = extend({
 			equals: eqeqeq, // How to check for equality, useful for indexOf, etc
@@ -36,6 +47,13 @@
 		my.BREAK = {};
 
 		// Get a particular item in the array
+		/**
+		 * Description
+		 * @method _get
+		 * @param {} arr
+		 * @param {} key
+		 * @return CallExpression
+		 */
 		var _get = function (arr, key) {
 			var val = arr._value[key];
 			if (val === undefined) { // Even if arr[key] is set to undefined, it would be a constraint
@@ -48,6 +66,14 @@
 		};
 
 		// For internal use; set a particular item in the array
+		/**
+		 * Description
+		 * @method _put
+		 * @param {} arr
+		 * @param {} key
+		 * @param {} val
+		 * @return 
+		 */
 		var _put = function (arr, key, val) {
 			cjs.wait(); // Don't run any nullification listeners until this function is done running
 			var $previous_value = arr._value[key];
@@ -71,6 +97,13 @@
 		};
 
 		// Remove every element of the array
+		/**
+		 * Description
+		 * @method _clear
+		 * @param {} arr
+		 * @param {} silent
+		 * @return ThisExpression
+		 */
 		var _clear = function (arr, silent) {
 			var $val;
 			cjs.wait();
@@ -89,6 +122,12 @@
 			return this;
 		};
 
+		/**
+		 * Description
+		 * @method _update_len
+		 * @param {} arr
+		 * @return 
+		 */
 		var _update_len = function (arr) {
 			// The setter will automatically not update if the value is the same
 			arr.$len.set(arr._value.length);
@@ -96,12 +135,25 @@
 
 
 		// Change the equality check; useful for indexOf
+		/**
+		 * Description
+		 * @method setEqualityCheck
+		 * @param {} equality_check
+		 * @return ThisExpression
+		 */
 		proto.setEqualityCheck = function (equality_check) {
 			this.$equality_check.set(equality_check);
 			return this;
 		};
 
 		// Run through every element of the array and call func with 'this' === context or window
+		/**
+		 * Description
+		 * @method forEach
+		 * @param {} func
+		 * @param {} context
+		 * @return ThisExpression
+		 */
 		proto.forEach = function (func, context) {
 			var i, len = this.length();
 			context = context || root; // Set context to window if not specified
@@ -115,6 +167,13 @@
 
 		// Return a new JAVASCRIPT array with each element's value being the result of calling func
 		// on item i
+		/**
+		 * Description
+		 * @method map
+		 * @param {} func
+		 * @param {} context
+		 * @return rv
+		 */
 		proto.map = function (func, context) {
 			var rv = [];
 			context = context || root;
@@ -125,6 +184,12 @@
 		};
 
 		// Replaces the whole array
+		/**
+		 * Description
+		 * @method setValue
+		 * @param {} arr
+		 * @return ThisExpression
+		 */
 		proto.setValue = function (arr) {
 			cjs.wait(); // Don't run nullified functions quite yet
 			_clear(this);
@@ -134,6 +199,13 @@
 		};
 
 		// Get or put item i
+		/**
+		 * Description
+		 * @method item
+		 * @param {} key
+		 * @param {} val
+		 * @return 
+		 */
 		proto.item = function (key, val) {
 			if(arguments.length === 0) { // Just return an array if called with no arguments
 				return this.toArray();
@@ -144,16 +216,32 @@
 			}
 		};
 		// Clean up any allocated memory
+		/**
+		 * Description
+		 * @method destroy
+		 * @param {} silent
+		 * @return 
+		 */
 		proto.destroy = function (silent) {
 			_clear(this, silent);
 			this.$len.destroy(silent);
 		};
 
+		/**
+		 * Description
+		 * @method length
+		 * @return CallExpression
+		 */
 		proto.length = function () {
 			return this.$len.get(); // Remember that length is a constraint
 		};
 		
 		// add to the end of the array
+		/**
+		 * Description
+		 * @method push
+		 * @return CallExpression
+		 */
 		proto.push = function () {
 			var i, len = arguments.length, value_len = this._value.length;
 			//Make operation atomic
@@ -167,6 +255,11 @@
 		};
 
 		// Remove from the end of the array
+		/**
+		 * Description
+		 * @method pop
+		 * @return rv
+		 */
 		proto.pop = function () {
 			var rv, $value = this._value.pop(); // $value should be a constraint
 			cjs.wait();
@@ -185,11 +278,23 @@
 			return rv;
 		};
 		// Converts to a JAVASCRIPT array
+		/**
+		 * Description
+		 * @method toArray
+		 * @return CallExpression
+		 */
 		proto.toArray = function () {
 			return this.map(identity); // just get every element
 		};
 
 		// Returns the first item where calling filter is truthy
+		/**
+		 * Description
+		 * @method indexWhere
+		 * @param {} filter
+		 * @param {} context
+		 * @return UnaryExpression
+		 */
 		proto.indexWhere = function (filter, context) {
 			var i, len = this.length(), $val;
 			context = context || this;
@@ -202,6 +307,13 @@
 			return -1; // -1 if not found
 		};
 		// Return the last item where calling filter is truthy
+		/**
+		 * Description
+		 * @method lastIndexWhere
+		 * @param {} filter
+		 * @param {} context
+		 * @return UnaryExpression
+		 */
 		proto.lastIndexWhere = function (filter, context) {
 			var i, len = this.length(), $val;
 			context = context || this;
@@ -215,25 +327,65 @@
 		};
 
 		// First index of item, with either the supplied equality check or my equality check
+		/**
+		 * Description
+		 * @method indexOf
+		 * @param {} item
+		 * @param {} equality_check
+		 * @return CallExpression
+		 */
 		proto.indexOf = function (item, equality_check) {
 			equality_check = equality_check || this.$equality_check.get();
+			/**
+			 * Description
+			 * @method filter
+			 * @param {} x
+			 * @return CallExpression
+			 */
 			var filter = function (x) { return equality_check(x, item); };
 			return this.indexWhere(filter);
 		};
 
 		// Last index of item, with either the supplied equality check or my equality check
+		/**
+		 * Description
+		 * @method lastIndexOf
+		 * @param {} item
+		 * @param {} equality_check
+		 * @return CallExpression
+		 */
 		proto.lastIndexOf = function (item, equality_check) {
 			equality_check = equality_check || this.$equality_check.get();
+			/**
+			 * Description
+			 * @method filter
+			 * @param {} x
+			 * @return CallExpression
+			 */
 			var filter = function (x) { return equality_check(x, item); };
 			return this.lastIndexWhere(filter);
 		};
 
 		// Return true if any item in the array is true
+		/**
+		 * Description
+		 * @method some
+		 * @param {} filter
+		 * @param {} context
+		 * @return BinaryExpression
+		 */
 		proto.some = function(filter, context) {
 			return this.indexWhere(filter, context) >= 0;
 		};
 
 		// Return true if every item in the array has a truty value
+		/**
+		 * Description
+		 * @method every
+		 * @param {} filter
+		 * @param {} context
+		 * @return rv
+		 */
 		proto.every = function(filter, context) {
 			var rv = true;
 			this.forEach(function() {
@@ -246,6 +398,13 @@
 		};
 
 		// Works just like the standard JavaScript array splice function
+		/**
+		 * Description
+		 * @method splice
+		 * @param {} index
+		 * @param {} howmany
+		 * @return removed
+		 */
 		proto.splice = function (index, howmany) {
 			var i;
 			if (!isNumber(howmany)) { howmany = 0; }
@@ -311,18 +470,33 @@
 		};
 
 		// Remove the first item of the array
+		/**
+		 * Description
+		 * @method shift
+		 * @return MemberExpression
+		 */
 		proto.shift = function () {
 			var rv_arr = this.splice(0, 1);
 			return rv_arr[0];
 		};
 
 		// Add a new item to the beginning of the array (any number of parameters)
+		/**
+		 * Description
+		 * @method unshift
+		 * @return CallExpression
+		 */
 		proto.unshift = function () {
 			this.splice.apply(this, ([0, 0]).concat(toArray(arguments)));
 			return this.length();
 		};
 
 		// Like the standard js concat but return an array
+		/**
+		 * Description
+		 * @method concat
+		 * @return CallExpression
+		 */
 		proto.concat = function () {
 			// Every argument could either be an array or constraint array
 			var args = map(arguments, function(arg) {
@@ -333,6 +507,11 @@
 		};
 
 		// Just like the standard JS slice
+		/**
+		 * Description
+		 * @method slice
+		 * @return CallExpression
+		 */
 		proto.slice = function () {
 			// Just call the normal slice with the same arguments
 			var sliced_arr = this._value.slice.apply(this._value, arguments);
@@ -342,6 +521,12 @@
 		};
 
 		// Return a constraint whose value is bound to my value for key
+		/**
+		 * Description
+		 * @method getConstraint
+		 * @param {} key
+		 * @return NewExpression
+		 */
 		proto.getConstraint = function(key) {
 			return new Constraint(function() {
 				// Call cjs.get on the key so the key can also be a constraint
@@ -353,6 +538,11 @@
 
 		// All of these functions will just convert to an array and return that
 		each(["filter", "join", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
+			/**
+			 * Description
+			 * @method fn_name
+			 * @return CallExpression
+			 */
 			proto[fn_name] = function () {
 				var my_val = this.toArray();
 				return my_val[fn_name].apply(my_val, arguments);
@@ -360,11 +550,22 @@
 		});
 	}(ArrayConstraint));
 
+	/**
+	 * Description
+	 * @param {} obj
+	 * @return BinaryExpression
+	 */
 	is_array = function(obj) {
 		return obj instanceof ArrayConstraint;
 	};
 
 	extend(cjs, {
+		/**
+		 * Description
+		 * @method array
+		 * @param {} value
+		 * @return NewExpression
+		 */
 		array: function (value) { return new ArrayConstraint(value); },
 		ArrayConstraint: ArrayConstraint,
 		isArrayConstraint: is_array

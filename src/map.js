@@ -4,10 +4,22 @@
 
 	// Maps use hashing to improve performance. By default, the hash is a simple toString
 	// function
+	/**
+	 * Description
+	 * @method defaulthash
+	 * @param {} key
+	 * @return CallExpression
+	 */
 	var defaulthash = function (key) { return key.toString(); };
 
 	// A string can also be specified as the hash, so that the hash is the result of calling
 	// that property of the object
+	/**
+	 * Description
+	 * @method get_str_hash_fn
+	 * @param {} prop_name
+	 * @return FunctionExpression
+	 */
 	var get_str_hash_fn = function (prop_name) {
 		return function (key) {
 			return key[prop_name]();
@@ -15,6 +27,11 @@
 	};
 
 	// Map constraints are supposed to behave like normal objects ({}) with a few enhancements
+	/**
+	 * Description
+	 * @param {} options
+	 * @return 
+	 */
 	MapConstraint = function (options) {
 		options = extend({
 			hash: defaulthash, // Improves performance when searching by key
@@ -112,8 +129,23 @@
 		var proto = my.prototype;
 
 		// Utility function to return information about a key
+		/**
+		 * Description
+		 * @method _find_key
+		 * @param {} key
+		 * @param {} fetch_unsubstantiated
+		 * @param {} create_unsubstantiated
+		 * @return rv
+		 */
 		var _find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
 			// Get the hash
+			/**
+			 * Description
+			 * @method index_where_fn
+			 * @param {} a
+			 * @param {} b
+			 * @return CallExpression
+			 */
 			var hash = this._hash(key),
 				rv = {
 					h: hash, // the actual hash value
@@ -178,6 +210,16 @@
 		};
 
 		// Responsible for setting a key properly
+		/**
+		 * Description
+		 * @method _do_set_item_ki
+		 * @param {} ki
+		 * @param {} key
+		 * @param {} value
+		 * @param {} index
+		 * @param {} literal
+		 * @return 
+		 */
 		var _do_set_item_ki = function (ki, key, value, index, literal) {
 			// ki is the key information from _find_key
 			var i, value_hash, vhash_val, info,
@@ -301,11 +343,25 @@
 		};
 
 		// Cange an info's specified index
+		/**
+		 * Description
+		 * @method _set_index
+		 * @param {} info
+		 * @param {} to_index
+		 * @return 
+		 */
 		var _set_index = function (info, to_index) {
 			info.index.set(to_index);
 		};
 
 		// Deallocate memory from constraints
+		/**
+		 * Description
+		 * @method _destroy_info
+		 * @param {} infos
+		 * @param {} silent
+		 * @return 
+		 */
 		var _destroy_info = function (infos, silent) {
 			each(infos, function (info) {
 				info.key.destroy(silent);
@@ -315,6 +371,13 @@
 		};
 
 		// removes the selected item and destroys its value to deallocate it
+		/**
+		 * Description
+		 * @method _remove_index
+		 * @param {} index
+		 * @param {} silent
+		 * @return 
+		 */
 		var _remove_index = function (index, silent) {
 			var info = this._ordered_values[index];
 			_destroy_info(this._ordered_values.splice(index, 1), silent);
@@ -324,6 +387,11 @@
 		};
 		
 		// Getter for this.$keys constraint
+		/**
+		 * Description
+		 * @method _do_get_keys
+		 * @return rv
+		 */
 		proto._do_get_keys = function () {
 			var rv = [];
 			this.forEach(function (value, key, index) {
@@ -332,9 +400,19 @@
 			return rv;
 		};
 		// used when keys() is called
+		/**
+		 * Description
+		 * @method keys
+		 * @return CallExpression
+		 */
 		proto.keys = function () { return this.$keys.get(); };
 
 		// Getter for this.$values constraint
+		/**
+		 * Description
+		 * @method _do_get_values
+		 * @return rv
+		 */
 		proto._do_get_values = function () {
 			var rv = [];
 			this.forEach(function (value, key, index) {
@@ -343,9 +421,19 @@
 			return rv;
 		};
 		//used when values() is called
+		/**
+		 * Description
+		 * @method values
+		 * @return CallExpression
+		 */
 		proto.values = function () { return this.$values.get(); };
 
 		// Getter for this.$entries constraint
+		/**
+		 * Description
+		 * @method _do_get_entries
+		 * @return rv
+		 */
 		proto._do_get_entries = function () {
 			var rv = [];
 			this.forEach(function (value, key, index) {
@@ -354,24 +442,53 @@
 			return rv;
 		};
 		//used when entries() is called
+		/**
+		 * Description
+		 * @method entries
+		 * @return CallExpression
+		 */
 		proto.entries = function () { return this.$entries.get(); };
 
 		// Getter for this.$size constraint
+		/**
+		 * Description
+		 * @method _do_get_size
+		 * @return MemberExpression
+		 */
 		proto._do_get_size = function () {
 			return this._ordered_values.length;
 		};
 		// used when size() is called
+		/**
+		 * Description
+		 * @method size
+		 * @return CallExpression
+		 */
 		proto.size = function () {
 			return this.$size.get();
 		};
 		
 		// Simple check if I have items
+		/**
+		 * Description
+		 * @method isEmpty
+		 * @return BinaryExpression
+		 */
 		proto.isEmpty = function () {
 			return this.size() === 0;
 		};
 
 		// set the item at key (like this[key] = value)
-		proto.set = proto.put = function (key, value, index, literal) {
+		/**
+		 * Description
+		 * @method put
+		 * @param {} key
+		 * @param {} value
+		 * @param {} index
+		 * @param {} literal
+		 * @return ThisExpression
+		 */
+		proto.put = function (key, value, index, literal) {
 			cjs.wait();
 			// Find out if there's a key or unsubstantiated info but don't create it
 			var ki = _find_key.call(this, key, true, false);
@@ -382,6 +499,12 @@
 		};
 
 		// Unset the item at key (like delete this[key])
+		/**
+		 * Description
+		 * @method remove
+		 * @param {} key
+		 * @return ThisExpression
+		 */
 		proto.remove = function (key) {
 			// Find out if there's an actual key set
 			var ki = _find_key.call(this, key, false, false);
@@ -438,6 +561,12 @@
 		};
 		
 		// Get the item at key (like this[key])
+		/**
+		 * Description
+		 * @method get
+		 * @param {} key
+		 * @return 
+		 */
 		proto.get = function (key) {
 			// Try to find the key and search in any unsubstantiated values
 			var ki = _find_key.call(this, key, true, this._create_unsubstantiated),
@@ -456,6 +585,12 @@
 		};
 
 		// Return a constraint whose value is bound to my value for key
+		/**
+		 * Description
+		 * @method getConstraint
+		 * @param {} key
+		 * @return NewExpression
+		 */
 		proto.getConstraint = function(key) {
 			return new Constraint(function() {
 				// Call cjs.get on the key so the key can also be a constraint
@@ -466,6 +601,12 @@
 		};
 
 		// Empty out every entry
+		/**
+		 * Description
+		 * @method clear
+		 * @param {} silent
+		 * @return ThisExpression
+		 */
 		proto.clear = function (silent) {
 			if (this.size() > 0) { // If I actually have something
 				cjs.wait();
@@ -497,6 +638,13 @@
 			return this;
 		};
 		// Loop through every value and key calling func on it with this === context (or this)
+		/**
+		 * Description
+		 * @method forEach
+		 * @param {} func
+		 * @param {} context
+		 * @return ThisExpression
+		 */
 		proto.forEach = function (func, context) {
 			var i, info, len = this.size(),
 				ov_clone = this._ordered_values.slice();
@@ -510,16 +658,34 @@
 			return this;
 		};
 		// Change rules for key lookup
+		/**
+		 * Description
+		 * @method setEqualityCheck
+		 * @param {} equality_check
+		 * @return ThisExpression
+		 */
 		proto.setEqualityCheck = function (equality_check) {
 			this.$equality_check.set(equality_check);
 			return this;
 		};
 		// Change rules for value lookup
+		/**
+		 * Description
+		 * @method setValueEqualityCheck
+		 * @param {} vequality_check
+		 * @return ThisExpression
+		 */
 		proto.setValueEqualityCheck = function (vequality_check) {
 			this.$vequality_check.set(vequality_check);
 			return this;
 		};
 		// Change how hashing is done
+		/**
+		 * Description
+		 * @method setHash
+		 * @param {} hash
+		 * @return ThisExpression
+		 */
 		proto.setHash = function (hash) {
 			cjs.wait();
 			// First, empty out the old key hash and unsubstantiated values
@@ -558,6 +724,12 @@
 		};
 
 		// Change how value hashing is done
+		/**
+		 * Description
+		 * @method setValueHash
+		 * @param {} vhash
+		 * @return ThisExpression
+		 */
 		proto.setValueHash = function (vhash) {
 			this._valuehash = isString(vhash) ? get_str_hash_fn(vhash) : vhash;
 			// Empty out the old value hash
@@ -579,6 +751,14 @@
 
 			return this;
 		};
+		/**
+		 * Description
+		 * @method item
+		 * @param {} arg0
+		 * @param {} arg1
+		 * @param {} arg2
+		 * @return 
+		 */
 		proto.item = function (arg0, arg1, arg2) {
 			if(arguments.length === 0) { // no arguments? return an object
 				return this.toObject();
@@ -589,6 +769,12 @@
 			}
 		};
 		// Find the item in myself (uses hashing)
+		/**
+		 * Description
+		 * @method indexOf
+		 * @param {} key
+		 * @return 
+		 */
 		proto.indexOf = function (key) {
 			// get hash information
 			var ki = _find_key.call(this, key, true, this._create_unsubstantiated),
@@ -606,6 +792,16 @@
 		};
 
 		// This function will search for a key and create it if not found
+		/**
+		 * Description
+		 * @method get_or_put
+		 * @param {} key
+		 * @param {} create_fn
+		 * @param {} create_fn_context
+		 * @param {} index
+		 * @param {} literal
+		 * @return 
+		 */
 		proto.get_or_put = function (key, create_fn, create_fn_context, index, literal) {
 			var ki = _find_key.call(this, key, true, false);
 			var key_index = ki.i, // index within hash array
@@ -625,7 +821,14 @@
 		};
 
 		// Check if we have a given key
-		proto.has = proto.containsKey = function (key) {
+		proto.has = 
+/**
+  * Description
+  * @method containsKey
+  * @param {} key
+  * @return 
+  */
+ proto.containsKey = function (key) {
 			var ki = _find_key.call(this, key, true, this._create_unsubstantiated);
 			var key_index = ki.i;
 			if (key_index >= 0) { // Found successfully
@@ -640,6 +843,13 @@
 		};
 
 		//Move an item from one index to another given the item's index
+		/**
+		 * Description
+		 * @method moveIndex
+		 * @param {} old_index
+		 * @param {} new_index
+		 * @return ThisExpression
+		 */
 		proto.moveIndex = function (old_index, new_index) {
 			var i;
 			cjs.wait();
@@ -666,6 +876,13 @@
 			return this;
 		};
 		// Move an item from one index to another given the item's key
+		/**
+		 * Description
+		 * @method move
+		 * @param {} key
+		 * @param {} to_index
+		 * @return ThisExpression
+		 */
 		proto.move = function (key, to_index) {
 			//Move a key to a new index
 			var ki = _find_key.call(this, key, false, false);
@@ -679,6 +896,13 @@
 		};
 
 		// Given a value, find the corresponding key
+		/**
+		 * Description
+		 * @method keyForValue
+		 * @param {} value
+		 * @param {} eq_check
+		 * @return 
+		 */
 		proto.keyForValue = function (value, eq_check) {
 			eq_check = eq_check || this.$vequality_check.get();
 			var i;
@@ -711,6 +935,12 @@
 			}
 		};
 		// Useful for deallocating memory
+		/**
+		 * Description
+		 * @method destroy
+		 * @param {} silent
+		 * @return 
+		 */
 		proto.destroy = function (silent) {
 			cjs.wait();
 			this.clear(silent);
@@ -723,6 +953,12 @@
 			cjs.signal();
 		};
 		// optional filter to apply to every key
+		/**
+		 * Description
+		 * @method toObject
+		 * @param {} key_map_fn
+		 * @return rv
+		 */
 		proto.toObject = function (key_map_fn) {
 			var rv = {};
 			key_map_fn = key_map_fn || identity; // just use the key if not supplied
@@ -731,11 +967,23 @@
 		};
 	}(MapConstraint));
 
+	/**
+	 * Description
+	 * @param {} obj
+	 * @return BinaryExpression
+	 */
 	is_map = function(obj) {
 		return obj instanceof MapConstraint;
 	};
 
 	extend(cjs, {
+		/**
+		 * Description
+		 * @method map
+		 * @param {} arg0
+		 * @param {} arg1
+		 * @return NewExpression
+		 */
 		map: function (arg0, arg1) { return new MapConstraint(arg0, arg1); },
 		MapConstraint: MapConstraint,
 		isMapConstraint: is_map

@@ -23,6 +23,12 @@
 	 * HTMLtoDOM(htmlString, document.body);
 	 *
 	 */
+	/**
+	 * Description
+	 * @method makeMap
+	 * @param {} str
+	 * @return obj
+	 */
 	var makeMap = function(str){
 		var obj = {};
 		each(str.split(","), function(item) { obj[item] = true; });
@@ -94,12 +100,31 @@
 		}
 	};
 
+	/**
+	 * Description
+	 * @method parseTemplate
+	 * @param {} input_str
+	 * @param {} handler
+	 * @return 
+	 */
 	var parseTemplate = function(input_str, handler) {
 		var html_index, hb_index, last_closed_hb_tag, index, chars, match, stack = [], last = input_str;
+		/**
+		 * Description
+		 * @method last
+		 * @return MemberExpression
+		 */
 		stack.last = function(){
 			return this[this.length - 1];
 		};
 
+		/**
+		 * Description
+		 * @method replace_fn
+		 * @param {} all
+		 * @param {} text
+		 * @return Literal
+		 */
 		var replace_fn = function(all, text) {
 			text = text	.replace(/<!--(.*?)-->/g, "$1")
 						.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1");
@@ -184,6 +209,15 @@
 		// Clean up any remaining tags
 		parseEndTag();
 
+		/**
+		 * Description
+		 * @method parseStartTag
+		 * @param {} tag
+		 * @param {} tagName
+		 * @param {} rest
+		 * @param {} unary
+		 * @return 
+		 */
 		function parseStartTag( tag, tagName, rest, unary ) {
 			tagName = tagName.toLowerCase();
 
@@ -223,9 +257,21 @@
 			}
 		}
 
+		/**
+		 * Description
+		 * @method parseEndTag
+		 * @param {} tag
+		 * @param {} tagName
+		 * @return 
+		 */
 		function parseEndTag(tag, tagName) {
 			popStackUntilTag(tagName, HTML_TYPE);
 		}
+		/**
+		 * Description
+		 * @method getLatestHandlebarParent
+		 * @return undefined
+		 */
 		function getLatestHandlebarParent() {
 			var i, stack_i;
 			for(i = stack.length - 1; i>= 0; i--) {
@@ -236,6 +282,14 @@
 			}
 			return undefined;
 		}
+		/**
+		 * Description
+		 * @method parseHandlebar
+		 * @param {} tag
+		 * @param {} prefix
+		 * @param {} content
+		 * @return 
+		 */
 		function parseHandlebar(tag, prefix, content) {
 			var last_stack, tagName, parsed_content = jsep(content);
 
@@ -304,6 +358,13 @@
 					break;
 			}
 		}
+		/**
+		 * Description
+		 * @method popStackUntilTag
+		 * @param {} tagName
+		 * @param {} type
+		 * @return 
+		 */
 		function popStackUntilTag(tagName, type) {
 			var i, pos, stack_i;
 			for (pos = stack.length - 1; pos >= 0; pos -= 1) {

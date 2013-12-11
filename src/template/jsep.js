@@ -10,6 +10,12 @@ var COMPOUND = 'Compound',
 	PARENT_EXP = 'ParentExpression',
 	CURR_LEVEL_EXP = 'CurrLevelExpression',
 	jsep = (function (root) {
+		/**
+		 * Description
+		 * @method do_parse
+		 * @param {} expr
+		 * @return CallExpression
+		 */
 		var unary_ops = keys(unary_operators),
 			binary_ops = keys(binary_operators),
 			binary_op_len = binary_ops.length,
@@ -75,6 +81,11 @@ var COMPOUND = 'Compound',
 			number_regex = new RegExp('^(\\d+(\\.\\d+)?)'),
 
 			do_parse = function(expr) {
+				/**
+				 * Description
+				 * @method gobbleGroup
+				 * @return 
+				 */
 				var stack = [],
 					index = 0,
 					length = expr.length,

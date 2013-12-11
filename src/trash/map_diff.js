@@ -1,4 +1,11 @@
 	// Compute the differences between two objects
+	/**
+	 * Description
+	 * @method compute_map_diff
+	 * @param {} key_diff
+	 * @param {} value_diff
+	 * @return ObjectExpression
+	 */
 	var compute_map_diff = function (key_diff, value_diff) {
 		key_diff = clone(key_diff);
 		value_diff = clone(value_diff);
@@ -87,6 +94,14 @@
 		return { set: set, unset: unset, key_change: key_change, value_change: value_change, index_changed: index_changed, moved: moved};
 	};
 
+	/**
+	 * Description
+	 * @method get_map_diff
+	 * @param {} from_obj
+	 * @param {} to_obj
+	 * @param {} equality_check
+	 * @return CallExpression
+	 */
 	var get_map_diff = function (from_obj, to_obj, equality_check) {
 		var from_keys = keys(from_obj),
 			to_keys = keys(to_obj),

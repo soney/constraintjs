@@ -3,6 +3,13 @@
 	 */
 
 	// State keeps track of basic state information (its containing FSM does most of the work)
+	/**
+	 * Description
+	 * @method State
+	 * @param {} fsm
+	 * @param {} name
+	 * @return 
+	 */
 	var State = function(fsm, name) {
 		this._fsm = fsm; // parent fsm
 		this._name = name; // state name (fetch with getName)
@@ -11,11 +18,30 @@
 
 	(function(my) {
 		var proto = my.prototype;
+		/**
+		 * Description
+		 * @method getName
+		 * @return MemberExpression
+		 */
 		proto.getName = function() { return this._name; }; // getter for name
+		/**
+		 * Description
+		 * @method id
+		 * @return MemberExpression
+		 */
 		proto.id = function() { return this._id; }; // getter for id
 	}(State));
 
 	// Simple transition representation (again, the containing FSM does most of the work)
+	/**
+	 * Description
+	 * @method Transition
+	 * @param {} fsm
+	 * @param {} from_state
+	 * @param {} to_state
+	 * @param {} name
+	 * @return 
+	 */
 	var Transition = function(fsm, from_state, to_state, name) {
 		this._fsm = fsm; // parent FSM
 		this._from = from_state; // from state (fetch with getFrom)
@@ -26,11 +52,41 @@
 
 	(function(my) {
 		var proto = my.prototype;
+		/**
+		 * Description
+		 * @method getFrom
+		 * @return MemberExpression
+		 */
 		proto.getFrom = function() { return this._from; }; // from getter
+		/**
+		 * Description
+		 * @method getTo
+		 * @return MemberExpression
+		 */
 		proto.getTo = function() { return this._to; }; // to getter
+		/**
+		 * Description
+		 * @method getName
+		 * @return MemberExpression
+		 */
 		proto.getName = function() { return this._name; }; // name getter
+		/**
+		 * Description
+		 * @method getFSM
+		 * @return MemberExpression
+		 */
 		proto.getFSM = function() { return this._fsm; }; // FSM getter
+		/**
+		 * Description
+		 * @method id
+		 * @return MemberExpression
+		 */
 		proto.id = function() { return this._id; }; // getter for id
+		/**
+		 * Description
+		 * @method run
+		 * @return 
+		 */
 		proto.run = function() {
 			var fsm = this.getFSM();
 			// do_transition should be called by the user's code
@@ -55,11 +111,23 @@
 	 */
 
 	// The selector for a state with a supplied name (e.g. stateA)
+	/**
+	 * Description
+	 * @method StateSelector
+	 * @param {} state_name
+	 * @return 
+	 */
 	var StateSelector = function(state_name) {
 		this._state_name = state_name;
 	};
 	(function(my) {
 		var proto = my.prototype;
+		/**
+		 * Description
+		 * @method matches
+		 * @param {} state
+		 * @return LogicalExpression
+		 */
 		proto.matches = function(state) {
 			// Supplied object should be a State object with the given name
 			return state instanceof State && (this._state_name === state || this._state_name === state.getName());
@@ -67,14 +135,33 @@
 	}(StateSelector));
 
 	// Matches any state (e.g. *)
+	/**
+	 * Description
+	 * @method AnyStateSelector
+	 * @return 
+	 */
 	var AnyStateSelector = function() { };
 	(function(my) {
 		var proto = my.prototype;
 		// will match any state (but not transition)
+		/**
+		 * Description
+		 * @method matches
+		 * @param {} state
+		 * @return BinaryExpression
+		 */
 		proto.matches = function(state) {return state instanceof State;};
 	}(AnyStateSelector));
 
 	// Matches certain transitions (see transition formatting spec)
+	/**
+	 * Description
+	 * @method TransitionSelector
+	 * @param {} pre
+	 * @param {} from_state_selector
+	 * @param {} to_state_selector
+	 * @return 
+	 */
 	var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 		this.is_pre = pre; // should fire before the transition (as opposed to after)
 		this.from_state_selector = from_state_selector; // the selector for the from state (should be a StateSelector or AnyStateSelector)
@@ -83,6 +170,13 @@
 	(function(my) {
 		var proto = my.prototype;
 		// Make sure that the supplied object is a transition with the same timing
+		/**
+		 * Description
+		 * @method matches
+		 * @param {} transition
+		 * @param {} pre
+		 * @return 
+		 */
 		proto.matches = function(transition, pre) {
 			if(transition instanceof Transition && this.is_pre === pre) { 
 				var from_state = transition.getFrom();
@@ -95,11 +189,22 @@
 	}(TransitionSelector));
 
 	// Multiple possiblities (read OR, not AND)
+	/**
+	 * Description
+	 * @method MultiSelector
+	 * @param {} selectors
+	 * @return 
+	 */
 	var MultiSelector = function(selectors) {
 		this.selectors = selectors; // all of the selectors to test
 	};
 	(function(my) {
 		var proto = my.prototype;
+		/**
+		 * Description
+		 * @method matches
+		 * @return CallExpression
+		 */
 		proto.matches = function() {
 			var match_args = arguments;
 			// See if any selectors match
@@ -110,6 +215,12 @@
 	}(MultiSelector));
 
 	// return a selector object from a string representing a single state
+	/**
+	 * Description
+	 * @method parse_single_state_spec
+	 * @param {} str
+	 * @return 
+	 */
 	var parse_single_state_spec = function(str) {
 		if(str === "*") {
 			return new AnyStateSelector();
@@ -119,6 +230,12 @@
 	};
 
 	// Parse one side of the transition
+	/**
+	 * Description
+	 * @method parse_state_spec
+	 * @param {} str
+	 * @return 
+	 */
 	var parse_state_spec = function(str) {
 		// Split by , and remove any excess spacing
 		var state_spec_strs = map(str.split(","), function(ss) { return ss.trim(); }); 
@@ -133,6 +250,14 @@
 	};
 
 	// The user specified a transition
+	/**
+	 * Description
+	 * @method parse_transition_spec
+	 * @param {} left_str
+	 * @param {} transition_str
+	 * @param {} right_str
+	 * @return 
+	 */
 	var parse_transition_spec = function(left_str, transition_str, right_str) {
 		var left_to_right_transition, right_to_left_transition;
 		var left_state_spec = parse_state_spec(left_str);
@@ -160,6 +285,12 @@
 
 	var transition_separator_regex = new RegExp("^([\\sa-zA-Z0-9,\\-_*]+)((<->|>-<|->|>-|<-|-<)([\\sa-zA-Z0-9,\\-_*]+))?$");
 	// Given a string specifying a state or set of states, return a selector object
+	/**
+	 * Description
+	 * @method parse_spec
+	 * @param {} str
+	 * @return 
+	 */
 	var parse_spec = function(str) {
 		var matches = str.match(transition_separator_regex);
 		if(matches === null) {
@@ -180,6 +311,14 @@
 
 	// StateListener
 	var state_listener_id = 0;
+	/**
+	 * Description
+	 * @method StateListener
+	 * @param {} selector
+	 * @param {} callback
+	 * @param {} context
+	 * @return 
+	 */
 	var StateListener = function(selector, callback, context) {
 		this._context = context || root; // 'this' in the callback
 		this._selector = selector; // used to record interest
@@ -189,11 +328,26 @@
 	(function(my) {
 		var proto = my.prototype;
 		// Used to determine if run should be called by the fsm
+		/**
+		 * Description
+		 * @method interested_in
+		 * @return CallExpression
+		 */
 		proto.interested_in = function() { return this._selector.matches.apply(this._selector, arguments); };
 		// Run the user-specified callback
+		/**
+		 * Description
+		 * @method run
+		 * @return 
+		 */
 		proto.run = function() { this._callback.apply(this._context, arguments); };
 	}(StateListener));
 
+	/**
+	 * Description
+	 * @method FSM
+	 * @return 
+	 */
 	var FSM = function() {
 		this._states = {}; // simple substate representations
 		this._transitions = []; // simple transition representations
@@ -217,6 +371,12 @@
 	(function(my) {
 		var proto = my.prototype;
 		// Creates and returns a new state object with name state
+		/**
+		 * Description
+		 * @method createState
+		 * @param {} state_name
+		 * @return state
+		 */
 		proto.createState = function(state_name) {
 			var state = new State(this, state_name);
 			this._states[state_name] = state;
@@ -225,6 +385,12 @@
 
 		// Either creates a state with name state_name or sets the current
 		// chain state to that state
+		/**
+		 * Description
+		 * @method addState
+		 * @param {} state_name
+		 * @return ThisExpression
+		 */
 		proto.addState = function(state_name) {
 			var state = this.stateWithName(state_name);
 			if(state === null) {
@@ -237,17 +403,36 @@
 			return this;
 		};
 		// Find the state with a given name
+		/**
+		 * Description
+		 * @method stateWithName
+		 * @param {} state_name
+		 * @return LogicalExpression
+		 */
 		proto.stateWithName = function(state_name) {
 			return this._states[state_name] || null;
 		};
 
 		// Returns the name of the state this machine is currently in
+		/**
+		 * Description
+		 * @method getState
+		 * @return CallExpression
+		 */
 		proto.getState = function() {
 			return this.state.get();
 		};
 		
 		// Add a transition from the last state that was added (the chain state) to a given state
 		// add_transition_fn will be called with the code to do a transition as a parameter
+		/**
+		 * Description
+		 * @method addTransition
+		 * @param {} a
+		 * @param {} b
+		 * @param {} c
+		 * @return 
+		 */
 		proto.addTransition = function(a, b, c) {
 			var from_state, to_state, transition, add_transition_fn, return_transition_func = false;
 
@@ -289,6 +474,13 @@
 		};
 
 		// Creates a new transition that will go from from_state to to_state
+		/**
+		 * Description
+		 * @method _getTransition
+		 * @param {} from_state
+		 * @param {} to_state
+		 * @return transition
+		 */
 		proto._getTransition = function(from_state, to_state) {
 			if(isString(from_state)) {
 				from_state = this.stateWithName(from_state);
@@ -303,6 +495,13 @@
 			return transition;
 		};
 		// This function should, ideally, be called by a transition instead of directly
+		/**
+		 * Description
+		 * @method _setState
+		 * @param {} state
+		 * @param {} transition
+		 * @return 
+		 */
 		proto._setState = function(state, transition) {
 			var from_state = this.getState(); // the name of my current state
 			var to_state = isString(state) ? this.stateWithName(state) : state;
@@ -329,12 +528,23 @@
 				}
 			});
 		};
+		/**
+		 * Description
+		 * @method destroy
+		 * @return 
+		 */
 		proto.destroy = function() {
 			this.state.destroy();
 			this._states = {};
 			this._transitions = [];
 			this._curr_state = null;
 		};
+		/**
+		 * Description
+		 * @method startsAt
+		 * @param {} state_name
+		 * @return ThisExpression
+		 */
 		proto.startsAt = function(state_name) {
 			var state = this.stateWithName(state_name); // Get existing state
 			if(state === null) {
@@ -348,6 +558,12 @@
 			this._chain_state = state;
 			return this;
 		};
+		/**
+		 * Description
+		 * @method is
+		 * @param {} state_name
+		 * @return 
+		 */
 		proto.is = function(state_name) {
 			// get the current state name...
 			var state = this.getState();
@@ -362,7 +578,16 @@
 			}
 		};
 		// A function to be called when the given string is true
-		proto.on = proto.addEventListener = function(spec_str, callback, context) {
+		proto.on = 
+/**
+  * Description
+  * @method addEventListener
+  * @param {} spec_str
+  * @param {} callback
+  * @param {} context
+  * @return ThisExpression
+  */
+ proto.addEventListener = function(spec_str, callback, context) {
 			var selector;
 			if(isString(spec_str)) {
 				selector = parse_spec(spec_str);
@@ -378,7 +603,14 @@
 		};
 
 		// Remove the listener specified by an on call; pass in just the callback
-		proto.off = proto.removeEventListener = function(listener_callback) {
+		proto.off = 
+/**
+  * Description
+  * @method removeEventListener
+  * @param {} listener_callback
+  * @return ThisExpression
+  */
+ proto.removeEventListener = function(listener_callback) {
 			this._listeners = filter(this._listeners, function(listener) {
 				return listener.callback !== listener_callback;
 			});
@@ -387,6 +619,17 @@
 	}(FSM));
 
 	extend(cjs, {
+		/**
+		 * Description
+		 * @method fsm
+		 * @return NewExpression
+		 */
 		fsm: function() { return new FSM(arguments); },
+		/**
+		 * Description
+		 * @method isFSM
+		 * @param {} obj
+		 * @return BinaryExpression
+		 */
 		isFSM: function(obj) { return obj instanceof FSM; }
 	});
