@@ -175,23 +175,16 @@
 			}
 		},
 		memoize_dom_elems = function() {
-			var memoized_args = [],
-				memoized_vals = [];
+			var memoized_vals = [],
+				lineage_id = 1;
 
 			return {
-				get: function(context, lineage, curr_bindings) {
-					var memo_index = indexWhere(memoized_args, function(margs) {
-						return margs[0] === context &&
-								margs[1].length === lineage.length &&
-								every(margs[1], function(l, i) {
-									return l.this_exp === lineage[i].this_exp;
-								});
-					});
-					return memoized_vals[memo_index];
+				get: function(lineage) {
+					return memoized_vals[lineage._id];
 				},
-				set: function(context, lineage, curr_bindings, val) {
-					memoized_args.push([context, lineage, curr_bindings]);
-					memoized_vals.push(val);
+				set: function(lineage, val) {
+					lineage._id = lineage_id++;
+					memoized_vals[lineage._id] = val;
 				}
 			};
 		},
@@ -244,10 +237,7 @@
 						isHTML: true
 					};
 
-					if(stack.length > 0) {
-						last(stack).children.push(last_pop);
-					}
-
+					last(stack).children.push(last_pop);
 					if(!unary) {
 						stack.push(last_pop);
 					}
@@ -257,13 +247,9 @@
 				},
 				HTMLcomment: function(str) {
 					last_pop = {
-						create: function() { return doc.createComment(str); },
-						isText: true,
-						text: str
+						create: function() { return doc.createComment(str); }
 					};
-					if(stack.length > 0) {
-						last(stack).children.push(last_pop);
-					}
+					last(stack).children.push(last_pop);
 				},
 				chars: function(str) {
 					last_pop = {
@@ -273,9 +259,7 @@
 						isText: true,
 						text: str
 					};
-					if(stack.length > 0) {
-						last(stack).children.push(last_pop);
-					}
+					last(stack).children.push(last_pop);
 				},
 				startHB: function(tag, parsed_content, unary, literal) {
 					var memoized_elems, setter_name, type_name, push_onto_children;
@@ -293,9 +277,7 @@
 						};
 						last_pop[type_name] = true;
 
-						if(stack.length > 0) {
-							last(stack).children.push(last_pop);
-						}
+						last(stack).children.push(last_pop);
 					} else {
 						push_onto_children = true;
 						if(tag === "each") {
@@ -305,7 +287,7 @@
 								create: function(context, lineage, curr_bindings) {
 									var mvals, mdom, mLastLineage, val_diff, rv = [],
 										val = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings),
-										memoized_val = memoized_elems.get(context, lineage, curr_bindings);
+										memoized_val = memoized_elems.get(lineage);
 
 									if(!isArray(val)) {
 										// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
@@ -322,7 +304,7 @@
 										mvals = [];
 										mdom = [];
 										mLastLineage = [];
-										memoized_elems.set(context, lineage, curr_bindings, {val: val, dom: mdom, lineage: mLastLineage});
+										memoized_elems.set(lineage, {val: val, dom: mdom, lineage: mLastLineage});
 									}
 
 									val_diff = get_array_diff(mvals, val, map_aware_array_eq);
@@ -379,7 +361,7 @@
 							memoized_elems = memoize_dom_elems();
 							last_pop = {
 								create: function(context, lineage, curr_bindings) {
-									var memoized_val = memoized_elems.get(context, lineage, curr_bindings),
+									var memoized_val = memoized_elems.get(lineage),
 										len = this.sub_conditions.length,
 										cond = !!get_node_value(this.condition, context, lineage, curr_bindings),
 										i = -1, children, memo_index;
@@ -403,10 +385,10 @@
 									if(i < 0) {
 										return [];
 									} else {
-										var memoized_children = memoized_elems.get(context, lineage, curr_bindings);
+										var memoized_children = memoized_elems.get(lineage);
 										if(!memoized_children) {
 											memoized_children = [];
-											memoized_elems.set(context, lineage, curr_bindings, memoized_children);
+											memoized_elems.set(lineage, memoized_children);
 										}
 
 										if(!memoized_children[i]) {
@@ -458,10 +440,10 @@
 									for(state_name in this.sub_states) {
 										if(this.sub_states.hasOwnProperty(state_name)) {
 											if(state === state_name) {
-												memoized_children = memoized_elems.get(context, lineage, curr_bindings);
+												memoized_children = memoized_elems.get(lineage);
 												if(!memoized_children) {
 													memoized_children = {};
-													memoized_elems.set(context, lineage, curr_bindings, memoized_children);
+													memoized_elems.set(lineage, memoized_children);
 												}
 
 												if(!has(memoized_children, state_name)) {
@@ -499,7 +481,7 @@
 							return;
 						}
 
-						if(push_onto_children && stack.length > 0) {
+						if(push_onto_children) {
 							last(stack).children.push(last_pop);
 						}
 						stack.push(last_pop);
@@ -523,9 +505,7 @@
 							}
 						};
 
-						if(stack.length > 0) {
-							last(stack).children.push(last_pop);
-						}
+						last(stack).children.push(last_pop);
 					}
 				}
 			});
@@ -584,8 +564,8 @@
 									return bind(memoize_template, template);
 								}
 							},
-		registerPartial:	function(name, value) { partials[name] = value; },
-		unregisterPartial:	function(name) { delete partials[name]; },
+		registerPartial:	function(name, value) { partials[name] = value; return this;},
+		unregisterPartial:	function(name) { delete partials[name]; return this;},
 		destroyTemplate:	function(dom_node) {
 								var nodeIndex = indexOf(memoized_template_nodes, dom_node);
 								if(nodeIndex >= 0) {

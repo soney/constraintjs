@@ -382,6 +382,22 @@
 			}
 			return this;
 		};
+
+		// extend the standard constraint constructor so that any constraint can have its values depend on an fsm
+		proto.inFSM = function(fsm, values) {
+			each(values, function(v, k) {
+				// add listeners to the fsm for that state that will set my getter's value
+				fsm.on(k, function() {
+					this.set(v);
+				}, this);
+
+				if(fsm.is(k)) {
+					this.set(v);
+				}
+			}, this);
+			
+			return this;
+		};
 		
 		// Undoes the effect of onChange, removes the listener. 'context' is optional here
 		// only removes the last matching callback
@@ -500,6 +516,10 @@
 		constraint: function(value, options) { return new Constraint(value, options); },
 		Constraint: Constraint,
 		isConstraint: is_constraint,
+
+		inFSM: function(fsm, values) {
+			return (new Constraint()).inFSM(fsm, values);
+		},
 
 		// Gets the value of an object regardless of if it's a constraint or not
 		get: function (obj, arg0) {
