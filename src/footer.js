@@ -1,4 +1,4 @@
-	return cjs;
+return cjs;
 }(this));
 
 // Export for node

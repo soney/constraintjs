@@ -1,4 +1,4 @@
-	/**
+/**
  * Description
  * @method get_template_bindings
  * @param {} dom_node
