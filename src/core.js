@@ -374,6 +374,15 @@ Constraint = function (value, options) {
 		return this;
 	};
 
+	/**
+	 * Description
+	 * @method isValid
+	 * @return boolean
+	 */
+	proto.isValid = function () {
+		return this._valid;
+	};
+
 	// Removes every dependency to this node
 	/**
 	 * Description
