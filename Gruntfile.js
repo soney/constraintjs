@@ -88,6 +88,10 @@ module.exports = function(grunt) {
 			full: {
 				files: src_files.concat(['test/unit_tests.js', 'test/unit_tests/*.js']),
 				tasks: ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify']
+			},
+			docs: {
+				files: src_files,
+				tasks: ['docco']
 			}
 		},
 		compress: {
@@ -101,6 +105,15 @@ module.exports = function(grunt) {
 					src: '*',
 					dest: '<%= pkg.name %>-<%= pkg.version %>'
 				}]
+			}
+		},
+		docco: {
+			package: {
+				src: ['build/cjs.js'],
+				options: {
+					output: 'docs/',
+					css: "resources/docco.css"
+				}
 			}
 		}
 	});
@@ -128,10 +141,12 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-qunit');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-compress');
+	grunt.loadNpmTasks('grunt-docco');
 
 	// Default task(s).
 	grunt.registerTask('default', ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development']);
-	grunt.registerTask('dev', ['usetheforce_on', 'jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development', 'watch:full', 'usetheforce_restore']);
+	grunt.registerTask('dev', ['usetheforce_on', 'jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development', 'watch:full', 'docco', 'usetheforce_restore']);
 	grunt.registerTask('quickdev', ['usetheforce_on', 'concat_sourcemap', 'watch:quickdev', 'usetheforce_restore']);
-	grunt.registerTask('package', ['clean', 'jshint:source', 'concat', 'jshint:post_concat', 'qunit', 'uglify:production', 'compress']);
+	grunt.registerTask('package', ['clean', 'jshint:source', 'concat', 'jshint:post_concat', 'qunit', 'uglify:production', 'compress', 'docco']);
+	grunt.registerTask('docs', ['clean', 'watch:docs']);
 };
