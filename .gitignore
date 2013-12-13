@@ -1,5 +1,6 @@
 build
 dist
+docs
 *.swp
 node_modules
 *.DS_Store
