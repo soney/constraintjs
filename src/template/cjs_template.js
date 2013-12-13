@@ -1,9 +1,3 @@
-/**
- * Description
- * @method get_template_bindings
- * @param {} dom_node
- * @return ConditionalExpression
- */
 var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		child_is_text				= function(child)	{ return child.isText; },
 		every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
@@ -186,12 +180,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		memoize_dom_elems = function() {
 			var memoized_vals = [];
 			return {
-				/**
-				 * Description
-				 * @method get
-				 * @param {} lineage
-				 * @return 
-				 */
 				get: function(lineage) {
 					var hash = lineage.length,
 						mvals = memoized_vals[hash],
@@ -205,13 +193,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 						}
 					}
 				},
-				/**
-				 * Description
-				 * @method set
-				 * @param {} lineage
-				 * @param {} value
-				 * @return 
-				 */
 				set: function(lineage, value) {
 					var hash = lineage.length,
 						value_info = {lineage: lineage, value: value};
@@ -237,24 +218,8 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 			}], last_pop = false, has_container = false, condition_stack = [], fsm_stack = [];
 
 			parseTemplate(template_str, {
-				/**
-				 * Description
-				 * @method startHTML
-				 * @param {} tag
-				 * @param {} attributes
-				 * @param {} unary
-				 * @return 
-				 */
 				startHTML: function(tag, attributes, unary) {
 					last_pop = {
-						/**
-						 * Description
-						 * @method create
-						 * @param {} context
-						 * @param {} lineage
-						 * @param {} curr_bindings
-						 * @return element
-						 */
 						create: function(context, lineage, curr_bindings) {
 							var args = arguments,
 								element = doc.createElement(tag),
@@ -295,45 +260,17 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 						stack.push(last_pop);
 					}
 				},
-				/**
-				 * Description
-				 * @method endHTML
-				 * @param {} tag
-				 * @return 
-				 */
 				endHTML: function(tag) {
 					last_pop = stack.pop();
 				},
-				/**
-				 * Description
-				 * @method HTMLcomment
-				 * @param {} str
-				 * @return 
-				 */
 				HTMLcomment: function(str) {
 					last_pop = {
-						/**
-						 * Description
-						 * @method create
-						 * @return CallExpression
-						 */
 						create: function() { return doc.createComment(str); }
 					};
 					last(stack).children.push(last_pop);
 				},
-				/**
-				 * Description
-				 * @method chars
-				 * @param {} str
-				 * @return 
-				 */
 				chars: function(str) {
 					last_pop = {
-						/**
-						 * Description
-						 * @method create
-						 * @return CallExpression
-						 */
 						create: function() {
 							return doc.createTextNode(str);
 						},
@@ -342,29 +279,12 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 					};
 					last(stack).children.push(last_pop);
 				},
-				/**
-				 * Description
-				 * @method startHB
-				 * @param {} tag
-				 * @param {} parsed_content
-				 * @param {} unary
-				 * @param {} literal
-				 * @return 
-				 */
 				startHB: function(tag, parsed_content, unary, literal) {
 					var memoized_elems, setter_name, type_name, push_onto_children;
 					if(unary) {
 						if(literal) { type_name = "isDynamicHTML"; setter_name = "html"; }
 						else { type_name = "isText"; setter_name = "text"; }
 						last_pop = {
-							/**
-							 * Description
-							 * @method create
-							 * @param {} context
-							 * @param {} lineage
-							 * @param {} curr_bindings
-							 * @return elem
-							 */
 							create: function(context, lineage, curr_bindings) {
 								var elem = doc.createTextNode(""),
 									val = get_node_value(first_body(parsed_content), context, lineage, curr_bindings);
@@ -382,14 +302,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 							memoized_elems = memoize_dom_elems();
 
 							last_pop = {
-								/**
-								 * Description
-								 * @method create
-								 * @param {} context
-								 * @param {} lineage
-								 * @param {} curr_bindings
-								 * @return CallExpression
-								 */
 								create: function(context, lineage, curr_bindings) {
 									var mvals, mdom, mLastLineage, val_diff, rv = [],
 										val = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings),
@@ -466,14 +378,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 						} else if(tag === "if" || tag === "unless") {
 							memoized_elems = memoize_dom_elems();
 							last_pop = {
-								/**
-								 * Description
-								 * @method create
-								 * @param {} context
-								 * @param {} lineage
-								 * @param {} curr_bindings
-								 * @return 
-								 */
 								create: function(context, lineage, curr_bindings) {
 									var len = this.sub_conditions.length,
 										cond = !!get_node_value(this.condition, context, lineage, curr_bindings),
@@ -541,21 +445,7 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 							memoized_elems = memoize_dom_elems();
 							var fsm_target = rest_body(parsed_content);
 							last_pop = {
-								/**
-								 * Description
-								 * @method create
-								 * @param {} context
-								 * @param {} lineage
-								 * @param {} curr_bindings
-								 * @return ArrayExpression
-								 */
 								create: function(context, lineage, curr_bindings) {
-									/**
-									 * Description
-									 * @method do_child_create
-									 * @param {} child
-									 * @return CallExpression
-									 */
 									var fsm = get_node_value(fsm_target, context, lineage, curr_bindings),
 										state = fsm.getState(),
 										do_child_create = function(child) {
@@ -597,14 +487,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 							}
 						} else if(tag === "with") {
 							last_pop = {
-								/**
-								 * Description
-								 * @method create
-								 * @param {} context
-								 * @param {} lineage
-								 * @param {} curr_bindings
-								 * @return CallExpression
-								 */
 								create: function(context, lineage, curr_bindings) {
 									var new_context = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings),
 										concatenated_lineage = lineage.concat({this_exp: new_context});
@@ -624,12 +506,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 						stack.push(last_pop);
 					}
 				},
-				/**
-				 * Description
-				 * @method endHB
-				 * @param {} tag
-				 * @return 
-				 */
 				endHB: function(tag) {
 					if(tag === "if" || tag === "unless") {
 						condition_stack.pop();
@@ -638,25 +514,10 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 					}
 					stack.pop();
 				},
-				/**
-				 * Description
-				 * @method partialHB
-				 * @param {} tagName
-				 * @param {} parsed_content
-				 * @return 
-				 */
 				partialHB: function(tagName, parsed_content) {
 					var partial = partials[tagName];
 					if(partial) {
 						last_pop = {
-							/**
-							 * Description
-							 * @method create
-							 * @param {} context
-							 * @param {} lineage
-							 * @param {} curr_bindings
-							 * @return CallExpression
-							 */
 							create: function(context, lineage, curr_bindings) {
 								var new_context = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings);
 								return partial(new_context);
