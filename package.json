@@ -1,24 +1,23 @@
 {
 	"name": "ConstraintJS",
-	"description": "Constraint library for JavaScript",
 	"version": "0.9.1",
-	"author": "Stephen Oney",
-	"main": "build/cjs.js",
+	"description": "Constraint library for JavaScript",
+	"author": "Stephen Oney <swloney@gmail.com> (http://from.so/)",
+	"homepage": "http://cjs.from.so/",
 	"repository": {
 		"type" : "git",
-		"url" : "https://github.com/soney/ConstraintJS"
+		"url" : "https://github.com/soney/ConstraintJS.git"
 	},
-	"maintainers": [
-		{
+	"maintainers": [{
 		"name": "Stephen Oney",
 		"email": "swloney@gmail.com",
 		"web": "http://from.so/"
-		}
-	],
+	}],
 	"licenses": [{
 		"type": "MIT",
 		"url": "https://github.com/soney/ConstraintJS/blob/master/LICENSE"
 	}],
+	"main": "build/cjs.js",
 	"private": false,
 	"dependencies": { },
 	"devDependencies": {

@@ -10,15 +10,14 @@ var Constraint, // Declare here, will be defined later
 	
 	// Save the previous value of the `cjs` variable.
 	old_cjs = root.cjs,
-	/**
-	 * Description
-	 * 
+	/*!
+	 * The main act! `cjs` can be called in multiple ways
+	 *
 	 * @public
 	 * @method cjs
 	 * @param {Array.*} value an initial value for the array constraint
 	 * @return ArrayConstraint
 	 */
-	// Here's the star of the show!
 	cjs = function (arg0, arg1) {
 		if(isArray(arg0)) {
 			return new ArrayConstraint(extend({
@@ -277,13 +276,7 @@ var constraint_solver = {
  * @module Constraint
  */
 
-/*!
- * @public
- * @class
- * @method Constraint
- * @param {*} value
- * @param {*} options
- */
+/** @constructor cjs.Constraint */
 Constraint = function (value, options) {
 	// *OPTION DEFAULTS*:
 

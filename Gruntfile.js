@@ -19,7 +19,7 @@ module.exports = function(grunt) {
 		uglify: {
 			development: {
 				options: {
-					banner: '/*<%= pkg.name %> - v<%= pkg.version %>*/\n',
+					banner: '/* <%= pkg.name %> - v<%= pkg.version %> (<%= pkg.homepage %>) */',
 					report: 'gzip',
 					sourceMapIn: "build/cjs.js.map",
 					sourceMap: "build/cjs.min.js.map",
@@ -31,7 +31,7 @@ module.exports = function(grunt) {
 			},
 			production: {
 				options: {
-					banner: '/*<%= pkg.name %> - v<%= pkg.version %>*/\n',
+					banner: '/* <%= pkg.name %> - v<%= pkg.version %> (<%= pkg.homepage %>) */',
 					sourceMap: "build/cjs.min.js.map",
 					sourceMappingURL: "cjs.min.js.map",
 					sourceMapRoot: '..',
@@ -43,7 +43,6 @@ module.exports = function(grunt) {
 		},
 		concat_sourcemap: {
 			options: {
-				banner: '/*<%= pkg.name %> - v<%= pkg.version %>*/\n',
 				process: {
 					data: {
 						version: package.version // the updated version will be added to the concatenated file
@@ -58,7 +57,6 @@ module.exports = function(grunt) {
 		},
 		concat: {
 			options: {
-				banner: '/*<%= pkg.name %> - v<%= pkg.version %>*/\n',
 				process: {
 					data: {
 						version: package.version // the updated version will be added to the concatenated file
@@ -90,7 +88,7 @@ module.exports = function(grunt) {
 				tasks: ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify']
 			},
 			docs: {
-				files: src_files,
+				files: enclosed_src_files,
 				tasks: ['dox']
 			}
 		},
@@ -121,7 +119,7 @@ module.exports = function(grunt) {
 				title: "ConstraintJS Documentation"
 			},
 			files: {
-				src: ['src/'],
+				src: enclosed_src_files,
 				dest: 'docs'
 			}
 		}

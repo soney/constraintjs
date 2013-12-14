@@ -1,13 +1,9 @@
+//     ConstraintJS (CJS) <%= version %>
+//     ConstraintJS may be freely distributed under the MIT License
+//     http://cjs.from.so/
+
 /*! jslint nomen: true, vars: true */
 /*! jshint -W093 */
 /*! global document */
-
-/**
- * @title ConstraintJS!
- * @copyright (c) 2013
- * @license MIT
- * @something abc
- * @author Stephen Oney
-*/
 var cjs = (function (root) {
 "use strict";
