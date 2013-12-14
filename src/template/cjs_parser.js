@@ -1,34 +1,5 @@
-//Based on Mu's parser: https://github.com/raycmorgan/Mu
-/*
- * HTML Parser By John Resig (ejohn.org)
- * Original code by Erik Arvidsson, Mozilla Public License
- * http://erik.eae.net/simplehtmlparser/simplehtmlparser.js
- *
- * // Use like so:
- * HTMLParser(htmlString, {
- *     start: function(tag, attrs, unary) {},
- *     end: function(tag) {},
- *     chars: function(text) {},
- *     comment: function(text) {}
- * });
- *
- * // or to get an XML string:
- * HTMLtoXML(htmlString);
- *
- * // or to get an XML DOM Document
- * HTMLtoDOM(htmlString);
- *
- * // or to inject into an existing document/DOM node
- * HTMLtoDOM(htmlString, document);
- * HTMLtoDOM(htmlString, document.body);
- *
- */
-/**
- * Description
- * @method makeMap
- * @param {} str
- * @return obj
- */
+// Based on [Mu's parser](https://github.com/raycmorgan/Mu) and
+// John Resig's [HTML parser](http://erik.eae.net/simplehtmlparser/simplehtmlparser.js)
 var makeMap = function(str){
 	var obj = {};
 	each(str.split(","), function(item) { obj[item] = true; });
@@ -44,26 +15,18 @@ var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+[a-zA-Z0-9_\-]+(?:\s*=\s*(?:(?:"[^"]*"
 	HTML_TYPE = "html";
 	
 // Empty Elements - HTML 4.01
-var empty = makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed");
-
+var empty = makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed"),
 // Block Elements - HTML 4.01
-var block = makeMap("address,applet,blockquote,button,center,dd,del,dir,div,dl,dt,fieldset,form,frameset,hr,iframe,ins,isindex,li,map,menu,noframes,noscript,object,ol,p,pre,script,table,tbody,td,tfoot,th,thead,tr,ul");
-
+	block = makeMap("address,applet,blockquote,button,center,dd,del,dir,div,dl,dt,fieldset,form,frameset,hr,iframe,ins,isindex,li,map,menu,noframes,noscript,object,ol,p,pre,script,table,tbody,td,tfoot,th,thead,tr,ul"),
 // Inline Elements - HTML 4.01
-var inline = makeMap("a,abbr,acronym,applet,b,basefont,bdo,big,br,button,cite,code,del,dfn,em,font,i,iframe,img,input,ins,kbd,label,map,object,q,s,samp,script,select,small,span,strike,strong,sub,sup,textarea,tt,u,var");
-
-// Elements that you can, intentionally, leave open
-// (and which close themselves)
-var closeSelf = makeMap("colgroup,dd,dt,li,options,p,td,tfoot,th,thead,tr");
-
+	inline = makeMap("a,abbr,acronym,applet,b,basefont,bdo,big,br,button,cite,code,del,dfn,em,font,i,iframe,img,input,ins,kbd,label,map,object,q,s,samp,script,select,small,span,strike,strong,sub,sup,textarea,tt,u,var"),
+// Elements that you can, intentionally, leave open (and which close themselves)
+	closeSelf = makeMap("colgroup,dd,dt,li,options,p,td,tfoot,th,thead,tr"),
 // Attributes that have their values filled in disabled="disabled"
-var fillAttrs = makeMap("checked,compact,declare,defer,disabled,ismap,multiple,nohref,noresize,noshade,nowrap,readonly,selected");
-
+	fillAttrs = makeMap("checked,compact,declare,defer,disabled,ismap,multiple,nohref,noresize,noshade,nowrap,readonly,selected"),
 // Special Elements (can contain anything)
-var special = makeMap("script,style");
+	special = makeMap("script,style");
 
-
-// HANDLEBARS RULES
 
 // Dictates what parents children must have; state must be a direct descendent of diagram
 var parent_rules = {
@@ -100,31 +63,12 @@ var sibling_rules = {
 	}
 };
 
-/**
- * Description
- * @method parseTemplate
- * @param {} input_str
- * @param {} handler
- * @return 
- */
 var parseTemplate = function(input_str, handler) {
 	var html_index, hb_index, last_closed_hb_tag, index, chars, match, stack = [], last = input_str;
-	/**
-	 * Description
-	 * @method last
-	 * @return MemberExpression
-	 */
 	stack.last = function(){
 		return this[this.length - 1];
 	};
 
-	/**
-	 * Description
-	 * @method replace_fn
-	 * @param {} all
-	 * @param {} text
-	 * @return Literal
-	 */
 	var replace_fn = function(all, text) {
 		text = text	.replace(/<!--(.*?)-->/g, "$1")
 					.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1");
@@ -209,15 +153,6 @@ var parseTemplate = function(input_str, handler) {
 	// Clean up any remaining tags
 	parseEndTag();
 
-	/**
-	 * Description
-	 * @method parseStartTag
-	 * @param {} tag
-	 * @param {} tagName
-	 * @param {} rest
-	 * @param {} unary
-	 * @return 
-	 */
 	function parseStartTag( tag, tagName, rest, unary ) {
 		tagName = tagName.toLowerCase();
 
@@ -257,21 +192,9 @@ var parseTemplate = function(input_str, handler) {
 		}
 	}
 
-	/**
-	 * Description
-	 * @method parseEndTag
-	 * @param {} tag
-	 * @param {} tagName
-	 * @return 
-	 */
 	function parseEndTag(tag, tagName) {
 		popStackUntilTag(tagName, HTML_TYPE);
 	}
-	/**
-	 * Description
-	 * @method getLatestHandlebarParent
-	 * @return undefined
-	 */
 	function getLatestHandlebarParent() {
 		var i, stack_i;
 		for(i = stack.length - 1; i>= 0; i--) {
@@ -282,14 +205,6 @@ var parseTemplate = function(input_str, handler) {
 		}
 		return undefined;
 	}
-	/**
-	 * Description
-	 * @method parseHandlebar
-	 * @param {} tag
-	 * @param {} prefix
-	 * @param {} content
-	 * @return 
-	 */
 	function parseHandlebar(tag, prefix, content) {
 		var last_stack, tagName, parsed_content = jsep(content);
 
@@ -313,11 +228,6 @@ var parseTemplate = function(input_str, handler) {
 			case '>': // partial
 				handler.partialHB(tagName, parsed_content);
 				break;
-
-			//case '!': // comment
-				//var text = tag.replace(/\{\{!(--)?(.*?)(--)?\}\}/g, "$1");
-				//handler.HBComment(text);
-				//break;
 			case '#': // start block
 				last_stack = getLatestHandlebarParent();
 
@@ -358,13 +268,6 @@ var parseTemplate = function(input_str, handler) {
 				break;
 		}
 	}
-	/**
-	 * Description
-	 * @method popStackUntilTag
-	 * @param {} tagName
-	 * @param {} type
-	 * @return 
-	 */
 	function popStackUntilTag(tagName, type) {
 		var i, pos, stack_i;
 		for (pos = stack.length - 1; pos >= 0; pos -= 1) {

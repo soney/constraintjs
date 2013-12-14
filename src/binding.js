@@ -2,7 +2,6 @@
  * Description
  * @method get_dom_array
  * @param {} obj
- * @return 
  */
 var make_node = function(item) { // Check if the argument is a DOM node or create a new textual node with its contents
 		if(isAnyElement(item)) {
@@ -83,13 +82,11 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
  * Description
  * @method Binding
  * @param {} options
- * @return 
  */
 var Binding = function(options) {
 	/**
 	 * Description
 	 * @method do_update
-	 * @return 
 	 */
 	var targets = options.targets, // the DOM nodes
 		onAdd = options.onAdd, // optional function to be called when a new target is added
@@ -154,13 +151,11 @@ var Binding = function(options) {
 	/**
 	 * Description
 	 * @method pause
-	 * @return 
 	 */
 	proto.pause = function() { this.$live_fn.pause(); }; // Pause binding (no updates to the attribute until resume is called)
 	/**
 	 * Description
 	 * @method resume
-	 * @return 
 	 */
 	proto.resume = function() { this.$live_fn.resume(); }; // Resume the binding (after pause)
 	/**
@@ -182,7 +177,6 @@ var Binding = function(options) {
 	/**
 	 * Description
 	 * @method destroy
-	 * @return 
 	 */
 	proto.destroy = function() {
 		this.$live_fn.destroy();
@@ -215,7 +209,6 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 				/**
 				 * Description
 				 * @method onDestroy
-				 * @return 
 				 */
 				onDestroy: function() {
 					val.destroy(); // Clean up the constraint when we are done
@@ -252,7 +245,6 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 				 * @method setter
 				 * @param {} element
 				 * @param {} value
-				 * @return 
 				 */
 				setter: function(element, value) {
 					each(value, function(v, k) {
@@ -262,7 +254,6 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 				/**
 				 * Description
 				 * @method getter
-				 * @return 
 				 */
 				getter: function() {
 					if(is_map(vals)) {
@@ -347,7 +338,6 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 		/**
 		 * Description
 		 * @method deactivate
-		 * @return 
 		 */
 		var constraint = cjs(function() {
 				if(arr_inp) {
@@ -378,7 +368,6 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 		/**
 		 * Description
 		 * @method destroy
-		 * @return 
 		 */
 		constraint.destroy = function() {
 			deactivate();

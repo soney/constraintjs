@@ -7,7 +7,6 @@
  * @method State
  * @param {} fsm
  * @param {} name
- * @return 
  */
 var State = function(fsm, name) {
 	this._fsm = fsm; // parent fsm
@@ -39,7 +38,6 @@ var State = function(fsm, name) {
  * @param {} from_state
  * @param {} to_state
  * @param {} name
- * @return 
  */
 var Transition = function(fsm, from_state, to_state, name) {
 	this._fsm = fsm; // parent FSM
@@ -84,7 +82,6 @@ var Transition = function(fsm, from_state, to_state, name) {
 	/**
 	 * Description
 	 * @method run
-	 * @return 
 	 */
 	proto.run = function() {
 		var fsm = this.getFSM();
@@ -114,7 +111,6 @@ var Transition = function(fsm, from_state, to_state, name) {
  * Description
  * @method StateSelector
  * @param {} state_name
- * @return 
  */
 var StateSelector = function(state_name) {
 	this._state_name = state_name;
@@ -137,7 +133,6 @@ var StateSelector = function(state_name) {
 /**
  * Description
  * @method AnyStateSelector
- * @return 
  */
 var AnyStateSelector = function() { };
 (function(my) {
@@ -159,7 +154,6 @@ var AnyStateSelector = function() { };
  * @param {} pre
  * @param {} from_state_selector
  * @param {} to_state_selector
- * @return 
  */
 var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 	this.is_pre = pre; // should fire before the transition (as opposed to after)
@@ -174,7 +168,6 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 	 * @method matches
 	 * @param {} transition
 	 * @param {} pre
-	 * @return 
 	 */
 	proto.matches = function(transition, pre) {
 		if(transition instanceof Transition && this.is_pre === pre) { 
@@ -192,7 +185,6 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
  * Description
  * @method MultiSelector
  * @param {} selectors
- * @return 
  */
 var MultiSelector = function(selectors) {
 	this.selectors = selectors; // all of the selectors to test
@@ -218,7 +210,6 @@ var MultiSelector = function(selectors) {
  * Description
  * @method parse_single_state_spec
  * @param {} str
- * @return 
  */
 var parse_single_state_spec = function(str) {
 	if(str === "*") {
@@ -233,7 +224,6 @@ var parse_single_state_spec = function(str) {
  * Description
  * @method parse_state_spec
  * @param {} str
- * @return 
  */
 var parse_state_spec = function(str) {
 	// Split by , and remove any excess spacing
@@ -255,7 +245,6 @@ var parse_state_spec = function(str) {
  * @param {} left_str
  * @param {} transition_str
  * @param {} right_str
- * @return 
  */
 var parse_transition_spec = function(left_str, transition_str, right_str) {
 	var left_to_right_transition, right_to_left_transition;
@@ -288,7 +277,6 @@ var transition_separator_regex = new RegExp("^([\\sa-zA-Z0-9,\\-_*]+)((<->|>-<|-
  * Description
  * @method parse_spec
  * @param {} str
- * @return 
  */
 var parse_spec = function(str) {
 	var matches = str.match(transition_separator_regex);
@@ -316,7 +304,6 @@ var state_listener_id = 0;
  * @param {} selector
  * @param {} callback
  * @param {} context
- * @return 
  */
 var StateListener = function(selector, callback, context) {
 	this._context = context || root; // 'this' in the callback
@@ -337,7 +324,6 @@ var StateListener = function(selector, callback, context) {
 	/**
 	 * Description
 	 * @method run
-	 * @return 
 	 */
 	proto.run = function() { this._callback.apply(this._context, arguments); };
 }(StateListener));
@@ -345,7 +331,6 @@ var StateListener = function(selector, callback, context) {
 /**
  * Description
  * @method FSM
- * @return 
  */
 var FSM = function() {
 	this._states = {}; // simple substate representations
@@ -430,7 +415,6 @@ var FSM = function() {
 	 * @param {} a
 	 * @param {} b
 	 * @param {} c
-	 * @return 
 	 */
 	proto.addTransition = function(a, b, c) {
 		var from_state, to_state, transition, add_transition_fn, return_transition_func = false;
@@ -499,7 +483,6 @@ var FSM = function() {
 	 * @method _setState
 	 * @param {} state
 	 * @param {} transition
-	 * @return 
 	 */
 	proto._setState = function(state, transition) {
 		var from_state = this.getState(); // the name of my current state
@@ -530,7 +513,6 @@ var FSM = function() {
 	/**
 	 * Description
 	 * @method destroy
-	 * @return 
 	 */
 	proto.destroy = function() {
 		this.state.destroy();
@@ -561,7 +543,6 @@ var FSM = function() {
 	 * Description
 	 * @method is
 	 * @param {} state_name
-	 * @return 
 	 */
 	proto.is = function(state_name) {
 		// get the current state name...

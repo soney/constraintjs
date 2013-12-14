@@ -12,10 +12,11 @@ var Constraint, // Declare here, will be defined later
 	old_cjs = root.cjs,
 	/**
 	 * Description
+	 * 
+	 * @public
 	 * @method cjs
-	 * @param {} arg0
-	 * @param {} arg1
-	 * @return 
+	 * @param {Array.*} value an initial value for the array constraint
+	 * @return ArrayConstraint
 	 */
 	// Here's the star of the show!
 	cjs = function (arg0, arg1) {
@@ -36,7 +37,8 @@ var Constraint, // Declare here, will be defined later
 
 // Constraint Solver
 // -----------------
-// Implements constraint solving, as described in: http://doi.acm.org/10.1145/180171.180174
+// Implements constraint solving, as described in:
+// [Integrating pointer variables into one-way constraint models](http://doi.acm.org/10.1145/180171.180174)
 
 //   Edge from A -> B means A sends data to B
 
@@ -59,12 +61,12 @@ var constraint_solver = {
 			dependency_edge = node._outEdges[demanding_var._id];
 
 			// If there's already a dependency set up, mark it as still being used by setting its timestamp to the demanding
-			// variable's timestamp 1 (because that variable's timestamp will be incrememted later on, so they will be equal)
+			// variable's timestamp + `1` (because that variable's timestamp will be incrememted later on, so they will be equal)
 			// 
 			// Code in the this.nullify will check this timestamp and remove the dependency if it's out of date
 			if(dependency_edge) {
 				// Update timestamp
-				dependency_edge.tstamp = demanding_var._tstamp + 1;
+				dependency_edge.tstamp++;
 			} else {
 				// Make sure that the dependency should be added
 				if (node._options.auto_add_outgoing_dependencies !== false &&
@@ -85,8 +87,7 @@ var constraint_solver = {
 			node._valid = true;
 
 			// Set the timestamp before fetching in case a constraint depends on itself
-			// TODO: Check the logic on this...
-			node._tstamp += 1;
+			node._tstamp++;
 
 			if (node._options.cache_value !== false) {
 				// Check if dynamic value. If it is, then call it. If not, just fetch it
@@ -109,18 +110,19 @@ var constraint_solver = {
 	},
 	nullify: function(node) {
 		// Unfortunately, running nullification listeners can, in some cases cause nullify to be indirectly called by itself
-		// (as in while running nullify). The variable is_root will prevent another call to run_nullification_listeners at
+		// (as in while running `nullify`). The variable is_root will prevent another call to `run_nullification_listeners` at
 		// the bottom of this function
 		var i, outgoingEdges, toNodeID, invalid, curr_node, equals, old_value, new_value, changeListeners,
 			to_nullify = [node],
 			to_nullify_len = 1,
-			is_root = this._is_nullifying !== true;
+			is_root = !this._is_nullifying;
 
 		if (is_root) {
-			this._is_nullifying = true; // This variable is used to track is_root for any potential future calls
+			// This variable is used to track `is_root` for any potential future calls
+			this._is_nullifying = true;
 		}
 
-		// Using a list instead of a recursive call because the call stack can get tal and annoying for debugging with
+		// Using a list instead of a recursive call because the call stack can get tall and annoying for debugging with
 		// recursive calls
 		for (i = 0; i < to_nullify_len; i+= 1) {
 			curr_node = to_nullify[i]; // the constraint we are currently nullifying
@@ -187,13 +189,13 @@ var constraint_solver = {
 		}
 	},
 	
-	// Remove the edge going from fromNode to toNode
+	// Remove the edge going from `fromNode` to `toNode`
 	removeDependency: function(fromNode, toNode) {
 		delete fromNode._outEdges[toNode._id];
 		delete toNode._inEdges[fromNode._id];
 	},
 
-	// Use a semaphore-like system to decide when running the nullification listeners is appropriate
+	// Use a semaphore to decide when running the nullification listeners is appropriate
 	semaphore: 0,
 	wait: function() {
 		this.semaphore -= 1;
@@ -237,7 +239,7 @@ var constraint_solver = {
 	},
 	run_nullified_listeners: function () {
 		var nullified_info, callback, context;
-		// Make sure run_nullified_listeners isn't indirectly called by itself
+		// Make sure `run_nullified_listeners` isn't indirectly called by itself
 		if (!this.running_listeners) {
 			this.running_listeners = true;
 			while (this.nullified_call_stack.length > 0) {
@@ -246,7 +248,7 @@ var constraint_solver = {
 				context = nullified_info.context || this;
 
 				nullified_info.in_call_stack = false;
-				// If in debugging mode, then call the callback outside of a try statement
+				// If in debugging mode, then call the callback outside of a `try` statement
 				if(cjs.__debug) {
 					callback.apply(context, nullified_info.args);
 				} else {
@@ -254,7 +256,9 @@ var constraint_solver = {
 						// Call the nulification callback with any specified aguments
 						callback.apply(context, nullified_info.args);
 					} catch(e) {
-						console_error(e);
+						if(has(root, "console")) {
+							root.console.error(e);
+						}
 					}
 				}
 			}
@@ -270,24 +274,25 @@ var constraint_solver = {
 // --------------------
 
 /**
- * Description
- * @param {} value
- * @param {} options
- * @return 
+ * @module Constraint
+ */
+
+/**
+ * @method Constraint
+ * @param {*} value
+ * @param {*} options
  */
 Constraint = function (value, options) {
-	/*
-	 * == OPTION DEFAULTS ==
-	 *
-	 * literal: if 'value' is a function, the value of the constraint should be the function itself (not its return value)
-	 * context: if 'value' is a function, the value of 'this', when that function is called 
-	 * cache_value: whether or not to keep track of the current value, true by default
-	 * equals: the function to check if two values are equal, === by default
-	 * auto_add_outgoing_dependencies: allow the constraint solver to determine when things depend on me, true by default
-	 * auto_add_incoming_dependencies: allow the constraint solver to determine when things I depend on thigns, true by default
-	 * check_on_nullify: when nullified, check if my value has actually changed (requires immediately re-evaluating me), false by default
-	 * run_on_add_listener: when onChange is called, whether or not immediately validate the value, true by default
-	*/
+	// *OPTION DEFAULTS*:
+
+	// + `literal`: if `value` is a function, the value of the constraint should be the function itself (not its return value)
+	// + `context`: if `value` is a function, the value of `this`, when that function is called 
+	// + `cache_value`: whether or not to keep track of the current value, true by default
+	// + `equals`: the function to check if two values are equal, `===` by default
+	// + `auto_add_outgoing_dependencies`: allow the constraint solver to determine when things depend on me, `true` by default
+	// + `auto_add_incoming_dependencies`: allow the constraint solver to determine when things I depend on thigns, `true` by default
+	// + `check_on_nullify`: when nullified, check if my value has actually changed (requires immediately re-evaluating me), `false` by default
+	// + `run_on_add_listener`: when `onChange` is called, whether or not immediately validate the value, `true` by default
 	// These are all hidden values that should not be referred to directly
 	this._options = extend({
 		context: root
@@ -319,8 +324,8 @@ Constraint = function (value, options) {
 	/**
 	 * Description
 	 * @method set
-	 * @param {} new_value
-	 * @param {} options
+	 * @param {*} new_value
+	 * @param {Object} options
 	 * @return ThisExpression
 	 */
 	proto.set = function (new_value, options) {
@@ -417,10 +422,9 @@ Constraint = function (value, options) {
 		return this;
 	};
 
-	// Calls 'callback' when my value has changed
-	// context controls the value of 'this' when callback is being called and any number of additional
-	// arguments can be passed in that will be passed as parameters to 'callback'
-	
+	// Calls `callback` when my value has changed
+	// `context` controls the value of `this` when callback is being called and any number of additional
+	// arguments can be passed in that will be passed as parameters to `callback`
 	/**
 	 * Description
 	 * @method onChange
@@ -465,7 +469,7 @@ Constraint = function (value, options) {
 		return this;
 	};
 	
-	// Undoes the effect of onChange, removes the listener. 'context' is optional here
+	// Undoes the effect of `onChange`, removes the listener. `context` is optional here
 	// only removes the last matching callback
 	/**
 	 * Description
@@ -493,10 +497,10 @@ Constraint = function (value, options) {
 		return this;
 	};
 
-	// And/or was created separate from createConstraintModifier because we don't want every argument to always be evaluated. For instance:
-	// false && a() should not evaluate a(), just as
-	// true || b() should not evaluate b()
-	// Returns false if this or any passed in value is falsy. Otherwise, returns the lasat value passed in
+	// Returns false if this or any passed in value is falsy. Otherwise, returns the last value passed in
+	// And/or was created separate from `createConstraintModifier` because we don't want every argument to always be evaluated. For instance:
+	// + `false && a()` should not evaluate `a()`
+	// + `true || b()` should not evaluate `b()`
 	/**
 	 * Description
 	 * @method and
@@ -519,7 +523,7 @@ Constraint = function (value, options) {
 		});
 	};
 
-	// Returns this value or the value of the first argument that is truthy. Returns false if this and nothing else is truthy
+	// Returns this value or the value of the first argument that is truthy. Returns `false` if this and nothing else is truthy
 	/**
 	 * Description
 	 * @method or
@@ -542,8 +546,8 @@ Constraint = function (value, options) {
 		});
 	};
 
-	// Creates a new function that takes in any number of arguments and creates a constraint whose result is calling modifier_fn on
-	// 'this' plus every argument
+	// Creates a new function that takes in any number of arguments and creates a constraint whose result
+	// is calling `modifier_fn` on `this` plus every argument
 	/**
 	 * Description
 	 * @method createConstraintModifier
@@ -560,10 +564,10 @@ Constraint = function (value, options) {
 	};
 
 	// For all the arithmetic operators, allow any number of arguments to be passed in. For example:
-	// x = y.add(1,2,z); means x <- y + 1 + 2 + z
-	// x = y.sub(1,2,z); means x <- y - 1 - 2 - z
-	// x = y.mul(1,2,z); means x <- y * 1 * 2 * z
-	// x = y.div(1,2,z); means x <- y / 1 / 2 / z
+	// + `x = y.add(1,2,z);` means x <- `y + 1 + 2 + z`
+	// + `x = y.sub(1,2,z);` means x <- `y - 1 - 2 - z`
+	// + `x = y.mul(1,2,z);` means x <- `y * 1 * 2 * z`
+	// + `x = y.div(1,2,z);` means x <- `y / 1 / 2 / z`
 	// Use reduce with the binary operators to allow this
 	proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
 	proto.sub = createConstraintModifier(function() { return reduce(arguments, binary_operators["-"], 0); });
@@ -604,7 +608,7 @@ is_constraint = function(obj) {
 	return obj instanceof Constraint;
 };
 
-// Expore CJS core functions
+// Expore core functions
 // -------------------------
 extend(cjs, {
 	/**
@@ -635,7 +639,7 @@ extend(cjs, {
 	 * @method get
 	 * @param {} obj
 	 * @param {} arg0
-	 * @return 
+	 * @return value
 	 */
 	get: function (obj, arg0) {
 		if(is_constraint(obj))	{ return obj.get(arg0); }
@@ -644,8 +648,10 @@ extend(cjs, {
 		else					{ return obj; }
 	},
 
-	wait: bind(constraint_solver.wait, constraint_solver), // Wait tells the constraint solver to delay before running any onChange listeners
-	signal: bind(constraint_solver.signal, constraint_solver), // Signal tells the constraint solver that it can run onChange listeners
+	// `wait` tells the constraint solver to delay before running any `onChange` listeners
+	wait: bind(constraint_solver.wait, constraint_solver),
+	// `signal` tells the constraint solver that it can run `onChange` listeners
+	signal: bind(constraint_solver.signal, constraint_solver),
 	removeDependency: constraint_solver.removeDependency,
 
 	arrayDiff: get_array_diff, // expose this useful function
@@ -659,12 +665,15 @@ extend(cjs, {
 	toString: function() { return "ConstraintJS v" + cjs.version; },
 
 	__debug: false,
-	noConflict: has(root, "cjs") ?  function() { // If there was a previous cjs property...
-										// ...then track it and allow cjs.noConflict to restore its previous value
+	noConflict: has(root, "cjs") ?  function() {
+										// If there was a previous `cjs` property then track it
+										// and allow `cjs.noConflict` to restore its previous value
 										root.cjs = old_cjs;
-										return cjs; // and return a reference to cjs if the user wants it
+										// and return a reference to `cjs` if the user wants it
+										return cjs;
 									} :
-									function() { // ...otherwise, cjs.noConflict will just delete the old value
+									// ...otherwise, `cjs.noConflict` will just delete the old value
+									function() {
 										delete root.cjs;
 										return cjs;
 									}

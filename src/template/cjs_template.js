@@ -561,7 +561,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		 * Description
 		 * @method createTemplate
 		 * @param {} template_str
-		 * @return 
 		 */
 		createTemplate:		function(template_str) {
 								if(!isString(template_str)) {

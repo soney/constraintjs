@@ -12,7 +12,7 @@ extend(cjs, {
 	 */
 	liven:	function (func, options) {
 				options = extend({
-					context: root, // what to equate 'this' to
+					context: root, // what to equate `this` to
 					run_on_create: true, // whether it should run immediately
 					pause_while_running: false, // whether to allow the function to be called recursively (indirectly)
 					on_destroy: false // a function to call when this liven function is destroyed
@@ -35,7 +35,6 @@ extend(cjs, {
 				 * Description
 				 * @method destroy
 				 * @param {} silent
-				 * @return 
 				 */
 				var destroy = function (silent) {
 					if(options.on_destroy) {
@@ -78,7 +77,6 @@ extend(cjs, {
 				// The actual getter, will call the constraint's getter
 				/**
 				 * Description
-				 * @return 
 				 */
 				do_get = function () {
 					if (options.pause_while_running) {

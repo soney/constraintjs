@@ -29,7 +29,6 @@ var get_str_hash_fn = function (prop_name) {
 /**
  * Description
  * @param {} options
- * @return 
  */
 MapConstraint = function (options) {
 	options = extend({
@@ -217,7 +216,6 @@ MapConstraint = function (options) {
 	 * @param {} value
 	 * @param {} index
 	 * @param {} literal
-	 * @return 
 	 */
 	var _do_set_item_ki = function (ki, key, value, index, literal) {
 		// ki is the key information from _find_key
@@ -347,7 +345,6 @@ MapConstraint = function (options) {
 	 * @method _set_index
 	 * @param {} info
 	 * @param {} to_index
-	 * @return 
 	 */
 	var _set_index = function (info, to_index) {
 		info.index.set(to_index);
@@ -359,7 +356,6 @@ MapConstraint = function (options) {
 	 * @method _destroy_info
 	 * @param {} infos
 	 * @param {} silent
-	 * @return 
 	 */
 	var _destroy_info = function (infos, silent) {
 		each(infos, function (info) {
@@ -375,7 +371,6 @@ MapConstraint = function (options) {
 	 * @method _remove_index
 	 * @param {} index
 	 * @param {} silent
-	 * @return 
 	 */
 	var _remove_index = function (index, silent) {
 		var info = this._ordered_values[index];
@@ -564,7 +559,6 @@ MapConstraint = function (options) {
 	 * Description
 	 * @method get
 	 * @param {} key
-	 * @return 
 	 */
 	proto.get = function (key) {
 		// Try to find the key and search in any unsubstantiated values
@@ -756,7 +750,6 @@ MapConstraint = function (options) {
 	 * @param {} arg0
 	 * @param {} arg1
 	 * @param {} arg2
-	 * @return 
 	 */
 	proto.item = function (arg0, arg1, arg2) {
 		if(arguments.length === 0) { // no arguments? return an object
@@ -772,7 +765,6 @@ MapConstraint = function (options) {
 	 * Description
 	 * @method indexOf
 	 * @param {} key
-	 * @return 
 	 */
 	proto.indexOf = function (key) {
 		// get hash information
@@ -799,7 +791,6 @@ MapConstraint = function (options) {
 	 * @param {} create_fn_context
 	 * @param {} index
 	 * @param {} literal
-	 * @return 
 	 */
 	proto.get_or_put = function (key, create_fn, create_fn_context, index, literal) {
 		var ki = _find_key.call(this, key, true, false);
@@ -825,7 +816,6 @@ MapConstraint = function (options) {
 * Description
 * @method containsKey
 * @param {} key
-* @return 
 */
 proto.containsKey = function (key) {
 		var ki = _find_key.call(this, key, true, this._create_unsubstantiated);
@@ -900,7 +890,6 @@ proto.containsKey = function (key) {
 	 * @method keyForValue
 	 * @param {} value
 	 * @param {} eq_check
-	 * @return 
 	 */
 	proto.keyForValue = function (value, eq_check) {
 		eq_check = eq_check || this.$vequality_check.get();
@@ -938,7 +927,6 @@ proto.containsKey = function (key) {
 	 * Description
 	 * @method destroy
 	 * @param {} silent
-	 * @return 
 	 */
 	proto.destroy = function (silent) {
 		cjs.wait();

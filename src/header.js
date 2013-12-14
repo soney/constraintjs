@@ -1,8 +1,12 @@
-/* jslint nomen: true, vars: true */
-/* jshint -W093 */
-/* global document */
+/*! jslint nomen: true, vars: true */
+/*! jshint -W093 */
+/*! global document */
 
-// ConstraintJS <%= version %> (http://cjs.from.so/)
-
+/**
+ * @title ConstraintJS
+ * @copyright (c) 2013
+ * @license MIT
+ * @author Stephen Oney
+*/
 var cjs = (function (root) {
 "use strict";

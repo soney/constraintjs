@@ -13,7 +13,6 @@ var isPositiveInteger = function (val) {
 /**
  * Description
  * @param {} options
- * @return 
  */
 ArrayConstraint = function (options) {
 	options = extend({
@@ -40,13 +39,6 @@ ArrayConstraint = function (options) {
 	my.BREAK = {};
 
 	// Get a particular item in the array
-	/**
-	 * Description
-	 * @method _get
-	 * @param {} arr
-	 * @param {} key
-	 * @return CallExpression
-	 */
 	var _get = function (arr, key) {
 		var val = arr._value[key];
 		if (val === undefined) { // Even if arr[key] is set to undefined, it would be a constraint
@@ -59,14 +51,6 @@ ArrayConstraint = function (options) {
 	};
 
 	// For internal use; set a particular item in the array
-	/**
-	 * Description
-	 * @method _put
-	 * @param {} arr
-	 * @param {} key
-	 * @param {} val
-	 * @return 
-	 */
 	var _put = function (arr, key, val) {
 		cjs.wait(); // Don't run any nullification listeners until this function is done running
 		var $previous_value = arr._value[key];
@@ -119,7 +103,6 @@ ArrayConstraint = function (options) {
 	 * Description
 	 * @method _update_len
 	 * @param {} arr
-	 * @return 
 	 */
 	var _update_len = function (arr) {
 		// The setter will automatically not update if the value is the same
@@ -197,7 +180,6 @@ ArrayConstraint = function (options) {
 	 * @method item
 	 * @param {} key
 	 * @param {} val
-	 * @return 
 	 */
 	proto.item = function (key, val) {
 		if(arguments.length === 0) { // Just return an array if called with no arguments
@@ -213,7 +195,6 @@ ArrayConstraint = function (options) {
 	 * Description
 	 * @method destroy
 	 * @param {} silent
-	 * @return 
 	 */
 	proto.destroy = function (silent) {
 		_clear(this, silent);

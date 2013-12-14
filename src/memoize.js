@@ -4,7 +4,6 @@
  * @method memoize_default_equals
  * @param {} args1
  * @param {} args2
- * @return 
  */
 var memoize_default_hash = function () {
 	var i, len = arguments.length;
@@ -77,7 +76,6 @@ extend(cjs, {
 		 * Description
 		 * @method destroy
 		 * @param {} silent
-		 * @return 
 		 */
 		rv.destroy = function (silent) {
 			args_map.forEach(function (constraint) {
@@ -94,7 +92,6 @@ extend(cjs, {
 		 * Description
 		 * @method each
 		 * @param {} fn
-		 * @return 
 		 */
 		rv.each = function (fn) {
 			args_map.forEach(fn);

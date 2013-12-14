@@ -6,7 +6,6 @@
  * @param {} filter
  * @param {} onAddTransition
  * @param {} onRemoveTransition
- * @return 
  */
 var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._listeners = []; // parent events that want to know when I fire
@@ -37,7 +36,6 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	 * Description
 	 * @method _addTransition
 	 * @param {} transition
-	 * @return 
 	 */
 	proto._addTransition = function(transition) {
 		this._transitions.push(transition);
@@ -51,7 +49,6 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	 * Description
 	 * @method _removeTransition
 	 * @param {} transition
-	 * @return 
 	 */
 	proto._removeTransition = function(transition) {
 		if(remove(this._transitions, transition)) {
@@ -70,7 +67,6 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	/**
 	 * Description
 	 * @method _fire
-	 * @return 
 	 */
 	proto._fire = function() {
 		var args = arguments;
@@ -113,7 +109,6 @@ extend(cjs, {
 					/**
 					 * Description
 					 * @method off_listener
-					 * @return 
 					 */
 					var targets = [],
 						timeout_id = false,
