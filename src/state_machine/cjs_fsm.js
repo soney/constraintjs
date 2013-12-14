@@ -2,7 +2,7 @@
 // ---------------------
 
 // State keeps track of basic state information (its containing FSM does most of the work)
-/**
+/*!
  * Description
  * @method State
  * @param {} fsm
@@ -16,13 +16,13 @@ var State = function(fsm, name) {
 
 (function(my) {
 	var proto = my.prototype;
-	/**
+	/*!
 	 * Description
 	 * @method getName
 	 * @return MemberExpression
 	 */
 	proto.getName = function() { return this._name; }; // getter for name
-	/**
+	/*!
 	 * Description
 	 * @method id
 	 * @return MemberExpression
@@ -31,7 +31,7 @@ var State = function(fsm, name) {
 }(State));
 
 // Simple transition representation (again, the containing FSM does most of the work)
-/**
+/*!
  * Description
  * @method Transition
  * @param {} fsm
@@ -49,37 +49,37 @@ var Transition = function(fsm, from_state, to_state, name) {
 
 (function(my) {
 	var proto = my.prototype;
-	/**
+	/*!
 	 * Description
 	 * @method getFrom
 	 * @return MemberExpression
 	 */
 	proto.getFrom = function() { return this._from; }; // from getter
-	/**
+	/*!
 	 * Description
 	 * @method getTo
 	 * @return MemberExpression
 	 */
 	proto.getTo = function() { return this._to; }; // to getter
-	/**
+	/*!
 	 * Description
 	 * @method getName
 	 * @return MemberExpression
 	 */
 	proto.getName = function() { return this._name; }; // name getter
-	/**
+	/*!
 	 * Description
 	 * @method getFSM
 	 * @return MemberExpression
 	 */
 	proto.getFSM = function() { return this._fsm; }; // FSM getter
-	/**
+	/*!
 	 * Description
 	 * @method id
 	 * @return MemberExpression
 	 */
 	proto.id = function() { return this._id; }; // getter for id
-	/**
+	/*!
 	 * Description
 	 * @method run
 	 */
@@ -107,7 +107,7 @@ var Transition = function(fsm, from_state, to_state, name) {
  */
 
 // The selector for a state with a supplied name (e.g. stateA)
-/**
+/*!
  * Description
  * @method StateSelector
  * @param {} state_name
@@ -117,7 +117,7 @@ var StateSelector = function(state_name) {
 };
 (function(my) {
 	var proto = my.prototype;
-	/**
+	/*!
 	 * Description
 	 * @method matches
 	 * @param {} state
@@ -130,7 +130,7 @@ var StateSelector = function(state_name) {
 }(StateSelector));
 
 // Matches any state (e.g. *)
-/**
+/*!
  * Description
  * @method AnyStateSelector
  */
@@ -138,7 +138,7 @@ var AnyStateSelector = function() { };
 (function(my) {
 	var proto = my.prototype;
 	// will match any state (but not transition)
-	/**
+	/*!
 	 * Description
 	 * @method matches
 	 * @param {} state
@@ -148,7 +148,7 @@ var AnyStateSelector = function() { };
 }(AnyStateSelector));
 
 // Matches certain transitions (see transition formatting spec)
-/**
+/*!
  * Description
  * @method TransitionSelector
  * @param {} pre
@@ -163,7 +163,7 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 (function(my) {
 	var proto = my.prototype;
 	// Make sure that the supplied object is a transition with the same timing
-	/**
+	/*!
 	 * Description
 	 * @method matches
 	 * @param {} transition
@@ -181,7 +181,7 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 }(TransitionSelector));
 
 // Multiple possiblities (read OR, not AND)
-/**
+/*!
  * Description
  * @method MultiSelector
  * @param {} selectors
@@ -191,7 +191,7 @@ var MultiSelector = function(selectors) {
 };
 (function(my) {
 	var proto = my.prototype;
-	/**
+	/*!
 	 * Description
 	 * @method matches
 	 * @return CallExpression
@@ -206,7 +206,7 @@ var MultiSelector = function(selectors) {
 }(MultiSelector));
 
 // return a selector object from a string representing a single state
-/**
+/*!
  * Description
  * @method parse_single_state_spec
  * @param {} str
@@ -220,7 +220,7 @@ var parse_single_state_spec = function(str) {
 };
 
 // Parse one side of the transition
-/**
+/*!
  * Description
  * @method parse_state_spec
  * @param {} str
@@ -239,7 +239,7 @@ var parse_state_spec = function(str) {
 };
 
 // The user specified a transition
-/**
+/*!
  * Description
  * @method parse_transition_spec
  * @param {} left_str
@@ -273,7 +273,7 @@ var parse_transition_spec = function(left_str, transition_str, right_str) {
 
 var transition_separator_regex = new RegExp("^([\\sa-zA-Z0-9,\\-_*]+)((<->|>-<|->|>-|<-|-<)([\\sa-zA-Z0-9,\\-_*]+))?$");
 // Given a string specifying a state or set of states, return a selector object
-/**
+/*!
  * Description
  * @method parse_spec
  * @param {} str
@@ -298,7 +298,7 @@ var parse_spec = function(str) {
 
 // StateListener
 var state_listener_id = 0;
-/**
+/*!
  * Description
  * @method StateListener
  * @param {} selector
@@ -314,21 +314,21 @@ var StateListener = function(selector, callback, context) {
 (function(my) {
 	var proto = my.prototype;
 	// Used to determine if run should be called by the fsm
-	/**
+	/*!
 	 * Description
 	 * @method interested_in
 	 * @return CallExpression
 	 */
 	proto.interested_in = function() { return this._selector.matches.apply(this._selector, arguments); };
 	// Run the user-specified callback
-	/**
+	/*!
 	 * Description
 	 * @method run
 	 */
 	proto.run = function() { this._callback.apply(this._context, arguments); };
 }(StateListener));
 
-/**
+/*!
  * Description
  * @method FSM
  */
@@ -355,7 +355,7 @@ var FSM = function() {
 (function(my) {
 	var proto = my.prototype;
 	// Creates and returns a new state object with name state
-	/**
+	/*!
 	 * Description
 	 * @method createState
 	 * @param {} state_name
@@ -369,7 +369,7 @@ var FSM = function() {
 
 	// Either creates a state with name state_name or sets the current
 	// chain state to that state
-	/**
+	/*!
 	 * Description
 	 * @method addState
 	 * @param {} state_name
@@ -387,7 +387,7 @@ var FSM = function() {
 		return this;
 	};
 	// Find the state with a given name
-	/**
+	/*!
 	 * Description
 	 * @method stateWithName
 	 * @param {} state_name
@@ -398,7 +398,7 @@ var FSM = function() {
 	};
 
 	// Returns the name of the state this machine is currently in
-	/**
+	/*!
 	 * Description
 	 * @method getState
 	 * @return CallExpression
@@ -409,7 +409,7 @@ var FSM = function() {
 	
 	// Add a transition from the last state that was added (the chain state) to a given state
 	// add_transition_fn will be called with the code to do a transition as a parameter
-	/**
+	/*!
 	 * Description
 	 * @method addTransition
 	 * @param {} a
@@ -457,7 +457,7 @@ var FSM = function() {
 	};
 
 	// Creates a new transition that will go from from_state to to_state
-	/**
+	/*!
 	 * Description
 	 * @method _getTransition
 	 * @param {} from_state
@@ -478,7 +478,7 @@ var FSM = function() {
 		return transition;
 	};
 	// This function should, ideally, be called by a transition instead of directly
-	/**
+	/*!
 	 * Description
 	 * @method _setState
 	 * @param {} state
@@ -510,7 +510,7 @@ var FSM = function() {
 			}
 		});
 	};
-	/**
+	/*!
 	 * Description
 	 * @method destroy
 	 */
@@ -520,7 +520,7 @@ var FSM = function() {
 		this._transitions = [];
 		this._curr_state = null;
 	};
-	/**
+	/*!
 	 * Description
 	 * @method startsAt
 	 * @param {} state_name
@@ -539,7 +539,7 @@ var FSM = function() {
 		this._chain_state = state;
 		return this;
 	};
-	/**
+	/*!
 	 * Description
 	 * @method is
 	 * @param {} state_name
@@ -558,7 +558,7 @@ var FSM = function() {
 		}
 	};
 	// A function to be called when the given string is true
-	/**
+	/*!
 	* Description
 	* @method addEventListener
 	* @param {} spec_str
@@ -582,7 +582,7 @@ var FSM = function() {
 	};
 
 	// Remove the listener specified by an on call; pass in just the callback
-	/**
+	/*!
 	* Description
 	* @method removeEventListener
 	* @param {} listener_callback
@@ -597,14 +597,14 @@ var FSM = function() {
 }(FSM));
 
 extend(cjs, {
-	/**
+	/*!
 	 * Description
 	 * @method fsm
 	 * @return NewExpression
 	 */
 	fsm: function() { return new FSM(arguments); },
 
-	/**
+	/*!
 	 * Description
 	 * @method isFSM
 	 * @param {} obj

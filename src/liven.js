@@ -3,7 +3,7 @@
 
 // Will automatically call the provided function when it becomes invalid
 extend(cjs, {
-	/**
+	/*!
 	 * Description
 	 * @method liven
 	 * @param {} func
@@ -31,7 +31,7 @@ extend(cjs, {
 				var do_get;
 
 				// Destroy the node and make sure no memory is allocated
-				/**
+				/*!
 				 * Description
 				 * @method destroy
 				 * @param {} silent
@@ -45,7 +45,7 @@ extend(cjs, {
 				};
 
 				// Stop changing and remove it from the event queue if necessary
-				/**
+				/*!
 				 * Description
 				 * @method pause
 				 * @return Literal
@@ -60,7 +60,7 @@ extend(cjs, {
 				};
 
 				// Re-add to the event queue
-				/**
+				/*!
 				 * Description
 				 * @method resume
 				 * @return Literal
@@ -75,7 +75,7 @@ extend(cjs, {
 				};
 
 				// The actual getter, will call the constraint's getter
-				/**
+				/*!
 				 * Description
 				 */
 				do_get = function () {
@@ -95,7 +95,7 @@ extend(cjs, {
 					destroy: destroy,
 					pause: pause,
 					resume: resume,
-					/**
+					/*!
 					 * Description
 					 * @method run
 					 * @param {} arg0

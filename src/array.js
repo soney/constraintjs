@@ -10,7 +10,7 @@ var isPositiveInteger = function (val) {
 // It contains many of the standard array functions (push, pop, slice, etc)
 // and makes them constraint-enabled.
 // x[1] = y[2] + z[3] === x.item(1, y.item(2) + z.item(3))
-/**
+/*!
  * Description
  * @param {} options
  */
@@ -74,7 +74,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Remove every element of the array
-	/**
+	/*!
 	 * Description
 	 * @method _clear
 	 * @param {} arr
@@ -99,7 +99,7 @@ ArrayConstraint = function (options) {
 		return this;
 	};
 
-	/**
+	/*!
 	 * Description
 	 * @method _update_len
 	 * @param {} arr
@@ -111,7 +111,7 @@ ArrayConstraint = function (options) {
 
 
 	// Change the equality check; useful for indexOf
-	/**
+	/*!
 	 * Description
 	 * @method setEqualityCheck
 	 * @param {} equality_check
@@ -123,7 +123,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Run through every element of the array and call func with 'this' === context or window
-	/**
+	/*!
 	 * Description
 	 * @method forEach
 	 * @param {} func
@@ -143,7 +143,7 @@ ArrayConstraint = function (options) {
 
 	// Return a new JAVASCRIPT array with each element's value being the result of calling func
 	// on item i
-	/**
+	/*!
 	 * Description
 	 * @method map
 	 * @param {} func
@@ -160,7 +160,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Replaces the whole array
-	/**
+	/*!
 	 * Description
 	 * @method setValue
 	 * @param {} arr
@@ -175,7 +175,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Get or put item i
-	/**
+	/*!
 	 * Description
 	 * @method item
 	 * @param {} key
@@ -191,7 +191,7 @@ ArrayConstraint = function (options) {
 		}
 	};
 	// Clean up any allocated memory
-	/**
+	/*!
 	 * Description
 	 * @method destroy
 	 * @param {} silent
@@ -201,7 +201,7 @@ ArrayConstraint = function (options) {
 		this.$len.destroy(silent);
 	};
 
-	/**
+	/*!
 	 * Description
 	 * @method length
 	 * @return CallExpression
@@ -211,7 +211,7 @@ ArrayConstraint = function (options) {
 	};
 	
 	// add to the end of the array
-	/**
+	/*!
 	 * Description
 	 * @method push
 	 * @return CallExpression
@@ -229,7 +229,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Remove from the end of the array
-	/**
+	/*!
 	 * Description
 	 * @method pop
 	 * @return rv
@@ -252,7 +252,7 @@ ArrayConstraint = function (options) {
 		return rv;
 	};
 	// Converts to a JAVASCRIPT array
-	/**
+	/*!
 	 * Description
 	 * @method toArray
 	 * @return CallExpression
@@ -262,7 +262,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Returns the first item where calling filter is truthy
-	/**
+	/*!
 	 * Description
 	 * @method indexWhere
 	 * @param {} filter
@@ -281,7 +281,7 @@ ArrayConstraint = function (options) {
 		return -1; // -1 if not found
 	};
 	// Return the last item where calling filter is truthy
-	/**
+	/*!
 	 * Description
 	 * @method lastIndexWhere
 	 * @param {} filter
@@ -301,7 +301,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// First index of item, with either the supplied equality check or my equality check
-	/**
+	/*!
 	 * Description
 	 * @method indexOf
 	 * @param {} item
@@ -310,7 +310,7 @@ ArrayConstraint = function (options) {
 	 */
 	proto.indexOf = function (item, equality_check) {
 		equality_check = equality_check || this.$equality_check.get();
-		/**
+		/*!
 		 * Description
 		 * @method filter
 		 * @param {} x
@@ -321,7 +321,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Last index of item, with either the supplied equality check or my equality check
-	/**
+	/*!
 	 * Description
 	 * @method lastIndexOf
 	 * @param {} item
@@ -330,7 +330,7 @@ ArrayConstraint = function (options) {
 	 */
 	proto.lastIndexOf = function (item, equality_check) {
 		equality_check = equality_check || this.$equality_check.get();
-		/**
+		/*!
 		 * Description
 		 * @method filter
 		 * @param {} x
@@ -341,7 +341,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Return true if any item in the array is true
-	/**
+	/*!
 	 * Description
 	 * @method some
 	 * @param {} filter
@@ -353,7 +353,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Return true if every item in the array has a truty value
-	/**
+	/*!
 	 * Description
 	 * @method every
 	 * @param {} filter
@@ -372,7 +372,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Works just like the standard JavaScript array splice function
-	/**
+	/*!
 	 * Description
 	 * @method splice
 	 * @param {} index
@@ -444,7 +444,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Remove the first item of the array
-	/**
+	/*!
 	 * Description
 	 * @method shift
 	 * @return MemberExpression
@@ -455,7 +455,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Add a new item to the beginning of the array (any number of parameters)
-	/**
+	/*!
 	 * Description
 	 * @method unshift
 	 * @return CallExpression
@@ -466,7 +466,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Like the standard js concat but return an array
-	/**
+	/*!
 	 * Description
 	 * @method concat
 	 * @return CallExpression
@@ -481,7 +481,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Just like the standard JS slice
-	/**
+	/*!
 	 * Description
 	 * @method slice
 	 * @return CallExpression
@@ -495,7 +495,7 @@ ArrayConstraint = function (options) {
 	};
 
 	// Return a constraint whose value is bound to my value for key
-	/**
+	/*!
 	 * Description
 	 * @method getConstraint
 	 * @param {} key
@@ -512,7 +512,7 @@ ArrayConstraint = function (options) {
 
 	// All of these functions will just convert to an array and return that
 	each(["filter", "join", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
-		/**
+		/*!
 		 * Description
 		 * @method fn_name
 		 * @return CallExpression
@@ -524,7 +524,7 @@ ArrayConstraint = function (options) {
 	});
 }(ArrayConstraint));
 
-/**
+/*!
  * Description
  * @param {} obj
  * @return BinaryExpression
@@ -534,7 +534,7 @@ is_array = function(obj) {
 };
 
 extend(cjs, {
-	/**
+	/*!
 	 * Description
 	 * @method array
 	 * @param {} value

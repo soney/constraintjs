@@ -3,7 +3,7 @@
 
 // Maps use hashing to improve performance. By default, the hash is a simple toString
 // function
-/**
+/*!
  * Description
  * @method defaulthash
  * @param {} key
@@ -13,7 +13,7 @@ var defaulthash = function (key) { return key.toString(); };
 
 // A string can also be specified as the hash, so that the hash is the result of calling
 // that property of the object
-/**
+/*!
  * Description
  * @method get_str_hash_fn
  * @param {} prop_name
@@ -26,7 +26,7 @@ var get_str_hash_fn = function (prop_name) {
 };
 
 // Map constraints are supposed to behave like normal objects ({}) with a few enhancements
-/**
+/*!
  * Description
  * @param {} options
  */
@@ -127,7 +127,7 @@ MapConstraint = function (options) {
 	var proto = my.prototype;
 
 	// Utility function to return information about a key
-	/**
+	/*!
 	 * Description
 	 * @method _find_key
 	 * @param {} key
@@ -137,7 +137,7 @@ MapConstraint = function (options) {
 	 */
 	var _find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
 		// Get the hash
-		/**
+		/*!
 		 * Description
 		 * @method index_where_fn
 		 * @param {} a
@@ -208,7 +208,7 @@ MapConstraint = function (options) {
 	};
 
 	// Responsible for setting a key properly
-	/**
+	/*!
 	 * Description
 	 * @method _do_set_item_ki
 	 * @param {} ki
@@ -340,7 +340,7 @@ MapConstraint = function (options) {
 	};
 
 	// Cange an info's specified index
-	/**
+	/*!
 	 * Description
 	 * @method _set_index
 	 * @param {} info
@@ -351,7 +351,7 @@ MapConstraint = function (options) {
 	};
 
 	// Deallocate memory from constraints
-	/**
+	/*!
 	 * Description
 	 * @method _destroy_info
 	 * @param {} infos
@@ -366,7 +366,7 @@ MapConstraint = function (options) {
 	};
 
 	// removes the selected item and destroys its value to deallocate it
-	/**
+	/*!
 	 * Description
 	 * @method _remove_index
 	 * @param {} index
@@ -381,7 +381,7 @@ MapConstraint = function (options) {
 	};
 	
 	// Getter for this.$keys constraint
-	/**
+	/*!
 	 * Description
 	 * @method _do_get_keys
 	 * @return rv
@@ -394,7 +394,7 @@ MapConstraint = function (options) {
 		return rv;
 	};
 	// used when keys() is called
-	/**
+	/*!
 	 * Description
 	 * @method keys
 	 * @return CallExpression
@@ -402,7 +402,7 @@ MapConstraint = function (options) {
 	proto.keys = function () { return this.$keys.get(); };
 
 	// Getter for this.$values constraint
-	/**
+	/*!
 	 * Description
 	 * @method _do_get_values
 	 * @return rv
@@ -415,7 +415,7 @@ MapConstraint = function (options) {
 		return rv;
 	};
 	//used when values() is called
-	/**
+	/*!
 	 * Description
 	 * @method values
 	 * @return CallExpression
@@ -423,7 +423,7 @@ MapConstraint = function (options) {
 	proto.values = function () { return this.$values.get(); };
 
 	// Getter for this.$entries constraint
-	/**
+	/*!
 	 * Description
 	 * @method _do_get_entries
 	 * @return rv
@@ -436,7 +436,7 @@ MapConstraint = function (options) {
 		return rv;
 	};
 	//used when entries() is called
-	/**
+	/*!
 	 * Description
 	 * @method entries
 	 * @return CallExpression
@@ -444,7 +444,7 @@ MapConstraint = function (options) {
 	proto.entries = function () { return this.$entries.get(); };
 
 	// Getter for this.$size constraint
-	/**
+	/*!
 	 * Description
 	 * @method _do_get_size
 	 * @return MemberExpression
@@ -453,7 +453,7 @@ MapConstraint = function (options) {
 		return this._ordered_values.length;
 	};
 	// used when size() is called
-	/**
+	/*!
 	 * Description
 	 * @method size
 	 * @return CallExpression
@@ -463,7 +463,7 @@ MapConstraint = function (options) {
 	};
 	
 	// Simple check if I have items
-	/**
+	/*!
 	 * Description
 	 * @method isEmpty
 	 * @return BinaryExpression
@@ -473,7 +473,7 @@ MapConstraint = function (options) {
 	};
 
 	// set the item at key (like this[key] = value)
-	/**
+	/*!
 	 * Description
 	 * @method put
 	 * @param {} key
@@ -493,7 +493,7 @@ MapConstraint = function (options) {
 	};
 
 	// Unset the item at key (like delete this[key])
-	/**
+	/*!
 	 * Description
 	 * @method remove
 	 * @param {} key
@@ -555,7 +555,7 @@ MapConstraint = function (options) {
 	};
 	
 	// Get the item at key (like this[key])
-	/**
+	/*!
 	 * Description
 	 * @method get
 	 * @param {} key
@@ -578,7 +578,7 @@ MapConstraint = function (options) {
 	};
 
 	// Return a constraint whose value is bound to my value for key
-	/**
+	/*!
 	 * Description
 	 * @method getConstraint
 	 * @param {} key
@@ -594,7 +594,7 @@ MapConstraint = function (options) {
 	};
 
 	// Empty out every entry
-	/**
+	/*!
 	 * Description
 	 * @method clear
 	 * @param {} silent
@@ -631,7 +631,7 @@ MapConstraint = function (options) {
 		return this;
 	};
 	// Loop through every value and key calling func on it with this === context (or this)
-	/**
+	/*!
 	 * Description
 	 * @method forEach
 	 * @param {} func
@@ -651,7 +651,7 @@ MapConstraint = function (options) {
 		return this;
 	};
 	// Change rules for key lookup
-	/**
+	/*!
 	 * Description
 	 * @method setEqualityCheck
 	 * @param {} equality_check
@@ -662,7 +662,7 @@ MapConstraint = function (options) {
 		return this;
 	};
 	// Change rules for value lookup
-	/**
+	/*!
 	 * Description
 	 * @method setValueEqualityCheck
 	 * @param {} vequality_check
@@ -673,7 +673,7 @@ MapConstraint = function (options) {
 		return this;
 	};
 	// Change how hashing is done
-	/**
+	/*!
 	 * Description
 	 * @method setHash
 	 * @param {} hash
@@ -717,7 +717,7 @@ MapConstraint = function (options) {
 	};
 
 	// Change how value hashing is done
-	/**
+	/*!
 	 * Description
 	 * @method setValueHash
 	 * @param {} vhash
@@ -744,7 +744,7 @@ MapConstraint = function (options) {
 
 		return this;
 	};
-	/**
+	/*!
 	 * Description
 	 * @method item
 	 * @param {} arg0
@@ -761,7 +761,7 @@ MapConstraint = function (options) {
 		}
 	};
 	// Find the item in myself (uses hashing)
-	/**
+	/*!
 	 * Description
 	 * @method indexOf
 	 * @param {} key
@@ -783,7 +783,7 @@ MapConstraint = function (options) {
 	};
 
 	// This function will search for a key and create it if not found
-	/**
+	/*!
 	 * Description
 	 * @method get_or_put
 	 * @param {} key
@@ -812,7 +812,7 @@ MapConstraint = function (options) {
 
 	// Check if we have a given key
 	proto.has = 
-/**
+/*!
 * Description
 * @method containsKey
 * @param {} key
@@ -832,7 +832,7 @@ proto.containsKey = function (key) {
 	};
 
 	//Move an item from one index to another given the item's index
-	/**
+	/*!
 	 * Description
 	 * @method moveIndex
 	 * @param {} old_index
@@ -865,7 +865,7 @@ proto.containsKey = function (key) {
 		return this;
 	};
 	// Move an item from one index to another given the item's key
-	/**
+	/*!
 	 * Description
 	 * @method move
 	 * @param {} key
@@ -885,7 +885,7 @@ proto.containsKey = function (key) {
 	};
 
 	// Given a value, find the corresponding key
-	/**
+	/*!
 	 * Description
 	 * @method keyForValue
 	 * @param {} value
@@ -923,7 +923,7 @@ proto.containsKey = function (key) {
 		}
 	};
 	// Useful for deallocating memory
-	/**
+	/*!
 	 * Description
 	 * @method destroy
 	 * @param {} silent
@@ -940,7 +940,7 @@ proto.containsKey = function (key) {
 		cjs.signal();
 	};
 	// optional filter to apply to every key
-	/**
+	/*!
 	 * Description
 	 * @method toObject
 	 * @param {} key_map_fn
@@ -954,7 +954,7 @@ proto.containsKey = function (key) {
 	};
 }(MapConstraint));
 
-/**
+/*!
  * Description
  * @param {} obj
  * @return BinaryExpression
@@ -964,7 +964,7 @@ is_map = function(obj) {
 };
 
 extend(cjs, {
-	/**
+	/*!
 	 * Description
 	 * @method map
 	 * @param {} arg0

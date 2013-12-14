@@ -1,5 +1,5 @@
 // A function to hash the arguments passed in. By default, just a concatenation of the arguments' string value
-/**
+/*!
  * Description
  * @method memoize_default_equals
  * @param {} args1
@@ -33,7 +33,7 @@ memoize_default_equals = function (args1, args2) {
 
 extend(cjs, {
 	// Memoize takes a function and applies a getter_fn as a filter
-	/**
+	/*!
 	 * Description
 	 * @method memoize
 	 * @param {} getter_fn
@@ -56,7 +56,7 @@ extend(cjs, {
 		});
 
 		// When getting a value either create a constraint or return the existing value
-		/**
+		/*!
 		 * Description
 		 * @method rv
 		 * @return CallExpression
@@ -72,7 +72,7 @@ extend(cjs, {
 		};
 
 		// Clean up memory after self
-		/**
+		/*!
 		 * Description
 		 * @method destroy
 		 * @param {} silent
@@ -88,7 +88,7 @@ extend(cjs, {
 		};
 
 		// Run through every argument and call fn on it
-		/**
+		/*!
 		 * Description
 		 * @method each
 		 * @param {} fn

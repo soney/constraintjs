@@ -3,9 +3,10 @@
 /*! global document */
 
 /**
- * @title ConstraintJS
+ * @title ConstraintJS!
  * @copyright (c) 2013
  * @license MIT
+ * @something abc
  * @author Stephen Oney
 */
 var cjs = (function (root) {

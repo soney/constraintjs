@@ -273,11 +273,13 @@ var constraint_solver = {
 // Constraint Variables
 // --------------------
 
-/**
+/*!
  * @module Constraint
  */
 
-/**
+/*!
+ * @public
+ * @class
  * @method Constraint
  * @param {*} value
  * @param {*} options
@@ -321,7 +323,7 @@ Constraint = function (value, options) {
 	proto.get = constraint_solver.getValue;
 
 	// Change the value of the constraint
-	/**
+	/*!
 	 * Description
 	 * @method set
 	 * @param {*} new_value
@@ -349,7 +351,7 @@ Constraint = function (value, options) {
 	};
 
 	// Can pass in either a string and value or an object with multiple keys and values
-	/**
+	/*!
 	 * Description
 	 * @method setOption
 	 * @param {} arg0
@@ -369,7 +371,7 @@ Constraint = function (value, options) {
 	};
 
 	// Mark myself as invalid
-	/**
+	/*!
 	 * Description
 	 * @method invalidate
 	 * @return ThisExpression
@@ -379,7 +381,7 @@ Constraint = function (value, options) {
 		return this;
 	};
 
-	/**
+	/*!
 	 * Description
 	 * @method isValid
 	 * @return boolean
@@ -389,7 +391,7 @@ Constraint = function (value, options) {
 	};
 
 	// Removes every dependency to this node
-	/**
+	/*!
 	 * Description
 	 * @method remove
 	 * @param {} silent
@@ -403,7 +405,7 @@ Constraint = function (value, options) {
 	};
 	
 	// Tries to clean up the constraint's allocated memory
-	/**
+	/*!
 	 * Description
 	 * @method destroy
 	 * @param {} silent
@@ -425,7 +427,7 @@ Constraint = function (value, options) {
 	// Calls `callback` when my value has changed
 	// `context` controls the value of `this` when callback is being called and any number of additional
 	// arguments can be passed in that will be passed as parameters to `callback`
-	/**
+	/*!
 	 * Description
 	 * @method onChange
 	 * @param {} callback
@@ -447,7 +449,7 @@ Constraint = function (value, options) {
 	};
 
 	// extend the standard constraint constructor so that any constraint can have its values depend on an fsm
-	/**
+	/*!
 	 * Description
 	 * @method inFSM
 	 * @param {} fsm
@@ -471,7 +473,7 @@ Constraint = function (value, options) {
 	
 	// Undoes the effect of `onChange`, removes the listener. `context` is optional here
 	// only removes the last matching callback
-	/**
+	/*!
 	 * Description
 	 * @method offChange
 	 * @param {} callback
@@ -501,7 +503,7 @@ Constraint = function (value, options) {
 	// And/or was created separate from `createConstraintModifier` because we don't want every argument to always be evaluated. For instance:
 	// + `false && a()` should not evaluate `a()`
 	// + `true || b()` should not evaluate `b()`
-	/**
+	/*!
 	 * Description
 	 * @method and
 	 * @return NewExpression
@@ -524,7 +526,7 @@ Constraint = function (value, options) {
 	};
 
 	// Returns this value or the value of the first argument that is truthy. Returns `false` if this and nothing else is truthy
-	/**
+	/*!
 	 * Description
 	 * @method or
 	 * @return NewExpression
@@ -548,7 +550,7 @@ Constraint = function (value, options) {
 
 	// Creates a new function that takes in any number of arguments and creates a constraint whose result
 	// is calling `modifier_fn` on `this` plus every argument
-	/**
+	/*!
 	 * Description
 	 * @method createConstraintModifier
 	 * @param {} modifier_fn
@@ -599,7 +601,7 @@ Constraint = function (value, options) {
 } (Constraint));
 
 // Create some exposed utility functions
-/**
+/*!
  * Description
  * @param {} obj
  * @return BinaryExpression
@@ -611,7 +613,7 @@ is_constraint = function(obj) {
 // Expore core functions
 // -------------------------
 extend(cjs, {
-	/**
+	/*!
 	 * Description
 	 * @method constraint
 	 * @param {} value
@@ -622,7 +624,7 @@ extend(cjs, {
 	Constraint: Constraint,
 	isConstraint: is_constraint,
 
-	/**
+	/*!
 	 * Description
 	 * @method inFSM
 	 * @param {} fsm
@@ -634,7 +636,7 @@ extend(cjs, {
 	},
 
 	// Gets the value of an object regardless of if it's a constraint or not
-	/**
+	/*!
 	 * Description
 	 * @method get
 	 * @param {} obj
@@ -657,7 +659,7 @@ extend(cjs, {
 	arrayDiff: get_array_diff, // expose this useful function
 
 	version: "<%= version %>", // This template will be filled in by the builder
-	/**
+	/*!
 	 * Description
 	 * @method toString
 	 * @return BinaryExpression

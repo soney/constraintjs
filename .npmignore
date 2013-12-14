@@ -1,0 +1,7 @@
+dist
+annotated_source
+docs
+*.swp
+node_modules
+*.DS_Store
+./*.zip

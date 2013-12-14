@@ -1,4 +1,4 @@
-/**
+/*!
  * Description
  * @method get_dom_array
  * @param {} obj
@@ -78,13 +78,13 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 // A binding calls some arbitrary functions passed into options. It is responsible for keeping some aspect of a
 // DOM node in line with a constraint value. For example, it might keep an element's class name in sync with a
 // class_name constraint
-/**
+/*!
  * Description
  * @method Binding
  * @param {} options
  */
 var Binding = function(options) {
-	/**
+	/*!
 	 * Description
 	 * @method do_update
 	 */
@@ -148,17 +148,17 @@ var Binding = function(options) {
 
 (function(my) {
 	var proto = my.prototype;
-	/**
+	/*!
 	 * Description
 	 * @method pause
 	 */
 	proto.pause = function() { this.$live_fn.pause(); }; // Pause binding (no updates to the attribute until resume is called)
-	/**
+	/*!
 	 * Description
 	 * @method resume
 	 */
 	proto.resume = function() { this.$live_fn.resume(); }; // Resume the binding (after pause)
-	/**
+	/*!
 	 * Description
 	 * @method throttle
 	 * @param {} min_delay
@@ -174,7 +174,7 @@ var Binding = function(options) {
 		this.$live_fn.run();
 		return this;
 	};
-	/**
+	/*!
 	 * Description
 	 * @method destroy
 	 */
@@ -188,7 +188,7 @@ var Binding = function(options) {
 
 // Creates a type of binding that accepts any number of arguments and then sets an attribute's value to depend on
 // every element that was passed in
-/**
+/*!
  * Description
  * @method create_obj_binding
  * @param {} obj_binding_setter
@@ -206,7 +206,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 				getter: bind(val.get, val), // use the constraint's value as the getter
 				setter: list_binding_setter,
 				init_val: list_binding_init_value,
-				/**
+				/*!
 				 * Description
 				 * @method onDestroy
 				 */
@@ -240,7 +240,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 
 			var binding = new Binding({
 				targets: elements,
-				/**
+				/*!
 				 * Description
 				 * @method setter
 				 * @param {} element
@@ -251,7 +251,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 						obj_binding_setter(element, k, v);
 					});
 				},
-				/**
+				/*!
 				 * Description
 				 * @method getter
 				 */
@@ -318,7 +318,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		element.setAttribute(key, value);
 	});
 
-/**
+/*!
  * Description
  * @method getInputValueConstraint
  * @param {} inps
@@ -335,7 +335,7 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 			arr_inp = true;
 		}
 		// the constraint should just return the value of the input element
-		/**
+		/*!
 		 * Description
 		 * @method deactivate
 		 */
@@ -365,7 +365,7 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 			oldDestroy = constraint.destroy;
 
 		// when the constraint is destroyed, remove the event listeners
-		/**
+		/*!
 		 * Description
 		 * @method destroy
 		 */

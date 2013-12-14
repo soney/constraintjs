@@ -3,6 +3,7 @@
 	"description": "Constraint library for JavaScript",
 	"version": "0.9.1",
 	"author": "Stephen Oney",
+	"main": "build/cjs.js",
 	"repository": {
 		"type" : "git",
 		"url" : "https://github.com/soney/ConstraintJS"
@@ -21,13 +22,13 @@
 	"private": false,
 	"dependencies": { },
 	"devDependencies": {
-		"grunt": "~0.4.1",
-		"grunt-contrib-jshint": "~0.1",
+		"grunt": "~0.4.2",
+		"grunt-contrib-jshint": "~0.7",
 		"grunt-contrib-qunit": "~0.3",
 		"grunt-contrib-uglify": "~0.2",
 		"grunt-contrib-concat": "~0.3",
 		"grunt-contrib-watch": "~0.5",
-		"grunt-contrib-clean": "~0.4",
+		"grunt-contrib-clean": "~0.5",
 		"grunt-contrib-compress": "~0.5",
 		"grunt-concat-sourcemap": "~0.4",
 		"grunt-dox": "~0.5",
