@@ -264,18 +264,24 @@ var constraint_solver = {
 // Constraint Variables
 // --------------------
 
-
+/**
+ * `cjs.Constraint` is the constructor for the base constraint. Valid properties for `options` are:
+ *
+ * - `auto_add_outgoing_dependencies`: allow the constraint solver to determine when things depend on me. *default:* `true`
+ * - `auto_add_incoming_dependencies`: allow the constraint solver to determine when things I depend on things. *default:* `true`
+ * - `cache_value`: whether or not to keep track of the current value. *default:* `true`
+ * - `check_on_nullify`: when nullified, check if my value has actually changed (requires immediately re-evaluating me). *default*: `false`
+ * - `context`: if `value` is a function, the value of `this`, when that function is called. *default:* `window`
+ * - `equals`: the function to check if two values are equal, *default:* `===`
+ * - `literal`: if `value` is a function, the value of the constraint should be the function itself (not its return value). *default:* `false`
+ * - `run_on_add_listener`: when `onChange` is called, whether or not immediately validate the value. *default:* `true`
+ *
+ * @class cjs.Constraint
+ * @classdesc A constraint object communicates with the constraint solver to store and maintain constraint values
+ * @param {*} value - The initial value of the constraint or a function to compute its value
+ * @param {Object} [options] - A set of options to control how and when the constraint's value is evaluated:
+ */
 Constraint = function (value, options) {
-	// *OPTION DEFAULTS*:
-
-	// + `literal`: if `value` is a function, the value of the constraint should be the function itself (not its return value)
-	// + `context`: if `value` is a function, the value of `this`, when that function is called 
-	// + `cache_value`: whether or not to keep track of the current value, true by default
-	// + `equals`: the function to check if two values are equal, `===` by default
-	// + `auto_add_outgoing_dependencies`: allow the constraint solver to determine when things depend on me, `true` by default
-	// + `auto_add_incoming_dependencies`: allow the constraint solver to determine when things I depend on thigns, `true` by default
-	// + `check_on_nullify`: when nullified, check if my value has actually changed (requires immediately re-evaluating me), `false` by default
-	// + `run_on_add_listener`: when `onChange` is called, whether or not immediately validate the value, `true` by default
 	// These are all hidden values that should not be referred to directly
 	this._options = extend({
 		context: root
@@ -299,6 +305,12 @@ Constraint = function (value, options) {
 (function(my) {
 	var proto = my.prototype;
 
+	/**
+	 * Get the current value of this constraint.
+	 * @method get
+	 * @param {boolean} [autoAddOutgoing=true] - Whether to automatically add a dependency from this constraint to ones that depend on it.
+	 * @return {*} The current constraint value
+	 */
 	// This function IS meant to be called directly. It asks the constraint solver for the value,
 	// which in turn can be cached
 	proto.get = constraint_solver.getValue;
