@@ -1,8 +1,3 @@
-/*!
- * Description
- * @method get_dom_array
- * @param {} obj
- */
 var make_node = function(item) { // Check if the argument is a DOM node or create a new textual node with its contents
 		if(isAnyElement(item)) {
 			return item;
@@ -78,16 +73,7 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 // A binding calls some arbitrary functions passed into options. It is responsible for keeping some aspect of a
 // DOM node in line with a constraint value. For example, it might keep an element's class name in sync with a
 // class_name constraint
-/*!
- * Description
- * @method Binding
- * @param {} options
- */
 var Binding = function(options) {
-	/*!
-	 * Description
-	 * @method do_update
-	 */
 	var targets = options.targets, // the DOM nodes
 		onAdd = options.onAdd, // optional function to be called when a new target is added
 		onRemove = options.onRemove, // optional function to be called when a target is removed
@@ -148,22 +134,8 @@ var Binding = function(options) {
 
 (function(my) {
 	var proto = my.prototype;
-	/*!
-	 * Description
-	 * @method pause
-	 */
 	proto.pause = function() { this.$live_fn.pause(); }; // Pause binding (no updates to the attribute until resume is called)
-	/*!
-	 * Description
-	 * @method resume
-	 */
 	proto.resume = function() { this.$live_fn.resume(); }; // Resume the binding (after pause)
-	/*!
-	 * Description
-	 * @method throttle
-	 * @param {} min_delay
-	 * @return ThisExpression
-	 */
 	proto.throttle = function(min_delay) { // require at least min_delay ms between setting the attribute
 		this._throttle_delay = min_delay > 0 ? min_delay : false; // Make sure it's positive
 		if(this._timeout_id && !this._throttle_delay) { // If it was speicfied that there should be no delay and we are waiting for a re-eval
@@ -174,10 +146,6 @@ var Binding = function(options) {
 		this.$live_fn.run();
 		return this;
 	};
-	/*!
-	 * Description
-	 * @method destroy
-	 */
 	proto.destroy = function() {
 		this.$live_fn.destroy();
 		if(this.onDestroy) {
@@ -188,12 +156,6 @@ var Binding = function(options) {
 
 // Creates a type of binding that accepts any number of arguments and then sets an attribute's value to depend on
 // every element that was passed in
-/*!
- * Description
- * @method create_obj_binding
- * @param {} obj_binding_setter
- * @return FunctionExpression
- */
 var create_list_binding = function(list_binding_getter, list_binding_setter, list_binding_init_value) {
 		return function(elements) { // The first argument is a list of elements
 			var args = slice.call(arguments, 1), // and the rest are values
@@ -206,10 +168,6 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 				getter: bind(val.get, val), // use the constraint's value as the getter
 				setter: list_binding_setter,
 				init_val: list_binding_init_value,
-				/*!
-				 * Description
-				 * @method onDestroy
-				 */
 				onDestroy: function() {
 					val.destroy(); // Clean up the constraint when we are done
 				}
@@ -240,21 +198,11 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 
 			var binding = new Binding({
 				targets: elements,
-				/*!
-				 * Description
-				 * @method setter
-				 * @param {} element
-				 * @param {} value
-				 */
 				setter: function(element, value) {
 					each(value, function(v, k) {
 						obj_binding_setter(element, k, v);
 					});
 				},
-				/*!
-				 * Description
-				 * @method getter
-				 */
 				getter: function() {
 					if(is_map(vals)) {
 						return vals.toObject();
@@ -318,12 +266,6 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		element.setAttribute(key, value);
 	});
 
-/*!
- * Description
- * @method getInputValueConstraint
- * @param {} inps
- * @return constraint
- */
 var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 	// take an input element and create a constraint whose value is constrained to the value of that input element
 	getInputValueConstraint = function(inps) {
@@ -335,10 +277,6 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 			arr_inp = true;
 		}
 		// the constraint should just return the value of the input element
-		/*!
-		 * Description
-		 * @method deactivate
-		 */
 		var constraint = cjs(function() {
 				if(arr_inp) {
 					return map(inps, function(inp) { return inp.value; }); // if it's an array, return every value
@@ -365,10 +303,6 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 			oldDestroy = constraint.destroy;
 
 		// when the constraint is destroyed, remove the event listeners
-		/*!
-		 * Description
-		 * @method destroy
-		 */
 		constraint.destroy = function() {
 			deactivate();
 			oldDestroy.call(constraint);

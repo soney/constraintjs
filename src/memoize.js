@@ -1,10 +1,4 @@
 // A function to hash the arguments passed in. By default, just a concatenation of the arguments' string value
-/*!
- * Description
- * @method memoize_default_equals
- * @param {} args1
- * @param {} args2
- */
 var memoize_default_hash = function () {
 	var i, len = arguments.length;
 	var rv = "";
@@ -33,13 +27,6 @@ memoize_default_equals = function (args1, args2) {
 
 extend(cjs, {
 	// Memoize takes a function and applies a getter_fn as a filter
-	/*!
-	 * Description
-	 * @method memoize
-	 * @param {} getter_fn
-	 * @param {} options
-	 * @return rv
-	 */
 	memoize: function (getter_fn, options) {
 		options = extend({
 			hash: memoize_default_hash,
@@ -56,11 +43,6 @@ extend(cjs, {
 		});
 
 		// When getting a value either create a constraint or return the existing value
-		/*!
-		 * Description
-		 * @method rv
-		 * @return CallExpression
-		 */
 		var rv = function () {
 			var args = toArray(arguments),
 				constraint = args_map.get_or_put(args, function() {
@@ -72,11 +54,6 @@ extend(cjs, {
 		};
 
 		// Clean up memory after self
-		/*!
-		 * Description
-		 * @method destroy
-		 * @param {} silent
-		 */
 		rv.destroy = function (silent) {
 			args_map.forEach(function (constraint) {
 				constraint.destroy(silent);
@@ -88,11 +65,6 @@ extend(cjs, {
 		};
 
 		// Run through every argument and call fn on it
-		/*!
-		 * Description
-		 * @method each
-		 * @param {} fn
-		 */
 		rv.each = function (fn) {
 			args_map.forEach(fn);
 		};

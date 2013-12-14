@@ -558,11 +558,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		};
 
 	extend(cjs, {
-		/*!
-		 * Description
-		 * @method createTemplate
-		 * @param {} template_str
-		 */
 		createTemplate:		function(template_str) {
 								if(!isString(template_str)) {
 									if(is_jquery_obj(template_str) || isNList(template_str)) {
@@ -589,27 +584,8 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 									return bind(memoize_template, template);
 								}
 							},
-		/*!
-		 * Description
-		 * @method registerPartial
-		 * @param {} name
-		 * @param {} value
-		 * @return ThisExpression
-		 */
 		registerPartial:	function(name, value) { partials[name] = value; return this;},
-		/*!
-		 * Description
-		 * @method unregisterPartial
-		 * @param {} name
-		 * @return ThisExpression
-		 */
 		unregisterPartial:	function(name) { delete partials[name]; return this;},
-		/*!
-		 * Description
-		 * @method destroyTemplate
-		 * @param {} dom_node
-		 * @return Literal
-		 */
 		destroyTemplate:	function(dom_node) {
 								var nodeIndex = indexOf(memoized_template_nodes, dom_node);
 								if(nodeIndex >= 0) {
@@ -621,23 +597,11 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 								}
 								return false;
 							},
-		/*!
-		 * Description
-		 * @method pauseTemplate
-		 * @param {} dom_node
-		 * @return UnaryExpression
-		 */
 		pauseTemplate:		function(dom_node) {
 								var bindings = get_template_bindings(dom_node);
 								each(bindings, function(binding) { if(has(binding, "pause")) { binding.pause(); } });
 								return !!bindings;
 							},
-		/*!
-		 * Description
-		 * @method resumeTemplate
-		 * @param {} dom_node
-		 * @return UnaryExpression
-		 */
 		resumeTemplate:		function(dom_node) {
 								var bindings = get_template_bindings(dom_node);
 								each(get_template_bindings(dom_node), function(binding) { if(has(binding, "resume")) { binding.resume(); } });

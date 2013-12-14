@@ -3,13 +3,6 @@
 
 // Will automatically call the provided function when it becomes invalid
 extend(cjs, {
-	/*!
-	 * Description
-	 * @method liven
-	 * @param {} func
-	 * @param {} options
-	 * @return rv
-	 */
 	liven:	function (func, options) {
 				options = extend({
 					context: root, // what to equate `this` to
@@ -31,11 +24,6 @@ extend(cjs, {
 				var do_get;
 
 				// Destroy the node and make sure no memory is allocated
-				/*!
-				 * Description
-				 * @method destroy
-				 * @param {} silent
-				 */
 				var destroy = function (silent) {
 					if(options.on_destroy) {
 						options.on_destroy.call(options.context, silent);
@@ -45,11 +33,6 @@ extend(cjs, {
 				};
 
 				// Stop changing and remove it from the event queue if necessary
-				/*!
-				 * Description
-				 * @method pause
-				 * @return Literal
-				 */
 				var pause = function () {
 					if(paused === false) {
 						paused = true;
@@ -60,11 +43,6 @@ extend(cjs, {
 				};
 
 				// Re-add to the event queue
-				/*!
-				 * Description
-				 * @method resume
-				 * @return Literal
-				 */
 				var resume = function () {
 					if(paused === true) {
 						paused = false;
@@ -75,9 +53,6 @@ extend(cjs, {
 				};
 
 				// The actual getter, will call the constraint's getter
-				/*!
-				 * Description
-				 */
 				do_get = function () {
 					if (options.pause_while_running) {
 						pause();
@@ -95,12 +70,6 @@ extend(cjs, {
 					destroy: destroy,
 					pause: pause,
 					resume: resume,
-					/*!
-					 * Description
-					 * @method run
-					 * @param {} arg0
-					 * @return ThisExpression
-					 */
 					run: function(arg0) {
 						do_get(arg0);
 						return this;
