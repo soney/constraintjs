@@ -315,8 +315,8 @@ Constraint = function (value, options) {
 	}
 };
 
-(function(my) {
-	var proto = my.prototype;
+(function(My) {
+	var proto = My.prototype;
 	/** @lends cjs.Constraint.prototype */
 
 	/**
@@ -532,7 +532,7 @@ Constraint = function (value, options) {
 		var args = ([this]).concat(toArray(arguments)),
 			len = args.length;
 
-		return new Constraint(function() {
+		return new My(function() {
 			var i = 0, val;
 			for(;i<len; i++) {
 				// If any value is falsy, return false
@@ -559,7 +559,7 @@ Constraint = function (value, options) {
 		var args = ([this]).concat(toArray(arguments)),
 			len = args.length;
 
-		return new Constraint(function() {
+		return new My(function() {
 			var i = 0, val;
 			for(;i<len; i++) {
 				// Return the first value (including this) that is truthy
@@ -580,7 +580,7 @@ Constraint = function (value, options) {
 	var createConstraintModifier = function(modifier_fn) {
 		return function() {
 			var args = ([this]).concat(toArray(arguments));
-			return new Constraint(function() {
+			return new My(function() {
 				return modifier_fn.apply(this, map(args, cjs.get));
 			});
 		};
@@ -829,6 +829,20 @@ Constraint = function (value, options) {
 			proto[op_name] = createConstraintModifier(op_list[key]);
 		});
 	});
+
+	/**
+	 * @method typeOf
+	 * @param {*} other - a constraint or value to compare against
+	 * @return {*} - a constraint whose value is `typeof this.get()`
+	 */
+	proto.typeOf = createConstraintModifier(function(a) { return typeof a;});
+
+	/**
+	 * @method instanceOf
+	 * @param {*} other - a constraint or value to compare against
+	 * @return {boolean} - a constraint whose value is `this.get() instanceof other.get()`
+	 */
+	proto.instanceOf = createConstraintModifier(function(a, b) { return a instanceof b;});
 } (Constraint));
 
 // Create some exposed utility functions

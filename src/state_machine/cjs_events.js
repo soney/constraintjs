@@ -1,10 +1,9 @@
 /**
- * Creates an event that can be used in a finite-state machine
+ * Creates an event that can be used in a finite-state machine transition
  * @private
  * @class CJSEvent
  * @classdesc A constraint object communicates with the constraint solver to store and maintain constraint values
  */
-// Represents the event portion of a FSM transition
 var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._listeners = []; // parent events that want to know when I fire
 	this._transitions = []; // a list of transitions that I'm attached to
@@ -17,13 +16,26 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 };
 
 (function(my) {
+	/** @lends CJSEvent.prototype */
 	var proto = my.prototype;
-	// Create a transition that calls filter whenever it fires to ensure that it should fire
+	/**
+	 * Create a transition that calls filter whenever it fires to ensure that it should fire
+	 *
+	 * @method guard
+	 * @param {function} [filter] - Returns `true` if the event should fire and false otherwise
+	 * @return {CJSEvent} A new event that only fires when `filter` returns a truthy value
+	 */
 	proto.guard = function(filter) {
 		return new CJSEvent(this, filter);
 	};
 
-	// Add a transition to my list of transitions that this event is attached to
+	/**
+	 * Add a transition to my list of transitions that this event is attached to
+	 *
+	 * @private
+	 * @method _addTransition
+	 * @param {Transition} transition - The transition this event is attached to
+	 */
 	proto._addTransition = function(transition) {
 		this._transitions.push(transition);
 		if(this._on_add_transition) {
@@ -31,7 +43,13 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		}
 	};
 
-	// Remove a transition from my list of transitions;
+	/**
+	 * Remove a transition from my list of transitions
+	 *
+	 * @private
+	 * @method _removeTransition
+	 * @param {Transition} transition - The transition this event is attached to
+	 */
 	proto._removeTransition = function(transition) {
 		if(remove(this._transitions, transition)) {
 			if(this._on_remove_transition) {
@@ -45,18 +63,24 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		}
 	};
 
-	// When I fire, go through every transition I'm attached to and fire it then let any interested listeners know as well
+	/**
+	 * When I fire, go through every transition I'm attached to and fire it then let any interested listeners know as well
+	 *
+	 * @private
+	 * @method _fire
+	 * @param {...*} events - Any number of events that will be passed to the transition
+	 */
 	proto._fire = function() {
-		var args = arguments;
+		var events = arguments;
 		each(this._transitions, function(transition) {
-			transition.run.apply(transition, args);
+			transition.run.apply(transition, events);
 		});
 		each(this._listeners, function(listener_info) {
 			var listener = listener_info.event,
 				filter = listener_info.filter;
 
-			if(!filter || filter.apply(root, args)) {
-				listener._fire.apply(listener, args);
+			if(!filter || filter.apply(root, events)) {
+				listener._fire.apply(listener, events);
 			}
 		});
 	};

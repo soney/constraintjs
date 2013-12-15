@@ -558,6 +558,32 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		};
 
 	extend(cjs, {
+		/**
+		 * Create a new template. If `context` is specified, then this function returns a DOM node with the specified template.
+		 * Otherwise, it returns a function that can be called with `context` and `[parent]` to create a new template.
+		 *
+		 * @method cjs.createTemplate
+		 * @param {string|dom} template - the template as either a string or a `script` tag whose contents are the template
+		 * @param {object} [context] - Any number of target objects to lisen to
+		 * @param {dom} [parent] - The parent DOM node for the template
+		 * @return {function|dom} - An event that can be attached to 
+		 *
+		 * @see cjs.destroyTemplate
+		 * @see cjs.pauseTemplate
+		 * @see cjs.resumeTemplate
+		 *
+		 * @example
+		 * <script id='my_template' type='cjs/template'>
+		 *		{{x}}
+		 * </script>
+		 * var template_elem = document.getElementById('my_template');
+		 * var template = cjs.createTemplate(template_elem);
+		 * var element1 = template({x: 1});
+		 * var element2 = template({x: 2});
+		 *
+		 * @example
+		 * var element = cjs.createTemplate("{{x}}", {x: 1});
+		 */
 		createTemplate:		function(template_str) {
 								if(!isString(template_str)) {
 									if(is_jquery_obj(template_str) || isNList(template_str)) {
@@ -584,8 +610,37 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 									return bind(memoize_template, template);
 								}
 							},
+		/**
+		 * Register a partial that can be used in other templates
+		 *
+		 * @method cjs.registerPartial
+		 * @param {string} name - The name that this partial can be referred to as
+		 * @param {Template} value - The template
+		 * @return {cjs} - `cjs`
+		 * @see cjs.unregisterPartial
+		 */
 		registerPartial:	function(name, value) { partials[name] = value; return this;},
+
+		/**
+		 * Unregister a partial for other templates
+		 *
+		 * @method cjs.unregisterPartial
+		 * @param {string} name - The name of the partial
+		 * @return {cjs} - `cjs`
+		 * @see cjs.registerPartial
+		 */
 		unregisterPartial:	function(name) { delete partials[name]; return this;},
+
+		/**
+		 * Destroy a template instance
+		 *
+		 * @method cjs.destroyTemplate
+		 * @param {dom} node - The dom node created by `createTemplate`
+		 * @return {boolean} - Whether the template was successfully removed
+		 * @see cjs.createTemplate
+		 * @see cjs.pauseTemplate
+		 * @see cjs.resumeTemplate
+		 */
 		destroyTemplate:	function(dom_node) {
 								var nodeIndex = indexOf(memoized_template_nodes, dom_node);
 								if(nodeIndex >= 0) {
@@ -597,11 +652,33 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 								}
 								return false;
 							},
+
+		/**
+		 * Pause dynamic updates to a template
+		 *
+		 * @method cjs.pauseTemplate
+		 * @param {dom} node - The dom node created by `createTemplate`
+		 * @return {boolean} - Whether the template was successfully paused
+		 * @see cjs.resumeTemplate
+		 * @see cjs.createTemplate
+		 * @see cjs.destroyTemplate
+		 */
 		pauseTemplate:		function(dom_node) {
 								var bindings = get_template_bindings(dom_node);
 								each(bindings, function(binding) { if(has(binding, "pause")) { binding.pause(); } });
 								return !!bindings;
 							},
+
+		/**
+		 * Resume dynamic updates to a template
+		 *
+		 * @method cjs.resumeTemplate
+		 * @param {dom} node - The dom node created by `createTemplate`
+		 * @return {boolean} - Whether the template was successfully resumed
+		 * @see cjs.pauseTemplate
+		 * @see cjs.createTemplate
+		 * @see cjs.destroyTemplate
+		 */
 		resumeTemplate:		function(dom_node) {
 								var bindings = get_template_bindings(dom_node);
 								each(get_template_bindings(dom_node), function(binding) { if(has(binding, "resume")) { binding.resume(); } });

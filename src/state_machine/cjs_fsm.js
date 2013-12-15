@@ -193,6 +193,14 @@ var StateListener = function(selector, callback, context) {
 	proto.run = function() { this._callback.apply(this._context, arguments); };
 }(StateListener));
 
+/**
+ * This class represents a finite-state machine to track the state of an interface or component
+ *
+ * @private
+ * @class FSM
+ * @classdesc A finite-state machine
+ * @param {...string} state_names - Any number of state names for the FSM to have
+ */
 var FSM = function() {
 	this._states = {}; // simple substate representations
 	this._transitions = []; // simple transition representations
@@ -202,6 +210,10 @@ var FSM = function() {
 	this._did_transition = false; // keeps track of if any transition has run (so that when the user specifies
 								// a start state, it knows whether or not to change the current state
 
+	/**
+	 * The name of this FSM's active state
+	 * @property {Constraint} state
+	 */
 	this.state = cjs(function() { // the name of the current state
 		if(this._curr_state) { return this._curr_state.getName(); }
 		else { return null; }
@@ -210,43 +222,114 @@ var FSM = function() {
 	});
 
 	// Option to pass in state names as arguments
-	var state_names = flatten(arguments, true);
-	each(state_names, this.addState, this);
+	this.addState.apply(this, flatten(arguments, true));
 };
 (function(my) {
 	var proto = my.prototype;
-	// Creates and returns a new state object with name state
-	proto.createState = function(state_name) {
-		var state = new State(this, state_name);
-		this._states[state_name] = state;
-		return state;
+	/** @lends FSM.prototype */
+
+	// Find the state with a given name
+	var getStateWithName = function(fsm, state_name) {
+		return fsm._states[state_name];
 	};
 
-	// Either creates a state with name state_name or sets the current
-	// chain state to that state
-	proto.addState = function(state_name) {
-		var state = this.stateWithName(state_name);
-		if(state === null) {
-			state = this.createState.apply(this, arguments);
-			if(this._curr_state === null) { this._curr_state = state; } // if there isn't an active state,
-																	// make this one the starting state by default
-		}
+	/**
+	 * Create states and set the current "chain state" to that state
+	 *
+	 * @method addState
+	 * @param {...string} state_names - Anyu number of state names to add. The lst state becomes the chain state
+	 * @return {FSM} - `this`
+	 */
+	proto.addState = function() {
+		var state;
+		each(arguments, function(state_name) {
+			state = getStateWithName(this, state_name);
+			if(!state) {
+				state = this._states[state_name] = new State(this, state_name);
+				// if there isn't an active state,
+				// make this one the starting state by default
+				if(this._curr_state === null) { this._curr_state = state; }
+			}
+		}, this);
 
-		this._chain_state = state;
+		if(state) { this._chain_state = state; }
+
 		return this;
 	};
-	// Find the state with a given name
-	proto.stateWithName = function(state_name) {
-		return this._states[state_name] || null;
-	};
 
-	// Returns the name of the state this machine is currently in
+	/**
+	 * Returns the name of the state this machine is currently in. Constraints that depend on the return
+	 * value will be automatically updated.
+	 *
+	 * @method getState
+	 * @return {string} - The name of the currently active state
+	 */
 	proto.getState = function() {
 		return this.state.get();
 	};
 	
-	// Add a transition from the last state that was added (the chain state) to a given state
-	// add_transition_fn will be called with the code to do a transition as a parameter
+	/**
+	 * Add a transition from the current "chain state" (the last added state) to the specified state
+	 *
+	 * @method addTransition
+	 * @param {string} to_state - The name of the state the transition should go to
+	 * @return {function} - A function that tells the transition to run
+	 * @example
+	 *		var x = cjs.fsm();
+	 *      x.addState("b")
+	 *       .addState("a");
+	 *		var run_transition = x.addTransition("b"); //add a transition from a to b
+	 *		window.addEventListener("click", run_transition); // run that transition when the window is clicked
+	 */
+	/**
+	 * Add a transition from the current "chain state" (the last added state) to the specified state
+	 *
+	 * @method addTransition^2
+	 * @param {string} to_state - The name of the state the transition should go to
+	 * @param {CJSEvent|function} add_transition_fn - A `CJSEvent` or a user-specified function for adding the event listener
+	 * @return {FSM} - `this`
+	 * @example
+	 *		var x = cjs.fsm();
+	 *		x.addState("b")
+	 *       .addState("a")
+	 *       .addTransition("b", cjs.on('click')); // add a transition from a to b that runs when the window is clicked
+	 * @example
+	 *		var x = cjs.fsm();
+	 *		x.addState("b")
+	 *       .addState("a")
+	 *       .addTransition("b", function(run_transition) {
+	 *           window.addEventListener("click", run_transition);
+	 *       }); // add a transition from a to b that runs when the window is clicked
+	 */
+	/**
+	 * Add a transition between the specified states
+	 *
+	 * @method addTransition^3
+	 * @param {string} from_state - The name of the state the transition should come from
+	 * @param {string} to_state - The name of the state the transition should go to
+	 * @return {function} - A function that tells the transition to run
+	 * @example
+	 *		var x = cjs.fsm("a", "b");
+	 *		var run_transition = x.addTransition("a", "b"); //add a transition from a to b
+	 *		window.addEventListener("click", run_transition); // run that transition when the window is clicked
+	 */
+	/**
+	 * Add a transition between the specified states
+	 *
+	 * @method addTransition^4
+	 * @param {string} from_state - The name of the state the transition should come from
+	 * @param {string} to_state - The name of the state the transition should go to
+	 * @param {CJSEvent|function} add_transition_fn - A `CJSEvent` or a user-specified function for adding the event listener
+	 * @return {FSM} - `this`
+	 * @example
+	 *		var x = cjs.fsm("a", "b");
+	 *		x.addTransition("a", "b", cjs.on("click"));
+	 * @example
+	 *		var x = cjs.fsm("a", "b");
+	 *		var run_transition = x.addTransition("a", "b", function(run_transition) {
+	 *			window.addEventListener("click", run_transition);
+	 *      }); // add a transition from a to b that runs when the window is clicked
+	 */
 	proto.addTransition = function(a, b, c) {
 		var from_state, to_state, transition, add_transition_fn, return_transition_func = false;
 
@@ -266,14 +349,16 @@ var FSM = function() {
 				to_state = b;
 				return_transition_func = true;
 			}
-		} else if(arguments.length > 2) {
+		} else {
 			from_state = a;
 			to_state = b;
 			add_transition_fn = c;
 		}
 
 		// do_transition is a function that can be called to activate the transition
-		transition = this._getTransition(from_state, to_state);
+		// Creates a new transition that will go from from_state to to_state
+		transition = new Transition(this, from_state, to_state);
+		this._transitions.push(transition);
 		if(return_transition_func) {
 			return bind(transition.run, transition);
 		} else {
@@ -287,24 +372,19 @@ var FSM = function() {
 		}
 	};
 
-	// Creates a new transition that will go from from_state to to_state
-	proto._getTransition = function(from_state, to_state) {
-		if(isString(from_state)) {
-			from_state = this.stateWithName(from_state);
-		}
-		if(isString(to_state)) {
-			to_state = this.stateWithName(to_state);
-		}
-		
-		var transition = new Transition(this, from_state, to_state);
-		this._transitions.push(transition);
-
-		return transition;
-	};
-	// This function should, ideally, be called by a transition instead of directly
+	/**
+	 * i
+	 * Changes the active state of this FSM.
+	 * This function should, ideally, be called by a transition instead of directly.
+	 *
+	 * @private
+	 * @method _setState
+	 * @param {State|string} state - The state to transition to
+	 * @param {Transition} transition - The transition that ran
+	 */
 	proto._setState = function(state, transition) {
 		var from_state = this.getState(); // the name of my current state
-		var to_state = isString(state) ? this.stateWithName(state) : state;
+		var to_state = isString(state) ? getStateWithName(this, state) : state;
 		if(!to_state) {
 			throw new Error("Could not find state '" + state + "'");
 		}
@@ -328,15 +408,29 @@ var FSM = function() {
 			}
 		});
 	};
+
+	/**
+	 * Remove all of the states and transitions of this FSM. Useful for cleaning up memory
+	 *
+	 * @method destroy
+	 */
 	proto.destroy = function() {
 		this.state.destroy();
 		this._states = {};
 		this._transitions = [];
 		this._curr_state = null;
 	};
+
+	/**
+	 * Specify which state this FSM should begin at.
+	 *
+	 * @method startsAt
+	 * @param {string} state_name - The name of the state to start at
+	 * @return {FSM} - `this`
+	 */
 	proto.startsAt = function(state_name) {
-		var state = this.stateWithName(state_name); // Get existing state
-		if(state === null) {
+		var state = getStateWithName(this, state_name); // Get existing state
+		if(!state) {
 			// or create it if necessary
 			state = this.create_state(state_name);
 		}
@@ -347,20 +441,42 @@ var FSM = function() {
 		this._chain_state = state;
 		return this;
 	};
+
+	/**
+	 * Check if the current state is `state_name`
+	 *
+	 * @method is
+	 * @param {string} state_name - The name of the state to check against
+	 * @return {boolean} - `true` if the name of the active state is `state_name`. `false` otherwise
+	 */
 	proto.is = function(state_name) {
-		// get the current state name...
+		// get the current state name & compare
 		var state = this.getState();
-		if(state === null) { return false; }
-		else {
-			// ...and compare
-			if(isString(state_name)) {
-				return state === state_name;
-			} else {
-				return state === state_name.getName();
-			}
-		}
+		return state === null ? false : (state === (isString(state_name) ? state_name : state_name.getName()));
 	};
-	// A function to be called when the given string is true
+
+	/**
+	 * Call a givern function when the finite-state machine enters a given state.
+	 * `spec` can be of the form:
+	 * - `'*'`: any state
+	 * - `'state1'`: A state named `state1`
+	 * - `'state1 -> state2'`: Immediately **after** state1 transitions to state2
+	 * - `'state1 >- state2'`: Immediately **before** state1 transitions to state2
+	 * - `'state1 <-> state2'`: Immediately **after** any transition between state1 and state2
+	 * - `'state1 >-< state2'`: Immediately **before** any transition between state1 and state2
+	 * - `'state1 <- state2'`: Immediately **after** state2 transitions 2 state1
+	 * - `'state1 -< state2'`: Immediately **before** state2 transitions 2 state1
+	 * - `'state1 -> *'`: Any transition from state1
+	 * - `'* -> state2'`: Any transition to state2
+	 *
+	 * @method on
+	 * @param {string} spec - A specification of which state to call the callback
+	 * @param {function} callback - The function to be called
+	 * @param {object} [context] - What `this` should evaluate to when `callback` is called
+	 * @return {FSM} - `this`
+	 *
+	 * @see FSM.prototype.off
+	 */
 	proto.on = proto.addEventListener = function(spec_str, callback, context) {
 		var selector;
 		if(isString(spec_str)) {
@@ -376,7 +492,15 @@ var FSM = function() {
 		return this;
 	};
 
-	// Remove the listener specified by an on call; pass in just the callback
+	/**
+	 * Remove the listener specified by an on call; pass in just the callback
+	 *
+	 * @method off
+	 * @param {function} callback - The function to remove as a callback
+	 * @return {FSM} - `this`
+	 *
+	 * @see FSM.prototype.on
+	 */
 	proto.off = proto.removeEventListener = function(listener_callback) {
 		this._listeners = filter(this._listeners, function(listener) {
 			return listener.callback !== listener_callback;
@@ -386,7 +510,19 @@ var FSM = function() {
 }(FSM));
 
 extend(cjs, {
+	/**
+	 * @method cjs.fsm
+	 * @constructs FSM
+	 * @param {...string} state_names - An initial set of state names to add to the FSM
+	 * @return {FSM} - A new FSM
+	 * @see FSM
+	 */
 	fsm: function() { return new FSM(arguments); },
-
+	/**
+	 * Determine whether an object is an FSM
+	 * @method cjs.isFSM
+	 * @param {*} obj - An object to check
+	 * @return {boolean} - `true` if `obj` is an `FSM`, `false` otherwise
+	 */
 	isFSM: function(obj) { return obj instanceof FSM; }
 });

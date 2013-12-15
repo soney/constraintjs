@@ -5,7 +5,6 @@ var isPositiveInteger = function (val) {
 	return isNumber(val) && Math.round(val) === val && val >= 0;
 };
 
-
 // This class is meant to emulate standard arrays, but with constraints
 // It contains many of the standard array functions (push, pop, slice, etc)
 // and makes them constraint-enabled.
