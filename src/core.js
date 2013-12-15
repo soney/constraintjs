@@ -180,7 +180,11 @@ var constraint_solver = {
 		}
 	},
 	
-	// Remove the edge going from `fromNode` to `toNode`
+	/**
+	 * 
+	 * Remove the edge going from `fromNode` to `toNode`
+	 * @method cjs.removeDependency
+	 */
 	removeDependency: function(fromNode, toNode) {
 		delete fromNode._outEdges[toNode._id];
 		delete toNode._inEdges[fromNode._id];
@@ -188,9 +192,18 @@ var constraint_solver = {
 
 	// Use a semaphore to decide when running the nullification listeners is appropriate
 	semaphore: 0,
+
+	/**
+	 * Tells the constraint solver to delay before running any `onChange` listeners
+	 * @method cjs.wait
+	 */
 	wait: function() {
 		this.semaphore -= 1;
 	},
+	/**
+	 * Tells the constraint solver to delay before running any `onChange` listeners
+	 * @method cjs.signal
+	 */
 	signal: function () {
 		this.semaphore += 1;
 		// When we signal that we're ready, try running the call stack
@@ -834,13 +847,16 @@ is_constraint = function(obj) {
 extend(cjs, {
 	/**
 	 * @method cjs.constraint
+	 * @constructs cjs.Constraint
 	 * @param {*} value - The initial value of the constraint or a function to compute its value
 	 * @param {Object} [options] - A set of options to control how and when the constraint's value is evaluated
 	 * @return {cjs.Constraint} - A new constraint object
 	 * @see cjs.Constraint
 	 */
 	constraint: function(value, options) { return new Constraint(value, options); },
+	/** @expose cjs.Constraint */
 	Constraint: Constraint,
+	/** @expose cjs.isConstraint */
 	isConstraint: is_constraint,
 
 	/**
@@ -878,20 +894,19 @@ extend(cjs, {
 		else					{ return obj; }
 	},
 
-	// `wait` tells the constraint solver to delay before running any `onChange` listeners
+	/** @expose cjs.wait */
 	wait: bind(constraint_solver.wait, constraint_solver),
-	// `signal` tells the constraint solver that it can run `onChange` listeners
+	/** @expose cjs.signal */
 	signal: bind(constraint_solver.signal, constraint_solver),
+	/** @expose cjs.removeDependency */
 	removeDependency: constraint_solver.removeDependency,
 
+	/** @expose cjs.arrayDiff */
 	arrayDiff: get_array_diff, // expose this useful function
 
 	/**
-	 * Print out the name and version of ConstraintJS
-	 *
-	 * @namespace
+	 * The version number of ConstraintJS
 	 * @property {string} cjs.version
-	 * @return {string} - The version number of ConstraintJS
 	 */
 	version: "<%= version %>", // This template will be filled in by the builder
 	/**
@@ -902,6 +917,7 @@ extend(cjs, {
 	 */
 	toString: function() { return "ConstraintJS v" + cjs.version; },
 
+	/** @private */
 	__debug: false,
 
 	/**

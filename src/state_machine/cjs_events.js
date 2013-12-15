@@ -1,3 +1,9 @@
+/**
+ * Creates an event that can be used in a finite-state machine
+ * @private
+ * @class CJSEvent
+ * @classdesc A constraint object communicates with the constraint solver to store and maintain constraint values
+ */
 // Represents the event portion of a FSM transition
 var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._listeners = []; // parent events that want to know when I fire
@@ -62,6 +68,15 @@ var isElementOrWindow = function(elem) { return elem === root || isElement(elem)
 	timeout_event_type = "timeout";
 
 extend(cjs, {
+	/**
+	 * Create a new event for use in a finite state machine transition
+	 *
+	 * @constructs CJSEvent
+	 * @method cjs.on
+	 * @param {string} event_type - the type of event to listen for (e.g. mousedown, timeout)
+	 * @param {...element|number} [target=window] - Any number of target objects to lisen to
+	 * @return {CJSEvent} - An event that can be attached to 
+	 */
 	on:	function(event_type) {
 			var rest_args = arguments.length > 1 ? rest(arguments) : root,
 				// no parent, no filter by default
