@@ -1,3 +1,30 @@
+/**
+ * {{#each}}
+ * {{this}}
+ * {{@key}}
+ * {{@index}}
+ * {{#else}}
+ *
+ * {{#if}}
+ * {{#elif}}
+ * {{#else}}
+ *
+ * {{#unless}}
+ *
+ * {{#with}}
+ *
+ * {{#state}}
+ * {{#fsm}}
+ *
+ * {{>partial}}
+ *
+ * {{value}}
+ *
+ * {{{literal}}}
+ *
+ * {{! comment }}
+ *
+ */
 var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		child_is_text				= function(child)	{ return child.isText; },
 		every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },

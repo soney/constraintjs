@@ -5,10 +5,21 @@ var isPositiveInteger = function (val) {
 	return isNumber(val) && Math.round(val) === val && val >= 0;
 };
 
-// This class is meant to emulate standard arrays, but with constraints
-// It contains many of the standard array functions (push, pop, slice, etc)
-// and makes them constraint-enabled.
-// x[1] = y[2] + z[3] === x.item(1, y.item(2) + z.item(3))
+/**
+ * This class is meant to emulate standard arrays, but with constraints
+ * It contains many of the standard array functions (push, pop, slice, etc)
+ * and makes them constraint-enabled.
+ *		x[1] = y[2] + z[3] === x.item(1, y.item(2) + z.item(3))
+ *
+ * Options:
+ *
+ * - `equals`: the function to check if two values are equal, *default:* `===`
+ * - `value`: an array for the initial value of this constraint
+ *
+ * @class cjs.ArrayConstraint
+ * @classdesc A class that adds constraint to arrays
+ * @param {Object} [options] - A set of options to control how the array constraint is evaluated
+ */
 ArrayConstraint = function (options) {
 	options = extend({
 		equals: eqeqeq, // How to check for equality, useful for indexOf, etc
@@ -30,7 +41,12 @@ ArrayConstraint = function (options) {
 
 (function (my) {
 	var proto = my.prototype;
-	// Any iterator in forEach can return this object to break the loop
+	/** @lends cjs.ArrayConstraint.prototype */
+
+	/**
+	 * Any iterator in forEach can return this object to break out of its loop.
+	 * @property {string} BREAK
+	 */
 	my.BREAK = {};
 
 	// Get a particular item in the array
@@ -66,6 +82,7 @@ ArrayConstraint = function (options) {
 		}
 		_update_len(arr); // Make sure the length hasn't changed
 		cjs.signal(); // OK, run nullification listeners now if necessary
+		return val;
 	};
 
 	// Remove every element of the array
@@ -93,36 +110,62 @@ ArrayConstraint = function (options) {
 	};
 
 
-	// Change the equality check; useful for indexOf
+	/**
+	 * Change the equality check; useful for indexOf
+	 *
+	 * @method setEqualityCheck
+	 * @param {function} equality_check - A new function to check for equality between two items in this array
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.setEqualityCheck = function (equality_check) {
 		this.$equality_check.set(equality_check);
 		return this;
 	};
 
-	// Run through every element of the array and call func with 'this' === context or window
-	proto.forEach = function (func, context) {
+	/**
+	 * The forEach() method executes a provided function once per array element.
+	 * 
+	 * @method forEach
+	 * @param {function} callback - Function to execute for each element.
+	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
+	proto.forEach = function (callback, thisArg) {
 		var i, len = this.length();
-		context = context || root; // Set context to window if not specified
+		thisArg = thisArg || root; // Set thisArg to window if not specified
 		for (i = 0; i < len; i += 1) {
-			if (func.call(context, _get(this, i), i) === my.BREAK) { // "break" equivalent
+			if (callback.call(thisArg, _get(this, i), i) === my.BREAK) { // "break" equivalent
 				return this;
 			}
 		}
 		return this;
 	};
 
-	// Return a new JAVASCRIPT array with each element's value being the result of calling func
-	// on item i
-	proto.map = function (func, context) {
+	/**
+	 *  The map() method creates a new array (not array constraint) with the results of calling a provided
+	 *  function on every element in this array.
+	 * 
+	 * @method map
+	 * @param {function} callback - Function that produces an element of the new Array from an element of the current one.
+	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
+	 * @return {array} - The result of calling `callback` on every element
+	 */
+	proto.map = function (callback, thisArg) {
 		var rv = [];
-		context = context || root;
+		thisArg = thisArg || root;
 		this.forEach(function(val, i) {
-			rv[i] = func.call(context, val, i);
+			rv[i] = callback.call(thisArg, val, i);
 		});
 		return rv;
 	};
 
-	// Replaces the whole array
+	/**
+	 * Replaces the whole array
+	 *
+	 * @method setValue
+	 * @param {array} arr - The new value
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.setValue = function (arr) {
 		cjs.wait(); // Don't run nullified functions quite yet
 		_clear(this);
@@ -131,7 +174,28 @@ ArrayConstraint = function (options) {
 		return this;
 	};
 
-	// Get or put item i
+	/**
+	 * Convert my value to a standard JavaScript array
+	 *
+	 * @method item
+	 * @return {array} - A standard JavaScript array
+	 * @see toArray
+	 */
+	/**
+	 * Get item `key`
+	 *
+	 * @method item^2
+	 * @param {number} key - The array index
+	 * @return {*} - The value at index `key`
+	 */
+	/**
+	 * Set item i
+	 *
+	 * @method item^3
+	 * @param {number} key - The array index
+	 * @param {*} value - The new value
+	 * @return {*} - `value`
+	 */
 	proto.item = function (key, val) {
 		if(arguments.length === 0) { // Just return an array if called with no arguments
 			return this.toArray();
@@ -141,30 +205,63 @@ ArrayConstraint = function (options) {
 			return _put(this, key, val);
 		}
 	};
-	// Clean up any allocated memory
+
+	/**
+	 * Clear this array and try to clean up any memory
+	 *
+	 * @method destroy
+	 * @param {boolean} [silent=false] - If set to `true`, avoids invalidating any dependent constraints.
+	 */
 	proto.destroy = function (silent) {
 		_clear(this, silent);
 		this.$len.destroy(silent);
 	};
 
+	/**
+	 * Get the length of the array
+	 *
+	 * @method length
+	 * @return {number} - The length of the array
+	 */
 	proto.length = function () {
 		return this.$len.get(); // Remember that length is a constraint
 	};
 	
-	// add to the end of the array
+	/**
+	 * The push() method mutates an array by appending the given elements and returning the new length of the array.
+	 *
+	 * @method push
+	 * @param {...*} elements - The set of elements to append to the end of the array
+	 * @return {number} - The new length of the array
+	 *
+	 * @see pop
+	 * @see shift
+	 * @see unshift
+	 * @see splice
+	 */
 	proto.push = function () {
 		var i, len = arguments.length, value_len = this._value.length;
 		//Make operation atomic
 		cjs.wait();
 		// Add every item that was passed in
-		for (i = 0; i < len; i += 1) {
+		for (i = 0; i < len; i++) {
 			_put(this, value_len+i, arguments[i]);
 		}
 		cjs.signal();
 		return this.length(); // return the new length
 	};
 
-	// Remove from the end of the array
+	/**
+	 * The pop() method removes the last element from an array and returns that element.
+	 *
+	 * @method pop
+	 * @return {*} - The value that was popped off or `undefined`
+	 * 
+	 * @see push
+	 * @see shift
+	 * @see unshift
+	 * @see splice
+	 */
 	proto.pop = function () {
 		var rv, $value = this._value.pop(); // $value should be a constraint
 		cjs.wait();
@@ -182,60 +279,108 @@ ArrayConstraint = function (options) {
 		
 		return rv;
 	};
-	// Converts to a JAVASCRIPT array
+
+	/**
+	 * Converts this array to a JavaScript array
+	 *
+	 * @method toArray
+	 * @return {array} - This object as a JavaScript array
+	 */
 	proto.toArray = function () {
 		return this.map(identity); // just get every element
 	};
 
-	// Returns the first item where calling filter is truthy
-	proto.indexWhere = function (filter, context) {
+	/**
+	 * Returns the *first* item where calling filter is truthy
+	 * 
+	 * @method indexWhere
+	 * @param {function} filter - The function to call on every item
+	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
+	 * @return {number} - The first index where calling `filter` is truthy or `-1`
+	 */
+	proto.indexWhere = function (filter, thisArg) {
 		var i, len = this.length(), $val;
-		context = context || this;
+		thisArg = thisArg || this;
 
 		for (i = 0; i < len; i += 1) {
 			$val = this._value[i];
-			if (filter.call(context, $val.get(), i)) { return i; }
+			if (filter.call(thisArg, $val.get(), i)) { return i; }
 		}
 
 		return -1; // -1 if not found
 	};
-	// Return the last item where calling filter is truthy
-	proto.lastIndexWhere = function (filter, context) {
+	/**
+	 * Returns the *last* item where calling filter is truthy
+	 * 
+	 * @method lastIndexWhere
+	 * @param {function} filter - The function to call on every item
+	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
+	 * @return {number} - The last index where calling `filter` is truthy or `-1`
+	 */
+	proto.lastIndexWhere = function (filter, thisArg) {
 		var i, len = this.length(), $val;
-		context = context || this;
+		thisArg = thisArg || this;
 
 		for (i = len - 1; i >= 0; i -= 1) {
 			$val = this._value[i];
-			if (filter.call(context, $val.get(), i)) { return i; }
+			if (filter.call(thisArg, $val.get(), i)) { return i; }
 		}
 
 		return -1; // -1 if not found
 	};
 
-	// First index of item, with either the supplied equality check or my equality check
+	/**
+	 * Returns the *first* index of `item`
+	 * 
+	 * @method indexOf
+	 * @param {*} item - The item we are searching for
+	 * @param {function} [equality_check] - How to check whether two objects are equal, defaults to the option that was passed in)
+	 * @return {number} - The item's index or `-1`
+	 */
 	proto.indexOf = function (item, equality_check) {
 		equality_check = equality_check || this.$equality_check.get();
 		var filter = function (x) { return equality_check(x, item); };
 		return this.indexWhere(filter);
 	};
 
-	// Last index of item, with either the supplied equality check or my equality check
+	/**
+	 * Returns the *last* index of `item`
+	 * 
+	 * @method lastIndexOf
+	 * @param {*} item - The item we are searching for
+	 * @param {function} [equality_check] - How to check whether two objects are equal, defaults to the option that was passed in)
+	 * @return {number} - The item's index or `-1`
+	 */
 	proto.lastIndexOf = function (item, equality_check) {
 		equality_check = equality_check || this.$equality_check.get();
 		var filter = function (x) { return equality_check(x, item); };
 		return this.lastIndexWhere(filter);
 	};
 
-	// Return true if any item in the array is true
-	proto.some = function(filter, context) {
-		return this.indexWhere(filter, context) >= 0;
+	/**
+	 * Return `true` if `filter` against any item in my array is truthy
+	 * 
+	 * @method some
+	 * @param {function} filter - The function to check against
+	 * @param {*} thisArg - Object to use as `this` when executing `filter`.
+	 * @return {boolean} - `true` if some item matches `filter`. `false` otherwise
+	 */
+	proto.some = function(filter, thisArg) {
+		return this.indexWhere(filter, thisArg) >= 0;
 	};
 
-	// Return true if every item in the array has a truty value
-	proto.every = function(filter, context) {
+	/**
+	 * Return `true` if `filter` against every item in my array is truthy
+	 * 
+	 * @method every
+	 * @param {function} filter - The function to check against
+	 * @param {*} thisArg - Object to use as `this` when executing `filter`.
+	 * @return {boolean} - `true` if some item matches `filter`. `false` otherwise
+	 */
+	proto.every = function(filter, thisArg) {
 		var rv = true;
 		this.forEach(function() {
-			if(!filter.apply(context, arguments)) { // break on the first non-obeying element
+			if(!filter.apply(thisArg, arguments)) { // break on the first non-obeying element
 				rv = false;
 				return my.BREAK;
 			}
@@ -243,7 +388,26 @@ ArrayConstraint = function (options) {
 		return rv;
 	};
 
-	// Works just like the standard JavaScript array splice function
+	/**
+	 * The splice() method changes the content of an array, adding new elements while removing old elements.
+	 *
+	 * @method splice
+	 * @param {number} index - Index at which to start changing the array. If greater than the length of the array,
+	 * no elements will be removed.
+	 * @param {number} howMany - An integer indicating the number of old array elements to remove.
+	 * If howMany is 0, no elements are removed. In this case, you should specify at least one new element.
+	 * If howMany is greater than the number of elements left in the array starting at index,
+	 * then all of the elements through the end of the array will be deleted.
+	 * @param {...*} elements - The elements to add to the array. If you don't specify any elements,
+	 * splice simply removes elements from the array.
+	 * @return {array.*}An array containing the removed elements. If only one element is removed,
+	 * an array of one element is returned. If no elements are removed, an empty array is returned.
+	 *
+	 * @see push
+	 * @see pop
+	 * @see shift
+	 * @see unshift
+	 */
 	proto.splice = function (index, howmany) {
 		var i;
 		if (!isNumber(howmany)) { howmany = 0; }
@@ -308,21 +472,50 @@ ArrayConstraint = function (options) {
 		return removed;
 	};
 
-	// Remove the first item of the array
+	/**
+	 * The shift() method removes the first element from an array and returns that element.
+	 * This method changes the length of the array.
+	 *
+	 * @method shift
+	 * @return {*} - The element that was removed
+	 *
+	 * @see unshift
+	 * @see push
+	 * @see pop
+	 * @see splice
+	 */
 	proto.shift = function () {
 		var rv_arr = this.splice(0, 1);
 		return rv_arr[0];
 	};
 
-	// Add a new item to the beginning of the array (any number of parameters)
+	/**
+	 * The unshift() method adds one or more elements to the beginning of an array and returns the new length
+	 * of the array.
+	 *
+	 * @method unshift
+	 * @param {...*} elements - The elements to be added
+	 * @return {number} - The new array length
+	 *
+	 * @see shift
+	 * @see push
+	 * @see pop
+	 * @see splice
+	 */
 	proto.unshift = function () {
 		this.splice.apply(this, ([0, 0]).concat(toArray(arguments)));
 		return this.length();
 	};
 
-	// Like the standard js concat but return an array
+	/**
+	 * The concat() method returns a new array comprised of this array joined with other array(s) and/or value(s).
+	 *
+	 * @method concat
+	 * @param {...*} values - Arrays and/or values to concatenate to the resulting array.
+	 * @return {array} The concatenated array
+	 */
 	proto.concat = function () {
-		// Every argument could either be an array or constraint array
+		// Every argument could either be a JS array or array constraint
 		var args = map(arguments, function(arg) {
 			return is_array(arg) ? arg.toArray() : arg;
 		});
@@ -330,7 +523,14 @@ ArrayConstraint = function (options) {
 		return my_val.concat.apply(my_val, args);
 	};
 
-	// Just like the standard JS slice
+	/**
+	 * The slice() method returns a portion of an array.
+	 *
+	 * @method slice
+	 * @param {number} [begin=0] - Zero-based index at which to begin extraction.
+	 * @param {number} [end=this.length] - Zero-based index at which to end extraction. slice extracts up to but not including end.
+	 * @return {array} A JavaScript array
+	 */
 	proto.slice = function () {
 		// Just call the normal slice with the same arguments
 		var sliced_arr = this._value.slice.apply(this._value, arguments);
@@ -339,8 +539,14 @@ ArrayConstraint = function (options) {
 		});
 	};
 
-	// Return a constraint whose value is bound to my value for key
-	proto.getConstraint = function(key) {
+	/**
+	 * Return a constraint whose value is bound to my value for key
+	 *
+	 * @method itemConstraint
+	 * @param {number|Constraint} key - The array index
+	 * @return {Constraint} - A constraint whose value is the
+	 */
+	proto.itemConstraint = function(key) {
 		return new Constraint(function() {
 			// Call cjs.get on the key so the key can also be a constraint
 			return this.item(cjs.get(key));
@@ -349,8 +555,45 @@ ArrayConstraint = function (options) {
 		});
 	};
 
-	// All of these functions will just convert to an array and return that
-	each(["filter", "join", "sort", "reverse", "valueOf", "toString"], function (fn_name) {
+	/**
+	 * The filter() method creates a new array with all elements that pass the test implemented by the provided function.
+	 *
+	 * @method filter
+	 * @param {function} callback - Function to test each element of the array.
+	 * @param {*} [thisObject] - Object to use as this when executing callback.
+	 * @return {array} A filtered JavaScript array
+	 */
+	/**
+	 * The join() method joins all elements of an array into a string.
+	 *
+	 * @method join
+	 * @param {string} [separator=','] - Specifies a string to separate each element of the array.
+	 * The separator is converted to a string if necessary. If omitted, the array elements are separated with a comma.
+	 * @return {string} The joined string
+	 */
+	/**
+	 * The sort() method sorts the elements of an array in place and returns the array.
+	 * The default sort order is lexicographic (not numeric).
+	 *
+	 * @method sort
+	 * @param {function} [compreFunction] - Specifies a function that defines the sort order. If omitted,
+	 * the array is sorted lexicographically (in dictionary order) according to the string conversion of each element.
+	 * @return {array} A sofrted JavaScript array
+	 */
+	/**
+	 * The reverse() method reverses an array in place. The first array element becomes the last and the last becomes the first.
+	 *
+	 * @method reverse
+	 * @return {array} A JavaScript array whose value is the reverse of mine
+	 */
+	/**
+	 * The toString() method returns a string representing the specified array and its elements.
+	 *
+	 * @method toString
+	 * @return {string} A string representation of this array.
+	 */
+	each(["filter", "join", "sort", "reverse", "toString"], function (fn_name) {
+		// All of these functions will just convert to an array and return that
 		proto[fn_name] = function () {
 			var my_val = this.toArray();
 			return my_val[fn_name].apply(my_val, arguments);
@@ -358,12 +601,27 @@ ArrayConstraint = function (options) {
 	});
 }(ArrayConstraint));
 
+/**
+ * Determine whether an object is an array constraint
+ * @method cjs.isArrayConstraint
+ * @param {*} obj - An object to check
+ * @return {boolean} - `true` if `obj` is a `cjs.ArayConstraint`, `false` otherwise
+ */
 is_array = function(obj) {
 	return obj instanceof ArrayConstraint;
 };
 
 extend(cjs, {
-	array: function (value) { return new ArrayConstraint(value); },
+	/**
+	 * @method cjs.array
+	 * @constructs cjs.ArrayConstraint
+	 * @param {Object} [options] - A set of options to control how the array constraint is evaluated
+	 * @return {cjs.ArayConstraint} - A new array constraint object
+	 * @see cjs.ArrayConstraint
+	 */
+	array: function (options) { return new ArrayConstraint(options); },
+	/** @expose cjs.ArrayConstraint */
 	ArrayConstraint: ArrayConstraint,
+	/** @expose cjs.isArrayConstraint */
 	isArrayConstraint: is_array
 });

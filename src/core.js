@@ -10,6 +10,37 @@ var Constraint, // Declare here, will be defined later
 	
 	// Save the previous value of the `cjs` variable.
 	old_cjs = root.cjs,
+	/**
+	 * Create an array constraint
+	 *
+	 * @method cjs
+	 * @param {object} value - A map of initial values
+	 * @param {object} options - A set of optiosn to control how the array constraint is evaluated
+	 * @return {cjs.ArrayConstraint} A new array constraint
+	 */
+	/**
+	 * Create an input value constraint
+	 *
+	 * @method cjs^2
+	 * @param {dom} node - The DOM node whose value to follow
+	 * @return {cjs.Binding} A constraint whose value is the current value of the input
+	 */
+	/**
+	 * Create a map constraint
+	 *
+	 * @method cjs^3
+	 * @param {object} value - A map of initial values
+	 * @param {object} options - A set of optiosn to control how the map constraint is evaluated
+	 * @return {cjs.MapConstraint} A new map constraint
+	 */
+	/**
+	 * Create a standard constraint
+	 *
+	 * @method cjs^4
+	 * @param {object} value - The constraint's value
+	 * @param {object} options - A set of optiosn to control how the constraint is evaluated
+	 * @return {cjs.Constraint} A new constraint
+	 */
 	cjs = function (arg0, arg1) {
 		if(isArray(arg0)) {
 			return new ArrayConstraint(extend({
