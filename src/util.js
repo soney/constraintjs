@@ -77,9 +77,9 @@ var keys = nativeKeys || function (obj) {
 // Get the last element of an array. Passing **n** will return the last N
 // values in the array.
 var last = function(array, n) {
-	if (array == null) {
+	if (!array) {
 		return void 0;
-	} else if (n == null) {
+	} else if (n===undefined) {
 		return array[array.length - 1];
 	} else {
 		return slice.call(array, Math.max(array.length - n, 0));
@@ -90,7 +90,7 @@ var last = function(array, n) {
 // Delegates to **ECMAScript 5**'s native `some` if available.
 var any = function(obj, iterator, context) {
 	var result = false;
-	if (obj == null) { return result; }
+	if (!obj) { return result; }
 	if (nativeSome && obj.some === nativeSome) { return obj.some(iterator, context); }
 	each(obj, function(value, index, list) {
 		if (result || (result = iterator.call(context, value, index, list))) { return breaker; }
@@ -102,7 +102,7 @@ var any = function(obj, iterator, context) {
 // Especially useful on the arguments object. Passing an **n** will return
 // the rest N values in the array.
 var rest = function(array, n) {
-	return slice.call(array, n == null ? 1 : n);
+	return slice.call(array, n === undefined ? 1 : n);
 };
 
 // Trim out all falsy values from an array.

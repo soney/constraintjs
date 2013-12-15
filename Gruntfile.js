@@ -56,14 +56,15 @@ module.exports = function(grunt) {
 			}
 		},
 		concat: {
-			options: {
-				process: {
-					data: {
-						version: package.version // the updated version will be added to the concatenated file
-					}
-				}
-			},
 			js: {
+				options: {
+					stripBanners: true,
+					process: {
+						data: {
+							version: package.version // the updated version will be added to the concatenated file
+						}
+					}
+				},
 				src: enclosed_src_files,
 				dest: "build/cjs.js"
 			}
