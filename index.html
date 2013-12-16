@@ -104,6 +104,9 @@ cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
 <h4>I am {{libName}}</h4>
 		</script>
 		<script type="cjs/template" id="ex2code">
+<input class='form-control' type='text' cjs-out='demonym'
+		placeholder='Demonym'
+		value='Commander' />
 <input class='form-control' type='text' cjs-out='items'
 		placeholder='Comma-separated items'
 		value='Kirk, Spock, Sulu, Uhura' />
@@ -111,7 +114,7 @@ cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
 <ul class="list-group">  
 	{{#each items.split(",")}}
 		<li class="list-group-item">
-			<strong>Person {{@index}}</strong>: {{this}}
+			<strong>{{demonym}} {{@index}}</strong>: {{this}}
 		</li>
 	{{/each}}
 </ul>
