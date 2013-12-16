@@ -3,6 +3,24 @@
 
 // Will automatically call the provided function when it becomes invalid
 extend(cjs, {
+	/**
+	 * Memoize a function to avoid unecessary re-evaluation. Its options are:
+	 *
+	 * - `context`: The context in which `func` should be evaliated
+	 * - `run_on_create`: Whether to run `func` immediately after creating the live function. (default: `true`)
+	 * - `pause_while_running`: Whether to explicitly prevent this live function from being called recursively (default: `false`)
+	 * - `on_destroy`: A function to call when `destroy` is called (default: `false`)
+	 *
+	 * The return value of this method also has two functions:
+	 * - `pause`: Pause evaluation of the live function
+	 * - `resume`: Resume evaluation of the live function
+	 * - `run`: Run `func` if it's invalid
+	 *
+	 * @method cjs.liven
+	 * @param {function} func - The function to make live
+	 * @param {object} [options] - A set of options to control how liven works
+	 * @return {object} An object with properties `destroy`, `pause`, `resume`, and `run`
+	 */
 	liven:	function (func, options) {
 				options = extend({
 					context: root, // what to equate `this` to

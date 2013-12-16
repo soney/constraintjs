@@ -18,6 +18,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 (function(my) {
 	/** @lends CJSEvent.prototype */
 	var proto = my.prototype;
+
 	/**
 	 * Create a transition that calls filter whenever it fires to ensure that it should fire
 	 *

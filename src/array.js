@@ -45,7 +45,7 @@ ArrayConstraint = function (options) {
 
 	/**
 	 * Any iterator in forEach can return this object to break out of its loop.
-	 * @property {string} BREAK
+	 * @property {object} BREAK
 	 */
 	my.BREAK = {};
 
@@ -207,7 +207,7 @@ ArrayConstraint = function (options) {
 	};
 
 	/**
-	 * Clear this array and try to clean up any memory
+	 * Clear this array and try to clean up any memory.
 	 *
 	 * @method destroy
 	 * @param {boolean} [silent=false] - If set to `true`, avoids invalidating any dependent constraints.
@@ -218,7 +218,7 @@ ArrayConstraint = function (options) {
 	};
 
 	/**
-	 * Get the length of the array
+	 * Get the length of the array.
 	 *
 	 * @method length
 	 * @return {number} - The length of the array
@@ -544,7 +544,7 @@ ArrayConstraint = function (options) {
 	 *
 	 * @method itemConstraint
 	 * @param {number|Constraint} key - The array index
-	 * @return {Constraint} - A constraint whose value is the
+	 * @return {Constraint} - A constraint whose value is `this[key]`
 	 */
 	proto.itemConstraint = function(key) {
 		return new Constraint(function() {
@@ -605,7 +605,7 @@ ArrayConstraint = function (options) {
  * Determine whether an object is an array constraint
  * @method cjs.isArrayConstraint
  * @param {*} obj - An object to check
- * @return {boolean} - `true` if `obj` is a `cjs.ArayConstraint`, `false` otherwise
+ * @return {boolean} - `true` if `obj` is a `cjs.ArrayConstraint`, `false` otherwise
  */
 is_array = function(obj) {
 	return obj instanceof ArrayConstraint;
@@ -616,7 +616,7 @@ extend(cjs, {
 	 * @method cjs.array
 	 * @constructs cjs.ArrayConstraint
 	 * @param {Object} [options] - A set of options to control how the array constraint is evaluated
-	 * @return {cjs.ArayConstraint} - A new array constraint object
+	 * @return {cjs.ArrayConstraint} - A new array constraint object
 	 * @see cjs.ArrayConstraint
 	 */
 	array: function (options) { return new ArrayConstraint(options); },

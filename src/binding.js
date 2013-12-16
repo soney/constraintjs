@@ -70,9 +70,16 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 		}
 	};
 
-// A binding calls some arbitrary functions passed into options. It is responsible for keeping some aspect of a
-// DOM node in line with a constraint value. For example, it might keep an element's class name in sync with a
-// class_name constraint
+/**
+ * A binding calls some arbitrary functions passed into options. It is responsible for keeping some aspect of a
+ * DOM node in line with a constraint value. For example, it might keep an element's class name in sync with a
+ * class_name constraint
+ *
+ * @private
+ * @class Binding
+ * @param {object} options
+ * @classdesc Bind a DOM node property to a constraint value
+ */
 var Binding = function(options) {
 	var targets = options.targets, // the DOM nodes
 		onAdd = options.onAdd, // optional function to be called when a new target is added
@@ -133,10 +140,39 @@ var Binding = function(options) {
 };
 
 (function(my) {
+	/** @lends Binding.prototype */
 	var proto = my.prototype;
-	proto.pause = function() { this.$live_fn.pause(); }; // Pause binding (no updates to the attribute until resume is called)
-	proto.resume = function() { this.$live_fn.resume(); }; // Resume the binding (after pause)
-	proto.throttle = function(min_delay) { // require at least min_delay ms between setting the attribute
+	/**
+	 * Pause binding (no updates to the attribute until resume is called)
+	 *
+	 * @method pause
+	 * @return {Binding} `this`
+	 * @see resume
+	 * @see throttle
+	 */
+	proto.pause = function() { this.$live_fn.pause(); return this; };
+
+	/**
+	 * Resume binding (after pause)
+	 *
+	 * @method resume
+	 * @return {Binding} `this`
+	 * @see pause
+	 * @see throttle
+	 */
+	proto.resume = function() { this.$live_fn.resume(); return this; };
+
+
+	/**
+	 * Require at least `min_delay` milliseconds between setting the attribute
+	 *
+	 * @method throttle
+	 * @param {number} min_delay - The minimum number of milliseconds between updates
+	 * @return {Binding} `this`
+	 * @see pause
+	 * @see resume
+	 */
+	proto.throttle = function(min_delay) {
 		this._throttle_delay = min_delay > 0 ? min_delay : false; // Make sure it's positive
 		if(this._timeout_id && !this._throttle_delay) { // If it was speicfied that there should be no delay and we are waiting for a re-eval
 			cTO(this._timeout_id); // then prevent that re-eval
@@ -146,6 +182,15 @@ var Binding = function(options) {
 		this.$live_fn.run();
 		return this;
 	};
+
+	/**
+	 * Stop updating the binding and try to clean up any memory
+	 *
+	 * @method destroy
+	 * @see pause
+	 * @see resume
+	 * @see throttle
+	 */
 	proto.destroy = function() {
 		this.$live_fn.destroy();
 		if(this.onDestroy) {
@@ -220,15 +265,50 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 		};
 	};
 
+	/**
+	 * Constrain a DOM node's text content
+	 *
+	 * @method cjs.text
+	 * @param {dom} element - The DOM element
+	 * @param {...*} values - The desired text value
+	 * @return {Binding} - A binding object
+	 */
 var text_binding = create_textual_binding(function(element, value) { // set the escaped text of a node
 		element.textContent = value;
 	}),
+
+	/**
+	 * Constrain a DOM node's HTML content
+	 *
+	 * @method cjs.html
+	 * @param {dom} element - The DOM element
+	 * @param {...*} values - The desired html content
+	 * @return {Binding} - A binding object
+	 */
 	html_binding = create_textual_binding(function(element, value) { // set the non-escaped inner HTML of a node
 		element.innerHTML = value;
 	}),
+
+	/**
+	 * Constrain a DOM node's value
+	 *
+	 * @method cjs.value
+	 * @param {dom} element - The DOM element
+	 * @param {...*} values - The value the element should have
+	 * @return {Binding} - A binding object
+	 */
 	val_binding = create_textual_binding(function(element, value) { // set the value of a ndoe
 		element.val = value;
 	}),
+
+	/**
+	 * Constrain a DOM node's class names
+	 *
+	 * @method cjs.class
+	 * @param {dom} element - The DOM element
+	 * @param {...*} values - The list of classes the element should have. The binding automatically flattens them.
+	 * @return {Binding} - A binding object
+	 */
 	class_binding = create_list_binding(function(args) { // set the class of a node
 		return flatten(map(args, cjs.get), true);
 	}, function(element, value, old_value) {
@@ -246,6 +326,14 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		element.className = curr_class_name; // finally, do the work of setting the class
 	}, []), // say that we don't have any classes to start with
 
+	/**
+	 * Constrain a DOM node's children
+	 *
+	 * @method cjs.children
+	 * @param {dom} element - The DOM element
+	 * @param {...*} elements - The elements to use as the constraint. The binding automatically flattens them.
+	 * @return {Binding} - A binding object
+	 */
 	children_binding = create_list_binding(function(args) {
 		var arg_val_arr = map(args, cjs.get);
 		return map(flatten(arg_val_arr, true), make_node);
@@ -257,17 +345,55 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	}, function(element) {
 		return toArray(element.childNodes);
 	}),
-	// set style attributes of a dom node
+
+	/**
+	 * Constrain a DOM node's CSS style
+	 *
+	 * @method cjs.css
+	 * @param {dom} element - The DOM element
+	 * @param {object} values - An object whose key-value pairs are the CSS property names and values respectively
+	 * @return {Binding} - A binding object representing the link from constraints to CSS styles
+	 */
+	/**
+	 * Constrain a DOM node's CSS style
+	 *
+	 * @method cjs.css^2
+	 * @param {string} key - The name of the CSS attribute to constraint
+	 * @param {cjs.Constraint|string} value - The value of this CSS attribute
+	 * @return {Binding} - A binding object representing the link from constraints to elements
+	 */
 	css_binding = create_obj_binding(function(element, key, value) {
 		element.style[camel_case(key)] = value;
 	}),
-	// set regular attributes of a dom node
+
+	/**
+	 * Constrain a DOM node's attribute values
+	 *
+	 * @method cjs.attr
+	 * @param {dom} element - The DOM element
+	 * @param {object} values - An object whose key-value pairs are the attribute names and values respectively
+	 * @return {Binding} - A binding object representing the link from constraints to elements
+	 */
+	/**
+	 * Constrain a DOM node's attribute value
+	 *
+	 * @method cjs.attr^2
+	 * @param {string} key - The name of the attribute to constraint
+	 * @param {cjs.Constraint|string} value - The value of this attribute
+	 * @return {Binding} - A binding object representing the link from constraints to elements
+	 */
 	attr_binding = create_obj_binding(function(element, key, value) {
 		element.setAttribute(key, value);
 	});
 
 var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
-	// take an input element and create a constraint whose value is constrained to the value of that input element
+	/**
+	 * Take an input element and create a constraint whose value is constrained to the value of that input element
+	 *
+	 * @method cjs.inputValue
+	 * @param {dom} inp - The input element
+	 * @return {cjs.Constraint} - A constraint whose value is the input's value
+	 */
 	getInputValueConstraint = function(inps) {
 		var arr_inp; // tracks if the input is a list of items
 		if(isElement(inps)) {
@@ -313,12 +439,20 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 	};
 
 extend(cjs, {
+	/** @expose cjs.text */
 	text: text_binding,
+	/** @expose cjs.html */
 	html: html_binding,
+	/** @expose cjs.val */
 	val: val_binding,
+	/** @expose cjs.children */
 	children: children_binding,
+	/** @expose cjs.attr */
 	attr: attr_binding,
+	/** @expose cjs.css */
 	css: css_binding,
+	/** @expose cjs.class */
 	"class": class_binding,
+	/** @expose cjs.inputValue */
 	inputValue: getInputValueConstraint
 });

@@ -13,7 +13,25 @@ var get_str_hash_fn = function (prop_name) {
 	};
 };
 
-// Map constraints are supposed to behave like normal objects ({}) with a few enhancements
+/**
+ * This class is menat to emulate JavaScript objects ({}) but with constraints
+ *
+ * Options:
+ *
+ * - `hash`: a key hash to use to improve performance when searching for a key (default: `x.toString()`)
+ * - `valuehash`: a value hash to use improve performance when searching for a value (default: `false`)
+ * - `equals`: How to check for equality when searching for a key (default: `===`)
+ * - `valueequals`: How to check for equality when searching for a value (default: `===`)
+ * - `value`: An optional starting value (default: `{}`)
+ * - `keys`: An optional starting set of keys (default: `[]`)
+ * - `values`: An optional starting set of values (default: `[]`)
+ * - `literal_values`: True if values that are functions should return a function rather than that function's return value. (default: `false`)
+ * - `create_unsubstantiated`: Create a constraint when searching for non-existant keys. (default: `true`)
+ *
+ * @class cjs.MapConstraint
+ * @classdesc A class that adds constraint to objects
+ * @param {Object} [options] - A set of options to control how the map constraint is evaluated
+ */
 MapConstraint = function (options) {
 	options = extend({
 		hash: defaulthash, // Improves performance when searching by key
@@ -97,18 +115,47 @@ MapConstraint = function (options) {
 	this._unsubstantiated_values = {};
 
 	// Array to store keys
-	this.$keys = new Constraint(this._do_get_keys, {context: this});
+	this.$keys = new Constraint(function () {
+			var rv = [];
+			this.forEach(function (value, key, index) {
+				rv[index] = key;
+			});
+			return rv;
+		}, {context: this});
+
 	// Array to store values
-	this.$values = new Constraint(this._do_get_values, {context: this});
+	this.$values = new Constraint(function() {
+		var rv = [];
+		this.forEach(function (value, key, index) {
+			rv[index] = value;
+		});
+		return rv;
+	}, {context: this});
+
 	// Full entries (includes keys and values)
-	this.$entries = new Constraint(this._do_get_entries, {context: this});
+	this.$entries = new Constraint(function() {
+		var rv = [];
+		this.forEach(function (value, key, index) {
+			rv[index] = {key: key, value: value};
+		});
+		return rv;
+	}, {context: this});
+
 	// Number of keys
-	this.$size = new Constraint(this._do_get_size, {context: this});
+	this.$size = new Constraint(function() {
+		return this._ordered_values.length;
+	}, {context: this});
 };
 
 (function (my) {
-	my.BREAK = ArrayConstraint.BREAK;
 	var proto = my.prototype;
+	/** @lends cjs.MapConstraint.prototype */
+
+	/**
+	 * Any iterator in forEach can return this object to break out of its loop.
+	 * @property {object} BREAK
+	 */
+	my.BREAK = ArrayConstraint.BREAK;
 
 	// Utility function to return information about a key
 	var _find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
@@ -322,54 +369,63 @@ MapConstraint = function (options) {
 		}
 	};
 	
-	// Getter for this.$keys constraint
-	proto._do_get_keys = function () {
-		var rv = [];
-		this.forEach(function (value, key, index) {
-			rv[index] = key;
-		});
-		return rv;
-	};
-	// used when keys() is called
+	/**
+	 * Get the keys on this object.
+	 *
+	 * @method keys
+	 * @return {array.*} - The set of keys
+	 */
 	proto.keys = function () { return this.$keys.get(); };
 
-	// Getter for this.$values constraint
-	proto._do_get_values = function () {
-		var rv = [];
-		this.forEach(function (value, key, index) {
-			rv[index] = value;
-		});
-		return rv;
-	};
-	//used when values() is called
+	/**
+	 * Get the values on this object.
+	 *
+	 * @method values
+	 * @return {array.*} - The set of values
+	 */
 	proto.values = function () { return this.$values.get(); };
 
-	// Getter for this.$entries constraint
-	proto._do_get_entries = function () {
-		var rv = [];
-		this.forEach(function (value, key, index) {
-			rv[index] = {key: key, value: value};
-		});
-		return rv;
-	};
-	//used when entries() is called
+	/**
+	 * Get every key and value of this object as an array.
+	 *
+	 * @method entries
+	 * @return {array.object} - A set of objects with properties `key` and `value`
+	 */
 	proto.entries = function () { return this.$entries.get(); };
 
-	// Getter for this.$size constraint
-	proto._do_get_size = function () {
-		return this._ordered_values.length;
-	};
-	// used when size() is called
-	proto.size = function () {
-		return this.$size.get();
-	};
+	/**
+	 * Get the number of entries in this object.
+	 *
+	 * @method size
+	 * @return {number} - The number of entries
+	 * @see isEmpty
+	 */
+	proto.size = function () { return this.$size.get(); };
 	
-	// Simple check if I have items
-	proto.isEmpty = function () {
-		return this.size() === 0;
-	};
+	/**
+	 * Check if this object has any entries
+	 *
+	 * @method isEmpty
+	 * @return {boolean} - `true` if there are no entries, `false` otherwise
+	 * @see size
+	 */
+	proto.isEmpty = function () { return this.size() === 0; };
 
-	// set the item at key (like this[key] = value)
+	/**
+	 * Set the entry for `key` to `value` (`this[key]=value`)
+	 *
+	 * @method put
+	 * @param {*} key - The entry's key
+	 * @param {*} value - The entry's value
+	 * @param {number} [index=this.size] - The entry's index
+	 * @param {boolean} [literal] - Whether to treat the value as literal
+	 * @return {cjs.MapConstraint} - `this`
+	 * @see get
+	 * @see getOrPut
+	 * @see item
+	 * @see remove
+	 * @see clear
+	 */
 	proto.put = function (key, value, index, literal) {
 		cjs.wait();
 		// Find out if there's a key or unsubstantiated info but don't create it
@@ -380,20 +436,29 @@ MapConstraint = function (options) {
 		return this;
 	};
 
-	// Unset the item at key (like delete this[key])
+	/**
+	 * Remove a key's entry (like `delete this[key]`)
+	 *
+	 * @method remove
+	 * @param {*} key - The entry's key
+	 * @return {cjs.MapConstraint} - `this`
+	 *
+	 * @see put
+	 * @see clear
+	 */
 	proto.remove = function (key) {
 		// Find out if there's an actual key set
-		var ki = _find_key.call(this, key, false, false);
-		var key_index = ki.i,
-			hash_values = ki.hv;
-		var i;
+		var ki = _find_key.call(this, key, false, false),
+			key_index = ki.i,
+			hash_values = ki.hv,
+			i, info, ordered_index, value_hash, vhash_val;
 
 		// If the item was found
 		if (key_index >= 0) {
 			cjs.wait();
 
-			var info = hash_values[key_index]; // The info about the value
-			var ordered_index = info.index.get(); // The map's index (not the index in the hash array)
+			info = hash_values[key_index]; // The info about the value
+			ordered_index = info.index.get(); // The map's index (not the index in the hash array)
 
 			hash_values.splice(key_index, 1); // Remove info from the hash array
 			if (hash_values.length === 0) { // If there isn't anything in the hash array,
@@ -403,8 +468,8 @@ MapConstraint = function (options) {
 			// If the value is also hashed..
 			if (this._vhash) {
 				// Find the value hash information
-				var value_hash = this._valuehash(info.value.get()); // the lookup key for the value hash
-				var vhash_val = this._vhash[value_hash]; // the value hash array
+				value_hash = this._valuehash(info.value.get()); // the lookup key for the value hash
+				vhash_val = this._vhash[value_hash]; // the value hash array
 				if (vhash_val) { // Found the value hash
 					var len = vhash_val.length;
 					for (i = 0; i < len; i += 1) {
@@ -436,7 +501,17 @@ MapConstraint = function (options) {
 		return this;
 	};
 	
-	// Get the item at key (like this[key])
+	/**
+	 * Get the item at key (like this[key])
+	 *
+	 * @method get
+	 * @param {*} key - The entry's key
+	 * @return {*|undefined} - the value at that entry or `undefined`
+	 *
+	 * @see item
+	 * @see put
+	 * @see getOrPut
+	 */
 	proto.get = function (key) {
 		// Try to find the key and search in any unsubstantiated values
 		var ki = _find_key.call(this, key, true, this._create_unsubstantiated),
@@ -454,8 +529,54 @@ MapConstraint = function (options) {
 		}
 	};
 
-	// Return a constraint whose value is bound to my value for key
-	proto.getConstraint = function(key) {
+	/**
+	 * Convert my value to a standard JavaScript object. The keys are converted using `toString`
+	 *
+	 * @method item
+	 * @return {object} - A standard JavaScript object
+	 * @see toArray
+	 */
+	/**
+	 * Get item `key`
+	 *
+	 * @method item^2
+	 * @param {number} key - The object key
+	 * @return {*} - The value at index `key`
+	 *
+	 * @see get
+	 * @see put
+	 * @see getOrPut
+	 */
+	/**
+	 * Set item i
+	 *
+	 * @method item^3
+	 * @param {number} key - The object key
+	 * @param {*} value - The new value
+	 * @return {cjs.MapConstraint} - `this`
+	 *
+	 * @see get
+	 * @see put
+	 * @see getOrPut
+	 */
+	proto.item = function (arg0, arg1, arg2) {
+		if(arguments.length === 0) { // no arguments? return an object
+			return this.toObject();
+		} else if (arguments.length === 1) { // One, try to get the keys values
+			return this.get(arg0);
+		} else { // more than two, try to set
+			return this.put(arg0, arg1, arg2);
+		}
+	};
+
+	/**
+	 * Return a constraint whose value is bound to my value for key
+	 *
+	 * @method itemConstraint
+	 * @param {*|Constraint} key - The array index
+	 * @return {Constraint} - A constraint whose value is `this[key]`
+	 */
+	proto.itemConstraint = function(key) {
 		return new Constraint(function() {
 			// Call cjs.get on the key so the key can also be a constraint
 			return this.get(cjs.get(key));
@@ -464,7 +585,13 @@ MapConstraint = function (options) {
 		});
 	};
 
-	// Empty out every entry
+	/**
+	 * Clear every entry of this object.
+	 *
+	 * @method clear
+	 * @return {cjs.MapConstraint} - `this`
+	 * @see remove
+	 */
 	proto.clear = function (silent) {
 		if (this.size() > 0) { // If I actually have something
 			cjs.wait();
@@ -495,30 +622,59 @@ MapConstraint = function (options) {
 		}
 		return this;
 	};
-	// Loop through every value and key calling func on it with this === context (or this)
-	proto.forEach = function (func, context) {
+
+	/**
+	 * The forEach() method executes a provided function once per entry.
+	 * 
+	 * @method forEach
+	 * @param {function} callback - Function to execute for each entry.
+	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
+	proto.forEach = function (func, thisArg) {
 		var i, info, len = this.size(),
 			ov_clone = this._ordered_values.slice();
-		context = context || this;
+		thisArg = thisArg || this;
 		for (i = 0; i < len; i += 1) {
 			info = ov_clone[i];
-			if (info && func.call(context, info.value.get(), info.key.get(), info.index.get()) === my.BREAK) { // break if desired
+			if (info && func.call(thisArg, info.value.get(), info.key.get(), info.index.get()) === my.BREAK) { // break if desired
 				break;
 			}
 		}
 		return this;
 	};
-	// Change rules for key lookup
+
+	/**
+	 * Change the default equality check when getting a key
+	 * 
+	 * @method setEqualityCheck
+	 * @param {function} equality_check - The new key equality check
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.setEqualityCheck = function (equality_check) {
 		this.$equality_check.set(equality_check);
 		return this;
 	};
-	// Change rules for value lookup
+
+	/**
+	 * Change the default value equality check when getting a value
+	 * 
+	 * @method setValueEqualityCheck
+	 * @param {function} vequality_check - The new value equality check
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.setValueEqualityCheck = function (vequality_check) {
 		this.$vequality_check.set(vequality_check);
 		return this;
 	};
-	// Change how hashing is done
+
+	/**
+	 * Change the default equality check when getting a key
+	 * 
+	 * @method setHash
+	 * @param {function|string} hash - The new hashing function (or a string representing a property name for every key to use as the hash)
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.setHash = function (hash) {
 		cjs.wait();
 		// First, empty out the old key hash and unsubstantiated values
@@ -556,7 +712,13 @@ MapConstraint = function (options) {
 		return this;
 	};
 
-	// Change how value hashing is done
+	/**
+	 * Change the default equality check when getting a value
+	 * 
+	 * @method setHash
+	 * @param {function|string} hash - The new hashing function (or a string representing a property name for every key to use as the hash)
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.setValueHash = function (vhash) {
 		this._valuehash = isString(vhash) ? get_str_hash_fn(vhash) : vhash;
 		// Empty out the old value hash
@@ -578,16 +740,14 @@ MapConstraint = function (options) {
 
 		return this;
 	};
-	proto.item = function (arg0, arg1, arg2) {
-		if(arguments.length === 0) { // no arguments? return an object
-			return this.toObject();
-		} else if (arguments.length === 1) { // One, try to get the keys values
-			return this.get(arg0);
-		} else { // more than two, try to set
-			return this.put(arg0, arg1, arg2);
-		}
-	};
-	// Find the item in myself (uses hashing)
+
+	/**
+	 * Get the index of the entry with key = `key`
+	 * 
+	 * @method indexOf
+	 * @param {*} key - The key to search for.
+	 * @return {number} - The index of the entry with key=`key` or `-1`
+	 */
 	proto.indexOf = function (key) {
 		// get hash information
 		var ki = _find_key.call(this, key, true, this._create_unsubstantiated),
@@ -604,28 +764,53 @@ MapConstraint = function (options) {
 		}
 	};
 
-	// This function will search for a key and create it if not found
-	proto.get_or_put = function (key, create_fn, create_fn_context, index, literal) {
-		var ki = _find_key.call(this, key, true, false);
-		var key_index = ki.i, // index within hash array
+	/**
+	 * Search for a key or create it if it wasn't found
+	 * 
+	 * @method getOrPut
+	 * @param {*} key - The key to search for.
+	 * @param {function} create_fn - A function to create the value if `key` is not found
+	 * @param {*} [create_fn_context] - The context in which to call `create_fn`
+	 * @param {number} [index=this.size] - Where to place a value that is created
+	 * @param {boolean} [literal=false] - Whether to create the value as a literal contraint
+	 * (the value of a function is the function)
+	 * @return {number} - The index of the entry with key=`key` or `-1`
+	 *
+	 * @see get
+	 * @see put
+	 * @see item
+	 */
+	proto.getOrPut = function (key, create_fn, create_fn_context, index, literal) {
+		var ki = _find_key.call(this, key, true, false),
+			key_index = ki.i, // index within hash array
 			hash_values = ki.hv, // hash array
-			hash = ki.h; // hash value
+			hash = ki.h, // hash value
+			context, value, info;
+
 		if (key_index >= 0) { // found actual item!
-			var info = hash_values[key_index];
+			info = hash_values[key_index];
 			return info.value.get();
 		} else { // need to create it
 			cjs.wait();
-			var context = create_fn_context || this;
-			var value = create_fn.call(context, key); // will set the value to this
+			context = create_fn_context || this;
+			value = create_fn.call(context, key); // will set the value to this
 			_do_set_item_ki.call(this, ki, key, value, index, literal); // do the work of putting
 			cjs.signal();
 			return value;
 		}
 	};
 
-	// Check if we have a given key
-	proto.has = 
-proto.containsKey = function (key) {
+	/**
+	 * Check if there is any entry with key = `key`
+	 * 
+	 * @method has
+	 * @param {*} key - The key to search for.
+	 * @return {boolean} - `true` if there is an entry with key=`key`, `false` otherwise.
+	 *
+	 * @see get
+	 * @see item
+	 */
+	proto.has = function (key) {
 		var ki = _find_key.call(this, key, true, this._create_unsubstantiated);
 		var key_index = ki.i;
 		if (key_index >= 0) { // Found successfully
@@ -639,7 +824,14 @@ proto.containsKey = function (key) {
 		}
 	};
 
-	//Move an item from one index to another given the item's index
+	/**
+	 * Move the entry at `old_index` to index `new_index`
+	 *
+	 * @method moveIndex
+	 * @param {number} old_index - The index to move from
+	 * @param {number} new_idnex - The index to move to
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.moveIndex = function (old_index, new_index) {
 		var i;
 		cjs.wait();
@@ -665,7 +857,15 @@ proto.containsKey = function (key) {
 		cjs.signal();
 		return this;
 	};
-	// Move an item from one index to another given the item's key
+
+	/**
+	 * Move the entry with key `key` to `index
+	 *
+	 * @method move
+	 * @param {*} key - The key to search for 
+	 * @param {number} to_index - The new index for the key
+	 * @return {cjs.ArrayConstraint} - `this`
+	 */
 	proto.move = function (key, to_index) {
 		//Move a key to a new index
 		var ki = _find_key.call(this, key, false, false);
@@ -678,7 +878,14 @@ proto.containsKey = function (key) {
 		return this;
 	};
 
-	// Given a value, find the corresponding key
+	/**
+	 * Given a value, find the corresponding key
+	 *
+	 * @method keyForValue
+	 * @param {*} value - The value whose key to search for 
+	 * @param {function} [eq_check] - How to check if two values are equal (default: `===`
+	 * @return {*|undefined} - The key where `this.get(key)===value`
+	 */
 	proto.keyForValue = function (value, eq_check) {
 		eq_check = eq_check || this.$vequality_check.get();
 		var i;
@@ -710,7 +917,13 @@ proto.containsKey = function (key) {
 			return key;
 		}
 	};
-	// Useful for deallocating memory
+
+	/**
+	 * Clear this object and try to clean up any memory.
+	 *
+	 * @method destroy
+	 * @param {boolean} [silent=false] - If set to `true`, avoids invalidating any dependent constraints.
+	 */
 	proto.destroy = function (silent) {
 		cjs.wait();
 		this.clear(silent);
@@ -722,7 +935,14 @@ proto.containsKey = function (key) {
 		this.$size.destroy(silent);
 		cjs.signal();
 	};
-	// optional filter to apply to every key
+
+	/**
+	 * Converts this array to a JavaScript object.
+	 *
+	 * @method toObject
+	 * @param {function} [key_map_fn] - A function to convert keys
+	 * @return {object} - This object as a JavaScript object
+	 */
 	proto.toObject = function (key_map_fn) {
 		var rv = {};
 		key_map_fn = key_map_fn || identity; // just use the key if not supplied
@@ -731,12 +951,27 @@ proto.containsKey = function (key) {
 	};
 }(MapConstraint));
 
+/**
+ * Determine whether an object is a map constraint
+ * @method cjs.isMapConstraint
+ * @param {*} obj - An object to check
+ * @return {boolean} - `true` if `obj` is a `cjs.MapConstraint`, `false` otherwise
+ */
 is_map = function(obj) {
 	return obj instanceof MapConstraint;
 };
 
 extend(cjs, {
+	/**
+	 * @method cjs.map
+	 * @constructs cjs.MapConstraint
+	 * @param {Object} [options] - A set of options to control how the map constraint is evaluated
+	 * @return {cjs.MapConstraint} - A new map constraint object
+	 * @see cjs.MapConstraint
+	 */
 	map: function (arg0, arg1) { return new MapConstraint(arg0, arg1); },
+	/** @expose cjs.MapConstraint */
 	MapConstraint: MapConstraint,
+	/** @expose cjs.isMapConstraint */
 	isMapConstraint: is_map
 });

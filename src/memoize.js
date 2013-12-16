@@ -26,7 +26,23 @@ memoize_default_equals = function (args1, args2) {
 };
 
 extend(cjs, {
-	// Memoize takes a function and applies a getter_fn as a filter
+	/**
+	 * Memoize a function to avoid unecessary re-evaluation. Its options are:
+	 *
+	 * - `hash`: Create a unique value for each set of arguments (call with an argument array)
+	 * - `equals`: check if two sets of arguments are equal (call with two argument arrays)
+	 * - `context`: The context in which `getter_fn` should be evaliated
+	 * - `literal_values`: Whether values should be literal if they are functions
+	 *
+	 * The return value of this method also has two functions:
+	 * - `each`: Iterate through every set of arguments and value that is memoized
+	 * - `destroy`: Clear the memoized values to clean up memory
+	 *
+	 * @method cjs.memoize
+	 * @param {function} getter_fn - The function to memoize
+	 * @param {object} [options] - A set of options to control how memoization works
+	 * @return {function} the moemoized function
+	 */
 	memoize: function (getter_fn, options) {
 		options = extend({
 			hash: memoize_default_hash,
