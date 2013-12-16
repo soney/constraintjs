@@ -29,7 +29,7 @@ img#cjs_logo {
 	position: absolute;
 	left: 50%;
 	margin-left: -100px;
-	top: -100px;
+	top: -60px;
 	z-index:4;
 	width: 200px;
 }
