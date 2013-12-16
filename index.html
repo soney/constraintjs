@@ -4,6 +4,7 @@
 		<title>ConstraintJS</title>
 		<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
 		<link rel="stylesheet" href="style/stylesheet.css">
+		<link href="resources/google-code-prettify/sunburst.css" type="text/css" rel="stylesheet" />
 		<link rel="icon" type="image/png" href="resources/cjs_logo_64.png" />
 	</head>
 	<body>
@@ -17,15 +18,72 @@
 				</div>
 			</header>
 			<div class="biginfo row">
-				<div class="col-md-8 desc">
-					<p>ConstraintJS is a small JavaScript library for creating <em>constraints</em>&mdash;relationships that are declared once and automatically maintained. ConstraintJS has a simple but powerful API to make it easier to write dynamic Web apps.</p>
+				<div class="col-md-3 mainlinks clearfix">
+					<div class="row">
+						<div class="col-md-12">
+                    		<a href="builds/ConstraintJS-0.9.0.zip" class="btn btn-block btn-lg btn-primary"><span class="glyphicon glyphicon-download"></span> Download <span class="version">v0.9.0</span></a>
+							<div class="filesize">&lt; 10kb minified &amp; gzipped</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<a href="guide.html" class="btn btn-block btn-link"><span class="glyphicon glyphicon-book"></span> Documentation</a>
+						</div>
+						<div class="col-md-6">
+                    		<a href="https://github.com/soney/ConstraintJS" class="btn btn-block btn-link"><span class="glyphicon glyphicon-wrench"></span> Github</a>
+						</div>
+					</div>
 				</div>
-				<div class="col-md-4 mainlinks">
-                    <a href="builds/ConstraintJS-0.9.0.zip" class="btn btn-block btn-lg btn-primary"><span class="glyphicon glyphicon-download"></span> Download <span class="version">v0.9.0</span></a>
-					<div class="filesize">&lt; 10kb minified &amp; gzipped!</div>
-                    <a href="guide.html" class="btn btn-block btn-lg btn-default"><span class="glyphicon glyphicon-book"></span> Documentation</a>
-                    <a href="https://github.com/soney/ConstraintJS" class="btn btn-block btn-lg btn-default"><span class="glyphicon glyphicon-wrench"></span> GitHub Repository</a>
+				<div class="col-md-3 desc">
+					<h4>Cleaner code</h4>
+					<p>ConstraintJS enables <em>constraints</em> &mdash; relationships that are declared once &amp; automatically maintained. These constraints can make writing dynamic apps easier.</p>
 				</div>
+				<div class="col-md-3 desc">
+					<h4>Lightweight</h4>
+					<p>ConstraintJS is small (about 10kb) and works well with other JavaScript libraries like jQuery.</p>
+				</div>
+				<div class="col-md-3 desc">
+					<h4>Simple syntax</h4>
+					<p>ConstraintJS's API is very learnable and includes features for dynamic handlebars-like templates.</p>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<h4>Example 1</h4>
+				</div>
+				<div class="code col-md-8">
+					<h5>Code</h5>
+				</div>
+				<div class="code col-md-4">
+					<h5>Output</h5>
+				</div>
+				<div class="code col-md-8">
+					<pre id="ex1_disp" class="prettyprint"></pre>
+					<pre id="ex1_js" class="prettyprint">
+cjs.createTemplate(document.getElementById("ex1code"),
+					{libName: cjs.toString()},
+					document.getElementById("ex1"));
+</pre>
+				</div>
+				<div class="code col-md-4" id="ex1"></div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<h4>Example 2</h4>
+				</div>
+				<div class="code col-md-8">
+					<h5>Code</h5>
+				</div>
+				<div class="code col-md-4">
+					<h5>Output</h5>
+				</div>
+				<div class="code col-md-8">
+					<pre id="ex2_disp" class="prettyprint"></pre>
+					<pre id="ex2_js" class="prettyprint">
+cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
+</pre>
+				</div>
+				<div class="code col-md-4" id="ex2"></div>
 			</div>
 			<footer class="row">
 				<div class="col-md-12">
@@ -38,5 +96,38 @@
 		<script src="builds/ConstraintJS-0.9.0/cjs.min.js"></script>
 		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 		<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+		<script type="cjs/template" id="ex1code">
+<input class='form-control' type='text' cjs-out='name'
+		placeholder='Enter your name' />
+
+<h3>Hello, {{name||'friend'}}!</h3>
+<h4>I am {{libName}}</h4>
+		</script>
+		<script type="cjs/template" id="ex2code">
+<input class='form-control' type='text' cjs-out='items'
+		placeholder='Comma-separated items'
+		value='Kirk, Spock, Sulu, Uhura' />
+<br />
+<ul class="list-group">  
+	{{#each items.split(",")}}
+		<li class="list-group-item">
+			<strong>Person {{@index}}</strong>: {{this}}
+		</li>
+	{{/each}}
+</ul>
+		</script>
+		<script type="text/javascript">	
+			cjs.createTemplate(document.getElementById("ex1code"), {libName: cjs.toString()}, document.getElementById("ex1"));
+			$("#ex1_disp").text($("#ex1code").text().trim());
+			
+			cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
+			$("#ex2_disp").text($("#ex2code").text().trim());
+			
+			
+			$(function() {
+				prettyPrint();
+			});
+		</script>
+		<script type="text/javascript" src="resources/google-code-prettify/prettify.js"></script>
 	</body>
 </html>
