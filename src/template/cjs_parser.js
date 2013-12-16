@@ -145,7 +145,7 @@ var parseTemplate = function(input_str, handler) {
 		}
 
 		if (input_str == last) {
-			throw "Parse Error: " + input_str;
+			throw Error("Parse Error: " + input_str);
 		}
 		last = input_str;
 	}
