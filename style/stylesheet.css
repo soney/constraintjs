@@ -1,5 +1,5 @@
 body {
-	padding-top: 110px;
+	padding-top: 80px;
 	padding-bottom: 30px;
 	background-color: #464646;
 	background-image: url(textures/tweed/tweed.png);
@@ -28,9 +28,10 @@ h2 span.cjs_name {
 img#cjs_logo {
 	position: absolute;
 	left: 50%;
-	margin-left: -128px;
+	margin-left: -100px;
 	top: -100px;
 	z-index:4;
+	width: 200px;
 }
 .download {
 	color: #AAA;
