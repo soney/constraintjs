@@ -8,25 +8,31 @@
 	</head>
 	<body>
 		<div class="container">
-			<div class="keystone row">
-				<div class="col-md-6 col-md-offset-3">
-					<img src="resources/cjs_logo_256.png" />
+			<header class="keystone row">
+				<div class="col-md-3">
+					<img id="cjs_logo" src="resources/cjs_logo_256.png" title="ConstraintJS"/>
+				</div>
+				<div class="col-md-9">
+					<h2 class='hidden-sm hidden-xs'><span class='cjs_name'>ConstraintJS</span> is a library for creating dynamic web apps</h2>
+				</div>
+			</header>
+			<div class="biginfo row">
+				<div class="col-md-8 desc">
+					<p>ConstraintJS is a small JavaScript library for creating <em>constraints</em>&mdash;relationships that are declared once and automatically maintained. ConstraintJS has a simple but powerful API to make it easier to write dynamic Web apps.</p>
+				</div>
+				<div class="col-md-4 mainlinks">
+                    <a href="builds/ConstraintJS-0.9.0.zip" class="btn btn-block btn-lg btn-primary"><span class="glyphicon glyphicon-download"></span> Download <span class="version">v0.9.0</span></a>
+					<div class="filesize">&lt; 10kb minified &amp; gzipped!</div>
+                    <a href="guide.html" class="btn btn-block btn-lg btn-default"><span class="glyphicon glyphicon-book"></span> Documentation</a>
+                    <a href="https://github.com/soney/ConstraintJS" class="btn btn-block btn-lg btn-default"><span class="glyphicon glyphicon-wrench"></span> GitHub Repository</a>
 				</div>
 			</div>
-			<div class="header row">
-				<div class="col-md-3">
-					<a href="builds/ConstraintJS-0.9.0.zip" class="btn btn-lg btn-block btn-primary"><span class="glyphicon glyphicon-download"></span> Download 0.9.0</a>
+			<footer class="row">
+				<div class="col-md-12">
+					<p class="pull-right">&copy; 2013 <a href="http://from.so">Stephen Oney</a></p>
+					<p>Code licensed under the <a target="license" href="https://github.com/soney/ConstraintJS/blob/master/LICENSE">MIT License</a>.</p>
 				</div>
-				<div class="col-md-3">
-					<a href="guide.html" class="btn btn-block btn-lg btn-default"><span class="glyphicon glyphicon-book"></span> Documentation</a>
-				</div>
-				<div class="col-md-3">
-					<a href="https://github.com/soney/ConstraintJS" class="btn btn-block btn-lg btn-default"><span class="glyphicon glyphicon-wrench"></span> GitHub Page</a>
-				</div>
-				<div class="col-md-3">
-					<a href="https://github.com/soney/ConstraintJS" class="btn btn-block btn-lg btn-default"><span class="glyphicon glyphicon-wrench"></span> Annotated Source</a>
-				</div>
-			</div>
+			</footer>
 		</div> <!-- /container -->
         
 		<script src="builds/ConstraintJS-0.9.0/cjs.min.js"></script>
