@@ -34,7 +34,6 @@ module.exports = function(grunt) {
 					banner: '/* <%= pkg.name %> - v<%= pkg.version %> (<%= pkg.homepage %>) */',
 					sourceMap: "build/cjs.min.js.map",
 					sourceMappingURL: "cjs.min.js.map",
-					sourceMapRoot: '..',
 					sourceMapPrefix: 1
 				},
 				src: "build/cjs.js", // Use concatenated files
