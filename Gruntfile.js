@@ -149,7 +149,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-compress');
 	grunt.loadNpmTasks('grunt-concat-sourcemap');
 	grunt.loadNpmTasks('grunt-docco');
-	grunt.loadNpmTasks('grunt-dox');
+	//require('./resources/cjs-dox/dox-task');
+	grunt.loadTasks('./resources/cjs-dox/tasks');
 
 	// Default task(s).
 	grunt.registerTask('default', ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development']);

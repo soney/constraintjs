@@ -29,9 +29,7 @@
 		"grunt-contrib-watch": "~0.5",
 		"grunt-contrib-clean": "~0.5",
 		"grunt-contrib-compress": "~0.5",
-		"grunt-concat-sourcemap": "~0.4",
-		"grunt-dox": "~0.5",
-		"grunt-docco": "~0.3"
+		"grunt-concat-sourcemap": "~0.4"
 	},
 	"engines": {
 		"node": ">= 0.4.7"
