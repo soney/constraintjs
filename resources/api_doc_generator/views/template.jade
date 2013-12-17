@@ -1,0 +1,46 @@
+doctype 5
+html
+  head
+    include ./_head.jade
+
+  body(data-spy="scroll")
+    .alert.alert-warning This API documentation is under construnction and is, at the moment, very rough
+    .container
+      .row
+        .col-md-4(role="complimentary")
+          .sidebar(data-offset-top="60" data-offset-bottom="200")
+            each item in docs
+                .row(class='l'+item.level)
+                  .col-md-12
+                      a(href='#'+item.name)=item.name+(item.type==='method' ? "()" : "")
+        .col-md-8.content(role="main")
+          h1 ConstraintJS API
+          each item in docs
+            .row(class='l'+item.level,id=item.name)
+              .col-md-12.entry
+                .classname=item.name
+                each subinfo in item.subinfos
+                  .desc!=subinfo.description
+                  if subinfo.params.length > 0
+                    .params
+                      h5 Parameters:
+                      ul
+                        each param in subinfo.params
+                          li.param
+                            span.name=param.name
+                            span.type=param.types
+                            span.description=param.description
+                  if subinfo.returns
+                    .returns
+                      span.type=subinfo.returns.types
+                      span.description=subinfo.returns.description
+                if item.examples.length > 0
+                  .examples
+                    h5 Examples:
+                    each example in item.examples
+                      pre.example=example
+                .source
+                  each link in item.sourceLinks
+                    a.pull-right(target="_blank",href=link.link)=link.text
+
+    include ./_footer.jade

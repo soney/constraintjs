@@ -29,7 +29,19 @@
 		"grunt-contrib-watch": "~0.5",
 		"grunt-contrib-clean": "~0.5",
 		"grunt-contrib-compress": "~0.5",
-		"grunt-concat-sourcemap": "~0.4"
+		"grunt-concat-sourcemap": "~0.4",
+		
+		"underscore": "*",
+		"commander": "~1.2.0",
+		"jade": "*",
+		"mkdirp": "*",
+		"walkdir": "~0.0.7",
+		"stylus": "~0.33.1",
+		"rimraf": "2.x",
+		"github-flavored-markdown": ">= 0.0.1",
+		"commander": "0.6.1",
+		"mocha": "*",
+		"should": "*"
 	},
 	"engines": {
 		"node": ">= 0.4.7"

@@ -1,0 +1,56 @@
+/*.row.l1 .classname {
+	font-size: 2em;
+}
+.row.l2 .classname {
+	font-size: 1.5em;
+}
+.row.l3 .classname {
+	font-size: 1.2em;
+}
+.row.l4 .classname {
+	font-size: 1em;
+}
+*/
+
+.classname {
+	font-size: 1.5em;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+.returns .type, .param .type {
+	font-style: oblique;
+	padding-right: 5px;
+}
+
+.param .name {
+	font-weight: 700;
+	padding-right: 5px;
+}
+
+.returns .description, .param .description {
+}
+.returns:before {
+	content: "Returns: ";
+	font-weight: 700;
+}
+.entry {
+	margin-top: 5px;
+	margin-bottom: 5px;
+	border-radius: 3px;
+	border: 1px solid #BBB;
+}
+.source {
+}
+
+.desc {
+	border-top: 1px solid #CCC;
+	margin-top: 10px;
+	padding-top: 10px;
+}
+
+.params {
+}
+body {
+	tab-size: 4;
+}
