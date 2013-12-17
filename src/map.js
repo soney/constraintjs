@@ -148,14 +148,14 @@ MapConstraint = function (options) {
 };
 
 (function (my) {
-	var proto = my.prototype;
-	/** @lends cjs.MapConstraint.prototype */
-
 	/**
 	 * Any iterator in forEach can return this object to break out of its loop.
-	 * @property {object} BREAK
+	 * @property {object} cjs.MapConstraint.BREAK
 	 */
 	my.BREAK = ArrayConstraint.BREAK;
+
+	var proto = my.prototype;
+	/** @lends cjs.MapConstraint.prototype */
 
 	// Utility function to return information about a key
 	var _find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
@@ -950,6 +950,7 @@ MapConstraint = function (options) {
 		return rv;
 	};
 }(MapConstraint));
+/** @lends */
 
 /**
  * Determine whether an object is a map constraint

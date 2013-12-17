@@ -198,6 +198,7 @@ var Binding = function(options) {
 		}
 	};
 }(Binding));
+/** @lends */
 
 // Creates a type of binding that accepts any number of arguments and then sets an attribute's value to depend on
 // every element that was passed in
@@ -292,7 +293,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	/**
 	 * Constrain a DOM node's value
 	 *
-	 * @method cjs.value
+	 * @method cjs.val
 	 * @param {dom} element - The DOM element
 	 * @param {...*} values - The value the element should have
 	 * @return {Binding} - A binding object

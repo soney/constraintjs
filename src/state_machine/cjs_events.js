@@ -86,6 +86,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		});
 	};
 }(CJSEvent));
+/** @lends */
 
 var isElementOrWindow = function(elem) { return elem === root || isElement(elem); },
 	do_trim = function(x) { return x.trim(); },

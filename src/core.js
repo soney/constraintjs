@@ -875,6 +875,7 @@ Constraint = function (value, options) {
 	 */
 	proto.instanceOf = createConstraintModifier(function(a, b) { return a instanceof b;});
 } (Constraint));
+/** @lends */
 
 // Create some exposed utility functions
 /**

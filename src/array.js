@@ -41,13 +41,14 @@ ArrayConstraint = function (options) {
 
 (function (my) {
 	var proto = my.prototype;
-	/** @lends cjs.ArrayConstraint.prototype */
-
 	/**
 	 * Any iterator in forEach can return this object to break out of its loop.
-	 * @property {object} BREAK
+	 * @property {object} cjs.ArrayConstraint.BREAK
 	 */
 	my.BREAK = {};
+
+	/** @lends cjs.ArrayConstraint.prototype */
+
 
 	// Get a particular item in the array
 	var _get = function (arr, key) {
@@ -600,6 +601,7 @@ ArrayConstraint = function (options) {
 		};
 	});
 }(ArrayConstraint));
+/** @lends */
 
 /**
  * Determine whether an object is an array constraint
