@@ -4,8 +4,20 @@ html
     include ./_head.jade
 
   body(data-spy="scroll")
-    .alert.alert-warning This API documentation is under construnction and is, at the moment, very rough
     .container
+      header.keystone.row
+        .col-md-2
+          a(href=".")
+            img#cjs_logo(src="resources/cjs_logo_256.png",title="ConstraintJS")
+        .col-md-10
+          ul.nav.navbar-nav.hidden-xs
+            li
+              a(href=".") Home
+            li
+              a(href="guide.html") Documentation
+            li
+              a(href="api.html",active) API
+      .row.alert.alert-warning This API documentation is under construnction and is, at the moment, very rough
       .row
         .col-md-4(role="complimentary")
           .sidebar(data-offset-top="60" data-offset-bottom="200")
