@@ -125,10 +125,8 @@ var eyes = (['left', 'right']).map(function(float) {
 		dy = eye_pos.prop("top").add(eye_radius).sub(mouse_y),
 		d  = dx.pow(2).add(dy.pow(2)).sqrt().min(eye_radius.sub(pupil_radius)),
 		angle = dy.atan2(dx),
-		eye_left = eye_radius.sub(pupil_radius)
-							 .sub(d.mul(angle.cos())),
-		eye_top = eye_radius.sub(pupil_radius)
-							.sub(d.mul(angle.sin()));
+		eye_left = eye_radius.sub(pupil_radius, d.mul(angle.cos())),
+		eye_top  = eye_radius.sub(pupil_radius, d.mul(angle.sin()));
 
 	cjs.css(pupil, {
 			position: "relative",
@@ -232,10 +230,8 @@ $(window).on("mousemove", function(event) {
 					dy = eye_pos.prop("top").add(eye_radius).sub(mouse_y),
 					d  = dx.pow(2).add(dy.pow(2)).sqrt().min(eye_radius.sub(pupil_radius)),
 					angle = dy.atan2(dx),
-					eye_left = eye_radius.sub(pupil_radius)
-										 .sub(d.mul(angle.cos())),
-					eye_top = eye_radius.sub(pupil_radius)
-										.sub(d.mul(angle.sin()));
+					eye_left = eye_radius.sub(pupil_radius, d.mul(angle.cos())),
+					eye_top  = eye_radius.sub(pupil_radius, d.mul(angle.sin()));
 
 				cjs.css(pupil, {
 						position: "relative",
