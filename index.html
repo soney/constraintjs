@@ -4,6 +4,7 @@
 		<title>ConstraintJS</title>
 		<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
 		<link rel="stylesheet" href="style/stylesheet.css">
+		<link rel="stylesheet" href="style/index_style.css">
 		<link href="resources/google-code-prettify/sunburst.css" type="text/css" rel="stylesheet" />
 		<link rel="icon" type="image/png" href="resources/cjs_logo_64.png" />
 	</head>
@@ -21,7 +22,7 @@
 				<div class="col-md-3 mainlinks clearfix">
 					<div class="row">
 						<div class="col-md-12">
-                    		<a href="builds/ConstraintJS-0.9.0.zip" class="btn btn-block btn-lg btn-primary"><span class="glyphicon glyphicon-download"></span> Download <span class="version">v0.9.0</span></a>
+                    		<a href="builds/ConstraintJS-0.9.1.zip" class="btn btn-block btn-lg btn-primary"><span class="glyphicon glyphicon-download"></span> Download <span class="version">v0.9.1</span></a>
 							<div class="filesize">&lt; 10kb minified &amp; gzipped</div>
 						</div>
 					</div>
@@ -33,7 +34,7 @@
 							<a href="guide.html" class="btn btn-block btn-link"><span class="glyphicon glyphicon-book"></span> Tutorial</a>
 						</div>
 						<div class="col-md-6">
-							<a href="docs/index.html" class="btn btn-block btn-link"><span class="glyphicon glyphicon-list"></span> API</a>
+							<a href="api.html" class="btn btn-block btn-link"><span class="glyphicon glyphicon-list"></span> API</a>
 						</div>
 					</div>
 				</div>
@@ -50,45 +51,107 @@
 					<p>ConstraintJS's API is very learnable and includes features for dynamic handlebars-like templates.</p>
 				</div>
 			</div>
-			<div class="row">
-				<div class="col-md-12">
-					<h4>Example 1</h4>
-					<p>This example shows some of the basics of cjs's templating mechanism</p>
+			<div class="panel panel-default">
+				<div class="panel-heading"><h4>Examples: Live Handlebars Templates</h4></div>
+				<div class="panel-body">
+					<p>ConstraintJS includes a Handlebars-like templating syntax. Unlike Handlebars templates, these templates are <em>live</em>&mdash;DOM nodes are created, moved, and removed dynamically without modifying other page elements. See <a href="docs/#cjs.createTemplate">the API documentation</a> for more details.</p>
 				</div>
-				<div class="code col-md-8">
-					<h5>Code</h5>
-				</div>
-				<div class="code col-md-4">
-					<h5>Output</h5>
-				</div>
-				<div class="code col-md-8">
-					<pre id="ex1_disp" class="prettyprint"></pre>
-					<pre id="ex1_js" class="prettyprint">
-cjs.createTemplate(document.getElementById("ex1code"),
-					{libName: cjs.toString()},
-					document.getElementById("ex1"));
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Code (Templated HTML &amp; JavaScript)</th>
+							<th>Output</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>
+								<pre id="ex1_disp" class="prettyprint"></pre>
+<pre id="ex1_js" class="prettyprint">
+cjs.createTemplate(ex1_code, {libName: cjs}); // use template above
 </pre>
-				</div>
-				<div class="code col-md-4" id="ex1"></div>
+							</td>
+							<td id="ex1"></td>
+						</tr>
+						<tr>
+							<td>
+								<pre id="ex2_disp" class="prettyprint"></pre>
+<pre id="ex2_js" class="prettyprint">
+// works with jQuery ($)
+cjs.createTemplate($("#ex2code"), {}, $("#ex2"));</pre>
+							</td>
+							<td id="ex2"></td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
-			<div class="row">
-				<div class="col-md-12">
-					<h4>Example 2</h4>
-					<p>A slightly more advanced template. Note that a minimal set of DOM nodes are added and removed when this template updates.</p>
+
+			<div class="panel panel-default">
+				<div class="panel-heading"><h4>Example: Dynamic JavaScripot</h4></div>
+				<div class="panel-body">
+					<p>ConstraintJS can also enhance lower-level JavaScript by making it easier to create developer-specified bindings between constraint variables and DOM elements. ConstraintJS gives developers a low-level API to create behaviors of any complexity.</p>
 				</div>
-				<div class="code col-md-8">
-					<h5>Code</h5>
-				</div>
-				<div class="code col-md-4">
-					<h5>Output</h5>
-				</div>
-				<div class="code col-md-8">
-					<pre id="ex2_disp" class="prettyprint"></pre>
-					<pre id="ex2_js" class="prettyprint">
-cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Code (JavaScript)</th>
+							<th>Output</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>
+<label>sliderTemplate:</label>
+<pre id="ex3_slider" class="prettyprint"></pre>
+<label>eyeTemplate:</label>
+<pre id="ex3_eye" class="prettyprint"></pre>
+<pre id="ex3_disp" class="prettyprint">
+var sliderTemplate = cjs.createTemplate($("#slider_template")),
+	eyeTemplate    = cjs.createTemplate($("#eye_template")),
+	eradius_slider = sliderTemplate({max: 90, min: 10, val: 50}),
+	eye_radius     = cjs(eradius_slider).toInt(),
+	pradius_slider = sliderTemplate({max: 90, min: 10, val: 20}),
+	pupil_radius   = cjs(pradius_slider).min(eye_radius),
+
+	mouse_x = cjs(0),
+	mouse_y = cjs(0);
+
+var eyes = (['left', 'right']).map(function(float) {
+	var eye = eyeTemplate({fill: "white", size: eye_radius.mul(2), float: float}),
+		pupil = eyeTemplate({fill: "black", size: pupil_radius.mul(2), float: ""}),
+
+		eye_pos = cjs(function() { return $(eye).position(); }),
+		dx = eye_pos.prop("left").add(eye_radius).sub(mouse_x),
+		dy = eye_pos.prop("top").add(eye_radius).sub(mouse_y),
+		d  = dx.pow(2).add(dy.pow(2)).sqrt().min(eye_radius.sub(pupil_radius)),
+		angle = dy.atan2(dx),
+		eye_left = eye_radius.sub(pupil_radius)
+							 .sub(d.mul(angle.cos())),
+		eye_top = eye_radius.sub(pupil_radius)
+							.sub(d.mul(angle.sin()));
+
+	cjs.css(pupil, {
+			position: "relative",
+			left: eye_left.add("px"),
+			top: eye_top.add("px")
+		});
+	
+	eye.appendChild(pupil);
+
+	$(window).on("scroll resize mouseup", function(event) { eye_pos.invalidate(); });
+
+	return eye;
+});
+
+$(window).on("mousemove", function(event) {
+	mouse_x.set(event.pageX); mouse_y.set(event.pageY);
+});
 </pre>
-				</div>
-				<div class="code col-md-4" id="ex2"></div>
+							</td>
+							<td id="ex3"></td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
 			<footer class="row">
 				<div class="col-md-12">
@@ -98,10 +161,11 @@ cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
 			</footer>
 		</div> <!-- /container -->
         
-		<script src="builds/ConstraintJS-0.9.0/cjs.min.js"></script>
+		<script src="builds/ConstraintJS-0.9.1/cjs.min.js"></script>
 		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 		<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 		<script type="cjs/template" id="ex1code">
+<label>Name:</label>
 <input class='form-control' type='text' cjs-out='name'
 		placeholder='Enter your name' />
 
@@ -109,13 +173,17 @@ cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
 <h4>I am {{libName}}</h4>
 		</script>
 		<script type="cjs/template" id="ex2code">
+<label>Title:</label>
 <input class='form-control' type='text' cjs-out='demonym'
-		placeholder='Demonym'
-		value='Commander' />
+		placeholder='Demonym' value='Commander' />
+
+<label>Members (comma-separated):</label>
 <input class='form-control' type='text' cjs-out='items'
 		placeholder='Comma-separated items'
 		value='Kirk, Spock, Sulu, Uhura' />
-<br />
+
+<hr /> <label>Result:</label>
+
 <ul class="list-group">  
 	{{#each items.split(",")}}
 		<li class="list-group-item">
@@ -124,15 +192,73 @@ cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
 	{{/each}}
 </ul>
 		</script>
+<script type="cjs/template" id="slider_template">
+<input type='range' max={{max}} min={{min}} value={{val}} />
+</script>
+<script type="cjs/template" id="eye_template">
+<span class='eye' style='background-color: {{fill}}; width:{{size}}px; height:{{size}}px;
+	border: 2px solid black; display: block; border-radius: {{size}}px; float:{{float}}'></span>
+</script>
 		<script type="text/javascript">	
-			cjs.createTemplate(document.getElementById("ex1code"), {libName: cjs.toString()}, document.getElementById("ex1"));
+
+			
+			$(function() {
+			cjs.createTemplate(document.getElementById("ex1code"), {libName: cjs}, document.getElementById("ex1"));
 			$("#ex1_disp").text($("#ex1code").text().trim());
 			
 			cjs.createTemplate($("#ex2code"), {}, $("#ex2"));
 			$("#ex2_disp").text($("#ex2code").text().trim());
 			
-			
-			$(function() {
+			$("#ex3_slider").text($("#slider_template").text().trim());
+			$("#ex3_eye").text($("#eye_template").text().trim());
+
+			try{
+			var sliderTemplate = cjs.createTemplate($("#slider_template")),
+				eyeTemplate    = cjs.createTemplate($("#eye_template")),
+				eradius_slider = sliderTemplate({max: 90, min: 10, val: 50}),
+				eye_radius     = cjs(eradius_slider).toInt(),
+				pradius_slider = sliderTemplate({max: 90, min: 10, val: 20}),
+				pupil_radius   = cjs(pradius_slider).min(eye_radius),
+
+				mouse_x = cjs(0),
+				mouse_y = cjs(0),
+
+			eyes = (['left', 'right']).map(function(float) {
+				var eye = eyeTemplate({fill: "white", size: eye_radius.mul(2), float: float}),
+					pupil = eyeTemplate({fill: "black", size: pupil_radius.mul(2), float: ""}),
+
+					eye_pos = cjs(function() { return $(eye).position(); }),
+					dx = eye_pos.prop("left").add(eye_radius).sub(mouse_x),
+					dy = eye_pos.prop("top").add(eye_radius).sub(mouse_y),
+					d  = dx.pow(2).add(dy.pow(2)).sqrt().min(eye_radius.sub(pupil_radius)),
+					angle = dy.atan2(dx),
+					eye_left = eye_radius.sub(pupil_radius)
+										 .sub(d.mul(angle.cos())),
+					eye_top = eye_radius.sub(pupil_radius)
+										.sub(d.mul(angle.sin()));
+
+				cjs.css(pupil, {
+						position: "relative",
+						left: eye_left.add("px"),
+						top: eye_top.add("px")
+					});
+				
+				eye.appendChild(pupil);
+
+				$(window).on("scroll resize mouseup", function(event) { eye_pos.invalidate(); });
+
+				return eye;
+			});
+
+			$(window).on("mousemove", function(event) {
+					mouse_x.set(event.pageX); mouse_y.set(event.pageY);
+				});
+
+			$("#ex3")	.append($("<div />").append("<label style='width:100px'>Eye radius: </label>", eradius_slider))
+						.append($("<div />").append("<label style='width:100px'>Pupil radius: </label>", pradius_slider))
+						//.append(pupil)
+						.append(eyes).css("overflow-x", "none");
+			} catch(e){}
 				prettyPrint();
 			});
 		</script>

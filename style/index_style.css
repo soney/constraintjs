@@ -1,0 +1,37 @@
+body {
+	padding-top: 80px;
+	padding-bottom: 30px;
+}
+.download {
+	color: #AAA;
+}
+a .version {
+	opacity: 0.6;
+}
+.filesize {
+	font-size: 0.9em;
+	text-align: right;
+	color: #999;
+	margin-bottom: 5px;
+}
+.mainlinks {
+	padding-top: 70px;
+	background-color: #DDD;
+	border-right: 1px solid #AAA;
+}
+
+.biginfo.row { 
+	color: #666;
+	background-color: #EEE;
+	border-bottom: 1px solid #AAA;
+}
+.biginfo .desc {
+	font-weight: 200;
+}
+.desc h4 {
+	text-transform: uppercase;
+}
+.panel {
+	margin-top: 10px;
+	margin-bottom: 10px;
+}

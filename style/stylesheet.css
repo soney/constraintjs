@@ -1,5 +1,5 @@
 body {
-	padding-top: 80px;
+	padding-top: 30px;
 	padding-bottom: 30px;
 	background-color: #464646;
 	background-image: url(textures/tweed/tweed.png);
@@ -33,9 +33,6 @@ img#cjs_logo {
 	z-index:4;
 	width: 200px;
 }
-.download {
-	color: #AAA;
-}
 
 footer {
 	border-top: 1px solid #AAA;
@@ -61,32 +58,6 @@ footer {
 }
 footer a {
 	color: #888;
-}
-a .version {
-	opacity: 0.6;
-}
-.filesize {
-	font-size: 0.9em;
-	text-align: right;
-	color: #999;
-	margin-bottom: 5px;
-}
-.mainlinks {
-	padding-top: 70px;
-	background-color: #DDD;
-	border-right: 1px solid #AAA;
-}
-
-.biginfo.row { 
-	color: #666;
-	background-color: #EEE;
-	border-bottom: 1px solid #AAA;
-}
-.biginfo .desc {
-	font-weight: 200;
-}
-.desc h4 {
-	text-transform: uppercase;
 }
 
 @media all and (-webkit-min-device-pixel-ratio : 1.5) {
