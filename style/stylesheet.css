@@ -55,8 +55,10 @@ footer a {
 @media all and (-webkit-min-device-pixel-ratio : 1.5) {
     body {
         background-image: url(textures/tweed/tweed_@2X.png);
+		background-size: 200px 200px;
     }
 	.row.keystone {
 		background-image: url(textures/navy_blue/navy_blue_@2X.png);
+		background-size: 600px 385px;
 	}
 }
