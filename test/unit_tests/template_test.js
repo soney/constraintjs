@@ -32,7 +32,10 @@ dt("Dynamic Templates", 5, function() {
 
 	var greet = cjs("hello");
 	var city = cjs("pittsburgh");
-	var t2 = cjs.createTemplate("{{greeting}}, {{city}}", {greeting: greet, city: city});
+	var tlate = document.createElement("script");
+	tlate.setAttribute("type", "cjs/template");
+	tlate.textContent = "{{greeting}}, {{city}}";
+	var t2 = cjs.createTemplate(tlate, {greeting: greet, city: city});
 	equal(t2.textContent, "hello, pittsburgh");
 	greet.set("bye");
 	equal(t2.textContent, "bye, pittsburgh");

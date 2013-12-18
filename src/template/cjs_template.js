@@ -642,9 +642,9 @@ extend(cjs, {
 	createTemplate:		function(template_str) {
 							if(!isString(template_str)) {
 								if(is_jquery_obj(template_str) || isNList(template_str)) {
-									template_str = template_str.length > 0 ? template_str[0].innerText.trim() : "";
+									template_str = template_str.length > 0 ? template_str[0].textContent.trim() : "";
 								} else if(isElement(template_str)) {
-									template_str = template_str.innerText;
+									template_str = template_str.textContent.trim();
 								} else {
 									template_str = "" + template_str;
 								}
