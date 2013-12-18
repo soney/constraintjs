@@ -30,6 +30,7 @@
 
 .returns .description, .param .description {
 }
+
 .returns:before {
 	content: "Returns: ";
 	font-weight: 700;
@@ -38,18 +39,16 @@
 	margin-top: 5px;
 	margin-bottom: 5px;
 	border-radius: 3px;
-	border: 1px solid #BBB;
-}
-.source {
 }
 
 .desc {
-	border-top: 1px solid #CCC;
+	border-bottom: 1px solid #CCC;
 	margin-top: 10px;
 	padding-top: 10px;
 }
 
-.params {
+.panel-footer {
+	text-align: right;
 }
 body {
 	tab-size: 4;

@@ -88,7 +88,7 @@ module.exports = function(grunt) {
 				tasks: ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify']
 			},
 			docs: {
-				files: enclosed_src_files.concat(['resources/cjs-dox/views/*', 'resources/cjs-dox/lib/**']),
+				files: enclosed_src_files.concat(['resources/api_doc_generator/views/*', 'resources/api_doc_generator/lib/**']),
 				tasks: ['dox']
 			}
 		},
