@@ -254,8 +254,8 @@ $(window).on("mousemove", function(event) {
 					mouse_x.set(event.pageX); mouse_y.set(event.pageY);
 				});
 
-			$("#ex3")	.append($("<div />").append("<label style='width:100px'>Eye radius: </label>", eradius_slider))
-						.append($("<div />").append("<label style='width:100px'>Pupil radius: </label>", pradius_slider))
+				$("#ex3")	.append("<label style='width:100%'>Eye radius: </label>", $("<div />").append(eradius_slider))
+				.append("<label style='width:100%'>Pupil radius: </label>", $("<div />").append(pradius_slider))
 						//.append(pupil)
 						.append(eyes).css("overflow-x", "none");
 			} catch(e){}
