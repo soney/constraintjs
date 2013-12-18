@@ -4,6 +4,7 @@
         <title>ConstraintJS Guide</title>
 		<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
 		<link rel="stylesheet" href="style/stylesheet.css">
+		<link rel="stylesheet" href="style/page_style.css">
 		<link rel="icon" type="image/png" href="resources/cjs_logo_64.png" />
 		<style type="text/css">
 			.figure {
@@ -18,50 +19,64 @@
 				font-weight: bold;
 				font-size: 0.85em;
 			}
+			.leftnav {
+				margin-top: 25px;
+			}
 		</style>
 	</head>
 	<body>
 		<div class="container">
+			<header class="keystone row">
+				<div class="col-md-2">
+					<a href="."><img id="cjs_logo" src="resources/cjs_logo_256.png" title="ConstraintJS"/></a>
+				</div>
+				<div class="col-md-10">
+					<ul class="nav navbar-nav hidden-xs">
+						<li>
+							<a href=".">Home</a>
+						</li>
+						<li class="active">
+							<a href="guide.html">Documentation</a>
+						</li>
+						<li>
+							<a href="api.html">API</a>
+						</li>
+					</ul>
+				</div>
+			</header>
 			<div class="row">
-				<div class="col-md-4">
-					<div class="well" style="padding: 8px 0;" id="navigation">
-						<ul class="nav nav-list">
-							<li><a href="/"><i class="icon-home"></i>ConstraintJS Home</a></li>
-							<li class="divider"></li>
-							
-							<li class="nav-header">Introduction</li>
-							<li><a href="#what_is_cjs">What is ConstraintJS?</a></li>
-							<li><a href="#where_use_cjs">Where can I use ConstraintJS?</a></li>
-							<li><a href="#how_use_cjs">How do I use ConstraintJS?</a></li>
-							
-							<li class="nav-header">Variables</li>
-							<li><a href="#cjs_variables">Creating CJS Variables</a></li>
-							<li><a href="#variable_modifiers">Variable Modifiers</a></li>
-							<li><a href="#invalidation">Variable Invalidation</a></li>
-							<li><a href="#detecting_variable_changes">Detecting Variable Changes</a></li>
-							<li><a href="#linking_variables_to_dom">Linking Variables to the DOM</a></li>
-							<li><a href="#conditional">Conditional Variables</a></li>
-							<li><a href="#arrays">Arrays</a></li>
-							
-							<li class="nav-header">States &amp; FSMs</li>
-							<li><a href="#creating_fsms">Creating FSMs</a></li>
-							<li><a href="#adding_states">Adding States</a></li>
-							<li><a href="#transition_events">Transition Events</a></li>
-							<li><a href="#adding_transitions">Switching States &amp; Adding Transitions</a></li>
-							<li><a href="#fsm_chaining">Chaining</a></li>
-							<li><a href="#fsm_constraints">FSM Constraints</a></li>
-							
-							<li class="nav-header">Templates</li>
-							<li><a href="#templates_overview">Template Overview</a></li>
-							<li><a href="#using_templates">Using Templates</a></li>
-							<li><a href="#templates_variables">Variables</a></li>
-							<li><a href="#templates_conditionals">Conditionals</a></li>
-							<li><a href="#templates_states">States</a></li>
-							<li><a href="#templates_loops">Loops</a></li>
-						</ul>
-					</div>
-					
-
+				<div class="leftnav col-md-4">
+					<ul class="nav nav-list">
+						<li class="nav-header">Introduction</li>
+						<li><a href="#what_is_cjs">What is ConstraintJS?</a></li>
+						<li><a href="#where_use_cjs">Where can I use ConstraintJS?</a></li>
+						<li><a href="#how_use_cjs">How do I use ConstraintJS?</a></li>
+						
+						<li class="nav-header">Variables</li>
+						<li><a href="#cjs_variables">Creating CJS Variables</a></li>
+						<li><a href="#variable_modifiers">Variable Modifiers</a></li>
+						<li><a href="#invalidation">Variable Invalidation</a></li>
+						<li><a href="#detecting_variable_changes">Detecting Variable Changes</a></li>
+						<li><a href="#linking_variables_to_dom">Linking Variables to the DOM</a></li>
+						<li><a href="#conditional">Conditional Variables</a></li>
+						<li><a href="#arrays">Arrays</a></li>
+						
+						<li class="nav-header">States &amp; FSMs</li>
+						<li><a href="#creating_fsms">Creating FSMs</a></li>
+						<li><a href="#adding_states">Adding States</a></li>
+						<li><a href="#transition_events">Transition Events</a></li>
+						<li><a href="#adding_transitions">Switching States &amp; Adding Transitions</a></li>
+						<li><a href="#fsm_chaining">Chaining</a></li>
+						<li><a href="#fsm_constraints">FSM Constraints</a></li>
+						
+						<li class="nav-header">Templates</li>
+						<li><a href="#templates_overview">Template Overview</a></li>
+						<li><a href="#using_templates">Using Templates</a></li>
+						<li><a href="#templates_variables">Variables</a></li>
+						<li><a href="#templates_conditionals">Conditionals</a></li>
+						<li><a href="#templates_states">States</a></li>
+						<li><a href="#templates_loops">Loops</a></li>
+					</ul>
 				</div>
 				<div class="col-md-8">
 					<h1>ConstraintJS Guide <small>for ConstraintJS v0.9</small></h1>

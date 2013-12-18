@@ -35,3 +35,12 @@ a .version {
 	margin-top: 10px;
 	margin-bottom: 10px;
 }
+
+img#cjs_logo {
+	position: absolute;
+	left: 50%;
+	margin-left: -100px;
+	top: -60px;
+	z-index:4;
+	width: 200px;
+}
