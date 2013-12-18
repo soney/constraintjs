@@ -146,7 +146,7 @@ $(window).on("mousemove", function(event) {
 });
 </pre>
 							</td>
-							<td style="max-width:250px" id="ex3"></td>
+							<td id="ex3"></td>
 						</tr>
 					</tbody>
 				</table>
@@ -223,7 +223,7 @@ $(window).on("mousemove", function(event) {
 
 			eyes = (['left', 'right']).map(function(float) {
 				var eye = eyeTemplate({fill: "white", size: eye_radius.mul(2), float: float}),
-					pupil = eyeTemplate({fill: "black", size: pupil_radius.mul(2), float: ""}),
+					pupil = eyeTemplate({fill: "black", size: pupil_radius.get()*2, float: ""}),
 
 					eye_pos = cjs(function() { return $(eye).position(); }),
 					dx = eye_pos.prop("left").add(eye_radius).sub(mouse_x),
@@ -232,19 +232,22 @@ $(window).on("mousemove", function(event) {
 					angle = dy.atan2(dx),
 					eye_left = eye_radius.sub(pupil_radius, d.mul(angle.cos())),
 					eye_top  = eye_radius.sub(pupil_radius, d.mul(angle.sin()));
-
 				cjs.css(pupil, {
 						position: "relative",
 						left: eye_left.add("px"),
-						top: eye_top.add("px")
+						top: eye_top.add("px"),
+						width: pupil_radius.mul(2).add("px"),
+						height: pupil_radius.mul(2).add("px"),
+						"border-radius": pupil_radius.mul(2).add("px")
 					});
 				
 				eye.appendChild(pupil);
 
-				$(window).on("scroll resize mouseup", function(event) { eye_pos.invalidate(); });
+				$(window).on("scroll resize mouseup mousemove", function(event) { eye_pos.invalidate(); });
 
 				return eye;
 			});
+			cjs.css($("#ex3"), "width", eye_radius.mul(4).add(20, "px"));
 
 			$(window).on("mousemove", function(event) {
 					mouse_x.set(event.pageX); mouse_y.set(event.pageY);
@@ -252,8 +255,8 @@ $(window).on("mousemove", function(event) {
 					mouse_x.set(event.originalEvent.touches[0].pageX); mouse_y.set(event.originalEvent.touches[0].pageY);
 			});
 
-				$("#ex3")	.append("<label style='width:100%'>Eye radius: </label>", $("<div />").append(eradius_slider))
-				.append("<label style='width:100%'>Pupil radius: </label>", $("<div />").append(pradius_slider))
+				$("#ex3")	.append("<label style='text-align:right;width:100%'>Eye radius: </label>", $("<div style='text-align: right' />").append(eradius_slider))
+				.append("<label style='text-align:right;width:100%'>Pupil radius: </label>", $("<div style='text-align: right' />").append(pradius_slider))
 						//.append(pupil)
 						.append(eyes).css("overflow-x", "none");
 			} catch(e){}
