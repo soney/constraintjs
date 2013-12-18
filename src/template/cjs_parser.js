@@ -65,7 +65,7 @@ var sibling_rules = {
 
 var parseTemplate = function(input_str, handler) {
 	var html_index, hb_index, last_closed_hb_tag, index, chars, match, stack = [], last = input_str;
-	stack.last = function(){
+	stack.last = function() {
 		return this[this.length - 1];
 	};
 
@@ -219,9 +219,6 @@ var parseTemplate = function(input_str, handler) {
 		}
 
 		switch (prefix) {
-			case undefined: // unary
-				handler.startHB(tagName, parsed_content, true, false);
-				break;
 			case '{': // literal
 				handler.startHB(tagName, parsed_content, true, true);
 				break;
@@ -265,6 +262,11 @@ var parseTemplate = function(input_str, handler) {
 
 			case '/': // end block
 				popStackUntilTag(tagName, HB_TYPE);
+				break;
+			case '!': // end block
+				break;
+			default: // unary
+				handler.startHB(tagName, parsed_content, true, false);
 				break;
 		}
 	}

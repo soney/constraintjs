@@ -617,6 +617,30 @@ Constraint = function (value, options) {
 		};
 	};
 
+	var get_prop = function(a, b) { return a ? a[b] : undefined; };
+	/**
+	 * Prop
+	 * @method prop
+	 * @param {...strings} args - Any number of properties to fetch
+	 * @return {*} - A constraint whose value is `this[args[0]][args[1]]...`
+	 * @example `w = x.prop("y", "z");` means w <- `x.y.z`
+	 */
+	proto.prop = createConstraintModifier(function(me) { return reduce(rest(arguments), get_prop, me); });
+
+	/**
+	 * To Integer
+	 * @method toInt
+	 * @return {*} - A constrant whose value is parseInt(this)
+	 */
+	proto.toInt = createConstraintModifier(function(me) { return parseInt.apply(this, arguments); });
+
+	/**
+	 * To Float
+	 * @method toFloat
+	 * @return {*} - A constrant whose value is parseFloat(this)
+	 */
+	proto.toFloat = createConstraintModifier(function(me) { return parseFloat.apply(this, arguments); });
+
 	// For all the arithmetic operators, allow any number of arguments to be passed in. For example:
 	/**
 	 * Add
@@ -625,6 +649,7 @@ Constraint = function (value, options) {
 	 * @return {number} - A constraint whose value is `this.get() + args[0].get() + args[1].get() + ...`
 	 * @example `x = y.add(1,2,z);` means x <- `y + 1 + 2 + z`
 	 */
+	proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
 	/**
 	 * Subtract
 	 * @method sub
@@ -632,6 +657,7 @@ Constraint = function (value, options) {
 	 * @return {number} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
 	 * @example `x = y.sub(1,2,z);` means x <- `y - 1 - 2 - z`
 	 */
+	proto.sub = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["-"], me); });
 	/**
 	 * Multiply
 	 * @method mul
@@ -639,6 +665,7 @@ Constraint = function (value, options) {
 	 * @return {number} - A constraint whose value is `this.get() * args[0].get() * args[1].get() * ...`
 	 * @example `x = y.mul(1,2,z);` means x <- `y * 1 * 2 * z`
 	 */
+	proto.mul = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["*"], me); });
 	/**
 	 * Divide
 	 * @method div
@@ -646,10 +673,7 @@ Constraint = function (value, options) {
 	 * @return {number} - A constraint whose value is `this.get() / args[0].get() / args[1].get() / ...`
 	 * @example `x = y.div(1,2,z);` means x <- `y / 1 / 2 / z`
 	 */
-	proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
-	proto.sub = createConstraintModifier(function() { return reduce(arguments, binary_operators["-"], 0); });
-	proto.mul = createConstraintModifier(function() { return reduce(arguments, binary_operators["*"], 1); });
-	proto.div = createConstraintModifier(function() { return reduce(arguments, binary_operators["/"], 1); });
+	proto.div = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["/"], me); });
 
 	/**
 	 * Absolute value
