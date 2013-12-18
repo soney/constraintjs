@@ -58,7 +58,7 @@ function buildStructureForFile(file) {
 }
 
 var BRANCH = "v091",
-	BASE_URL = "https://github.com/soney/ConstraintJS/tree/"+BRANCH+"/";
+	BASE_URL = "https://github.com/soney/ConstraintJS/blob/v0.9.1/";
 var get_link = function(fname, line) {
 	var rv = BASE_URL+fname+"#L"+line;
 	return rv;

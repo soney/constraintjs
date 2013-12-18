@@ -75,7 +75,7 @@ if (program.source) {
   }
 
   // Render and save each file
-  var indexPath = path.relative(process.cwd(), target) + path.sep + 'index.html';
+  var indexPath = path.relative(process.cwd(), target) + path.sep + 'api.html';
   var output = formatter.render(doxval, options);
     var dir = path.dirname(indexPath);
     if (!fs.existsSync(dir)) {
