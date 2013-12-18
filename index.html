@@ -148,7 +148,7 @@ $(window).on("mousemove", function(event) {
 });
 </pre>
 							</td>
-							<td id="ex3"></td>
+							<td style="max-width:250px" id="ex3"></td>
 						</tr>
 					</tbody>
 				</table>
@@ -215,9 +215,9 @@ $(window).on("mousemove", function(event) {
 			try{
 			var sliderTemplate = cjs.createTemplate($("#slider_template")),
 				eyeTemplate    = cjs.createTemplate($("#eye_template")),
-				eradius_slider = sliderTemplate({max: 90, min: 10, val: 50}),
+				eradius_slider = sliderTemplate({max: 90, min: 15, val: 50}),
 				eye_radius     = cjs(eradius_slider).toInt(),
-				pradius_slider = sliderTemplate({max: 90, min: 10, val: 20}),
+				pradius_slider = sliderTemplate({max: 90, min: 15, val: 20}),
 				pupil_radius   = cjs(pradius_slider).min(eye_radius),
 
 				mouse_x = cjs(0),
