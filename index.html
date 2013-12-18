@@ -248,7 +248,9 @@ $(window).on("mousemove", function(event) {
 
 			$(window).on("mousemove", function(event) {
 					mouse_x.set(event.pageX); mouse_y.set(event.pageY);
-				});
+				}).on("touchstart", function(event) {
+					mouse_x.set(event.originalEvent.touches[0].pageX); mouse_y.set(event.originalEvent.touches[0].pageY);
+			});
 
 				$("#ex3")	.append("<label style='width:100%'>Eye radius: </label>", $("<div />").append(eradius_slider))
 				.append("<label style='width:100%'>Pupil radius: </label>", $("<div />").append(pradius_slider))
