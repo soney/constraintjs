@@ -248,7 +248,7 @@ $(window).on("mousemove", function(event) {
 
 			$(window).on("mousemove", function(event) {
 					mouse_x.set(event.pageX); mouse_y.set(event.pageY);
-				}).on("touchstart touchmove touchend", function(event) {
+				}).on("touchstart touchend", function(event) {
 					mouse_x.set(event.originalEvent.touches[0].pageX); mouse_y.set(event.originalEvent.touches[0].pageY);
 			});
 
