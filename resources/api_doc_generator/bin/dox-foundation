@@ -82,36 +82,6 @@ if (program.source) {
       mkdirp.sync(dir);
     }
   fs.writeFileSync(indexPath, output);
-/*
-  // Set correct paths to produce the index.html file
-  var indexPath = path.relative(process.cwd(), target) + path.sep + 'index.html';
-  files.push({
-    sourceFile: indexPath,
-    targetFile: indexPath,
-    dox: []
-  });
-
-  var options = {};
-  if (program.title){
-    options.title = program.title;
-  } else if(fs.existsSync(process.cwd() + '/package.json')) {
-    options.title = require(process.cwd() + '/package.json').name;
-  } else {
-    options.title = 'Documentation';
-  }
-
-  // Render and save each file
-  files.forEach(function(file) {
-    var output = formatter.render(file, files, options);
-
-    var dir = path.dirname(file.targetFile);
-    if (!fs.existsSync(dir)) {
-      mkdirp.sync(dir);
-    }
-
-    fs.writeFileSync(file.targetFile, output);
-  });
-*/
 } else {
   // process stdin
   var buf = '',

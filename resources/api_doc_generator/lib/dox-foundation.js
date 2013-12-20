@@ -308,6 +308,7 @@ exports.compileDox = function(files) {
 	});
 
 	var stack = [];
+	console.log(tree);
 	var recursiveAdd = function(tree, curr_stack) {
 		if(curr_stack.length > 0) {
 			var name = curr_stack.join(".");

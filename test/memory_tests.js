@@ -72,7 +72,7 @@
 			clear_snapshots(function() {
 				take_snapshot([], function(response) {
 					callback();
-					take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM"], function(response) {
+					take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
 						ok(!response.illegal_strs, "Make sure nothing was allocated");
 						start();
 					});
