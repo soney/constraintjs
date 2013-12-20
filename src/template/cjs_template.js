@@ -588,8 +588,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 	},
 	memoized_template_nodes = [],
 	memoized_template_bindings = [],
-	template_strs = [],
-	template_values = [],
 	partials = {},
 	isPolyDOM = function(x) {
 		return is_jquery_obj(x) || isNList(x) || isAnyElement(x);
@@ -650,14 +648,7 @@ extend(cjs, {
 								}
 							}
 
-							var template, template_index = indexOf(template_strs, template_str);
-							if(template_index < 0) {
-								template = create_template(template_str);
-								template_strs.push(template_str);
-								template_values.push(template);
-							} else {
-								template = template_values[template_index];
-							}
+							var template = create_template(template_str);
 
 							if(arguments.length >= 2) { // Create and use the template immediately
 								return memoize_template.apply(template, rest(arguments));
