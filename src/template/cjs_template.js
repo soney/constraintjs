@@ -168,23 +168,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 					return rv;
 				});
 	},
-	default_template_create = function(context, parent_dom_node, curr_bindings) {
-		var args = [context, [{this_exp: context}], curr_bindings], // context & lineage
-			container = parent_dom_node || doc.createElement("span"),
-			first_child;
-		if(this.children.length === 1 && (first_child = this.children[0]) && first_child.isHTML) {
-			return first_child.create.apply(first_child, args);
-		}
-
-		if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
-			var concatenated_html = get_concatenated_inner_html_constraint(this.children, context);
-			curr_bindings.push(concatenated_html, html_binding(container, concatenated_html));
-		} else {
-			var children_constraint = get_concatenated_children_constraint(this.children, args);
-			curr_bindings.push(children_constraint, children_binding(container, children_constraint));
-		}
-		return container;
-	},
 	hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/,
 	get_constraint = function(str, context, lineage, curr_bindings) {
 		var has_constraint = false,
@@ -232,34 +215,6 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 	array_this_eq = function(a, b) {
 		return a.length === b.length && every(a, function(ai, i) { return ai.this_esp === b[i].this_esp; });
 	},
-	memoize_dom_elems = function() {
-		var memoized_vals = [];
-		return {
-			get: function(lineage) {
-				var hash = lineage.length,
-					mvals = memoized_vals[hash],
-					i = 0,
-					len = mvals ? mvals.length : 0,
-					mval;
-				for(; i<len; i++) {
-					mval = mvals[i];
-					if(array_this_eq(mval.lineage, lineage)) {
-						return mval.value;
-					}
-				}
-			},
-			set: function(lineage, value) {
-				var hash = lineage.length,
-					value_info = {lineage: lineage, value: value};
-
-				if(memoized_vals.hasOwnProperty(hash)) {
-					memoized_vals[hash].push(value_info);
-				} else {
-					memoized_vals[hash] = [value_info];
-				}
-			}
-		};
-	},
 	IS_OBJ = {},
 	map_aware_array_eq = function(a, b) {
 		return a === b || (a && a.is_obj === IS_OBJ && a.key === b.key && a.value === b.value);
@@ -268,45 +223,17 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 	on_regex = /^(data-)?cjs-on-(\w+)$/,
 	create_template = function(template_str) {
 		var stack = [{
-			children: [],
-			create: default_template_create
+			children: []
 		}], last_pop = false, has_container = false, condition_stack = [], fsm_stack = [];
 
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
 				last_pop = {
-					create: function(context, lineage, curr_bindings) {
-						var args = arguments,
-							element = doc.createElement(tag),
-							on_regex_match;
-
-						each(attributes, function(attr) {
-							if(attr.name.match(name_regex)) {
-								context[attr.value] = getInputValueConstraint(element);
-							} else if((on_regex_match = attr.name.match(on_regex))) {
-								var event_name = on_regex_match[2];
-								element.addEventListener(event_name, context[attr.value]);
-							} else {
-								var constraint = get_constraint(attr.value, context, lineage, curr_bindings);
-								if(is_constraint(constraint)) {
-									attr_binding(element, attr.name, constraint);
-								} else {
-									element.setAttribute(attr.name, constraint);
-								}
-							}
-						});
-
-						if(any_child_is_dynamic_html(this.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
-							var concatenated_html = get_concatenated_inner_html_constraint(this.children, context, lineage, curr_bindings);
-							curr_bindings.push(concatenated_html, html_binding(element, concatenated_html));
-						} else {
-							var children_constraint = get_concatenated_children_constraint(this.children, args);
-							curr_bindings.push(children_constraint, children_binding(element, children_constraint));
-						}
-						return element;
-					},
-					children: [],
-					isHTML: true
+					type: "html",
+					tag: tag,
+					attributes: attributes,
+					unary: unary,
+					children: []
 				};
 
 				last(stack).children.push(last_pop);
@@ -320,7 +247,8 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 			},
 			HTMLcomment: function(str) {
 				last_pop = {
-					create: function() { return doc.createComment(str); }
+					type: "comment",
+					str: str
 				};
 				last(stack).children.push(last_pop);
 			},
@@ -335,227 +263,44 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 				last(stack).children.push(last_pop);
 			},
 			startHB: function(tag, parsed_content, unary, literal) {
-				var memoized_elems, setter_name, type_name, push_onto_children;
 				if(unary) {
-					if(literal) { type_name = "isDynamicHTML"; setter_name = "html"; }
-					else { type_name = "isText"; setter_name = "text"; }
 					last_pop = {
-						create: function(context, lineage, curr_bindings) {
-							var elem = doc.createTextNode(""),
-								val = get_node_value(first_body(parsed_content), context, lineage, curr_bindings);
-							curr_bindings.push(cjs[setter_name](elem, val));
-							return elem;
-						},
+						type: "unary_hb",
+						parsed_content: parsed_content,
+						literal: literal,
 						tag: tag
 					};
-					last_pop[type_name] = true;
 
 					last(stack).children.push(last_pop);
 				} else {
-					push_onto_children = true;
-					if(tag === "each") {
-						memoized_elems = memoize_dom_elems();
-
-						last_pop = {
-							create: function(context, lineage, curr_bindings) {
-								var mvals, mdom, mLastLineage, val_diff, rv = [],
-									val = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings),
-									memoized_val = memoized_elems.get(lineage);
-
-								if(!isArray(val)) {
-									// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
-									val = map(val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
-								} else if(val.length === 0 && this.else_child) {
-									val = [ELSE_COND];
-								}
-
-
-								if(memoized_val) {
-									mvals = memoized_val.val;
-									mdom = memoized_val.dom;
-									mLastLineage = memoized_val.lineage;
-								} else {
-									mvals = [];
-									mdom = [];
-									mLastLineage = [];
-									memoized_elems.set(lineage, {val: val, dom: mdom, lineage: mLastLineage});
-								}
-
-								val_diff = get_array_diff(mvals, val, map_aware_array_eq);
-
-								each(val_diff.index_changed, function(ic_info) {
-									var lastLineageItem = mLastLineage[ic_info.from];
-									if(lastLineageItem && lastLineageItem.at && lastLineageItem.at.index) {
-										lastLineageItem.at.index.set(ic_info.to);
-									}
-								});
-								each(val_diff.removed, function(removed_info) {
-									var index = removed_info.from,
-										lastLineageItem = mLastLineage[index];
-									mdom.splice(index, 1);
-									if(lastLineageItem && lastLineageItem.at) {
-										each(lastLineageItem.at, function(v) {
-											v.destroy(true);
-										});
-									}
-								});
-								each(val_diff.added, function(added_info) {
-									var v = added_info.item,
-										index = added_info.to,
-										is_else = v === ELSE_COND,
-										lastLineageItem = is_else ? false : {this_exp: v, at: ((v && v.is_obj === IS_OBJ) ? {key: cjs(v.key)} : { index: cjs(index)})},
-										concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
-										vals = map(is_else ? this.else_child.children : this.children, function(child) {
-											var dom_child = child.create(context, concated_lineage, curr_bindings);
-											return dom_child;
-										});
-									mdom.splice(index, 0, vals);
-									mLastLineage.splice(index, 0, lastLineageItem);
-								}, this);
-								each(val_diff.moved, function(moved_info) {
-									var from_index = moved_info.from_index,
-										to_index = moved_info.to_index,
-										dom_elem = mdom[from_index],
-										lastLineageItem = mLastLineage[from_index];
-
-									mdom.splice(from_index, 1);
-									mdom.splice(to_index, 0, dom_elem);
-									mLastLineage.splice(from_index, 1);
-									mLastLineage.splice(to_index, 0, lastLineageItem);
-								});
-
-								mvals.splice.apply(mvals, ([0, mvals.length]).concat(val));
-								return flatten(mdom, true);
-							},
-							children: [],
-							isEach: true,
-							else_child: false 
-						};
-					} else if(tag === "if" || tag === "unless") {
-						memoized_elems = memoize_dom_elems();
-						last_pop = {
-							create: function(context, lineage, curr_bindings) {
-								var len = this.sub_conditions.length,
-									cond = !!get_node_value(this.condition, context, lineage, curr_bindings),
-									i = -1, children, memo_index;
-
-								if(this.reverse) {
-									cond = !cond;
-								}
-
-								if(cond) {
-									i = 0;
-								} else if(len > 0) {
-									for(i = 0; i<len; i++) {
-										cond = this.sub_conditions[i];
-
-										if(cond.condition === ELSE_COND || get_node_value(cond.condition, context, lineage, curr_bindings)) {
-											i++; break;
-										}
-									}
-								}
-
-								if(i < 0) {
-									return [];
-								} else {
-									var memoized_children = memoized_elems.get(lineage);
-									if(!memoized_children) {
-										memoized_children = [];
-										memoized_elems.set(lineage, memoized_children);
-									}
-
-									if(!memoized_children[i]) {
-										if(i === 0) {
-											children = this.children;
-										} else {
-											children = this.sub_conditions[i-1].children;
-										}
-										memoized_children[i] = flatten(map(children, function(child) {
-											return child.create(context, lineage, curr_bindings);
-										}), true);
-									}
-
-									return memoized_children[i];
-								}
-							},
-							children: [],
-							sub_conditions: [],
-							condition: rest_body(parsed_content),
-							reverse: tag === "unless"
-						};
-
-						condition_stack.push(last_pop);
-					} else if(tag === "elif" || tag === "else") {
-						last_pop = {
-							children: [],
-							condition: tag === "else" ? ELSE_COND : rest_body(parsed_content)
-						};
-						var last_stack = last(stack);
-						if(last_stack.isEach) {
-							last_stack.else_child = last_pop;
-						} else {
-							last(condition_stack).sub_conditions.push(last_pop);
-						}
-						push_onto_children = false;
-					} else if(tag === "fsm") {
-						memoized_elems = memoize_dom_elems();
-						var fsm_target = rest_body(parsed_content);
-						last_pop = {
-							create: function(context, lineage, curr_bindings) {
-								var fsm = get_node_value(fsm_target, context, lineage, curr_bindings),
-									state = fsm.getState(),
-									do_child_create = function(child) {
-										return child.create(context, lineage, curr_bindings);
-									}, state_name, memoized_children;
-
-								if(!lineage) {
-									lineage = [];
-								}
-
-								for(state_name in this.sub_states) {
-									if(this.sub_states.hasOwnProperty(state_name)) {
-										if(state === state_name) {
-											memoized_children = memoized_elems.get(lineage);
-											if(!memoized_children) {
-												memoized_children = {};
-												memoized_elems.set(lineage, memoized_children);
-											}
-
-											if(!has(memoized_children, state_name)) {
-												memoized_children[state_name] = map(this.sub_states[state_name].children, do_child_create);
-											}
-											return memoized_children[state_name];
-										}
-									}
-								}
-								return [];
-							},
-							children: [],
-							sub_states: {}
-						};
-						fsm_stack.push(last_pop);
-					} else if(tag === "state") {
-						if(parsed_content.body.length > 1) {
+					last_pop = {
+						type: "hb",
+						tag: tag,
+						children: []
+					};
+					switch(tag) {
+						case "each":
+							last_pop.else_child = false;
+							break;
+						case "if":
+						case "unless":
+							last_pop.sub_conditions = [];
+							last_pop.condition = rest_body(parsed_content);
+							break;
+						case "elif":
+						case "each":
+						case "fsm":
+							last_pop.sub_states = {};
+							fsm_stack.push(last_pop);
+							break;
+						case "state":
 							var state_name = parsed_content.body[1].name;
-							last_pop = { children: [] };
 							last(fsm_stack).sub_states[state_name] = last_pop;
 							push_onto_children = false;
-						}
-					} else if(tag === "with") {
-						last_pop = {
-							create: function(context, lineage, curr_bindings) {
-								var new_context = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings),
-									concatenated_lineage = lineage.concat({this_exp: new_context});
-								return map(this.children, function(child) {
-									return child.create(new_context, concatenated_lineage, curr_bindings);
-								});
-							},
-							children: []
-						};
-					} else {
-						return;
-					}
+							break;
+						case "with":
 
+					};
 					if(push_onto_children) {
 						last(stack).children.push(last_pop);
 					}
@@ -563,21 +308,23 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 				}
 			},
 			endHB: function(tag) {
-				if(tag === "if" || tag === "unless") {
-					condition_stack.pop();
-				} else if(tag === "fsm") {
-					fsm_stack.pop();
-				}
+				switch(tag) {
+					case "if":
+					case "unless";
+						condition_stack.pop();
+						break;
+					case "fsm":
+						fsm_stack.pop();
+
+				};
 				stack.pop();
 			},
 			partialHB: function(tagName, parsed_content) {
 				var partial = partials[tagName];
 				if(partial) {
 					last_pop = {
-						create: function(context, lineage, curr_bindings) {
-							var new_context = get_node_value(rest_body(parsed_content), context, lineage, curr_bindings);
-							return partial(new_context);
-						}
+						type: "partial_hb",
+						partial: partial
 					};
 
 					last(stack).children.push(last_pop);
