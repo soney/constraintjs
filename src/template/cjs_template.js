@@ -74,6 +74,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		return {type: COMPOUND,
 				body: node.type === COMPOUND ? rest(node.body) : [] };
 	},
+	get_instance_node = function(c) { return c.node || c.getNodes(); },
 	get_node_value = function(node, context, lineage, curr_bindings) {
 		var op, object, call_context, args;
 		if(!node) { return; }
@@ -156,7 +157,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 						return escapeHTML(get_node_value(child.val, context, lineage));
 					}
 				} else {
-					var child_val = child.node || child.getNodes.apply(child, args);
+					var child_val = get_instance_node(child);
 
 					if(isArray(child_val)) {
 						return map(child_val, get_escaped_html).join("");
@@ -171,7 +172,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		return cjs(function() {
 					var rv = [];
 					each(children, function(child) {
-						var c_plural = child.node || child.getNodes.apply(child, args);
+						var c_plural = get_instance_node(child);
 						if(isArray(c_plural)) {
 							rv.push.apply(rv, c_plural);
 						} else {
@@ -298,8 +299,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 							last_pop.else_child = false;
 							break;
 						case "unless":
-							last_pop.reverse = true;
 						case "if":
+							last_pop.reverse = tag === "unless";
 							last_pop.sub_conditions = [];
 							last_pop.condition = rest_body(parsed_content);
 							condition_stack.push(last_pop);
@@ -436,10 +437,11 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				literal = template.literal,
 				val_constraint = cjs(function() {
 					return get_node_value(parsed_elem, context, lineage);
-				});
+				}),
+				node, txt_binding;
 			if(!literal) {
-				var node = doc.createTextNode(""),
-					txt_binding = cjs.text(node, val_constraint);
+				node = doc.createTextNode("");
+				txt_binding = cjs.text(node, val_constraint);
 			}
 			return {
 				type: type,
@@ -491,7 +493,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 								concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
 								vals = map(is_else ? template.else_child.children : template.children, function(child) {
 									var dom_child = create_template_instance(child, context, concated_lineage);
-									return dom_child.node || dom_child.getNodes();
+									return get_instance_node(dom_child);
 								});
 							child_vals.splice(index, 0, vals);
 							lastLineages.splice(index, 0, lastLineageItem);
@@ -546,9 +548,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 								}), true);
 							}
 							
-							return map(instance_children[i], function(c) {
-								return c.node || c.getNodes();
-							});
+							return map(instance_children[i], get_instance_node);
 						}
 					}
 				};
@@ -576,9 +576,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 									} else {
 										children = memoized_children[state_name] = flatten(map(template.sub_states[state_name].children, do_child_create), true);
 									}
-									return map(children, function(c) {
-										return c.node || c.getNodes();
-									});
+									return map(children, get_instance_node);
 								}
 							}
 						}
@@ -593,15 +591,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					return create_template_instance(child, new_context, new_lineage);
 				}));
 				return {
-					node: map(instance_children, function(x) {
-						return x.node || x.getNodes();
-					})
+					node: map(instance_children, get_instance_node)
 				};
 			}
 		} else if (type === "partial_hb") {
 			var partial = partials[template.tag],
-				new_context = get_node_value(template.content, context, lineage),
-				nodes = partial(new_context);
+				concated_context = get_node_value(template.content, context, lineage),
+				nodes = partial(concated_context);
 			return {
 				node: nodes,
 				pause: function() { nodes.pause(); },
