@@ -53,7 +53,7 @@
  *
  */
 
-var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
+var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" && child.literal; },
 	child_is_text				= function(child)	{ return child.isText; },
 	every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
 	any_child_is_dynamic_html	= function(arr)		{ return indexWhere(arr, child_is_dynamic_html) >= 0; },
@@ -138,18 +138,27 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 			return get_node_value.apply(root, args);
 		});
 	},
+	get_escaped_html = function(c) {
+		if(c.nodeType === 3) {
+			return escapeHTML(c.textContent);
+		} else {
+			return escapeHTML(c.outerHTML);
+		}
+	},
 	get_concatenated_inner_html_constraint = function(children, context, lineage, curr_bindings) {
+		var args = arguments;
 		return cjs(function() {
 			return map(children, function(child) {
-				if(child.isDynamicHTML) {
-					return cjs.get(context[child.tag]);
-				} else if(has(child, "text")) {
-					return escapeHTML(child.text);
-				} else if(has(child, "tag")) {
-					return escapeHTML(cjs.get(context[child.tag]));
+				if(child_is_dynamic_html(child)) {
+					return get_node_value(child.val, context, lineage);
 				} else {
-					var child_val = child.create(context, lineage, curr_bindings);
-					return child_val.outerHTML;
+					var child_val = child.node || child.getNodes.apply(child, args);
+
+					if(isArray(child_val)) {
+						return map(child_val, get_escaped_html).join("");
+					} else {
+						return get_escaped_html(child_val);
+					}
 				}
 			}).join("");
 		});
@@ -158,7 +167,7 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 		return cjs(function() {
 					var rv = [];
 					each(children, function(child) {
-						var c_plural = child.create.apply(child, args);
+						var c_plural = child.node || child.getNodes.apply(child, args);
 						if(isArray(c_plural)) {
 							rv.push.apply(rv, c_plural);
 						} else {
@@ -222,9 +231,12 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 	name_regex = /^(data-)?cjs-out$/,
 	on_regex = /^(data-)?cjs-on-(\w+)$/,
 	create_template = function(template_str) {
-		var stack = [{
-			children: []
-		}], last_pop = false, has_container = false, condition_stack = [], fsm_stack = [];
+		var root = {
+			children: [],
+			type: "root"
+		}, stack = [root],
+		//TODO: check if condition and fsm stacks are necessary
+		last_pop = false, has_container = false, fsm_stack = [];
 
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
@@ -254,11 +266,8 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 			},
 			chars: function(str) {
 				last_pop = {
-					create: function() {
-						return doc.createTextNode(str);
-					},
-					isText: true,
-					text: str
+					type: "chars",
+					str: str
 				};
 				last(stack).children.push(last_pop);
 			},
@@ -273,6 +282,8 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 
 					last(stack).children.push(last_pop);
 				} else {
+					var push_onto_children = true;
+
 					last_pop = {
 						type: "hb",
 						tag: tag,
@@ -299,8 +310,8 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 							push_onto_children = false;
 							break;
 						case "with":
-
-					};
+							break;
+					}
 					if(push_onto_children) {
 						last(stack).children.push(last_pop);
 					}
@@ -310,13 +321,13 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 			endHB: function(tag) {
 				switch(tag) {
 					case "if":
-					case "unless";
+					case "unless":
 						condition_stack.pop();
 						break;
 					case "fsm":
 						fsm_stack.pop();
 
-				};
+				}
 				stack.pop();
 			},
 			partialHB: function(tagName, parsed_content) {
@@ -331,7 +342,107 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 				}
 			}
 		});
-		return stack.pop();
+		return root;
+	},
+	call_each = function(arr, prop_name) {
+		each(arr, function(x) {
+			if(has(x, prop_name)) {
+				x[prop_name]();
+			}
+		});
+	},
+	create_template_instance = function(template, context, lineage, parent_dom_node) {
+		var type = template.type,
+			instance_children,
+			element;
+
+		if(type === "chars") {
+			return {type: type, node: doc.createTextNode(template.str) };
+		} else if(type === "root" || type === "html") {
+			var args = arguments,
+				on_regex_match;
+			instance_children = map(template.children, function(child) {
+				return create_template_instance(child, context, lineage);
+			});
+
+			if(type === "root") {
+				if(parent_dom_node) {
+					element = parent_dom_node;
+				} else if(instance_children.length === 1 && template.children[0].type === "html") {
+					return instance_children[0];
+				} else {
+					element = doc.createElement("span");
+				}
+			} else {
+				element = doc.createElement(template.tag);
+			}
+
+			var bindings = [];
+
+			each(template.attributes, function(attr) {
+				if(attr.name.match(name_regex)) {
+					context[attr.value] = getInputValueConstraint(element);
+				} else if((on_regex_match = attr.name.match(on_regex))) {
+					var event_name = on_regex_match[2];
+					element.addEventListener(event_name, context[attr.value]);
+				} else {
+					var constraint = get_constraint(attr.value, context, lineage);
+					if(is_constraint(constraint)) {
+						bindings.push(attr_binding(element, attr.name, constraint));
+					} else {
+						element.setAttribute(attr.name, constraint);
+					}
+				}
+			});
+
+			if(any_child_is_dynamic_html(template.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
+				var concatenated_html = get_concatenated_inner_html_constraint(instance_children, context, lineage);
+				bindings.push(concatenated_html, html_binding(element, concatenated_html));
+			} else {
+				var children_constraint = get_concatenated_children_constraint(instance_children, args);
+				bindings.push(children_constraint, children_binding(element, children_constraint));
+			}
+
+			return {
+				node: element,
+				type: type,
+				pause: function() {
+					call_each(instance_children.concat(bindings), "pause");
+				},
+				resume: function() {
+					call_each(instance_children.concat(bindings), "resume");
+				},
+				destroy: function() {
+					call_each(instance_children.concat(bindings), "destroy");
+				}
+			};
+		} else if(type === "unary_hb") {
+			var textNode, parsed_elem = first_body(template.parsed_content);
+			if(!literal) {
+				element = cjs(function() {
+					var val = get_node_value(parsed_elem, context, lineage);
+					if(isAnyElement(val)) {
+						return val;
+					} else {
+						if(textNode) {
+							textNode.textContent = val;
+						} else {
+							textNode = doc.createTextNode(val);
+						}
+						return textNode;
+					}
+				});
+			}
+			return {
+				type: type,
+				literal: template.literal,
+				val: parsed_elem,
+				getNodes: function() { if(!literal) return element.get(); },
+				destroy: function() { if(!literal) element.destroy(true); }
+			};
+		} else {
+			console.log(template);
+		}
 	},
 	memoized_template_nodes = [],
 	memoized_template_bindings = [],
@@ -348,11 +459,12 @@ var child_is_dynamic_html		= function(child)	{ return child.isDynamicHTML; },
 	},
 	memoize_template = function(context, parent_dom_node) {
 		var template = this,
-			curr_bindings = [],
-			dom_node = template.create(context, parent_dom_node, curr_bindings);
-		memoized_template_nodes.push(dom_node);
-		memoized_template_bindings.push(curr_bindings);
-		return dom_node;
+			instance = create_template_instance(template, context, [context], parent_dom_node);
+		return instance.node;
+			//dom_node = instance.node;
+		//memoized_template_nodes.push(dom_node);
+		//memoized_template_bindings.push(curr_bindings);
+		//return dom_node;
 	},
 	get_template_bindings = function(dom_node) {
 		var nodeIndex = indexOf(memoized_template_nodes, dom_node);
