@@ -78,7 +78,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		var op, object, call_context, args;
 		if(!node) { return; }
 		switch(node.type) {
-			case THIS_EXP: return last(lineage).this_exp;
+			case THIS_EXP: return cjs.get(last(lineage).this_exp);
 			case LITERAL: return node.value;
 			case UNARY_EXP:
 				op = unary_operators[node.operator];
@@ -95,7 +95,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					for(var i = lineage.length-1; i>=0; i--) {
 						object = lineage[i].at;
 						if(object && has(object, name)) {
-							return object[name];
+							return cjs.get(object[name]);
 						}
 					}
 					return undefined;
@@ -149,8 +149,12 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		var args = arguments;
 		return cjs(function() {
 			return map(children, function(child) {
-				if(child_is_dynamic_html(child)) {
-					return get_node_value(child.val, context, lineage);
+				if(child.type === "unary_hb") {
+					if(child.literal) {
+						return get_node_value(child.val, context, lineage);
+					} else {
+						return escapeHTML(get_node_value(child.val, context, lineage));
+					}
 				} else {
 					var child_val = child.node || child.getNodes.apply(child, args);
 
@@ -235,8 +239,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			children: [],
 			type: "root"
 		}, stack = [root],
-		//TODO: check if condition and fsm stacks are necessary
-		last_pop = false, has_container = false, fsm_stack = [];
+		last_pop = false, has_container = false, fsm_stack = [], condition_stack = [];
 
 		parseTemplate(template_str, {
 			startHTML: function(tag, attributes, unary) {
@@ -291,16 +294,30 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					};
 					switch(tag) {
 						case "each":
+							last_pop.parsed_content = rest_body(parsed_content);
 							last_pop.else_child = false;
 							break;
-						case "if":
 						case "unless":
+							last_pop.reverse = true;
+						case "if":
 							last_pop.sub_conditions = [];
 							last_pop.condition = rest_body(parsed_content);
+							condition_stack.push(last_pop);
 							break;
 						case "elif":
+						case "else":
+							push_onto_children = false;
+							var last_stack = last(stack);
+							if(last_stack.type === "hb" && last_stack.tag === "each") {
+								last_stack.else_child = last_pop;
+							} else {
+								last(condition_stack).sub_conditions.push(last_pop);
+							}
+							last_pop.condition = tag === "else" ? ELSE_COND : rest_body(parsed_content);
+							break;
 						case "each":
 						case "fsm":
+							last_pop.fsm_target = rest_body(parsed_content);
 							last_pop.sub_states = {};
 							fsm_stack.push(last_pop);
 							break;
@@ -310,6 +327,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 							push_onto_children = false;
 							break;
 						case "with":
+							last_pop.content = rest_body(parsed_content);
 							break;
 					}
 					if(push_onto_children) {
@@ -326,20 +344,17 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 						break;
 					case "fsm":
 						fsm_stack.pop();
-
 				}
 				stack.pop();
 			},
 			partialHB: function(tagName, parsed_content) {
-				var partial = partials[tagName];
-				if(partial) {
-					last_pop = {
-						type: "partial_hb",
-						partial: partial
-					};
+				last_pop = {
+					type: "partial_hb",
+					tag: tagName,
+					content: rest_body(parsed_content)
+				};
 
-					last(stack).children.push(last_pop);
-				}
+				last(stack).children.push(last_pop);
 			}
 		});
 		return root;
@@ -417,37 +432,189 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				}
 			};
 		} else if(type === "unary_hb") {
-			var textNode, parsed_elem = first_body(template.parsed_content);
-			if(!literal) {
-				element = cjs(function() {
-					var val = get_node_value(parsed_elem, context, lineage);
-					if(isAnyElement(val)) {
-						return val;
-					} else {
-						if(textNode) {
-							textNode.textContent = val;
-						} else {
-							textNode = doc.createTextNode(val);
-						}
-						return textNode;
-					}
+			var textNode, parsed_elem = first_body(template.parsed_content),
+				literal = template.literal,
+				val_constraint = cjs(function() {
+					return get_node_value(parsed_elem, context, lineage);
 				});
+			if(!literal) {
+				var node = doc.createTextNode(""),
+					txt_binding = cjs.text(node, val_constraint);
 			}
 			return {
 				type: type,
 				literal: template.literal,
 				val: parsed_elem,
-				getNodes: function() { if(!literal) return element.get(); },
-				destroy: function() { if(!literal) element.destroy(true); }
+				node: node,
+				destroy: function() { if(txt_binding) txt_binding.destroy(true); },
+				pause: function() { if(txt_binding) txt_binding.pause(); },
+				resume: function() { if(txt_binding) txt_binding.resume(); },
 			};
-		} else {
-			console.log(template);
+		} else if (type === "hb") {
+			var tag = template.tag;
+			if(tag === "each") {
+				var old_arr_val = [], arr_val, lastLineages = [], child_vals = [];
+				return {
+					type: type,
+					getNodes: function() {
+						arr_val = get_node_value(template.parsed_content, context, lineage);
+						if(!isArray(arr_val)) {
+							// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
+							arr_val = map(arr_val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
+						} else if(arr_val.length === 0 && template.else_child) {
+							arr_val = [ELSE_COND];
+						}
+
+						var diff = get_array_diff(old_arr_val, arr_val, map_aware_array_eq),
+							rv = [];
+						each(diff.index_changed, function(ic_info) {
+							var lastLineageItem = lastLineages[ic_info.from];
+							if(lastLineageItem && lastLineageItem.at && lastLineageItem.at.index) {
+								lastLineageItem.at.index.set(ic_info.to);
+							}
+						});
+						each(diff.removed, function(removed_info) {
+							var index = removed_info.from,
+								lastLineageItem = lastLineages[index];
+							child_vals.splice(index, 1);
+							if(lastLineageItem && lastLineageItem.at) {
+								each(lastLineageItem.at, function(v) {
+									v.destroy(true);
+								});
+							}
+						});
+						each(diff.added, function(added_info) {
+							var v = added_info.item,
+								index = added_info.to,
+								is_else = v === ELSE_COND,
+								lastLineageItem = is_else ? false : {this_exp: v, at: ((v && v.is_obj === IS_OBJ) ? {key: cjs(v.key)} : { index: cjs(index)})},
+								concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
+								vals = map(is_else ? template.else_child.children : template.children, function(child) {
+									var dom_child = create_template_instance(child, context, concated_lineage);
+									return dom_child.node || dom_child.getNodes();
+								});
+							child_vals.splice(index, 0, vals);
+							lastLineages.splice(index, 0, lastLineageItem);
+						}, this);
+						each(diff.moved, function(moved_info) {
+							var from_index = moved_info.from_index,
+								to_index = moved_info.to_index,
+								dom_elem = mdom[from_index],
+								lastLineageItem = lastLineages[from_index];
+
+							child_vals.splice(from_index, 1);
+							child_vals.splice(to_index, 0, dom_elem);
+							lastLineages.splice(from_index, 1);
+							lastLineages.splice(to_index, 0, lastLineageItem);
+						});
+						old_arr_val = arr_val;
+						return flatten(child_vals, true);
+					}
+				};
+			} else if(tag === "if" || tag === "unless") {
+				instance_children = [];
+				return {
+					type: type,
+					getNodes: function() {
+						var len = template.sub_conditions.length,
+							cond = !!get_node_value(template.condition, context, lineage),
+							i = -1, children, memo_index;
+
+						if(template.reverse) {
+							cond = !cond;
+						}
+
+						if(cond) {
+							i = 0;
+						} else if(len > 0) {
+							for(i = 0; i<len; i++) {
+								cond = template.sub_conditions[i];
+
+								if(cond.condition === ELSE_COND || get_node_value(cond.condition, context, lineage)) {
+									i++; break;
+								}
+							}
+						}
+
+						if(i < 0) {
+							return [];
+						} else {
+							if(!instance_children[i]) {
+								children = i===0 ? template.children : template.sub_conditions[i-1].children;
+								instance_children[i] =  flatten(map(children, function(child) {
+									return create_template_instance(child, context, lineage);
+								}), true);
+							}
+							
+							return map(instance_children[i], function(c) {
+								return c.node || c.getNodes();
+							});
+						}
+					}
+				};
+			} else if(tag === "fsm") {
+				var memoized_children = {};
+				return {
+					type: type,
+					getNodes: function() {
+						var fsm = get_node_value(template.fsm_target, context, lineage),
+							state = fsm.getState(),
+							do_child_create = function(child) {
+								return create_template_instance(child, context, lineage);
+							}, state_name;
+
+						if(!lineage) {
+							lineage = [];
+						}
+
+						for(state_name in template.sub_states) {
+							if(template.sub_states.hasOwnProperty(state_name)) {
+								if(state === state_name) {
+									var children;
+									if(has(memoized_children, state_name)) {
+										children = memoized_children[state_name];
+									} else {
+										children = memoized_children[state_name] = flatten(map(template.sub_states[state_name].children, do_child_create), true);
+									}
+									return map(children, function(c) {
+										return c.node || c.getNodes();
+									});
+								}
+							}
+						}
+						return [];
+					}
+				};
+			} else if(tag === "with") {
+				var new_context = get_node_value(template.content, context, lineage),
+					new_lineage = lineage.concat({this_exp: new_context});
+
+				instance_children = flatten(map(template.children, function(child) {
+					return create_template_instance(child, new_context, new_lineage);
+				}));
+				return {
+					node: map(instance_children, function(x) {
+						return x.node || x.getNodes();
+					})
+				};
+			}
+		} else if (type === "partial_hb") {
+			var partial = partials[template.tag],
+				new_context = get_node_value(template.content, context, lineage),
+				nodes = partial(new_context);
+			return {
+				node: nodes,
+				pause: function() { nodes.pause(); },
+				destroy: function() { nodes.destroy(); },
+				resume: function() { ndoes.resume(); }
+			};
+		} else if (type === "comment") {
+			return {
+				node: doc.createComment(template.str)
+			};
 		}
+		return { node: [] };
 	},
-	memoized_template_nodes = [],
-	memoized_template_bindings = [],
-	template_strs = [],
-	template_values = [],
 	partials = {},
 	isPolyDOM = function(x) {
 		return is_jquery_obj(x) || isNList(x) || isAnyElement(x);
@@ -457,18 +624,31 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		else if(isAnyElement(x))			{ return x; }
 		else								{ return false; }
 	},
+	template_instance_nodes = [],
+	template_instances = [],
+	instance_id = 1,
 	memoize_template = function(context, parent_dom_node) {
 		var template = this,
-			instance = create_template_instance(template, context, [context], parent_dom_node);
-		return instance.node;
-			//dom_node = instance.node;
-		//memoized_template_nodes.push(dom_node);
-		//memoized_template_bindings.push(curr_bindings);
-		//return dom_node;
+			instance = create_template_instance(template, context, [{this_exp: context}], parent_dom_node),
+			node = instance.node,
+			id = (instance.id = instance_id++);
+
+		template_instances[id] = instance;
+		template_instance_nodes[id] = node;
+		node.setAttribute("data-cjs-template-instance", id);
+
+		return node;
 	},
-	get_template_bindings = function(dom_node) {
-		var nodeIndex = indexOf(memoized_template_nodes, dom_node);
-		return nodeIndex >= 0 ? memoized_template_bindings[nodeIndex] : false;
+	get_template_instance_index = function(dom_node) {
+		var instance_id = dom_node.getAttribute("data-cjs-template-instance");
+		if(!instance_id) {
+			instance_id = indexOf(template_instance_nodes, dom_node);
+		}
+		return instance_id;
+	},
+	get_template_instance = function(dom_node) {
+		var nodeIndex = get_template_instance_index(dom_node);
+		return nodeIndex >= 0 ? template_instances[nodeIndex] : false;
 	};
 
 extend(cjs, {
@@ -509,14 +689,7 @@ extend(cjs, {
 								}
 							}
 
-							var template, template_index = indexOf(template_strs, template_str);
-							if(template_index < 0) {
-								template = create_template(template_str);
-								template_strs.push(template_str);
-								template_values.push(template);
-							} else {
-								template = template_values[template_index];
-							}
+							var template = create_template(template_str);
 
 							if(arguments.length >= 2) { // Create and use the template immediately
 								return memoize_template.apply(template, rest(arguments));
@@ -556,15 +729,14 @@ extend(cjs, {
 	 * @see cjs.resumeTemplate
 	 */
 	destroyTemplate:	function(dom_node) {
-							var nodeIndex = indexOf(memoized_template_nodes, dom_node);
-							if(nodeIndex >= 0) {
-								var bindings = memoized_template_bindings[nodeIndex];
-								memoized_template_nodes.splice(nodeIndex, 1);
-								memoized_template_bindings.splice(nodeIndex, 1);
-								each(bindings, function(binding) { binding.destroy(); });
-								return true;
+							var index = get_template_instance_index(dom_node),
+								instance = index >= 0 ? template_instances[index] : false;
+
+							if(instance) {
+								instance.destroy();
+								delete template_instances[index];
 							}
-							return false;
+							return this;
 						},
 
 	/**
@@ -578,9 +750,9 @@ extend(cjs, {
 	 * @see cjs.destroyTemplate
 	 */
 	pauseTemplate:		function(dom_node) {
-							var bindings = get_template_bindings(dom_node);
-							each(bindings, function(binding) { if(has(binding, "pause")) { binding.pause(); } });
-							return !!bindings;
+							var instance = get_template_instance(dom_node);
+							if(instance) { instance.pause(); }
+							return this;
 						},
 
 	/**
@@ -594,8 +766,8 @@ extend(cjs, {
 	 * @see cjs.destroyTemplate
 	 */
 	resumeTemplate:		function(dom_node) {
-							var bindings = get_template_bindings(dom_node);
-							each(get_template_bindings(dom_node), function(binding) { if(has(binding, "resume")) { binding.resume(); } });
-							return !!bindings;
+							var instance = get_template_instance(dom_node);
+							if(instance) { instance.resume(); }
+							return this;
 						}
 });
