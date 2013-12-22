@@ -625,7 +625,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	instance_id = 1,
 	memoize_template = function(context, parent_dom_node) {
 		var template = this,
-			instance = create_template_instance(template, context, [{this_exp: context}], parent_dom_node),
+			instance = create_template_instance(template, context, [{this_exp: context}], getFirstDOMChild(parent_dom_node)),
 			node = instance.node,
 			id = (instance.id = instance_id++);
 
