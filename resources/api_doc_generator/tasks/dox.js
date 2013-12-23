@@ -7,55 +7,35 @@
  */
 
 var exec = require('child_process').exec,
-    fs = require('fs'),
-    path = require('path'),
-    rimraf = require('rimraf');
-
+	fs = require('fs'),
+	mkdirp = require('mkdirp'),
+	path = require('path'),
+	rimraf = require('rimraf'),
+    formatter = require('../lib/dox-foundation'),
+	ignoredDirs = 'test,static,templates,node_modules';
 
 module.exports = function(grunt) {
+	grunt.registerMultiTask('dox', 'Generate dox output ', function() {
+		var src = this.filesSrc,
+			dest = this.data.dest,
+			indexPath = path.relative(process.cwd(), dest + path.sep + 'api.html'),
+			ignore = ignoredDirs.trim().replace(' ', '').split(','),
+			options = {
+			};
 
-  grunt.registerMultiTask('dox', 'Generate dox output ', function() {
+		// Cleanup any existing docs
+		rimraf.sync(dest);
 
-    var dir = this.filesSrc,
-        dest = this.data.dest,
-        done = this.async(),
-        doxPath = path.resolve(__dirname,'../'),
-        _opts = this.options(),
-        _args = [];
+		// Find, cleanup and validate all potential files
+		var files		= formatter.collectFiles(src, { ignore: ignore }, files),
+			doxedFiles	= formatter.doxFiles(src, dest, { raw: false }, files),
+			dox			= formatter.compileDox(doxedFiles),
+			output		= formatter.render(dox, options),
+			dir			= path.dirname(indexPath);
 
-    // Absolute path to the formatter
-    var formatter = [doxPath, 'bin', 'dox-foundation'].join(path.sep);
-
-    // Cleanup any existing docs
-    rimraf.sync(dest);
-
-    _args.push('--source');
-    _args.push(dir);
-    _args.push('--target');
-    _args.push(dest);
-
-    // Set options to arguments
-    if(_opts.title){
-      _args.push('--title');
-      _args.push('"' + _opts.title + '"');
-    }
-
-    // Pass through ignore params if set
-    if (this.data.ignore) {
-      _args.push('--ignore');
-      this.data.ignore.forEach(function(ignorePath) {
-        _args.push(doxPath + ignorePath);
-      });
-      
-    }
-
-    exec(formatter + ' ' + _args.join(" "), {maxBuffer: 5000*1024}, function(error, stout, sterr){
-      if (error) { grunt.log.error("ERROR:  "+ error); }
-      if (!error) {
-        grunt.log.ok('Directory "' + dir + '" doxxed.');
-        done();
-      }
-    });
-  });
-
+		if (!fs.existsSync(dir)) {
+			mkdirp.sync(dir);
+		}
+		fs.writeFileSync(indexPath, output);
+	});
 };

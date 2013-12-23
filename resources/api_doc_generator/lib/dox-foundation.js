@@ -176,12 +176,12 @@ exports.shouldPass = function(method) {
 */
 exports.collectFiles = function(source, options, callback) {
 	var dirtyFiles = [],
-	ignore  = options.ignore || [],
-	files   = [];
+		ignore  = options.ignore || [],
+		files   = [];
 
 	// If more paths are given with the --source flag
-	if(source.split(',').length > 1){
-		var dirtyPaths = source.split(',');
+	if(source.length > 1){
+		var dirtyPaths = source;
 
 		dirtyPaths.forEach(function(dirtyPath){
 			dirtyFiles = dirtyFiles.concat(require('walkdir').sync(path.resolve(process.cwd(), dirtyPath),{follow_symlinks:true}));
@@ -196,7 +196,7 @@ exports.collectFiles = function(source, options, callback) {
 	dirtyFiles.forEach(function(file){
 		file = path.relative(process.cwd(), file);
 
-		var doNotIgnore = _.all(ignore, function(d){
+		var doNotIgnore = _.all(ignore, function(d) {
 			// return true if no part of the path is in the ignore list
 			return (file.indexOf(d) === -1);
 		});
@@ -217,8 +217,8 @@ exports.doxFiles = function(source, target, options, files) {
 	files = files.map(function(file) {
 		try {
 			// If more paths are given with the --source flag
-			if(source.split(',').length >= 1){
-				var tmpSource = source.split(',');
+			if(source.length >= 1){
+				var tmpSource = source;
 
 				tmpSource.forEach(function(s){
 					if(file.indexOf(s) !== -1) {
@@ -308,7 +308,6 @@ exports.compileDox = function(files) {
 	});
 
 	var stack = [];
-	console.log(tree);
 	var recursiveAdd = function(tree, curr_stack) {
 		if(curr_stack.length > 0) {
 			var name = curr_stack.join(".");
