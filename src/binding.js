@@ -187,6 +187,7 @@ var Binding = function(options) {
 	 * Stop updating the binding and try to clean up any memory
 	 *
 	 * @method destroy
+	 * @return {undefined}
 	 * @see pause
 	 * @see resume
 	 * @see throttle

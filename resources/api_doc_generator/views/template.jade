@@ -22,34 +22,38 @@ html
         .col-md-4(role="complimentary")
           .sidebar(data-offset-top="60" data-offset-bottom="200")
             each item in docs
-                .row(class='l'+item.level)
-                  .col-md-12
-                      a(href='#'+item.name)=item.name+(item.type==='method' ? "()" : "")
+              .row(class='l'+item.level)
+                .col-md-12
+                  a(href='#'+item.name)=item.short_colloquial
         .col-md-8.content(role="main")
           h1 ConstraintJS API
           each item in docs
             .row(class='l'+item.level,id=item.name)
               .col-md-12.entry
                 .panel.panel-default
-                  .panel-heading.classname=item.name
-                  each subinfo in item.subinfos
-                    .panel-body.desc!=subinfo.description
-                      if subinfo.params.length > 0
-                        .params
-                          h5 Parameters:
-                          ul
-                            each param in subinfo.params
-                              li.param
-                                span.name=param.name
-                                span.type=param.types
-                                span.description=param.description
-                      if subinfo.returns
-                        .returns
-                          span.type=subinfo.returns.types
-                          span.description=subinfo.returns.description
+                  .panel-heading.classname=item.colloquial
+                  .panel-body
+                    .desc!=item.description
+                    if item.calltypes.length > 0
+                      table.params
+                        tbody
+                          each calltype,index in item.calltypes
+                            tr.callname
+                              td.calldesc(colspan=3)=item.short+'('+calltype.params.map(function(x){return x.name;}).join(", ")+')'
+                              each param in calltype.params
+                                tr.param
+                                  td.name=param.name
+                                  td.type=param.types
+                                  td.description!=param.description
+                            if calltype.returns
+                              tr.returns
+                                td.static Returns
+                                td.type=calltype.returns.types
+                                td.description!=calltype.returns.description
+
                   if item.examples.length > 0
                     .panel-body.examples
-                      h5 Examples:
+                      h4 Examples:
                       each example in item.examples
                         pre.example=example
                   .panel-footer

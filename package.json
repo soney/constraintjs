@@ -38,7 +38,7 @@
 		"walkdir": "~0.0.7",
 		"stylus": "~0.33.1",
 		"rimraf": "2.x",
-		"github-flavored-markdown": ">= 0.0.1",
+		"marked": ">= 0.2.10",
 		"commander": "0.6.1",
 		"mocha": "*",
 		"should": "*"

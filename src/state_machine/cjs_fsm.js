@@ -199,7 +199,7 @@ var StateListener = function(selector, callback, context) {
  * @private
  * @class FSM
  * @classdesc A finite-state machine
- * @param {...string} state_names - Any number of state names for the FSM to have
+ * @param {string} ...state_names - Any number of state names for the FSM to have
  */
 var FSM = function() {
 	this._states = {}; // simple substate representations
@@ -237,7 +237,7 @@ var FSM = function() {
 	 * Create states and set the current "chain state" to that state
 	 *
 	 * @method addState
-	 * @param {...string} state_names - Anyu number of state names to add. The lst state becomes the chain state
+	 * @param {string} ...state_names - Any number of state names to add. The lst state becomes the chain state
 	 * @return {FSM} - `this`
 	 */
 	proto.addState = function() {

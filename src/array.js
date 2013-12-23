@@ -116,7 +116,7 @@ ArrayConstraint = function (options) {
 	 *
 	 * @method setEqualityCheck
 	 * @param {function} equality_check - A new function to check for equality between two items in this array
-	 * @return {cjs.ArrayConstraint} - `this`
+	 * @return {cjs.ArrayConstraint} `this`
 	 */
 	proto.setEqualityCheck = function (equality_check) {
 		this.$equality_check.set(equality_check);
@@ -129,7 +129,7 @@ ArrayConstraint = function (options) {
 	 * @method forEach
 	 * @param {function} callback - Function to execute for each element.
 	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
-	 * @return {cjs.ArrayConstraint} - `this`
+	 * @return {cjs.ArrayConstraint} `this`
 	 */
 	proto.forEach = function (callback, thisArg) {
 		var i, len = this.length();
@@ -401,7 +401,7 @@ ArrayConstraint = function (options) {
 	 * then all of the elements through the end of the array will be deleted.
 	 * @param {...*} elements - The elements to add to the array. If you don't specify any elements,
 	 * splice simply removes elements from the array.
-	 * @return {array.*}An array containing the removed elements. If only one element is removed,
+	 * @return {array.*} - An array containing the removed elements. If only one element is removed,
 	 * an array of one element is returned. If no elements are removed, an empty array is returned.
 	 *
 	 * @see push

@@ -41,7 +41,7 @@ extend(cjs, {
 	 * @method cjs.memoize
 	 * @param {function} getter_fn - The function to memoize
 	 * @param {object} [options] - A set of options to control how memoization works
-	 * @return {function} the moemoized function
+	 * @return {function} The memoized function
 	 */
 	memoize: function (getter_fn, options) {
 		options = extend({

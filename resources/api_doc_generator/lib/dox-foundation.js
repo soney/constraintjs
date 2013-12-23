@@ -69,7 +69,6 @@ var get_doc = function(doc_info) {
 			type: false,
 			info: false,
 			params: [],
-			return: false,
 			links: [],
 			examples:[]
 		},
@@ -117,23 +116,25 @@ exports.render = function(stack, options) {
 	options.docs = docs;
 
 	stack.forEach(function(item) {
-		var info;
-		var num_descs = 0;
-		item.docs.forEach(function(doc) {
-			if(doc.description) { num_descs++; }
-		});
-
-		info = {
+		var info = {
 			name: item.name,
 			level: item.level,
+			description: "",
 			subinfos: item.docs.map(function(x) { return get_doc(x, item.name, item.level); }),
 			isMultiple: item.docs.length === 1,
 			sourceLinks: [],
-			examples: []
+			examples: [],
+			calltypes: []
 		};
 
 		var has_source = false;
 		info.subinfos.forEach(function(si) {
+			if(si.returns || si.params.length>0) {
+				info.calltypes.push(si);
+			}
+			if(si.description && (si.description.length > info.description.length)) {
+				info.description = si.description;
+			}
 			var type = si.type;
 			if(type === 'method' || type === 'class' || type === 'property') {
 				info.type = type;
@@ -149,6 +150,22 @@ exports.render = function(stack, options) {
 			}
 			info.examples.push.apply(info.examples, si.examples);
 		});
+
+		if(info.type === 'method' || info.type === 'class') {
+			info.short_colloquial =  info.name.replace('.prototype', '')+'()';
+			if(info.calltypes.length === 1) {
+				info.colloquial = info.name + '(' + info.calltypes[0].params.map(function(x) { return x.name; }).join(', ') + ')';
+			} else {
+				info.colloquial = info.name + '(...)';
+			}
+			if(info.type === 'class') {
+				info.colloquial = 'new ' + info.colloquial;
+			}
+		} else {
+			info.short_colloquial = info.colloquial = info.name.replace('.prototype', '');
+		}
+		info.short = info.name.indexOf(".")<0 ? info.name : "."+_.last(info.name.split("."));
+		
 
 		docs.push(info);
 	});
