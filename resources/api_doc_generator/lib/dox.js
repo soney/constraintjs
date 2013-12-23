@@ -177,8 +177,9 @@ exports.parseTag = function(str) {
 		type = tag.type = parts.shift().replace('@', '');
 
 	if(str.match(/^@example[\s\n]/)) {
-		str = str.replace(/^@example/, "").trim();
-		tag = {type: "example", code: str};
+		str = str.replace(/^@example/, "");
+		//.trim();
+		tag = {type: "example", code: markdown(str)};
 		return tag;
 	}
 
@@ -239,6 +240,6 @@ exports.parseTag = function(str) {
 */
 
 exports.parseTagTypes = function(str) {
-	return str.replace(/[{}]/g, '')
-	.split(/ *[|,\/] */);
+	return str	.replace(/[{}]/g, '')
+				.split(/ *[|,\/] */);
 };

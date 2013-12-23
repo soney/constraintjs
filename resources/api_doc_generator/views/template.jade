@@ -1,3 +1,57 @@
+mixin sidebarlist(tree, top)
+  if tree.children.length === 1
+    +sidebarlist(tree.children[0])
+  else if tree.children.length > 1
+    ul(class=top?'top,nav' : 'nav')
+      each item in tree.children
+        li
+          a(href='#'+item.name)=item.short_colloquial
+          +sidebarlist(item)
+
+mixin apidoclist(item)
+  if item.colloquial
+    .row(id=item.name)
+      .col-md-12.entry
+        .panel.panel-default
+          .panel-heading.classname=item.colloquial
+          .panel-body
+            .desc!=item.description
+            if item.calltypes && item.calltypes.length > 0
+              table.params
+                tbody
+                  each calltype,index in item.calltypes
+                    tr.callname
+                      td.calldesc(colspan=3)=item.short+'('+calltype.params.map(function(x){return x.name;}).join(", ")+')'
+                      each param in calltype.params
+                        tr.param
+                          td.name=param.name
+                          td.type=param.types
+                          td.description!=param.description
+                    if calltype.returns
+                      tr.returns
+                        td.static Returns
+                        td.type=calltype.returns.types
+                        td.description!=calltype.returns.description
+
+          if item.examples && item.examples.length > 0
+            .panel-body.examples
+              h4 Examples:
+              each example in item.examples
+                .example!=example
+          if item.examples && item.links.length > 0
+            .panel-body.related
+              h4 Related:
+              ul.related_links
+                each link in item.links
+                  li.also_see
+                    a(href="#"+link)=link
+          .panel-footer
+            if item.sourceLinks
+              each link in item.sourceLinks
+                a(target="_blank",href=link.link)=" " + link.text
+  each child in item.children
+    +apidoclist(child)
+
 doctype 5
 html
   head
@@ -19,45 +73,11 @@ html
               a(href="api.html",active) API
       .row.alert.alert-warning This API documentation is under construnction and is, at the moment, very rough
       .row
-        .col-md-4(role="complimentary")
-          .sidebar(data-offset-top="60" data-offset-bottom="200")
-            each item in docs
-              .row(class='l'+item.level)
-                .col-md-12
-                  a(href='#'+item.name)=item.short_colloquial
-        .col-md-8.content(role="main")
+        .col-md-3(role="complimentary")
+          .bs-sidebar(data-spy="affix", data-offset-top=0)
+            +sidebarlist(docs, true)
+        .col-md-9.content(role="main")
           h1 ConstraintJS API
-          each item in docs
-            .row(class='l'+item.level,id=item.name)
-              .col-md-12.entry
-                .panel.panel-default
-                  .panel-heading.classname=item.colloquial
-                  .panel-body
-                    .desc!=item.description
-                    if item.calltypes.length > 0
-                      table.params
-                        tbody
-                          each calltype,index in item.calltypes
-                            tr.callname
-                              td.calldesc(colspan=3)=item.short+'('+calltype.params.map(function(x){return x.name;}).join(", ")+')'
-                              each param in calltype.params
-                                tr.param
-                                  td.name=param.name
-                                  td.type=param.types
-                                  td.description!=param.description
-                            if calltype.returns
-                              tr.returns
-                                td.static Returns
-                                td.type=calltype.returns.types
-                                td.description!=calltype.returns.description
-
-                  if item.examples.length > 0
-                    .panel-body.examples
-                      h4 Examples:
-                      each example in item.examples
-                        pre.example=example
-                  .panel-footer
-                    each link in item.sourceLinks
-                      a(target="_blank",href=link.link)=" " + link.text
+          +apidoclist(docs)
 
     include ./_footer.jade

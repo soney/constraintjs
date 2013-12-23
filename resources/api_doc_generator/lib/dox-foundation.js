@@ -108,67 +108,12 @@ var get_doc = function(doc_info) {
 /**
 * Parse source code to produce documentation
 */
-exports.render = function(stack, options) {
-	options          = options || { title: 'Documentation' };
-	templatePath     = path.resolve(__dirname, templatePath);
-    template         = fs.readFileSync(templatePath).toString();
-	var docs = [];
-	options.docs = docs;
-
-	stack.forEach(function(item) {
-		var info = {
-			name: item.name,
-			level: item.level,
-			description: "",
-			subinfos: item.docs.map(function(x) { return get_doc(x, item.name, item.level); }),
-			isMultiple: item.docs.length === 1,
-			sourceLinks: [],
-			examples: [],
-			calltypes: []
-		};
-
-		var has_source = false;
-		info.subinfos.forEach(function(si) {
-			if(si.returns || si.params.length>0) {
-				info.calltypes.push(si);
-			}
-			if(si.description && (si.description.length > info.description.length)) {
-				info.description = si.description;
-			}
-			var type = si.type;
-			if(type === 'method' || type === 'class' || type === 'property') {
-				info.type = type;
-			}
-
-			if(si.exposed) {
-				info.sourceLinks.push({text:"(Exposed: "+si.fname+":"+si.line+")", link: si.link});
-			} else {
-				if(!has_source) {
-					info.sourceLinks.push({text:"Source: "+si.fname+":"+si.line+"", link: si.link});
-				}
-				has_source = true;
-			}
-			info.examples.push.apply(info.examples, si.examples);
-		});
-
-		if(info.type === 'method' || info.type === 'class') {
-			info.short_colloquial =  info.name.replace('.prototype', '')+'()';
-			if(info.calltypes.length === 1) {
-				info.colloquial = info.name + '(' + info.calltypes[0].params.map(function(x) { return x.name; }).join(', ') + ')';
-			} else {
-				info.colloquial = info.name + '(...)';
-			}
-			if(info.type === 'class') {
-				info.colloquial = 'new ' + info.colloquial;
-			}
-		} else {
-			info.short_colloquial = info.colloquial = info.name.replace('.prototype', '');
-		}
-		info.short = info.name.indexOf(".")<0 ? info.name : "."+_.last(info.name.split("."));
-		
-
-		docs.push(info);
-	});
+exports.render = function(docs, options) {
+	templatePath = path.resolve(__dirname, templatePath);
+	var template	 = fs.readFileSync(templatePath).toString(),
+		options		 = _.extend({
+							docs: docs
+						}, options);
 	return jade.compile(template, { filename: templatePath })(options);
 };
 
@@ -297,54 +242,107 @@ exports.compileDox = function(files) {
 			});
 		});
 	});
-	var tree = {};
+
+	var tree = {children: []};
 	var keys = [];
 	for(var key in subjects) {
 		if(subjects.hasOwnProperty(key)) {
 			keys.push(key);
 		}
 	}
+
 	keys = keys.sort(function(a, b) {
-		return a.split(".").length - b.split(".").length;
-	});
-	//sort by levels
-	keys.forEach(function(key) {
-		var objs = key.split(".");
-		var ctree = tree;
-		objs.forEach(function(obj, i) {
-			if(i === objs.length-1) {
-				ctree[obj] = {"@docs": subjects[key]};
-			} else {
-				if(ctree.hasOwnProperty(obj)) {
-					ctree = ctree[obj];
-				} else {
-					ctree = ctree[obj] = {};
-				}
-			}
-		});
+		var diff = a.split(".").length - b.split(".").length;
+		if(diff === 0) {
+			return a.localeCompare(b);
+		} else {
+			return diff;
+		}
 	});
 
-	var stack = [];
-	var recursiveAdd = function(tree, curr_stack) {
-		if(curr_stack.length > 0) {
-			var name = curr_stack.join(".");
-			var docs = tree["@docs"];
-			var no_protos = curr_stack.filter(function(x) { return x !== "prototype";});
-			if(docs && docs.length > 0) {
-				stack.push({name: name, docs: docs, level: no_protos.length});
+	//sort by levels
+	keys.forEach(function(key) {
+		var objs = key.split("."),
+			ctree = tree,
+			info = get_doc_info(subjects[key]);
+
+		var level = 0;
+		objs.forEach(function(obj, i) {
+			var index = _	.chain(ctree.children)
+							.pluck("propname")
+							.indexOf(obj)
+							.value();
+			//console.log(index);
+			if(index < 0) {
+				var new_tree = {name: key, propname: obj, children: []};
+				ctree.children.push(new_tree);
+				ctree = new_tree;
+				ctree.children = _.sortBy(ctree.children, "propname");
+			} else {
+				ctree = ctree.children[index];
 			}
-		}
-		var keys = [];
-		for(var key in tree) {
-			if(key !== "@docs" && tree.hasOwnProperty(key)) {
-				keys.push(key);
-			}
-		}
-		keys = keys.sort();
-		keys.forEach(function(key) {
-			recursiveAdd(tree[key], curr_stack.concat(key));
+			level++;
 		});
-	};
-	recursiveAdd(tree, []);
-	return stack;
+
+		if(info.type === 'method' || info.type === 'class') {
+			ctree.short_colloquial =  ctree.propname.replace('.prototype', '')+'()';
+			if(info.calltypes.length === 1) {
+				ctree.colloquial = ctree.name + '(' + info.calltypes[0].params.map(function(x) { return x.name; }).join(', ') + ')';
+			} else {
+				ctree.colloquial = ctree.name + '(...)';
+			}
+			if(info.type === 'class') {
+				ctree.colloquial = 'new ' + ctree.colloquial;
+			}
+		} else {
+			ctree.short_colloquial = ctree.propname.replace('.prototype', '');
+			ctree.colloquial = ctree.name.replace('.prototype', '');
+		}
+		ctree.short = ctree.name.indexOf(".")<0 ? ctree.name : "."+_.last(ctree.name.split("."));
+
+		_.extend(ctree, info);
+	});
+	//console.log(_.pluck(tree, "name"));
+
+	return tree;
+};
+
+var get_doc_info = function(docs) {
+	var subinfos = docs.map(function(x) { return get_doc(x); }),
+		info = {
+			calltypes: [],
+			description: "",
+			type: "",
+			sourceLinks: [],
+			links: [],
+			examples: []
+		},
+		has_source = false;
+
+	_.each(subinfos, function(si) {
+		if(si.returns || si.params.length>0) {
+			info.calltypes.push(si);
+		}
+		if(si.description && (si.description.length > info.description.length)) {
+			info.description = si.description;
+		}
+		var type = si.type;
+		if(type === 'method' || type === 'class' || type === 'property') {
+			info.type = type;
+		}
+
+		if(si.exposed) {
+			info.sourceLinks.push({text:"(Exposed: "+si.fname+":"+si.line+")", link: si.link});
+		} else {
+			if(!has_source) {
+				info.sourceLinks.push({text:"Source: "+si.fname+":"+si.line+"", link: si.link});
+			}
+			has_source = true;
+		}
+		info.links.push.apply(info.links, si.links);
+		info.examples.push.apply(info.examples, si.examples);
+	});
+
+
+	return info;
 };

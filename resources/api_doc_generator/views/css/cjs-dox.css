@@ -101,3 +101,15 @@ body {
 	color: #aaa;
 	font-style: oblique;
 }
+.nav {
+	/*
+	display: none;
+	*/
+	padding-left: 10px;
+}
+.nav.top {
+	padding-left: 0px;
+}
+.nav.active {
+	display: block;
+}

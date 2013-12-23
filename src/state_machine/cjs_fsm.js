@@ -269,21 +269,20 @@ var FSM = function() {
 	};
 	
 	/**
-	 * Add a transition from the current "chain state" (the last added state) to the specified state
+	 * Add a transition between two states
 	 *
 	 * @method addTransition
 	 * @param {string} to_state - The name of the state the transition should go to
 	 * @return {function} - A function that tells the transition to run
 	 * @example
 	 *		var x = cjs.fsm();
-	 *      x.addState("b")
-	 *       .addState("a");
+	 *		x.addState("b")
+	 *		 .addState("a");
 	 *		var run_transition = x.addTransition("b"); //add a transition from a to b
 	 *		window.addEventListener("click", run_transition); // run that transition when the window is clicked
 	 */
 	/**
-	 * Add a transition from the current "chain state" (the last added state) to the specified state
-	 *
+	 * (variant 2)
 	 * @method addTransition^2
 	 * @param {string} to_state - The name of the state the transition should go to
 	 * @param {CJSEvent|function} add_transition_fn - A `CJSEvent` or a user-specified function for adding the event listener
@@ -302,8 +301,7 @@ var FSM = function() {
 	 *       }); // add a transition from a to b that runs when the window is clicked
 	 */
 	/**
-	 * Add a transition between the specified states
-	 *
+	 * (variant 3)
 	 * @method addTransition^3
 	 * @param {string} from_state - The name of the state the transition should come from
 	 * @param {string} to_state - The name of the state the transition should go to
@@ -314,13 +312,13 @@ var FSM = function() {
 	 *		window.addEventListener("click", run_transition); // run that transition when the window is clicked
 	 */
 	/**
-	 * Add a transition between the specified states
-	 *
+	 * (variant 4)
 	 * @method addTransition^4
 	 * @param {string} from_state - The name of the state the transition should come from
 	 * @param {string} to_state - The name of the state the transition should go to
 	 * @param {CJSEvent|function} add_transition_fn - A `CJSEvent` or a user-specified function for adding the event listener
 	 * @return {FSM} - `this`
+	 *
 	 * @example
 	 *		var x = cjs.fsm("a", "b");
 	 *		x.addTransition("a", "b", cjs.on("click"));
