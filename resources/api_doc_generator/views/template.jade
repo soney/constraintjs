@@ -34,7 +34,7 @@ mixin apidoclist(item)
 
           if item.examples && item.examples.length > 0
             .panel-body.examples
-              h4 Examples:
+              h4=item.examples.length===1 ? "Example:" : "Example:"
               each example in item.examples
                 .example!=example
           if item.examples && item.links.length > 0

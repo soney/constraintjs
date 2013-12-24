@@ -11,7 +11,8 @@ var Constraint, // Declare here, will be defined later
 	// Save the previous value of the `cjs` variable.
 	old_cjs = root.cjs,
 	/**
-	 * Create an array constraint
+	 * `cjs` is ConstraintJS's only *visible* object; every other method an property is a property of `cjs`.
+	 * The `cjs` object itself can also be called to 
 	 *
 	 * @method cjs
 	 * @param {object} value - A map of initial values

@@ -493,15 +493,33 @@ var has_from = function(x) { return x.hasOwnProperty("from"); },
  * Every item in `removed` has the format: `{item, index}`
  * Every item in `added` has the format: `{item, index}`
  * Every item in `moved` has the format: `{from_index, to_index}`
+ * Every item in `index_changed` has the format: `{from_index, to_index}`
  *
  * When `oldArray` removes every item in `removed`, adds every item in `added`,
  * and moves every item in `moved` (in that order), it will result in an array
- * that is equivalent to `newArray`.
+ * that is equivalent to `newArray`. Note: this function is used internally to
+ * determine how to keep DOM nodes in sync with an underlying model with the
+ * smallest number of modifications to the DOM tree.
+ *
  * @method cjs.arrayDiff
  * @param {array[*]} from_val - The 'former' array
  * @param {array[*]} to_val - The 'new' array
  * @param {function} [equality_check] - A function that checks for equality between items
  * @return {Object} - added, removed, and moved items
+ *
+ * @example Taking the diff between `old_array` and `new_array` with the default equality check
+ *
+ *     var old_array = ['a','b','c'],
+ *         new_array = ['c','b','d'],
+ *         diff = cjs.arrayDiff(old_array, new_array);
+ *		
+ *		// diff === {
+ *		//   added: [ { item: 'd', to: 2, to_item: 'd' } ],
+ *		//   removed: [ { from: 0, from_item: 'a' } ],
+ *		//   moved: [ { item: 'c', from: 2, insert_at: 0, move_from: 1, to: 0 } ],
+ *		//   index_changed: [ { from: 2, from_item: 'c', item: 'c', to: 0, to_item: 'c' } ]
+ *		// }
+ *		
  */
 var get_array_diff = function (from_val, to_val, equality_check) {
 	var source_map = array_source_map(from_val, to_val, equality_check),
