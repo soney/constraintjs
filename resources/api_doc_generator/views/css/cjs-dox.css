@@ -107,9 +107,17 @@ body {
 	*/
 	padding-left: 10px;
 }
+.nav li > a {
+	padding-top: 1px;
+	padding-bottom: 1px;
+}
 .nav.top {
 	padding-left: 0px;
 }
 .nav.active {
 	display: block;
+}
+.sidebar {
+	height: 500px;
+	overflow: scroll;
 }

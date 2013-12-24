@@ -76,7 +76,7 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
  * class_name constraint
  *
  * @private
- * @class Binding
+ * @class cjs.Binding
  * @param {object} options
  * @classdesc Bind a DOM node property to a constraint value
  */
@@ -140,7 +140,7 @@ var Binding = function(options) {
 };
 
 (function(my) {
-	/** @lends Binding.prototype */
+	/** @lends cjs.Binding.prototype */
 	var proto = my.prototype;
 	/**
 	 * Pause binding (no updates to the attribute until resume is called)
@@ -456,5 +456,7 @@ extend(cjs, {
 	/** @expose cjs.class */
 	"class": class_binding,
 	/** @expose cjs.inputValue */
-	inputValue: getInputValueConstraint
+	inputValue: getInputValueConstraint,
+	/** @expose cjs.Binding */
+	Binding: Binding
 });

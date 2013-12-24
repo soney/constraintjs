@@ -73,8 +73,8 @@ html
               a(href="api.html",active) API
       .row.alert.alert-warning This API documentation is under construnction and is, at the moment, very rough
       .row
-        .col-md-3(role="complimentary")
-          .bs-sidebar(data-spy="affix", data-offset-top=0)
+        .col-md-3(role="complimentary").hidden-xs
+          .sidebar.bs-sidebar(data-spy="affix", data-offset-top=0)
             +sidebarlist(docs, true)
         .col-md-9.content(role="main")
           h1 ConstraintJS API

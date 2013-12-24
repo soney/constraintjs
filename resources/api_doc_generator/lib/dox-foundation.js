@@ -302,7 +302,9 @@ exports.compileDox = function(files) {
 
 		_.extend(ctree, info);
 	});
-	//console.log(_.pluck(tree, "name"));
+	if(tree.children.length === 1) {
+		tree = tree.children[0];
+	}
 
 	return tree;
 };

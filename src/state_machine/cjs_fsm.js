@@ -197,7 +197,7 @@ var StateListener = function(selector, callback, context) {
  * This class represents a finite-state machine to track the state of an interface or component
  *
  * @private
- * @class FSM
+ * @class cjs.FSM
  * @classdesc A finite-state machine
  * @param {string} ...state_names - Any number of state names for the FSM to have
  */
@@ -226,7 +226,7 @@ var FSM = function() {
 };
 (function(my) {
 	var proto = my.prototype;
-	/** @lends FSM.prototype */
+	/** @lends cjs.FSM.prototype */
 
 	// Find the state with a given name
 	var getStateWithName = function(fsm, state_name) {
@@ -509,6 +509,8 @@ var FSM = function() {
 /** @lends */
 
 extend(cjs, {
+	/** @expose cjs.FSM */
+	FSM: FSM,
 	/**
 	 * @method cjs.fsm
 	 * @constructs FSM

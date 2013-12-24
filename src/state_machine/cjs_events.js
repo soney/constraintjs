@@ -1,7 +1,7 @@
 /**
  * Creates an event that can be used in a finite-state machine transition
  * @private
- * @class CJSEvent
+ * @class cjs.CJSEvent
  * @classdesc A constraint object communicates with the constraint solver to store and maintain constraint values
  */
 var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
@@ -16,7 +16,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 };
 
 (function(my) {
-	/** @lends CJSEvent.prototype */
+	/** @lends cjs.CJSEvent.prototype */
 	var proto = my.prototype;
 
 	/**
@@ -94,6 +94,8 @@ var isElementOrWindow = function(elem) { return elem === root || isElement(elem)
 	timeout_event_type = "timeout";
 
 extend(cjs, {
+	/** @expose cjs.CJSEvent */
+	CJSEvent: CJSEvent,
 	/**
 	 * Create a new event for use in a finite state machine transition
 	 *
