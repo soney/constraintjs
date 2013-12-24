@@ -120,4 +120,14 @@ body {
 .sidebar {
 	height: 500px;
 	overflow: scroll;
+	border: 1px solid #BBB;
+	background-color: #F7F7F7;
+}
+li.haschildren > a {
+	font-weight: 800;
+	color: black;
+}
+li.active {
+	border-right: 2px solid red;
+	background-color: #F0F0F0;
 }

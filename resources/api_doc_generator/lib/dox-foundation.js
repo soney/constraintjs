@@ -254,6 +254,14 @@ exports.compileDox = function(files) {
 	keys = keys.sort(function(a, b) {
 		var diff = a.split(".").length - b.split(".").length;
 		if(diff === 0) {
+			var pna = _.last(a.split(".")),
+				pnb = _.last(b.split("."));
+
+			if(pna[0].toLowerCase() !== pna[0] && pnb[0].toLowerCase() === pnb[0]) {
+				return 1;
+			} else if(pna[0].toLowerCase() === pna[0] && pnb[0].toLowerCase() !== pnb[0]) {
+				return -1;
+			}
 			return a.localeCompare(b);
 		} else {
 			return diff;
@@ -262,7 +270,7 @@ exports.compileDox = function(files) {
 
 	//sort by levels
 	keys.forEach(function(key) {
-		var objs = key.split("."),
+		var objs = key.replace(".prototype", "").split("."),
 			ctree = tree,
 			info = get_doc_info(subjects[key]);
 
@@ -277,7 +285,6 @@ exports.compileDox = function(files) {
 				var new_tree = {name: key, propname: obj, children: []};
 				ctree.children.push(new_tree);
 				ctree = new_tree;
-				ctree.children = _.sortBy(ctree.children, "propname");
 			} else {
 				ctree = ctree.children[index];
 			}

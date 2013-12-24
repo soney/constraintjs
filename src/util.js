@@ -486,15 +486,23 @@ var has_from = function(x) { return x.hasOwnProperty("from"); },
 		return a_has_from && b_has_from ? a.from - b.from : b_has_from - a_has_from;
 	};
 
-// `get_array_diff` returns an object with attributes:
-// `removed`, `added`, and `moved`.
-// Every item in `removed` has the format: `{item, index}`
-// Every item in `added` has the format: `{item, index}`
-// Every item in `moved` has the format: `{from_index, to_index}`
-
-// When `oldArray` removes every item in `removed`, adds every item in `added`,
-// and moves every item in `moved` (in that order), it will result in an array
-// that is equivalent to `newArray`.
+/**
+ *
+ * `arrayDiff` returns an object with attributes:
+ * `removed`, `added`, and `moved`.
+ * Every item in `removed` has the format: `{item, index}`
+ * Every item in `added` has the format: `{item, index}`
+ * Every item in `moved` has the format: `{from_index, to_index}`
+ *
+ * When `oldArray` removes every item in `removed`, adds every item in `added`,
+ * and moves every item in `moved` (in that order), it will result in an array
+ * that is equivalent to `newArray`.
+ * @method cjs.arrayDiff
+ * @param {array[*]} from_val - The 'former' array
+ * @param {array[*]} to_val - The 'new' array
+ * @param {function} [equality_check] - A function that checks for equality between items
+ * @return {Object} - added, removed, and moved items
+ */
 var get_array_diff = function (from_val, to_val, equality_check) {
 	var source_map = array_source_map(from_val, to_val, equality_check),
 		rearranged_array = clone(source_map).sort(sort_by_from_fn),

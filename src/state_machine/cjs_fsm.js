@@ -212,7 +212,7 @@ var FSM = function() {
 
 	/**
 	 * The name of this FSM's active state
-	 * @property {Constraint} FSM.prototype.state
+	 * @property {Constraint} cjs.FSM.state
 	 */
 	this.state = cjs(function() { // the name of the current state
 		if(this._curr_state) { return this._curr_state.getName(); }
