@@ -14,7 +14,7 @@ var get_str_hash_fn = function (prop_name) {
 };
 
 /**
- * This class is menat to emulate JavaScript objects ({}) but with constraints
+ * This class is meant to emulate JavaScript objects ({}) but with constraints
  *
  * Options:
  *
@@ -26,7 +26,7 @@ var get_str_hash_fn = function (prop_name) {
  * - `keys`: An optional starting set of keys (default: `[]`)
  * - `values`: An optional starting set of values (default: `[]`)
  * - `literal_values`: True if values that are functions should return a function rather than that function's return value. (default: `false`)
- * - `create_unsubstantiated`: Create a constraint when searching for non-existant keys. (default: `true`)
+ * - `create_unsubstantiated`: Create a constraint when searching for non-existent keys. (default: `true`)
  *
  * @class cjs.MapConstraint
  * @classdesc A class that adds constraint to objects
@@ -772,7 +772,7 @@ MapConstraint = function (options) {
 	 * @param {function} create_fn - A function to create the value if `key` is not found
 	 * @param {*} [create_fn_context] - The context in which to call `create_fn`
 	 * @param {number} [index=this.size] - Where to place a value that is created
-	 * @param {boolean} [literal=false] - Whether to create the value as a literal contraint
+	 * @param {boolean} [literal=false] - Whether to create the value as a literal constraint
 	 * (the value of a function is the function)
 	 * @return {number} - The index of the entry with key=`key` or `-1`
 	 *
@@ -815,11 +815,11 @@ MapConstraint = function (options) {
 		var key_index = ki.i;
 		if (key_index >= 0) { // Found successfully
 			return true;
-		} else if(this._create_unsubstantiated) { // Didn't find but there is an unusbstantiated item
+		} else if(this._create_unsubstantiated) { // Didn't find but there is an unsubstantiated item
 			var unsubstantiated_info = ki.uhv[ki.ui];
 			unsubstantiated_info.index.get(); // Add a dependency
 			return false;
-		} else { // No dependency to be added; just saya we didn't find it
+		} else { // No dependency to be added; just say we didn't find it
 			return false;
 		}
 	};
@@ -829,7 +829,7 @@ MapConstraint = function (options) {
 	 *
 	 * @method moveIndex
 	 * @param {number} old_index - The index to move from
-	 * @param {number} new_idnex - The index to move to
+	 * @param {number} new_index - The index to move to
 	 * @return {cjs.ArrayConstraint} - `this`
 	 */
 	proto.moveIndex = function (old_index, new_index) {

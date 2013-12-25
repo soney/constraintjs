@@ -654,7 +654,7 @@ extend(cjs, {
 	 *
 	 * @method cjs.createTemplate
 	 * @param {string|dom} template - the template as either a string or a `script` tag whose contents are the template
-	 * @param {object} [context] - Any number of target objects to lisen to
+	 * @param {object} [context] - Any number of target objects to listen to
 	 * @param {dom} [parent] - The parent DOM node for the template
 	 * @return {function|dom} - An event that can be attached to 
 	 *

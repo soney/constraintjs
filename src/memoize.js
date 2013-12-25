@@ -27,11 +27,11 @@ memoize_default_equals = function (args1, args2) {
 
 extend(cjs, {
 	/**
-	 * Memoize a function to avoid unecessary re-evaluation. Its options are:
+	 * Memoize a function to avoid unnecessary re-evaluation. Its options are:
 	 *
 	 * - `hash`: Create a unique value for each set of arguments (call with an argument array)
 	 * - `equals`: check if two sets of arguments are equal (call with two argument arrays)
-	 * - `context`: The context in which `getter_fn` should be evaliated
+	 * - `context`: The context in which `getter_fn` should be evaluated
 	 * - `literal_values`: Whether values should be literal if they are functions
 	 *
 	 * The return value of this method also has two functions:

@@ -102,7 +102,7 @@ extend(cjs, {
 	 * @constructs CJSEvent
 	 * @method cjs.on
 	 * @param {string} event_type - the type of event to listen for (e.g. mousedown, timeout)
-	 * @param {...element|number} [target=window] - Any number of target objects to lisen to
+	 * @param {...element|number} [target=window] - Any number of target objects to listen to
 	 * @return {CJSEvent} - An event that can be attached to 
 	 */
 	on:	function(event_type) {
@@ -161,7 +161,7 @@ extend(cjs, {
 							off_listener();
 
 							event_type_val = split_and_trim(cjs.get(event_type));
-							// only use DOM elements (or the weindow) as my target
+							// only use DOM elements (or the window) as my target
 							targets = filter(get_dom_array(rest_args), isElementOrWindow);
 
 							// when entering the state, add the event listeners, then remove them when leaving the state

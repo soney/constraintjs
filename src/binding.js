@@ -32,7 +32,7 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 		}
 	},
 	move_child = function(parent_node, to_index, from_index) {
-		// Utility to move a child DOM node by indicies
+		// Utility to move a child DOM node by indices
 		var children = parent_node.childNodes;
 		if(children.length > from_index) {
 			var child_node = children[from_index];
@@ -61,7 +61,7 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 			return obj.toArray();
 		} else if(is_map(obj)) { // map constraint
 			return obj.values();
-		} else if(is_jquery_obj(obj)) { // jquery object
+		} else if(is_jquery_obj(obj)) { // jQuery object
 			return root.jQuery.makeArray(obj);
 		} else if(isNList(obj)) { // node list
 			return toArray(obj);
@@ -115,7 +115,7 @@ var Binding = function(options) {
 		};
 
 	this.onDestroy = onDestroy;
-	this._throttle_delay = false; // Optional throtling to improve performance
+	this._throttle_delay = false; // Optional throttling to improve performance
 	this._timeout_id = false; // tracks the timeout that helps throttle
 
 	if(isFunction(init_val)) { // If init_val is a getter, call it on the first element
@@ -174,7 +174,7 @@ var Binding = function(options) {
 	 */
 	proto.throttle = function(min_delay) {
 		this._throttle_delay = min_delay > 0 ? min_delay : false; // Make sure it's positive
-		if(this._timeout_id && !this._throttle_delay) { // If it was speicfied that there should be no delay and we are waiting for a re-eval
+		if(this._timeout_id && !this._throttle_delay) { // If it was specified that there should be no delay and we are waiting for a re-eval
 			cTO(this._timeout_id); // then prevent that re-eval
 			this._timeout_id = false;
 		}
@@ -299,7 +299,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {...*} values - The value the element should have
 	 * @return {Binding} - A binding object
 	 */
-	val_binding = create_textual_binding(function(element, value) { // set the value of a ndoe
+	val_binding = create_textual_binding(function(element, value) { // set the value of a node
 		element.val = value;
 	}),
 
@@ -409,7 +409,7 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 				if(arr_inp) {
 					return map(inps, function(inp) { return inp.value; }); // if it's an array, return every value
 				} else {
-					return inps[0].value; // otherwise, just reutrn the first value
+					return inps[0].value; // otherwise, just return the first value
 				}
 			}),
 			len = inps.length,

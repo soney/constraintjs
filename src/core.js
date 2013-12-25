@@ -41,7 +41,7 @@ var Constraint, // Declare here, will be defined later
 	 *
 	 * @method cjs^3
 	 * @param {object} value - A map of initial values
-	 * @param {object} options - A set of optiosn to control how the map constraint is evaluated
+	 * @param {object} options - A set of options to control how the map constraint is evaluated
 	 * @return {cjs.MapConstraint} A new map constraint
 	 *
 	 * @example Creating a map constraint
@@ -57,7 +57,7 @@ var Constraint, // Declare here, will be defined later
 	 *
 	 * @method cjs^4
 	 * @param {object} value - The constraint's value
-	 * @param {object} options - A set of optiosn to control how the constraint is evaluated
+	 * @param {object} options - A set of options to control how the constraint is evaluated
 	 * @return {cjs.Constraint} A new constraint
 	 * 
 	 * @example Creating an empty constraint
@@ -227,7 +227,7 @@ var constraint_solver = {
 								delete curr_node._outEdges[toNodeID];
 								delete dependentNode._inEdges[node._id];
 							} else {
-								// But if the dependency still is being used, then add it to the nullificaiton
+								// But if the dependency still is being used, then add it to the nullification
 								// queue
 								to_nullify[to_nullify_len] = dependentNode;
 								to_nullify_len += 1;
@@ -238,7 +238,7 @@ var constraint_solver = {
 			}
 		}
 
-		// If I'm the first one, then runn the nullification listeners and remove the is_nullifying flag
+		// If I'm the first one, then run the nullification listeners and remove the is_nullifying flag
 		if (is_root) {
 			// If nobody told us to wait, then run the nullification listeners
 			if (this.semaphore >= 0 && this.nullified_call_stack.length > 0) {
@@ -325,7 +325,7 @@ var constraint_solver = {
 					callback.apply(context, nullified_info.args);
 				} else {
 					try {
-						// Call the nulification callback with any specified aguments
+						// Call the nullification callback with any specified arguments
 						callback.apply(context, nullified_info.args);
 					} catch(e) {
 						if(has(root, "console")) {
@@ -484,7 +484,7 @@ Constraint = function (value, options) {
 	};
 
 	/**
-	 * Mark this constraint's value as invalid. This signasl that the next time its value is fetched,
+	 * Mark this constraint's value as invalid. This signals that the next time its value is fetched,
 	 * it should be recomputed, rather than returning the cached value.
 	 *
 	 * An invalid constraint's value is only updated when it is next requested (for example, via `.get()`).
@@ -768,7 +768,7 @@ Constraint = function (value, options) {
 	/**
 	 * Float conversion constraint modifier.
 	 * @method toFloat
-	 * @return {*} - A constrant whose value is parseFloat(this)
+	 * @return {*} - A constraint whose value is parseFloat(this)
 	 * @example Given `<input />` element `inp_elem`
 	 *		var inp_val = cjs(inp_elem).toFloat();
 	 */
@@ -793,6 +793,7 @@ Constraint = function (value, options) {
 	 * @return {number} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
 	 * @example
 	 *		x = y.sub(1,2,z); // x <- y - 1 - 2 - z
+	 *
 	 */
 	proto.sub = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["-"], me); });
 	/**

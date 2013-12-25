@@ -93,7 +93,7 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 	};
 }(TransitionSelector));
 
-// Multiple possiblities (read OR, not AND)
+// Multiple possibilities (read OR, not AND)
 var MultiSelector = function(selectors) {
 	this.selectors = selectors; // all of the selectors to test
 };
@@ -237,7 +237,7 @@ var FSM = function() {
 	 * Create states and set the current "chain state" to that state
 	 *
 	 * @method addState
-	 * @param {string} ...state_names - Any number of state names to add. The lst state becomes the chain state
+	 * @param {string} ...state_names - Any number of state names to add. The last state becomes the chain state
 	 * @return {FSM} - `this`
 	 */
 	proto.addState = function() {
@@ -371,7 +371,6 @@ var FSM = function() {
 	};
 
 	/**
-	 * i
 	 * Changes the active state of this FSM.
 	 * This function should, ideally, be called by a transition instead of directly.
 	 *
@@ -433,7 +432,7 @@ var FSM = function() {
 			state = this.create_state(state_name);
 		}
 		if(!this.did_transition) {
-			// If no transitions have occured, set the current state to the one they specified
+			// If no transitions have occurred, set the current state to the one they specified
 			this._curr_state = state;
 		}
 		this._chain_state = state;
@@ -454,7 +453,7 @@ var FSM = function() {
 	};
 
 	/**
-	 * Call a givern function when the finite-state machine enters a given state.
+	 * Call a given function when the finite-state machine enters a given state.
 	 * `spec` can be of the form:
 	 * - `'*'`: any state
 	 * - `'state1'`: A state named `state1`

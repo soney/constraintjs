@@ -4,9 +4,9 @@
 // Will automatically call the provided function when it becomes invalid
 extend(cjs, {
 	/**
-	 * Memoize a function to avoid unecessary re-evaluation. Its options are:
+	 * Memoize a function to avoid unnecessary re-evaluation. Its options are:
 	 *
-	 * - `context`: The context in which `func` should be evaliated
+	 * - `context`: The context in which `func` should be evaluated
 	 * - `run_on_create`: Whether to run `func` immediately after creating the live function. (default: `true`)
 	 * - `pause_while_running`: Whether to explicitly prevent this live function from being called recursively (default: `false`)
 	 * - `on_destroy`: A function to call when `destroy` is called (default: `false`)
