@@ -12,19 +12,29 @@ var Constraint, // Declare here, will be defined later
 	old_cjs = root.cjs,
 	/**
 	 * `cjs` is ConstraintJS's only *visible* object; every other method an property is a property of `cjs`.
-	 * The `cjs` object itself can also be called to 
+	 * The `cjs` object itself can also be called to create a constraint object.
 	 *
 	 * @method cjs
 	 * @param {object} value - A map of initial values
-	 * @param {object} options - A set of optiosn to control how the array constraint is evaluated
+	 * @param {object} options - A set of options to control how the array constraint is evaluated
 	 * @return {cjs.ArrayConstraint} A new array constraint
+	 * @see cjs.noConflict
+	 *
+	 * @example Creating an array constraint
+	 *     var cjs_arr = cjs([1,2,3]);
+	 *     cjs_arr.item(0); // 1
 	 */
+
 	/**
-	 * Create an input value constraint
+	 * Input value constraint
 	 *
 	 * @method cjs^2
 	 * @param {dom} node - The DOM node whose value to follow
 	 * @return {cjs.Binding} A constraint whose value is the current value of the input
+	 *
+	 * @example Creating an input value constraint
+	 *     var inp_elem = document.getElementById('myTextInput'),
+	 *         cjs_val = cjs(inp_elem);
 	 */
 	/**
 	 * Create a map constraint
@@ -33,6 +43,14 @@ var Constraint, // Declare here, will be defined later
 	 * @param {object} value - A map of initial values
 	 * @param {object} options - A set of optiosn to control how the map constraint is evaluated
 	 * @return {cjs.MapConstraint} A new map constraint
+	 *
+	 * @example Creating a map constraint
+	 *     var cobj_obj = cjs({
+	 *         foo: 1
+	 *     });
+	 *     cobj.get('foo'); // 1
+	 *     cobj.put('bar', 2);
+	 *     cobj.get('bar') // 2
 	 */
 	/**
 	 * Create a standard constraint
@@ -41,6 +59,24 @@ var Constraint, // Declare here, will be defined later
 	 * @param {object} value - The constraint's value
 	 * @param {object} options - A set of optiosn to control how the constraint is evaluated
 	 * @return {cjs.Constraint} A new constraint
+	 * 
+	 * @example Creating an empty constraint
+	 *     var x = cjs(),
+	 *         y = cjs(1),
+	 *         z = cjs(function() {
+	 *				return y.get() + 1;
+	 *         });
+	 *      x.get(); // undefined
+	 *      y.get(); // 1
+	 *      z.get(); // 2
+	 *
+	 * @example With options
+	 *     var yes_lit = cjs(function() { return 1; },
+	 *                         { literal: true}),
+	 *     var not_lit = cjs(function() { return 1; },
+	 *                         { literal: false});
+	 *    yes_lit.get(); // (function)
+	 *    not_lit.get(); // 1
 	 */
 	cjs = function (arg0, arg1) {
 		if(isArray(arg0)) {
@@ -310,6 +346,7 @@ var constraint_solver = {
 // --------------------
 
 /**
+ * ***Note***: The preferred way to create a constraint is with the `cjs.constraint` function (lower-case 'c')
  * `cjs.Constraint` is the constructor for the base constraint. Valid properties for `options` are:
  *
  * - `auto_add_outgoing_dependencies`: allow the constraint solver to determine when things depend on me. *default:* `true`
@@ -352,22 +389,38 @@ Constraint = function (value, options) {
 	/** @lends cjs.Constraint.prototype */
 
 	/**
-	 * Get the current value of this constraint.
+	 * Get the current value of this constraint. For computed constraints, if the constraint is invalid, its value will be re-computed.
+	 *
 	 *
 	 * @method get
 	 * @param {boolean} [autoAddOutgoing=true] - Whether to automatically add a dependency from this constraint to ones that depend on it.
 	 * @return {*} The current constraint value
+	 * @see set
+	 *
+	 * @example
+	 *     var x = cjs(1);
+	 *     x.get(); // 1
 	 */
 	proto.get = constraint_solver.getValue;
 
 	/**
-	 * Change the current value of the constraint.
+	 * Change the current value of the constraint. Other constraints that depend on its value will be invalidated.
 	 *
 	 * @method set
 	 * @see cjs.Constraint
 	 * @param {*} value - The initial value of the constraint or a function to compute its value
 	 * @param {Object} [options] - A set of options to control how and when the constraint's value is evaluated:
 	 * @return {cjs.Constraint} - `this`
+	 * @see get
+	 * @see invalidate
+	 *
+	 * @example
+	 *     var x = cjs(1);
+	 *     x.get(); // 1
+	 *     x.set(function() { return 2; });
+	 *     x.get(); // 2
+	 *     x.set('c');
+	 *     x.get(); // 'c'
 	 */
 	proto.set = function (value, options) {
 		var old_value = this._value;
@@ -390,12 +443,21 @@ Constraint = function (value, options) {
 	};
 
 	/**
-	 * Change the current value of the constraint.
+	 * Change how this constraint is computed (see Constraint options)
 	 *
 	 * @method setOption
 	 * @see cjs.Constraint
 	 * @param {Object} options - An object with the options to change
 	 * @return {cjs.Constraint} - `this`
+	 *
+	 * @example
+	 *     var x = cjs(function() { return 1; });
+	 *     x.get(); // 1
+	 *     x.setOption({
+	 *	       literal: true,
+	 *         auto_add_outgoing_dependencies: false
+	 *	   });
+	 *     x.get(); // (function)
 	 */
 	/**
 	 * @method setOption^2
@@ -403,6 +465,12 @@ Constraint = function (value, options) {
 	 * @param {String} key - The name of the option to set
 	 * @param {*} value - The option's new value
 	 * @return {cjs.Constraint} - `this`
+	 *
+	 * @example
+	 *     var x = cjs(function() { return 1; });
+	 *     x.get(); // 1
+	 *     x.setOption("literal", true);
+	 *     x.get(); // (function)
 	 */
 	proto.setOption = function(arg0, arg1) {
 		if(isString(arg0)) {
@@ -416,10 +484,20 @@ Constraint = function (value, options) {
 	};
 
 	/**
-	 * Mark this constraint's value as invalid
+	 * Mark this constraint's value as invalid. This signasl that the next time its value is fetched,
+	 * it should be recomputed, rather than returning the cached value.
+	 *
+	 * An invalid constraint's value is only updated when it is next requested (for example, via `.get()`).
 	 *
 	 * @method invalidate
 	 * @return {cjs.Constraint} - `this`
+	 * @see isValid
+	 *
+	 * @example Tracking the window height
+	 *     var height = cjs(window.innerHeight);
+	 *     window.addEventListener("resize", function() {
+	 *         height.invalidate();
+	 *     });
 	 */
 	proto.invalidate = function () {
 		constraint_solver.nullify(this);
@@ -427,10 +505,23 @@ Constraint = function (value, options) {
 	};
 
 	/**
-	 * Mark this constraint's value as invalid
+	 * Find out if this constraint's value needs to be recomputed (i.e. whether it's invalid).
+	 *
+	 * An invalid constraint's value is only updated when it is next requested (for example, via `.get()`).
 	 *
 	 * @method isValid
 	 * @return {boolean} - `true` if this constraint's current value is valid. `false` otherwise.
+	 * @see invalidate
+	 *
+	 * @example
+	 *     var x = cjs(1),
+	 *         y = x.add(2);
+	 *     y.get();     // 3
+	 *     y.isValid(); // true
+	 *     x.set(2);
+	 *     y.isValid(); // false
+	 *     y.get();     // 4
+	 *     y.isValid(); //true
 	 */
 	proto.isValid = function () {
 		return this._valid;
@@ -442,6 +533,7 @@ Constraint = function (value, options) {
 	 * @method remove
 	 * @param {boolean} [silent=false] - If set to `true`, avoids invalidating any dependent constraints.
 	 * @return {cjs.Constraint} - `this`
+	 * @see destroy
 	 */
 	proto.remove = function (silent) {
 		constraint_solver.clearEdges(this, silent);
@@ -457,6 +549,11 @@ Constraint = function (value, options) {
 	 * @method destroy
 	 * @param {boolean} [silent=false] - If set to `true`, avoids invalidating any dependent constraints.
 	 * @return {cjs.Constraint} - `this`
+	 * @see remove
+	 *
+	 * @example
+	 *     var x = cjs(1);
+	 *     x.destroy(); // ...x is no longer needed
 	 */
 	proto.destroy = function (silent) {
 		each(this._changeListeners, function(cl) {
@@ -472,20 +569,28 @@ Constraint = function (value, options) {
 	};
 
 	/**
-	 * Calls `callback` when my value has changed.
+	 * Call `callback` as soon as this constraint's value is invalidated. Note that if the constraint's value
+	 * is invalidated multiple times, `callback` is only called once.
 	 *
 	 * @method onChange
 	 * @param {function} callback
-	 * @param {*} [context=window] - The context to use for `callback`
+	 * @param {*} [thisArg=window] - The context to use for `callback`
 	 * @param {...*} args - The first `args.length` arguments to `callback`
 	 * @return {cjs.Constraint} - `this`
 	 * @see offChange
+	 *
+	 * @example
+	 *     var x = cjs(1);
+	 *     x.onChange(function() {
+	 *		console.log("x is " + x.get());
+	 *     });
+	 *     x.set(2); // x is 2
 	 */
-	proto.onChange = function(callback, context) {
+	proto.onChange = function(callback, thisArg) {
 		var args = slice.call(arguments, 2); // Additional arguments
 		this._changeListeners.push({
 			callback: callback, // function
-			context: context, // 'this' when called
+			context: thisArg, // 'this' when called
 			args: slice.call(arguments, 2), // arguments to pass into the callback
 			in_call_stack: false // internally keeps track of if this function will be called in the near future
 		});
@@ -498,22 +603,28 @@ Constraint = function (value, options) {
 	};
 	
 	/**
-	 * Removes the first listener to `callback` that was created by `onChange`. `context` is optional and
-	 * if specified, it only removes listeners within the same context. If context is not specified,
+	 * Removes the first listener to `callback` that was created by `onChange`. `thisArg` is optional and
+	 * if specified, it only removes listeners within the same context. If thisArg is not specified,
 	 * the first `callback` is removed. 
 	 *
 	 * @method offChange
 	 * @param {function} callback
-	 * @param {*} [context] - If specified, only remove listeners that were added with this context
+	 * @param {*} [thisArg] - If specified, only remove listeners that were added with this context
 	 * @return {cjs.Constraint} - `this`
 	 * @see onChange
+	 *
+	 *     var x = cjs(1),
+	 *			callback = function(){};
+	 *		x.onChange(callback);
+	 *	   // ...
+	 *	   x.offChange(callback);
 	 */
-	proto.offChange = function (callback, context) {
+	proto.offChange = function (callback, thisArg) {
 		var cl, i;
 		for(i = this._changeListeners.length-1; i>=0; i-=1) {
 			cl = this._changeListeners[i];
 			// Same callback and either the same context or context wasn't specified
-			if(cl.callback === callback && (!context || cl.context === context)) {
+			if(cl.callback === callback && (!thisArg || cl.context === thisArg)) {
 				// Then get rid of it
 				removeIndex(this._changeListeners, i);
 				// And remove it if it's in the callback
@@ -534,6 +645,15 @@ Constraint = function (value, options) {
 	 * @param {cjs.FSM} fsm - The finite-state machine to depend on
 	 * @param {Object} values - Keys are the state specifications for the FSM, values are the value for those specific states
 	 * @return {cjs.Constraint} - `this`
+	 *
+	 * @example
+	 *     var fsm = cjs.fsm("state1", "state2")
+	 *					.addTransition("state1", "state2",
+	 *					               cjs.on("click"));
+	 *	   var x = cjs().inFSM(fsm, {
+	 *		state1: 'val1',
+	 *		state2: function() { return 'val2'; }
+	 *	   });
 	 */
 	proto.inFSM = function(fsm, values) {
 		each(values, function(v, k) {
@@ -559,6 +679,9 @@ Constraint = function (value, options) {
 	 * @method and
 	 * @param {...*} args - Any number of constraints or values to pass the "and" test
 	 * @return {boolean|*} - `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
+	 *
+	 * @example
+	 *		var x = c1.and(c2, c3, true);
 	 */
 	proto.and = function() {
 		var args = ([this]).concat(toArray(arguments)),
@@ -586,6 +709,9 @@ Constraint = function (value, options) {
 	 * @method or
 	 * @param {...*} args - Any number of constraints or values to pass the "or" test
 	 * @return {boolean|*} - The first truthy value or `false` if there aren't any
+	 *
+	 * @example
+	 *		var x = c1.or(c2, c3, false);
 	 */
 	proto.or = function() {
 		var args = ([this]).concat(toArray(arguments)),
@@ -620,150 +746,196 @@ Constraint = function (value, options) {
 
 	var get_prop = function(a, b) { return a ? a[b] : undefined; };
 	/**
-	 * Prop
+	 * Property constraint modifier.
+	 *
 	 * @method prop
 	 * @param {...strings} args - Any number of properties to fetch
 	 * @return {*} - A constraint whose value is `this[args[0]][args[1]]...`
-	 * @example `w = x.prop("y", "z");` means w <- `x.y.z`
+	 * @example
+	 *		w = x.prop("y", "z"); // means w <- x.y.z
 	 */
 	proto.prop = createConstraintModifier(function(me) { return reduce(rest(arguments), get_prop, me); });
 
 	/**
-	 * To Integer
+	 * Integer conversion constraint modifier.
 	 * @method toInt
 	 * @return {*} - A constrant whose value is parseInt(this)
+	 * @example Given `<input />` element `inp_elem`
+	 *		var inp_val = cjs(inp_elem).toInt();
 	 */
 	proto.toInt = createConstraintModifier(function(me) { return parseInt.apply(this, arguments); });
 
 	/**
-	 * To Float
+	 * Float conversion constraint modifier.
 	 * @method toFloat
 	 * @return {*} - A constrant whose value is parseFloat(this)
+	 * @example Given `<input />` element `inp_elem`
+	 *		var inp_val = cjs(inp_elem).toFloat();
 	 */
 	proto.toFloat = createConstraintModifier(function(me) { return parseFloat.apply(this, arguments); });
 
 	// For all the arithmetic operators, allow any number of arguments to be passed in. For example:
 	/**
-	 * Add
+	 * Addition constraint modifier
 	 * @method add
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() + args[0].get() + args[1].get() + ...`
-	 * @example `x = y.add(1,2,z);` means x <- `y + 1 + 2 + z`
+	 * @example
+	 *		x = y.add(1,2,z); // x <- y + 1 + 2 + z
+	 * @example The same method can also be used to add units to values
+	 *		x = y.add("px"); // x <- ypx
 	 */
 	proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
 	/**
-	 * Subtract
+	 * Subtraction constraint modifier
 	 * @method sub
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
-	 * @example `x = y.sub(1,2,z);` means x <- `y - 1 - 2 - z`
+	 * @example
+	 *		x = y.sub(1,2,z); // x <- y - 1 - 2 - z
 	 */
 	proto.sub = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["-"], me); });
 	/**
-	 * Multiply
+	 * Multiplication constraint modifier
 	 * @method mul
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() * args[0].get() * args[1].get() * ...`
-	 * @example `x = y.mul(1,2,z);` means x <- `y * 1 * 2 * z`
+	 * @example
+	 *		x = y.mul(1,2,z); //x <- y * 1 * 2 * z
 	 */
 	proto.mul = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["*"], me); });
 	/**
-	 * Divide
+	 * Division constraint modifier
 	 * @method div
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() / args[0].get() / args[1].get() / ...`
-	 * @example `x = y.div(1,2,z);` means x <- `y / 1 / 2 / z`
+	 * @example
+	 *		x = y.div(1,2,z); // x <- y / 1 / 2 / z
 	 */
 	proto.div = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["/"], me); });
 
 	/**
-	 * Absolute value
+	 * Absolute value constraint modifier
 	 * @method abs
 	 * @return {number} - A constraint whose value is `Math.abs(this.get())`
+	 * @example
+	 *		x = c1.abs(); // x <- abs(c1)
 	 */
 	/**
 	 * Floor
 	 * @method floor
 	 * @return {number} - A constraint whose value is `Math.floor(this.get())`
+	 * @example
+	 *		x = c1.floor(); // x <- floor(c1)
 	 */
 	/**
 	 * Ceil
 	 * @method ceil
 	 * @return {number} - A constraint whose value is `Math.ceil(this.get())`
+	 * @example
+	 *		x = c1.ceil(); // x <- ceil(c1)
 	 */
 	/**
 	 * Round
 	 * @method round
 	 * @return {number} - A constraint whose value is `Math.round(this.get())`
+	 * @example
+	 *		x = c1.round(); // x <- round(c1)
 	 */
 	/**
 	 * Square root
 	 * @method sqrt
 	 * @return {number} - A constraint whose value is `Math.sqrt(this.get())`
+	 * @example
+	 *		x = c1.sqrt(); // x <- sqrt(c1)
 	 */
 	/**
 	 * Arccosine
 	 * @method acos
 	 * @return {number} - A constraint whose value is `Math.acos(this.get())`
+	 * @example
+	 *		angle = r.div(x).acos()
 	 */
 	/**
 	 * Arcsin
 	 * @method asin
 	 * @return {number} - A constraint whose value is `Math.asin(this.get())`
+	 * @example
+	 *		angle = r.div(y).asin()
 	 */
 	/**
 	 * Arctan
 	 * @method atan
 	 * @return {number} - A constraint whose value is `Math.atan(this.get())`
+	 * @example
+	 *		angle = y.div(x).atan()
 	 */
 	/**
 	 * Arctan2
 	 * @method atan2
 	 * @param {number|cjs.Constraint} x
 	 * @return {number} - A constraint whose value is `Math.atan2(this.get()/x.get())`
+	 * @example
+	 *		angle = y.atan2(x)
 	 */
 	/**
 	 * Cosine
 	 * @method cos
 	 * @return {number} - A constraint whose value is `Math.cos(this.get())`
+	 * @example
+	 *		dx = r.mul(angle.cos())
 	 */
 	/**
 	 * Sine
 	 * @method sin
 	 * @return {number} - A constraint whose value is `Math.sin(this.get())`
+	 * @example
+	 *		dy = r.mul(angle.sin())
 	 */
 	/**
 	 * Tangent
 	 * @method tan
 	 * @return {number} - A constraint whose value is `Math.tan(this.get())`
+	 * @example
+	 *		dy = r.mul(angle.sin())
 	 */
 	/**
 	 * Max
 	 * @method max
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **highest** of `this.get()`, `args[0].get()`, `args[1].get()`...
+	 * @example
+	 *		val = val1.max(val2, val3);
 	 */
 	/**
 	 * Min
 	 * @method min
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **lowest** of `this.get()`, `args[0].get()`, `args[1].get()`...
+	 * @example
+	 *		val = val1.min(val2, val3);
 	 */
 	/**
-	 * Pow
+	 * Power
 	 * @method pow
 	 * @param {number} x - The exponent
 	 * @return {number} - A constraint whose value is `Math.pow(this.get(), x.get())`
+	 * @example
+	 *		d = dx.pow(2).add(dy.pow(2)).sqrt()
 	 */
 	/**
-	 * Log
+	 * Natural Log (base e)
 	 * @method log
 	 * @return {number} - A constraint whose value is `Math.log(this.get())`
+	 * @example
+	 *		num_digits = num.max(2).log().div(Math.log(10)).ceil()
 	 */
 	/**
 	 * Exp (E^x)
 	 * @method exp
 	 * @return {number} - A constraint whose value is `Math.exp(this.get())`
+	 * @example
+	 *		neg_1 = cjs(i*pi).exp()
 	 */
 	each(["abs", "acos", "asin", "atan", "atan2", "cos", "max", "min", "sin", "tan",
 			"pow", "round", "floor", "ceil", "sqrt", "log", "exp"], function(op_name) {
@@ -771,68 +943,100 @@ Constraint = function (value, options) {
 	});
 
 	/**
-	 * Positive operator
+	 * Coerce an object to a number
 	 * @method pos
 	 * @return {number} - A constraint whose value is `+(this.get())`
+	 * @example
+	 *		numeric_val = val.pos()
 	 */
 	/**
 	 * Negative operator
 	 * @method neg
 	 * @return {number} - A constraint whose value is `-(this.get())`
+	 * @example
+	 *		neg_val = x.neg()
 	 */
 	/**
 	 * Not operator
 	 * @method not
 	 * @return {boolean} - A constraint whose value is `!(this.get())`
+	 * @example
+	 *		opposite = x.not()
 	 */
 	/**
 	 * Bitwise not operator
 	 * @method bitwiseNot
 	 * @return {number} - A constraint whose value is `~(this.get())`
+	 * @example
+	 *		inverseBits = val.bitwiseNot()
 	 */
 	/**
 	 * Equals unary operator
 	 * @method eq
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() == other.get()`
+	 *
+	 * @example
+	 *		isNull = val.eq(null)
 	 */
 	/**
 	 * Not equals operator
 	 * @method neq
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() != other.get()`
+	 *
+	 * @example
+	 *		notNull = val.neq(null)
 	 */
 	/**
 	 * Strict equals operator
 	 * @method eqStrict
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() === other.get()`
+	 *
+	 * @example
+	 *		isOne = val.eqStrict(1)
 	 */
 	/**
 	 * Not strict equals binary operator
 	 * @method neqStrict
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() !== other.get()`
+	 *
+	 * @example
+	 *		notOne = val.neqStrict(1)
 	 */
 	/**
 	 * @method gt
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() > other.get()`
+	 *
+	 * @example
+	 *		isPositive = val.gt(0)
 	 */
 	/**
 	 * @method lt
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() < other.get()`
+	 * 
+	 * @example
+	 *		isNegative = val.lt(0)
 	 */
 	/**
 	 * @method ge
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() >= other.get()`
+	 *
+	 * @example
+	 *		isBig = val.ge(100)
 	 */
 	/**
 	 * @method le
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {boolean} - A constraint whose value is `this.get() <= other.get()`
+	 *
+	 * @example
+	 *		isSmall = val.le(100)
 	 */
 	/**
 	 * @method xor
@@ -887,16 +1091,22 @@ Constraint = function (value, options) {
 	});
 
 	/**
+	 * Object type modifier
 	 * @method typeOf
 	 * @param {*} other - a constraint or value to compare against
 	 * @return {*} - a constraint whose value is `typeof this.get()`
+	 * @example
+	 *		var valIsNumber = val.typeOf().eq('[object Number]')
 	 */
 	proto.typeOf = createConstraintModifier(function(a) { return typeof a;});
 
 	/**
+	 * Object instance check modifier
 	 * @method instanceOf
 	 * @param {*} other - a constraint or value to compare against
 	 * @return {boolean} - a constraint whose value is `this.get() instanceof other.get()`
+	 * @example
+	 *		var valIsArray = val.instanceof(Array)
 	 */
 	proto.instanceOf = createConstraintModifier(function(a, b) { return a instanceof b;});
 } (Constraint));
@@ -907,16 +1117,16 @@ Constraint = function (value, options) {
  * Determine whether an object is a constraint
  * @method cjs.isConstraint
  * @param {*} obj - An object to check
- * @return {boolean} - `true` if `obj` is a `cjs.Constraint`, `false` otherwise
+ * @return {boolean} - `obj instanceof cjs.Constraint`
  */
-is_constraint = function(obj) {
-	return obj instanceof Constraint;
-};
+is_constraint = function(obj) { return obj instanceof Constraint; };
 
 // Expore core functions
 // -------------------------
 extend(cjs, {
 	/**
+	 * Constraint constructor
+	 *
 	 * @method cjs.constraint
 	 * @constructs cjs.Constraint
 	 * @param {*} value - The initial value of the constraint or a function to compute its value
@@ -957,6 +1167,17 @@ extend(cjs, {
 	 * @see cjs.ArrayConstraint.prototype.toArray
 	 * @see cjs.isMapConstraint
 	 * @see cjs.MapConstraint.prototype.toObject
+	 *
+	 * @example
+	 *		var w = 1,
+	 *			x = cjs(2),
+	 *			y = cjs(['a','b']),
+	 *			z = cjs({c: 2});
+	 *
+	 *		cjs.get(w); // 1
+	 *		cjs.get(x); // 2
+	 *		cjs.get(y); // ['a','b'] 
+	 *		cjs.get(z); // {c: 2}
 	 */
 	get: function (obj, arg0) {
 		if(is_constraint(obj))	{ return obj.get(arg0); }
@@ -978,13 +1199,16 @@ extend(cjs, {
 	/**
 	 * The version number of ConstraintJS
 	 * @property {string} cjs.version
+	 * @see cjs.toString
 	 */
 	version: "<%= version %>", // This template will be filled in by the builder
+
 	/**
 	 * Print out the name and version of ConstraintJS
 	 *
 	 * @method cjs.toString
 	 * @return {string} - `ConstraintJS v(version#)`
+	 * @see cjs.version
 	 */
 	toString: function() { return "ConstraintJS v" + cjs.version; },
 
@@ -996,6 +1220,11 @@ extend(cjs, {
 	 *
 	 * @method cjs.noConflict
 	 * @return {object} - `cjs`
+	 *
+	 * @example Renaming `cjs` to `ninjaCJS`
+	 *		var ninjaCJS = cjs.noConflict();
+	 *		var x = ninjaCJS(1);
+	 * @see cjs
 	 */
 	noConflict: has(root, "cjs") ?  function() {
 										// If there was a previous `cjs` property then track it

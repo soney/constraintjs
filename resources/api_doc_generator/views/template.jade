@@ -47,7 +47,7 @@ mixin apidoclist(item)
           .panel-footer
             if item.sourceLinks
               each link in item.sourceLinks
-                a(target="_blank",href=link.link)=" " + link.text
+                a(target="_blank",href=link.link.replace(/\./g, "_"))=" " + link.text
   each child in item.children
     +apidoclist(child)
 

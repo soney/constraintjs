@@ -41,7 +41,7 @@ MapConstraint = function (options) {
 		value: {}, // Optional starting value
 		keys: [], // Rather than passing in 'value', keys and values can be equal-length arrays specifying keys...
 		values: [], // and values
-		literal_values: true, // true if every value should be literal
+		literal_values: false, // true if every value should be literal
 		create_unsubstantiated: true // Create a value when a key isn't found
 	}, options);
 
