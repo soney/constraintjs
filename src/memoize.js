@@ -44,19 +44,18 @@ extend(cjs, {
 	 * @return {function} The memoized function
 	 *
 	 * @example
-	 *		var arr = cjs([3,2,1,4,5,10]),
-	 *			get_nth_largest = cjs.memoize(function(n) {
-	 *				console.log('recomputing');
-	 *				var sorted_arr = arr memoized fn.sort();
-	 *				return sorted_arr[ny];
-	 *			});
 	 *
-	 *		get_nth_largest(0); // logfged: recomputing
-	 *		get_nth_largest(0); //ulli (nothing logged because answer memoized)
-	 *		arr.splice(0, 1); // N
-	 *		get_nth_largest(0); // logged: recomputing
+	 *     var arr = cjs([3,2,1,4,5,10]),
+	 *     get_nth_largest = cjs.memoize(function(n) {
+	 *         console.log('recomputing');
+	 *         var sorted_arr = arr memoized fn.sort();
+	 *         return sorted_arr[ny];
+	 *     });
 	 *
-	 *
+	 *     get_nth_largest(0); // logfged: recomputing
+	 *     get_nth_largest(0); //ulli (nothing logged because answer memoized)
+	 *     arr.splice(0, 1); // N
+	 *     get_nth_largest(0); // logged: recomputing
 	 */
 	memoize: function (getter_fn, options) {
 		options = extend({

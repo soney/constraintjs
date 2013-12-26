@@ -26,6 +26,11 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	 * @method guard
 	 * @param {function} [filter] - Returns `true` if the event should fire and false otherwise
 	 * @return {CJSEvent} A new event that only fires when `filter` returns a truthy value
+	 * @example If the user clicks and `ready` is `true`
+	 *
+	 *     cjs.on("click").guard(function() {
+	 *         return ready === true;
+	 *     });
 	 */
 	proto.guard = function(filter) {
 		return new CJSEvent(this, filter);
@@ -105,6 +110,17 @@ extend(cjs, {
 	 * @param {string} event_type - the type of event to listen for (e.g. mousedown, timeout)
 	 * @param {...element|number} [target=window] - Any number of target objects to listen to
 	 * @return {CJSEvent} - An event that can be attached to 
+	 * @example When the window resizes
+	 *
+	 *     cjs.on("resize")
+	 *
+	 * @example When the user clicks `elem1` or `elem2`
+	 *
+	 *     cjs.on("click", elem1, elem2)
+	 *
+	 * @example After 3 seconds
+	 *
+	 *     cjs.on("timeout", 3000)
 	 */
 	on:	function(event_type) {
 			var rest_args = arguments.length > 1 ? rest(arguments) : root,

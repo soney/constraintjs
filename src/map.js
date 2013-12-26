@@ -378,8 +378,8 @@ MapConstraint = function (options) {
 	 * @see values
 	 * @see entries
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.keys(); // ['x','y']
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.keys(); // ['x','y']
 	 */
 	proto.keys = function () { return this.$keys.get(); };
 
@@ -391,8 +391,8 @@ MapConstraint = function (options) {
 	 * @see keys
 	 * @see entries
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.values(); // [1,2]
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.values(); // [1,2]
 	 */
 	proto.values = function () { return this.$values.get(); };
 
@@ -404,9 +404,9 @@ MapConstraint = function (options) {
 	 * @see keys
 	 * @see values
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.entries(); // [{key:'x',value:1},
-	 *					   //  {key:'y',value:2}]
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.entries(); // [{key:'x',value:1},
+	 *                    //  {key:'y',value:2}]
 	 */
 	proto.entries = function () { return this.$entries.get(); };
 
@@ -417,8 +417,8 @@ MapConstraint = function (options) {
 	 * @return {number} - The number of entries
 	 * @see isEmpty
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.size(); // 2
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.size(); // 2
 	 */
 	proto.size = function () { return this.$size.get(); };
 	
@@ -429,8 +429,8 @@ MapConstraint = function (options) {
 	 * @return {boolean} - `true` if there are no entries, `false` otherwise
 	 * @see size
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.isEmpty(); // false
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.isEmpty(); // false
 	 */
 	proto.isEmpty = function () { return this.size() === 0; };
 
@@ -450,9 +450,9 @@ MapConstraint = function (options) {
 	 * @see clear
 	 *
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.put("z", 3, 1);
-	 *		map.keys(); // ['x','z','y']
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.put("z", 3, 1);
+	 *     map.keys(); // ['x','z','y']
 	 */
 	proto.put = function (key, value, index, literal) {
 		cjs.wait();
@@ -475,9 +475,9 @@ MapConstraint = function (options) {
 	 * @see clear
 	 *
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.remove("x");
-	 *		map.keys(); // ['y']
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.remove("x");
+	 *     map.keys(); // ['y']
 	 */
 	proto.remove = function (key) {
 		// Find out if there's an actual key set
@@ -546,8 +546,8 @@ MapConstraint = function (options) {
 	 * @see getOrPut
 	 *
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.get("x"); // 1
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.get("x"); // 1
 	 */
 	proto.get = function (key) {
 		// Try to find the key and search in any unsubstantiated values
@@ -573,8 +573,8 @@ MapConstraint = function (options) {
 	 * @return {object} - A standard JavaScript object
 	 * @see toObject
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.item(); // {x:1,y:2}
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.item(); // {x:1,y:2}
 	 */
 	/**
 	 * Get item `key`
@@ -588,9 +588,9 @@ MapConstraint = function (options) {
 	 * @see getOrPut
 	 * 
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.item('x'); // 1
-	 */
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.item('x'); // 1
+	 */     
 	/**
 	 * Set item i
 	 *
@@ -604,9 +604,9 @@ MapConstraint = function (options) {
 	 * @see getOrPut
 	 *
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.item('z', 3);
-	 *		map.keys(); //['x','y','z']
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.item('z', 3);
+	 *     map.keys(); //['x','y','z']
 	 */
 	proto.item = function (arg0, arg1, arg2) {
 		if(arguments.length === 0) { // no arguments? return an object
@@ -626,11 +626,11 @@ MapConstraint = function (options) {
 	 * @return {Constraint} - A constraint whose value is `this[key]`
 	 *
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		var x_val = map.itemConstraint('x');
-	 *		x_val.get(); // 1
-	 *		map.item('x', 3);
-	 *		x_val.get(); // 3
+	 *     var map = cjs({x: 1, y: 2});
+	 *     var x_val = map.itemConstraint('x');
+	 *     x_val.get(); // 1
+	 *     map.item('x', 3);
+	 *     x_val.get(); // 3
 	 */
 	proto.itemConstraint = function(key) {
 		return new Constraint(function() {
@@ -649,10 +649,10 @@ MapConstraint = function (options) {
 	 * @see remove
 	 * @see isEmpty
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.isEmpty(); // false
-	 *		map.clear();
-	 *		map.isEmpty(); // true
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.isEmpty(); // false
+	 *     map.clear();
+	 *     map.isEmpty(); // true
 	 */
 	proto.clear = function (silent) {
 		if (this.size() > 0) { // If I actually have something
@@ -694,13 +694,13 @@ MapConstraint = function (options) {
 	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
 	 * @return {cjs.MapConstraint} - `this`
 	 * @example
-	 *		var map = cjs({x:1,y:2,z:3});
-	 *		map.forEach(function(val, key) {
-	 *			console.log(key+':'+val);
-	 *			if(key === 'y') {
-	 *				return cjs.MapConstraint.BREAK;
-	 *			}
-	 *		}); // x:1 ... y:2
+	 *     var map = cjs({x:1,y:2,z:3});
+	 *     map.forEach(function(val, key) {
+	 *         console.log(key+':'+val);
+	 *         if(key === 'y') {
+	 *             return cjs.MapConstraint.BREAK;
+	 *         }
+	 *     }); // x:1 ... y:2
 	 */
 	proto.forEach = function (func, thisArg) {
 		var i, info, len = this.size(),
@@ -820,8 +820,8 @@ MapConstraint = function (options) {
 	 * @return {number} - The index of the entry with key=`key` or `-1`
 	 *
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.indexOf('z'); // -1
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.indexOf('z'); // -1
 	 */
 	proto.indexOf = function (key) {
 		// get hash information
@@ -855,17 +855,17 @@ MapConstraint = function (options) {
 	 * @see put
 	 * @see item
 	 * @example
-	 *		var map = xjs({x: 1, y: 2});
-	 *		map.getOrPut('x', function() {
-	 *			console.log("evaluating");
-	 *			return 3;
-	 *		}); // output: 'evaluating'
-	 *			// 3
-	 *		map.getOrPut('x', function() {
-	 *			console.log("evaluating");
-	 *			return 3;
-	 *		}); // (no output)
-	 *			// 3
+	 *     var map = xjs({x: 1, y: 2});
+	 *     map.getOrPut('x', function() {
+	 *         console.log("evaluating");
+	 *         return 3;
+	 *     }); // output: 'evaluating'
+	 *     // 3
+	 *     map.getOrPut('x', function() {
+	 *         console.log("evaluating");
+	 *         return 3;
+	 *     }); // (no output)
+	 *     // 3
 	 */
 	proto.getOrPut = function (key, create_fn, create_fn_context, index, literal) {
 		var ki = _find_key.call(this, key, true, false),
@@ -897,8 +897,8 @@ MapConstraint = function (options) {
 	 * @see get
 	 * @see item
 	 * @example
-	 *		var map = cjs({x: 1, y: 2});
-	 *		map.has('x'); // true
+	 *     var map = cjs({x: 1, y: 2});
+	 *     map.has('x'); // true
 	 */
 	proto.has = function (key) {
 		var ki = _find_key.call(this, key, true, this._create_unsubstantiated);
@@ -922,10 +922,10 @@ MapConstraint = function (options) {
 	 * @param {number} new_index - The index to move to
 	 * @return {cjs.ArrayConstraint} - `this`
 	 * @example
-	 *		var map = cjs({x: 1, y: 2, z: 3});
-	 *		map.keys(); // ['x','y', 'z']
-	 *		map.moveIndex(1, 0)
-	 *		map.keys(); // ['y','x', 'z']
+	 *     var map = cjs({x: 1, y: 2, z: 3});
+	 *     map.keys(); // ['x','y', 'z']
+	 *     map.moveIndex(1, 0)
+	 *     map.keys(); // ['y','x', 'z']
 	 */
 	proto.moveIndex = function (old_index, new_index) {
 		var i;
@@ -961,10 +961,10 @@ MapConstraint = function (options) {
 	 * @param {number} to_index - The new index for the key
 	 * @return {cjs.ArrayConstraint} - `this`
 	 * @example
-	 *		var map = cjs({x: 1, y: 2, z: 3});
-	 *		map.keys(); // ['x','y', 'z']
-	 *		map.move('z', 0)
-	 *		map.keys(); // ['z','x', 'y']
+	 *     var map = cjs({x: 1, y: 2, z: 3});
+	 *     map.keys(); // ['x','y', 'z']
+	 *     map.move('z', 0)
+	 *     map.keys(); // ['z','x', 'y']
 	 */
 	proto.move = function (key, to_index) {
 		//Move a key to a new index
@@ -986,8 +986,8 @@ MapConstraint = function (options) {
 	 * @param {function} [eq_check] - How to check if two values are equal (default: `===`
 	 * @return {*|undefined} - The key where `this.get(key)===value`
 	 * @example
-	 *		var map = cjs({x: 1, y: 2, z: 3});
-	 *		map.keyForValue(1); // 'x'
+	 *     var map = cjs({x: 1, y: 2, z: 3});
+	 *     map.keyForValue(1); // 'x'
 	 */
 	proto.keyForValue = function (value, eq_check) {
 		eq_check = eq_check || this.$vequality_check.get();
@@ -1046,8 +1046,8 @@ MapConstraint = function (options) {
 	 * @param {function} [key_map_fn] - A function to convert keys
 	 * @return {object} - This object as a JavaScript object
 	 * @example
-	 *		var map = cjs({x: 1, y: 2, z: 3});
-	 *		map.toObject(); // {x:1,y:2,z:3}
+	 *     var map = cjs({x: 1, y: 2, z: 3});
+	 *     map.toObject(); // {x:1,y:2,z:3}
 	 */
 	proto.toObject = function (key_map_fn) {
 		var rv = {};

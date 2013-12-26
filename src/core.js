@@ -21,8 +21,9 @@ var Constraint, // Declare here, will be defined later
 	 * @see cjs.noConflict
 	 *
 	 * @example Creating an array constraint
-	 *		var cjs_arr = cjs([1,2,3]);
-	 *			cjs_arr.item(0); // 1
+	 *
+	 *     var cjs_arr = cjs([1,2,3]);
+	 *         cjs_arr.item(0); // 1
 	 */
 
 	/**
@@ -33,8 +34,9 @@ var Constraint, // Declare here, will be defined later
 	 * @return {cjs.Binding} A constraint whose value is the current value of the input
 	 *
 	 * @example Creating an input value constraint
-	 *		var inp_elem = document.getElementById('myTextInput'),
-	 *			cjs_val = cjs(inp_elem);
+	 *
+	 *     var inp_elem = document.getElementById('myTextInput'),
+	 *         cjs_val = cjs(inp_elem);
 	 */
 	/**
 	 * Create a map constraint
@@ -45,12 +47,13 @@ var Constraint, // Declare here, will be defined later
 	 * @return {cjs.MapConstraint} A new map constraint
 	 *
 	 * @example Creating a map constraint
-	 *		var cobj_obj = cjs({
-	 *			foo: 1
-	 *		});
-	 *		cobj.get('foo'); // 1
-	 *		cobj.put('bar', 2);
-	 *		cobj.get('bar') // 2
+	 *
+	 *     var cobj_obj = cjs({
+	 *         foo: 1
+	 *     });
+	 *     cobj.get('foo'); // 1
+	 *     cobj.put('bar', 2);
+	 *     cobj.get('bar') // 2
 	 */
 	/**
 	 * Create a standard constraint
@@ -61,22 +64,24 @@ var Constraint, // Declare here, will be defined later
 	 * @return {cjs.Constraint} A new constraint
 	 * 
 	 * @example Creating an empty constraint
-	 *		var x = cjs(),
-	 *			y = cjs(1),
-	 *			z = cjs(function() {
-	 *				return y.get() + 1;
-	 *			});
-	 *		x.get(); // undefined
-	 *		y.get(); // 1
-	 *		z.get(); // 2
+	 *
+	 *     var x = cjs(),
+	 *         y = cjs(1),
+	 *         z = cjs(function() {
+	 *             return y.get() + 1;
+	 *         });
+	 *     x.get(); // undefined
+	 *     y.get(); // 1
+	 *     z.get(); // 2
 	 *
 	 * @example With options
+	 *
 	 *     var yes_lit = cjs(function() { return 1; },
-	 *                         { literal: true}),
+	 *                         { literal: true }),
 	 *     var not_lit = cjs(function() { return 1; },
-	 *                         { literal: false});
-	 *    yes_lit.get(); // (function)
-	 *    not_lit.get(); // 1
+	 *                         { literal: false });
+	 *     yes_lit.get(); // (function)
+	 *     not_lit.get(); // 1
 	 */
 	cjs = function (arg0, arg1) {
 		if(isArray(arg0)) {
@@ -270,14 +275,14 @@ var constraint_solver = {
 	 * @see cjs.signal
 	 * @see cjs.onChange
 	 * @example
-	 *	var x = cjs(1);
-	 *	x.onChange(function() {
-	 *		console.log('x changed');
-	 *	});
-	 *	cjs.wait();
-	 *	x.set(2);
-	 *	x.set(3);
-	 *	cjs.signal(); // output: x changed
+	 *     var x = cjs(1);
+	 *     x.onChange(function() {
+	 *         console.log('x changed');
+	 *     });
+	 *     cjs.wait();
+	 *     x.set(2);
+	 *     x.set(3);
+	 *     cjs.signal(); // output: x changed
 	 */
 	wait: function() {
 		this.semaphore -= 1;
@@ -290,16 +295,16 @@ var constraint_solver = {
 	 * @see cjs.wait
 	 * @see cjs.onChange
 	 * @example
-	 *	var x = cjs(1);
-	 *	x.onChange(function() {
-	 *		console.log('x changed');
-	 *	});
-	 *	cjs.wait();
-	 *	cjs.wait();
-	 *	x.set(2);
-	 *	x.set(3);
-	 *	cjs.signal();
-	 *	cjs.signal(); // output: x changed
+	 *     var x = cjs(1);
+	 *     x.onChange(function() {
+	 *         console.log('x changed');
+	 *     });
+	 *     cjs.wait();
+	 *     cjs.wait();
+	 *     x.set(2);
+	 *     x.set(3);
+	 *     cjs.signal();
+	 *     cjs.signal(); // output: x changed
 	 */
 	signal: function () {
 		this.semaphore += 1;
@@ -483,9 +488,9 @@ Constraint = function (value, options) {
 	 *     var x = cjs(function() { return 1; });
 	 *     x.get(); // 1
 	 *     x.setOption({
-	 *	       literal: true,
+	 *         literal: true,
 	 *         auto_add_outgoing_dependencies: false
-	 *	   });
+	 *     });
 	 *     x.get(); // (function)
 	 */
 	/**
@@ -611,7 +616,7 @@ Constraint = function (value, options) {
 	 * @example
 	 *     var x = cjs(1);
 	 *     x.onChange(function() {
-	 *		console.log("x is " + x.get());
+	 *         console.log("x is " + x.get());
 	 *     });
 	 *     x.set(2); // x is 2
 	 */
@@ -643,10 +648,10 @@ Constraint = function (value, options) {
 	 * @see onChange
 	 *
 	 *     var x = cjs(1),
-	 *			callback = function(){};
-	 *		x.onChange(callback);
-	 *	   // ...
-	 *	   x.offChange(callback);
+	 *         callback = function(){};
+	 *     x.onChange(callback);
+	 *     // ...
+	 *     x.offChange(callback);
 	 */
 	proto.offChange = function (callback, thisArg) {
 		var cl, i;
@@ -677,12 +682,12 @@ Constraint = function (value, options) {
 	 *
 	 * @example
 	 *     var fsm = cjs.fsm("state1", "state2")
-	 *					.addTransition("state1", "state2",
-	 *					               cjs.on("click"));
-	 *	   var x = cjs().inFSM(fsm, {
-	 *		state1: 'val1',
-	 *		state2: function() { return 'val2'; }
-	 *	   });
+	 *                  .addTransition("state1", "state2",
+	 *                        cjs.on("click"));
+	 *     var x = cjs().inFSM(fsm, {
+	 *         state1: 'val1',
+	 *         state2: function() { return 'val2'; }
+	 *     });
 	 */
 	proto.inFSM = function(fsm, values) {
 		each(values, function(v, k) {
@@ -710,7 +715,8 @@ Constraint = function (value, options) {
 	 * @return {boolean|*} - `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
 	 *
 	 * @example
-	 *		var x = c1.and(c2, c3, true);
+	 *
+	 *     var x = c1.and(c2, c3, true);
 	 */
 	proto.and = function() {
 		var args = ([this]).concat(toArray(arguments)),
@@ -740,7 +746,8 @@ Constraint = function (value, options) {
 	 * @return {boolean|*} - The first truthy value or `false` if there aren't any
 	 *
 	 * @example
-	 *		var x = c1.or(c2, c3, false);
+	 *
+	 *     var x = c1.or(c2, c3, false);
 	 */
 	proto.or = function() {
 		var args = ([this]).concat(toArray(arguments)),
@@ -781,7 +788,8 @@ Constraint = function (value, options) {
 	 * @param {...strings} args - Any number of properties to fetch
 	 * @return {*} - A constraint whose value is `this[args[0]][args[1]]...`
 	 * @example
-	 *		w = x.prop("y", "z"); // means w <- x.y.z
+	 * 
+	 *     w = x.prop("y", "z"); // means w <- x.y.z
 	 */
 	proto.prop = createConstraintModifier(function(me) { return reduce(rest(arguments), get_prop, me); });
 
@@ -790,7 +798,8 @@ Constraint = function (value, options) {
 	 * @method toInt
 	 * @return {*} - A constrant whose value is parseInt(this)
 	 * @example Given `<input />` element `inp_elem`
-	 *		var inp_val = cjs(inp_elem).toInt();
+	 *
+	 *     var inp_val = cjs(inp_elem).toInt();
 	 */
 	proto.toInt = createConstraintModifier(function(me) { return parseInt.apply(this, arguments); });
 
@@ -799,7 +808,8 @@ Constraint = function (value, options) {
 	 * @method toFloat
 	 * @return {*} - A constraint whose value is parseFloat(this)
 	 * @example Given `<input />` element `inp_elem`
-	 *		var inp_val = cjs(inp_elem).toFloat();
+	 *
+	 *     var inp_val = cjs(inp_elem).toFloat();
 	 */
 	proto.toFloat = createConstraintModifier(function(me) { return parseFloat.apply(this, arguments); });
 
@@ -810,9 +820,11 @@ Constraint = function (value, options) {
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() + args[0].get() + args[1].get() + ...`
 	 * @example
-	 *		x = y.add(1,2,z); // x <- y + 1 + 2 + z
+	 *
+	 *     x = y.add(1,2,z); // x <- y + 1 + 2 + z
 	 * @example The same method can also be used to add units to values
-	 *		x = y.add("px"); // x <- ypx
+	 *
+	 *     x = y.add("px"); // x <- ypx
 	 */
 	proto.add = createConstraintModifier(function() { return reduce(arguments, binary_operators["+"], 0); });
 	/**
@@ -821,8 +833,8 @@ Constraint = function (value, options) {
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
 	 * @example
-	 *		x = y.sub(1,2,z); // x <- y - 1 - 2 - z
 	 *
+	 *     x = y.sub(1,2,z); // x <- y - 1 - 2 - z
 	 */
 	proto.sub = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["-"], me); });
 	/**
@@ -831,7 +843,8 @@ Constraint = function (value, options) {
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() * args[0].get() * args[1].get() * ...`
 	 * @example
-	 *		x = y.mul(1,2,z); //x <- y * 1 * 2 * z
+	 *
+	 *     x = y.mul(1,2,z); //x <- y * 1 * 2 * z
 	 */
 	proto.mul = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["*"], me); });
 	/**
@@ -840,7 +853,8 @@ Constraint = function (value, options) {
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() / args[0].get() / args[1].get() / ...`
 	 * @example
-	 *		x = y.div(1,2,z); // x <- y / 1 / 2 / z
+	 *
+	 *     x = y.div(1,2,z); // x <- y / 1 / 2 / z
 	 */
 	proto.div = createConstraintModifier(function(me) { return reduce(rest(arguments), binary_operators["/"], me); });
 
@@ -849,56 +863,64 @@ Constraint = function (value, options) {
 	 * @method abs
 	 * @return {number} - A constraint whose value is `Math.abs(this.get())`
 	 * @example
-	 *		x = c1.abs(); // x <- abs(c1)
+	 *
+	 *     x = c1.abs(); // x <- abs(c1)
 	 */
 	/**
 	 * Floor
 	 * @method floor
 	 * @return {number} - A constraint whose value is `Math.floor(this.get())`
 	 * @example
-	 *		x = c1.floor(); // x <- floor(c1)
+	 *
+	 *     x = c1.floor(); // x <- floor(c1)
 	 */
 	/**
 	 * Ceil
 	 * @method ceil
 	 * @return {number} - A constraint whose value is `Math.ceil(this.get())`
 	 * @example
-	 *		x = c1.ceil(); // x <- ceil(c1)
+	 *
+	 *     x = c1.ceil(); // x <- ceil(c1)
 	 */
 	/**
 	 * Round
 	 * @method round
 	 * @return {number} - A constraint whose value is `Math.round(this.get())`
 	 * @example
-	 *		x = c1.round(); // x <- round(c1)
+	 *
+	 *     x = c1.round(); // x <- round(c1)
 	 */
 	/**
 	 * Square root
 	 * @method sqrt
 	 * @return {number} - A constraint whose value is `Math.sqrt(this.get())`
 	 * @example
-	 *		x = c1.sqrt(); // x <- sqrt(c1)
+	 *
+	 *     x = c1.sqrt(); // x <- sqrt(c1)
 	 */
 	/**
 	 * Arccosine
 	 * @method acos
 	 * @return {number} - A constraint whose value is `Math.acos(this.get())`
 	 * @example
-	 *		angle = r.div(x).acos()
+	 *
+	 *     angle = r.div(x).acos()
 	 */
 	/**
 	 * Arcsin
 	 * @method asin
 	 * @return {number} - A constraint whose value is `Math.asin(this.get())`
 	 * @example
-	 *		angle = r.div(y).asin()
+	 *
+	 *     angle = r.div(y).asin()
 	 */
 	/**
 	 * Arctan
 	 * @method atan
 	 * @return {number} - A constraint whose value is `Math.atan(this.get())`
 	 * @example
-	 *		angle = y.div(x).atan()
+	 *
+	 *     angle = y.div(x).atan()
 	 */
 	/**
 	 * Arctan2
@@ -906,28 +928,32 @@ Constraint = function (value, options) {
 	 * @param {number|cjs.Constraint} x
 	 * @return {number} - A constraint whose value is `Math.atan2(this.get()/x.get())`
 	 * @example
-	 *		angle = y.atan2(x)
+	 *
+	 *     angle = y.atan2(x)
 	 */
 	/**
 	 * Cosine
 	 * @method cos
 	 * @return {number} - A constraint whose value is `Math.cos(this.get())`
 	 * @example
-	 *		dx = r.mul(angle.cos())
+	 *
+	 *     dx = r.mul(angle.cos())
 	 */
 	/**
 	 * Sine
 	 * @method sin
 	 * @return {number} - A constraint whose value is `Math.sin(this.get())`
 	 * @example
-	 *		dy = r.mul(angle.sin())
+	 *
+	 *     dy = r.mul(angle.sin())
 	 */
 	/**
 	 * Tangent
 	 * @method tan
 	 * @return {number} - A constraint whose value is `Math.tan(this.get())`
 	 * @example
-	 *		dy = r.mul(angle.sin())
+	 *
+	 *     dy = r.mul(angle.sin())
 	 */
 	/**
 	 * Max
@@ -935,7 +961,8 @@ Constraint = function (value, options) {
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **highest** of `this.get()`, `args[0].get()`, `args[1].get()`...
 	 * @example
-	 *		val = val1.max(val2, val3);
+	 *
+	 *     val = val1.max(val2, val3);
 	 */
 	/**
 	 * Min
@@ -943,7 +970,8 @@ Constraint = function (value, options) {
 	 * @param {...number} args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **lowest** of `this.get()`, `args[0].get()`, `args[1].get()`...
 	 * @example
-	 *		val = val1.min(val2, val3);
+	 *
+	 *     val = val1.min(val2, val3);
 	 */
 	/**
 	 * Power
@@ -951,21 +979,24 @@ Constraint = function (value, options) {
 	 * @param {number} x - The exponent
 	 * @return {number} - A constraint whose value is `Math.pow(this.get(), x.get())`
 	 * @example
-	 *		d = dx.pow(2).add(dy.pow(2)).sqrt()
+	 *
+	 *     d = dx.pow(2).add(dy.pow(2)).sqrt()
 	 */
 	/**
 	 * Natural Log (base e)
 	 * @method log
 	 * @return {number} - A constraint whose value is `Math.log(this.get())`
 	 * @example
-	 *		num_digits = num.max(2).log().div(Math.log(10)).ceil()
+	 *
+	 *     num_digits = num.max(2).log().div(Math.log(10)).ceil()
 	 */
 	/**
 	 * Exp (E^x)
 	 * @method exp
 	 * @return {number} - A constraint whose value is `Math.exp(this.get())`
 	 * @example
-	 *		neg_1 = cjs(i*pi).exp()
+	 *
+	 *     neg_1 = cjs(i*pi).exp()
 	 */
 	each(["abs", "acos", "asin", "atan", "atan2", "cos", "max", "min", "sin", "tan",
 			"pow", "round", "floor", "ceil", "sqrt", "log", "exp"], function(op_name) {
@@ -977,28 +1008,32 @@ Constraint = function (value, options) {
 	 * @method pos
 	 * @return {number} - A constraint whose value is `+(this.get())`
 	 * @example
-	 *		numeric_val = val.pos()
+	 *
+	 *     numeric_val = val.pos()
 	 */
 	/**
 	 * Negative operator
 	 * @method neg
 	 * @return {number} - A constraint whose value is `-(this.get())`
 	 * @example
-	 *		neg_val = x.neg()
+	 *
+	 *     neg_val = x.neg()
 	 */
 	/**
 	 * Not operator
 	 * @method not
 	 * @return {boolean} - A constraint whose value is `!(this.get())`
 	 * @example
-	 *		opposite = x.not()
+	 *
+	 *     opposite = x.not()
 	 */
 	/**
 	 * Bitwise not operator
 	 * @method bitwiseNot
 	 * @return {number} - A constraint whose value is `~(this.get())`
 	 * @example
-	 *		inverseBits = val.bitwiseNot()
+	 *
+	 *     inverseBits = val.bitwiseNot()
 	 */
 	/**
 	 * Equals unary operator
@@ -1007,7 +1042,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() == other.get()`
 	 *
 	 * @example
-	 *		isNull = val.eq(null)
+	 *
+	 *     isNull = val.eq(null)
 	 */
 	/**
 	 * Not equals operator
@@ -1016,7 +1052,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() != other.get()`
 	 *
 	 * @example
-	 *		notNull = val.neq(null)
+	 *
+	 *     notNull = val.neq(null)
 	 */
 	/**
 	 * Strict equals operator
@@ -1025,7 +1062,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() === other.get()`
 	 *
 	 * @example
-	 *		isOne = val.eqStrict(1)
+	 *
+	 *     isOne = val.eqStrict(1)
 	 */
 	/**
 	 * Not strict equals binary operator
@@ -1034,7 +1072,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() !== other.get()`
 	 *
 	 * @example
-	 *		notOne = val.neqStrict(1)
+	 *
+	 *     notOne = val.neqStrict(1)
 	 */
 	/**
 	 * @method gt
@@ -1042,7 +1081,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() > other.get()`
 	 *
 	 * @example
-	 *		isPositive = val.gt(0)
+	 *
+	 *     isPositive = val.gt(0)
 	 */
 	/**
 	 * @method lt
@@ -1050,7 +1090,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() < other.get()`
 	 * 
 	 * @example
-	 *		isNegative = val.lt(0)
+	 *
+	 *     isNegative = val.lt(0)
 	 */
 	/**
 	 * @method ge
@@ -1058,7 +1099,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() >= other.get()`
 	 *
 	 * @example
-	 *		isBig = val.ge(100)
+	 *
+	 *     isBig = val.ge(100)
 	 */
 	/**
 	 * @method le
@@ -1066,7 +1108,8 @@ Constraint = function (value, options) {
 	 * @return {boolean} - A constraint whose value is `this.get() <= other.get()`
 	 *
 	 * @example
-	 *		isSmall = val.le(100)
+	 *
+	 *     isSmall = val.le(100)
 	 */
 	/**
 	 * @method xor
@@ -1129,7 +1172,8 @@ Constraint = function (value, options) {
 	 * @param {*} other - a constraint or value to compare against
 	 * @return {*} - a constraint whose value is `typeof this.get()`
 	 * @example
-	 *		var valIsNumber = val.typeOf().eq('[object Number]')
+	 *
+	 *     var valIsNumber = val.typeOf().eq('[object Number]')
 	 */
 	proto.typeOf = createConstraintModifier(function(a) { return typeof a;});
 
@@ -1139,7 +1183,8 @@ Constraint = function (value, options) {
 	 * @param {*} other - a constraint or value to compare against
 	 * @return {boolean} - a constraint whose value is `this.get() instanceof other.get()`
 	 * @example
-	 *		var valIsArray = val.instanceof(Array)
+	 *
+	 *     var valIsArray = val.instanceof(Array)
 	 */
 	proto.instanceOf = createConstraintModifier(function(a, b) { return a instanceof b;});
 } (Constraint));
@@ -1183,13 +1228,14 @@ extend(cjs, {
 	 * @see cjs.Constraint.prototype.inFSM
 	 *
 	 * @example
+	 *
 	 *     var fsm = cjs.fsm("state1", "state2")
-	 *					.addTransition("state1", "state2",
-	 *					               cjs.on("click"));
-	 *	   var x = cjs.inFSM(fsm, {
-	 *		state1: 'val1',
-	 *		state2: function() { return 'val2'; }
-	 *	   });
+	 *                  .addTransition("state1", "state2",
+	 *                       cjs.on("click"));
+	 *     var x = cjs.inFSM(fsm, {
+	 *         state1: 'val1',
+	 *         state2: function() { return 'val2'; }
+	 *     });
 	 */
 	inFSM: function(fsm, values) {
 		return (new Constraint()).inFSM(fsm, values);
@@ -1211,15 +1257,15 @@ extend(cjs, {
 	 * @see cjs.MapConstraint.prototype.toObject
 	 *
 	 * @example
-	 *		var w = 1,
-	 *			x = cjs(2),
-	 *			y = cjs(['a','b']),
-	 *			z = cjs({c: 2});
+	 *     var w = 1,
+	 *         x = cjs(2),
+	 *         y = cjs(['a','b']),
+	 *         z = cjs({c: 2});
 	 *
-	 *		cjs.get(w); // 1
-	 *		cjs.get(x); // 2
-	 *		cjs.get(y); // ['a','b'] 
-	 *		cjs.get(z); // {c: 2}
+	 *     cjs.get(w); // 1
+	 *     cjs.get(x); // 2
+	 *     cjs.get(y); // ['a','b'] 
+	 *     cjs.get(z); // {c: 2}
 	 */
 	get: function (obj, arg0) {
 		if(is_constraint(obj))	{ return obj.get(arg0); }
@@ -1264,8 +1310,9 @@ extend(cjs, {
 	 * @return {object} - `cjs`
 	 *
 	 * @example Renaming `cjs` to `ninjaCJS`
-	 *		var ninjaCJS = cjs.noConflict();
-	 *		var x = ninjaCJS(1);
+	 *
+	 *     var ninjaCJS = cjs.noConflict();
+	 *     var x = ninjaCJS(1);
 	 * @see cjs
 	 */
 	noConflict: has(root, "cjs") ?  function() {

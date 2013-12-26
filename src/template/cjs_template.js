@@ -663,16 +663,18 @@ extend(cjs, {
 	 * @see cjs.resumeTemplate
 	 *
 	 * @example
-	 * <script id='my_template' type='cjs/template'>
-	 *		{{x}}
-	 * </script>
-	 * var template_elem = document.getElementById('my_template');
-	 * var template = cjs.createTemplate(template_elem);
-	 * var element1 = template({x: 1});
-	 * var element2 = template({x: 2});
+	 *
+	 *     <script id='my_template' type='cjs/template'>
+	 *         {{x}}
+	 *     </script>
+	 *     var template_elem = document.getElementById('my_template');
+	 *     var template = cjs.createTemplate(template_elem);
+	 *     var element1 = template({x: 1});
+	 *     var element2 = template({x: 2});
 	 *
 	 * @example
-	 * var element = cjs.createTemplate("{{x}}", {x: 1});
+	 *
+	 *     var element = cjs.createTemplate("{{x}}", {x: 1});
 	 */
 	createTemplate:		function(template_str) {
 							if(!isString(template_str)) {

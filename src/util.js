@@ -513,12 +513,12 @@ var has_from = function(x) { return x.hasOwnProperty("from"); },
  *         new_array = ['c','b','d'],
  *         diff = cjs.arrayDiff(old_array, new_array);
  *		
- *		// diff === {
- *		//   added: [ { item: 'd', to: 2, to_item: 'd' } ],
- *		//   removed: [ { from: 0, from_item: 'a' } ],
- *		//   moved: [ { item: 'c', from: 2, insert_at: 0, move_from: 1, to: 0 } ],
- *		//   index_changed: [ { from: 2, from_item: 'c', item: 'c', to: 0, to_item: 'c' } ]
- *		// }
+ *     // diff === {
+ *     //   added: [ { item: 'd', to: 2, to_item: 'd' } ],
+ *     //   removed: [ { from: 0, from_item: 'a' } ],
+ *     //   moved: [ { item: 'c', from: 2, insert_at: 0, move_from: 1, to: 0 } ],
+ *     //   index_changed: [ { from: 2, from_item: 'c', item: 'c', to: 0, to_item: 'c' } ]
+ *     // }
  *		
  */
 var get_array_diff = function (from_val, to_val, equality_check) {

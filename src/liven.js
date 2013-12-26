@@ -22,12 +22,12 @@ extend(cjs, {
 	 * @return {object} An object with properties `destroy`, `pause`, `resume`, and `run`
 	 *
 	 * @example
-	 *		var x_val = cjs(0);
-	 *		var api_update = cjs.liven(function() {
-	 *			console.log('updating other x');
-	 *			other_api.setX(x_val);
-	 *		}); // 'updating other x'
-	 *		x_val.set(2); // 'updating other x'
+	 *     var x_val = cjs(0);
+	 *     var api_update = cjs.liven(function() {
+	 *         console.log('updating other x');
+	 *         other_api.setX(x_val);
+	 *     }); // 'updating other x'
+	 *     x_val.set(2); // 'updating other x'
 	 *		
 	 */
 	liven:	function (func, options) {

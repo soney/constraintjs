@@ -216,8 +216,9 @@ var FSM = function() {
 	 * The name of this FSM's active state
 	 * @property {Constraint} cjs.FSM.state
 	 * @example
-	 *		var my_fsm = cjs.fsm("state1", "state2");
-	 *		my_fsm.state.get(); // 'state1'
+	 *
+	 *     var my_fsm = cjs.fsm("state1", "state2");
+	 *     my_fsm.state.get(); // 'state1'
 	 */
 	this.state = cjs(function() { // the name of the current state
 		if(this._curr_state) { return this._curr_state.getName(); }
@@ -246,10 +247,11 @@ var FSM = function() {
 	 * @return {FSM} - `this`
 	 *
 	 * @example
-	 *		var fsm = cjs.fsm()
-	 *					.addState('state1')
-	 *					.addState('state2')
-	 *					.addTransition('state2', cjs.on('click'));
+	 *
+	 *     var fsm = cjs.fsm()
+	 *                  .addState('state1')
+	 *                  .addState('state2')
+	 *                  .addTransition('state2', cjs.on('click'));
 	 */
 	proto.addState = function() {
 		var state;
@@ -275,8 +277,9 @@ var FSM = function() {
 	 * @method getState
 	 * @return {string} - The name of the currently active state
 	 * @example
-	 *		var my_fsm = cjs.fsm("state1", "state2");
-	 *		my_fsm.getState(); // 'state1'
+	 *
+	 *     var my_fsm = cjs.fsm("state1", "state2");
+	 *     my_fsm.getState(); // 'state1'
 	 */
 	proto.getState = function() {
 		return this.state.get();
@@ -289,11 +292,14 @@ var FSM = function() {
 	 * @param {string} to_state - The name of the state the transition should go to
 	 * @return {function} - A function that tells the transition to run
 	 * @example
-	 *		var x = cjs.fsm();
-	 *		x.addState("b")
-	 *		 .addState("a");
-	 *		var run_transition = x.addTransition("b"); //add a transition from a to b
-	 *		window.addEventListener("click", run_transition); // run that transition when the window is clicked
+	 *
+	 *     var x = cjs.fsm();
+	 *     x.addState("b")
+	 *      .addState("a");
+	 *     var run_transition = x.addTransition("b");
+	 *     //add a transition from a to b
+	 *     window.addEventListener("click", run_transition);
+	 *     // run that transition when the window is clicked
 	 */
 	/**
 	 * (variant 2)
@@ -302,17 +308,21 @@ var FSM = function() {
 	 * @param {CJSEvent|function} add_transition_fn - A `CJSEvent` or a user-specified function for adding the event listener
 	 * @return {FSM} - `this`
 	 * @example
-	 *		var x = cjs.fsm();
-	 *		x.addState("b")
-	 *       .addState("a")
-	 *       .addTransition("b", cjs.on('click')); // add a transition from a to b that runs when the window is clicked
+	 *
+	 *     var x = cjs.fsm();
+	 *     x.addState("b")
+	 *      .addState("a")
+	 *      .addTransition("b", cjs.on('click'));
+	 *     // add a transition from a to b that runs when the window is clicked
 	 * @example
-	 *		var x = cjs.fsm();
-	 *		x.addState("b")
-	 *       .addState("a")
-	 *       .addTransition("b", function(run_transition) {
-	 *           window.addEventListener("click", run_transition);
-	 *       }); // add a transition from a to b that runs when the window is clicked
+	 *
+	 *     var x = cjs.fsm();
+	 *     x.addState("b")
+	 *      .addState("a")
+	 *      .addTransition("b", function(run_transition) {
+	 *          window.addEventListener("click", run_transition);
+	 *      });
+	 *     // add a transition from a to b that runs when the window is clicked
 	 */
 	/**
 	 * (variant 3)
@@ -321,9 +331,10 @@ var FSM = function() {
 	 * @param {string} to_state - The name of the state the transition should go to
 	 * @return {function} - A function that tells the transition to run
 	 * @example
-	 *		var x = cjs.fsm("a", "b");
-	 *		var run_transition = x.addTransition("a", "b"); //add a transition from a to b
-	 *		window.addEventListener("click", run_transition); // run that transition when the window is clicked
+	 *
+	 *     var x = cjs.fsm("a", "b");
+	 *     var run_transition = x.addTransition("a", "b"); //add a transition from a to b
+	 *     window.addEventListener("click", run_transition); // run that transition when the window is clicked
 	 */
 	/**
 	 * (variant 4)
@@ -334,13 +345,15 @@ var FSM = function() {
 	 * @return {FSM} - `this`
 	 *
 	 * @example
-	 *		var x = cjs.fsm("a", "b");
-	 *		x.addTransition("a", "b", cjs.on("click"));
+	 *
+	 *     var x = cjs.fsm("a", "b");
+	 *     x.addTransition("a", "b", cjs.on("click"));
 	 * @example
-	 *		var x = cjs.fsm("a", "b");
-	 *		var run_transition = x.addTransition("a", "b", function(run_transition) {
-	 *			window.addEventListener("click", run_transition);
-	 *      }); // add a transition from a to b that runs when the window is clicked
+	 *
+	 *     var x = cjs.fsm("a", "b");
+	 *     var run_transition = x.addTransition("a", "b", function(run_transition) {
+	 *         window.addEventListener("click", run_transition);
+	 *     }); // add a transition from a to b that runs when the window is clicked
 	 */
 	proto.addTransition = function(a, b, c) {
 		var from_state, to_state, transition, add_transition_fn, return_transition_func = false;
@@ -439,8 +452,9 @@ var FSM = function() {
 	 * @param {string} state_name - The name of the state to start at
 	 * @return {FSM} - `this`
 	 * @example
-	 *		var x = cjs.fsm("a", "b");
-	 *		x.addTransition("a", "b", cjs.on("click"));
+	 *
+	 *     var x = cjs.fsm("a", "b");
+	 *     x.addTransition("a", "b", cjs.on("click"));
 	 */
 	proto.startsAt = function(state_name) {
 		var state = getStateWithName(this, state_name); // Get existing state
@@ -463,8 +477,9 @@ var FSM = function() {
 	 * @param {string} state_name - The name of the state to check against
 	 * @return {boolean} - `true` if the name of the active state is `state_name`. `false` otherwise
 	 * @example
-	 *		var x = cjs.fsm("a", "b");
-	 *		fsm.is("a"); // true, because a is the starting state
+	 *
+	 *     var x = cjs.fsm("a", "b");
+	 *     fsm.is("a"); // true, because a is the starting state
 	 */
 	proto.is = function(state_name) {
 		// get the current state name & compare
@@ -494,8 +509,9 @@ var FSM = function() {
 	 *
 	 * @see FSM.prototype.off
 	 * @example
-	 *		var x = cjs.fsm("a", "b");
-	 *		x.on("a->b", function() {...});
+	 *
+	 *     var x = cjs.fsm("a", "b");
+	 *     x.on("a->b", function() {...});
 	 */
 	proto.on = proto.addEventListener = function(spec_str, callback, context) {
 		var selector;
@@ -540,7 +556,8 @@ extend(cjs, {
 	 * @return {FSM} - A new FSM
 	 * @see FSM
 	 * #example Creating a state machine with two states
-	 *		var my_state = cjs.fsm("state1", "state2");
+	 *
+	 *     var my_state = cjs.fsm("state1", "state2");
 	 */
 	fsm: function() { return new FSM(arguments); },
 	/**
