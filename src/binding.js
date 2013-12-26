@@ -274,6 +274,9 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 	 * @param {dom} element - The DOM element
 	 * @param {...*} values - The desired text value
 	 * @return {Binding} - A binding object
+	 * @example If `my_elem` is a dom element
+	 *		var message = cjs('hello');
+	 *		cjs.text(my_elem, message);
 	 */
 var text_binding = create_textual_binding(function(element, value) { // set the escaped text of a node
 		element.textContent = value;
@@ -286,6 +289,9 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {dom} element - The DOM element
 	 * @param {...*} values - The desired html content
 	 * @return {Binding} - A binding object
+	 * @example If `my_elem` is a dom element
+	 *		var message = cjs('<b>hello</b>');
+	 *		cjs.text(my_elem, message);
 	 */
 	html_binding = create_textual_binding(function(element, value) { // set the non-escaped inner HTML of a node
 		element.innerHTML = value;
@@ -298,6 +304,9 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {dom} element - The DOM element
 	 * @param {...*} values - The value the element should have
 	 * @return {Binding} - A binding object
+	 * @example If `my_elem` is a text input element
+	 *		var value = cjs('hello');
+	 *		cjs.val(my_elem, message);
 	 */
 	val_binding = create_textual_binding(function(element, value) { // set the value of a node
 		element.val = value;
@@ -310,6 +319,9 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {dom} element - The DOM element
 	 * @param {...*} values - The list of classes the element should have. The binding automatically flattens them.
 	 * @return {Binding} - A binding object
+	 * @example If `my_elem` is a dom element
+	 *		var classes = cjs('class1 class2');
+	 *		cjs.class(my_elem, classes);
 	 */
 	class_binding = create_list_binding(function(args) { // set the class of a node
 		return flatten(map(args, cjs.get), true);
@@ -335,6 +347,9 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {dom} element - The DOM element
 	 * @param {...*} elements - The elements to use as the constraint. The binding automatically flattens them.
 	 * @return {Binding} - A binding object
+	 * @example If `my_elem`, `child1`, and `child2` are dom elements
+	 *		var nodes = cjs(child1, child2);
+	 *		cjs.children(my_elem, nodes);
 	 */
 	children_binding = create_list_binding(function(args) {
 		var arg_val_arr = map(args, cjs.get);
@@ -355,6 +370,14 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {dom} element - The DOM element
 	 * @param {object} values - An object whose key-value pairs are the CSS property names and values respectively
 	 * @return {Binding} - A binding object representing the link from constraints to CSS styles
+	 *
+	 * @example If `my_elem` is a dom element
+	 *		var color = cjs('red'),
+	 *			left = cjs(0);
+	 *		cjs.css(my_elem, {
+	 *			"background-color": color,
+	 *			left: left.add('px')
+	 *		});
 	 */
 	/**
 	 * Constrain a DOM node's CSS style
@@ -363,6 +386,10 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {string} key - The name of the CSS attribute to constraint
 	 * @param {cjs.Constraint|string} value - The value of this CSS attribute
 	 * @return {Binding} - A binding object representing the link from constraints to elements
+	 *
+	 * @example If `my_elem` is a dom element
+	 *		var color = cjs('red');
+	 *		cjs.css(my_elem, ''background-color', color);
 	 */
 	css_binding = create_obj_binding(function(element, key, value) {
 		element.style[camel_case(key)] = value;
@@ -375,6 +402,10 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {dom} element - The DOM element
 	 * @param {object} values - An object whose key-value pairs are the attribute names and values respectively
 	 * @return {Binding} - A binding object representing the link from constraints to elements
+	 *
+	 * @example If `my_elem` is an input element
+	 *		var default_txt = cjs('enter name');
+	 *		cjs.attr(my_elem, 'placeholder', default_txt);
 	 */
 	/**
 	 * Constrain a DOM node's attribute value
@@ -383,6 +414,14 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @param {string} key - The name of the attribute to constraint
 	 * @param {cjs.Constraint|string} value - The value of this attribute
 	 * @return {Binding} - A binding object representing the link from constraints to elements
+	 *
+	 * @example If `my_elem` is an input element
+	 *		var default_txt = cjs('enter name'),
+	 *			name = cjs('my_name');
+	 *		cjs.attr(my_elem, {
+	 *			placeholder: default_txt,
+	 *			name: name
+	 *		});
 	 */
 	attr_binding = create_obj_binding(function(element, key, value) {
 		element.setAttribute(key, value);
@@ -395,6 +434,9 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 	 * @method cjs.inputValue
 	 * @param {dom} inp - The input element
 	 * @return {cjs.Constraint} - A constraint whose value is the input's value
+	 *
+	 * @example If `name_input` is an input element
+	 *		var name = cjs.inputValue(name_input),
 	 */
 	getInputValueConstraint = function(inps) {
 		var arr_inp; // tracks if the input is a list of items

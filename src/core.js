@@ -21,8 +21,8 @@ var Constraint, // Declare here, will be defined later
 	 * @see cjs.noConflict
 	 *
 	 * @example Creating an array constraint
-	 *     var cjs_arr = cjs([1,2,3]);
-	 *     cjs_arr.item(0); // 1
+	 *		var cjs_arr = cjs([1,2,3]);
+	 *			cjs_arr.item(0); // 1
 	 */
 
 	/**
@@ -33,8 +33,8 @@ var Constraint, // Declare here, will be defined later
 	 * @return {cjs.Binding} A constraint whose value is the current value of the input
 	 *
 	 * @example Creating an input value constraint
-	 *     var inp_elem = document.getElementById('myTextInput'),
-	 *         cjs_val = cjs(inp_elem);
+	 *		var inp_elem = document.getElementById('myTextInput'),
+	 *			cjs_val = cjs(inp_elem);
 	 */
 	/**
 	 * Create a map constraint
@@ -45,12 +45,12 @@ var Constraint, // Declare here, will be defined later
 	 * @return {cjs.MapConstraint} A new map constraint
 	 *
 	 * @example Creating a map constraint
-	 *     var cobj_obj = cjs({
-	 *         foo: 1
-	 *     });
-	 *     cobj.get('foo'); // 1
-	 *     cobj.put('bar', 2);
-	 *     cobj.get('bar') // 2
+	 *		var cobj_obj = cjs({
+	 *			foo: 1
+	 *		});
+	 *		cobj.get('foo'); // 1
+	 *		cobj.put('bar', 2);
+	 *		cobj.get('bar') // 2
 	 */
 	/**
 	 * Create a standard constraint
@@ -61,14 +61,14 @@ var Constraint, // Declare here, will be defined later
 	 * @return {cjs.Constraint} A new constraint
 	 * 
 	 * @example Creating an empty constraint
-	 *     var x = cjs(),
-	 *         y = cjs(1),
-	 *         z = cjs(function() {
+	 *		var x = cjs(),
+	 *			y = cjs(1),
+	 *			z = cjs(function() {
 	 *				return y.get() + 1;
-	 *         });
-	 *      x.get(); // undefined
-	 *      y.get(); // 1
-	 *      z.get(); // 2
+	 *			});
+	 *		x.get(); // undefined
+	 *		y.get(); // 1
+	 *		z.get(); // 2
 	 *
 	 * @example With options
 	 *     var yes_lit = cjs(function() { return 1; },
@@ -263,14 +263,43 @@ var constraint_solver = {
 
 	/**
 	 * Tells the constraint solver to delay before running any `onChange` listeners
+	 *
+	 * Note that `signal` needs to be called the same number of times as `wait` before
+	 * the `onChange` listeners will run.
 	 * @method cjs.wait
+	 * @see cjs.signal
+	 * @see cjs.onChange
+	 * @example
+	 *	var x = cjs(1);
+	 *	x.onChange(function() {
+	 *		console.log('x changed');
+	 *	});
+	 *	cjs.wait();
+	 *	x.set(2);
+	 *	x.set(3);
+	 *	cjs.signal(); // output: x changed
 	 */
 	wait: function() {
 		this.semaphore -= 1;
 	},
 	/**
-	 * Tells the constraint solver to delay before running any `onChange` listeners
+	 * Tells the constraint solver it is ready to run any `onChange` listeners.
+	 * Note that `signal` needs to be called the same number of times as `wait` before
+	 * the `onChange` listeners will run.
 	 * @method cjs.signal
+	 * @see cjs.wait
+	 * @see cjs.onChange
+	 * @example
+	 *	var x = cjs(1);
+	 *	x.onChange(function() {
+	 *		console.log('x changed');
+	 *	});
+	 *	cjs.wait();
+	 *	cjs.wait();
+	 *	x.set(2);
+	 *	x.set(3);
+	 *	cjs.signal();
+	 *	cjs.signal(); // output: x changed
 	 */
 	signal: function () {
 		this.semaphore += 1;
@@ -1058,6 +1087,9 @@ Constraint = function (value, options) {
 	 * @method mod
 	 * @param {*} other - A constraint or value to compare against
 	 * @return {number} - A constraint whose value is `this.get() % other.get()`
+	 * @example
+	 *		isEven = x.mod(2).eq(0);
+	 *
 	 */
 	/**
 	 * @method rightShift
@@ -1149,6 +1181,15 @@ extend(cjs, {
 	 * @param {Object} values - Keys are the state specifications for the FSM, values are the value for those specific states
 	 * @return {cjs.Constraint} - A new constraint object
 	 * @see cjs.Constraint.prototype.inFSM
+	 *
+	 * @example
+	 *     var fsm = cjs.fsm("state1", "state2")
+	 *					.addTransition("state1", "state2",
+	 *					               cjs.on("click"));
+	 *	   var x = cjs.inFSM(fsm, {
+	 *		state1: 'val1',
+	 *		state2: function() { return 'val2'; }
+	 *	   });
 	 */
 	inFSM: function(fsm, values) {
 		return (new Constraint()).inFSM(fsm, values);

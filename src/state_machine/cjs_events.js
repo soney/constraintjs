@@ -1,8 +1,9 @@
 /**
+ * **Note:** the preferred way to create this object is with the `cjs.on` function
  * Creates an event that can be used in a finite-state machine transition
- * @private
  * @class cjs.CJSEvent
  * @classdesc A constraint object communicates with the constraint solver to store and maintain constraint values
+ * @see cjs.on
  */
 var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._listeners = []; // parent events that want to know when I fire

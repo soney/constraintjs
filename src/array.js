@@ -6,6 +6,8 @@ var isPositiveInteger = function (val) {
 };
 
 /**
+ * ***Note:*** The preferred constructor for arrays is `cjs.array`
+ *
  * This class is meant to emulate standard arrays, but with constraints
  * It contains many of the standard array functions (push, pop, slice, etc)
  * and makes them constraint-enabled.
@@ -19,6 +21,9 @@ var isPositiveInteger = function (val) {
  * @class cjs.ArrayConstraint
  * @classdesc A class that adds constraint to arrays
  * @param {Object} [options] - A set of options to control how the array constraint is evaluated
+ *
+ * @see cjs
+ * @see cjs.array
  */
 ArrayConstraint = function (options) {
 	options = extend({
@@ -130,6 +135,14 @@ ArrayConstraint = function (options) {
 	 * @param {function} callback - Function to execute for each element.
 	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
 	 * @return {cjs.ArrayConstraint} `this`
+	 * @example
+	 *		var arr = cjs(['a','b','c']);
+	 *		arr.forEach(function(val, i) {
+	 *			console.log(val);
+	 *			if(i === 1) {
+	 *				return cjs.ArrayConstraint.BREAK;
+	 *			}
+	 *		}); // 'a' ... 'b'
 	 */
 	proto.forEach = function (callback, thisArg) {
 		var i, len = this.length();
@@ -150,6 +163,9 @@ ArrayConstraint = function (options) {
 	 * @param {function} callback - Function that produces an element of the new Array from an element of the current one.
 	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
 	 * @return {array} - The result of calling `callback` on every element
+	 * @example
+	 *		var arr = cjs([1,2,3]);
+	 *		arr.map(function(x) { return x+1;}) // [2,3,4]
 	 */
 	proto.map = function (callback, thisArg) {
 		var rv = [];
@@ -166,6 +182,11 @@ ArrayConstraint = function (options) {
 	 * @method setValue
 	 * @param {array} arr - The new value
 	 * @return {cjs.ArrayConstraint} - `this`
+	 * @example
+	 *		var arr = cjs([1,2,3]);
+	 *		arr.toArray(); //[1,2,3]
+	 *		arr.setValue(['a','b','c']);
+	 *		arr.toArray(); //['a','b','c']
 	 */
 	proto.setValue = function (arr) {
 		cjs.wait(); // Don't run nullified functions quite yet
@@ -181,6 +202,9 @@ ArrayConstraint = function (options) {
 	 * @method item
 	 * @return {array} - A standard JavaScript array
 	 * @see toArray
+	 * @example
+	 *		var arr = cjs([1,2,3]);
+	 *		arr.item(); //[1,2,3]
 	 */
 	/**
 	 * Get item `key`
@@ -188,6 +212,9 @@ ArrayConstraint = function (options) {
 	 * @method item^2
 	 * @param {number} key - The array index
 	 * @return {*} - The value at index `key`
+	 * @example
+	 *		var arr = cjs(['a','b']);
+	 *		arr.item(0); //['a']
 	 */
 	/**
 	 * Set item i
@@ -196,6 +223,10 @@ ArrayConstraint = function (options) {
 	 * @param {number} key - The array index
 	 * @param {*} value - The new value
 	 * @return {*} - `value`
+	 * @example
+	 *		var arr = cjs(['a','b']);
+	 *		arr.item(0,'x');
+	 *		arr.toArray(); // ['x','b']
 	 */
 	proto.item = function (key, val) {
 		if(arguments.length === 0) { // Just return an array if called with no arguments
@@ -223,6 +254,9 @@ ArrayConstraint = function (options) {
 	 *
 	 * @method length
 	 * @return {number} - The length of the array
+	 * @example
+	 *		var arr = cjs(['a','b']);
+	 *		arr.length(); // 2
 	 */
 	proto.length = function () {
 		return this.$len.get(); // Remember that length is a constraint
@@ -239,6 +273,10 @@ ArrayConstraint = function (options) {
 	 * @see shift
 	 * @see unshift
 	 * @see splice
+	 * @example
+	 *		var arr = cjs(['a','b']);
+	 *		arr.push('c','d'); // 4
+	 *		arr.toArray(); // ['a','b','c','d']
 	 */
 	proto.push = function () {
 		var i, len = arguments.length, value_len = this._value.length;
@@ -262,6 +300,10 @@ ArrayConstraint = function (options) {
 	 * @see shift
 	 * @see unshift
 	 * @see splice
+	 * @example
+	 *		var arr = cjs(['a','b']);
+	 *		arr.pop(); // 'b'
+	 *		arr.toArray(); // ['a']
 	 */
 	proto.pop = function () {
 		var rv, $value = this._value.pop(); // $value should be a constraint
@@ -286,6 +328,9 @@ ArrayConstraint = function (options) {
 	 *
 	 * @method toArray
 	 * @return {array} - This object as a JavaScript array
+	 * @example
+	 *		var arr = cjs(['a','b']);
+	 *		arr.toArray(); // ['a', 'b']
 	 */
 	proto.toArray = function () {
 		return this.map(identity); // just get every element
@@ -298,6 +343,11 @@ ArrayConstraint = function (options) {
 	 * @param {function} filter - The function to call on every item
 	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
 	 * @return {number} - The first index where calling `filter` is truthy or `-1`
+	 * @example
+	 *		var arr = cjs(['a','b','b']);
+	 *		arr.indexWhere(function(val, i) {
+	 *			return val ==='b';
+	 *		}); // 1
 	 */
 	proto.indexWhere = function (filter, thisArg) {
 		var i, len = this.length(), $val;
@@ -317,6 +367,12 @@ ArrayConstraint = function (options) {
 	 * @param {function} filter - The function to call on every item
 	 * @param {*} thisArg - Object to use as `this` when executing `callback`.
 	 * @return {number} - The last index where calling `filter` is truthy or `-1`
+	 *
+	 * @example
+	 *		var arr = cjs(['a','b','a']);
+	 *		arr.lastIndexWhere(function(val, i) {
+	 *			return val ==='a';
+	 *		}); // 2
 	 */
 	proto.lastIndexWhere = function (filter, thisArg) {
 		var i, len = this.length(), $val;
@@ -337,6 +393,10 @@ ArrayConstraint = function (options) {
 	 * @param {*} item - The item we are searching for
 	 * @param {function} [equality_check] - How to check whether two objects are equal, defaults to the option that was passed in)
 	 * @return {number} - The item's index or `-1`
+	 *
+	 * @example
+	 *		var arr = cjs(['a','b','a']);
+	 *		arr.indexOf('a'); // 0
 	 */
 	proto.indexOf = function (item, equality_check) {
 		equality_check = equality_check || this.$equality_check.get();
@@ -351,6 +411,9 @@ ArrayConstraint = function (options) {
 	 * @param {*} item - The item we are searching for
 	 * @param {function} [equality_check] - How to check whether two objects are equal, defaults to the option that was passed in)
 	 * @return {number} - The item's index or `-1`
+	 * @example
+	 *		var arr = cjs(['a','b','a']);
+	 *		arr.indexOf('a'); // 2
 	 */
 	proto.lastIndexOf = function (item, equality_check) {
 		equality_check = equality_check || this.$equality_check.get();
@@ -365,6 +428,10 @@ ArrayConstraint = function (options) {
 	 * @param {function} filter - The function to check against
 	 * @param {*} thisArg - Object to use as `this` when executing `filter`.
 	 * @return {boolean} - `true` if some item matches `filter`. `false` otherwise
+	 * @see every
+	 * @example
+	 *		var arr = cjs([1,3,5]);
+	 *		arr.some(function(x) { return x%2===0; }); // false
 	 */
 	proto.some = function(filter, thisArg) {
 		return this.indexWhere(filter, thisArg) >= 0;
@@ -377,6 +444,10 @@ ArrayConstraint = function (options) {
 	 * @param {function} filter - The function to check against
 	 * @param {*} thisArg - Object to use as `this` when executing `filter`.
 	 * @return {boolean} - `true` if some item matches `filter`. `false` otherwise
+	 * @see some
+	 * @example
+	 *		var arr = cjs([2,4,6]);
+	 *		arr.some(function(x) { return x%2===0; }); // true
 	 */
 	proto.every = function(filter, thisArg) {
 		var rv = true;
@@ -408,6 +479,10 @@ ArrayConstraint = function (options) {
 	 * @see pop
 	 * @see shift
 	 * @see unshift
+	 * @example
+	 *		var arr = cjs(['a','b','c']);
+	 *		arr.splice(0,2,'x','y'); //['a','b']
+	 *		arr.toArray(); // ['x','y','c']
 	 */
 	proto.splice = function (index, howmany) {
 		var i;
@@ -484,6 +559,10 @@ ArrayConstraint = function (options) {
 	 * @see push
 	 * @see pop
 	 * @see splice
+	 * @example
+	 *		var arr = cjs(['a','b','c']);
+	 *		arr.shift(); // 'a'
+	 *		arr.toArray(); //['b','c']
 	 */
 	proto.shift = function () {
 		var rv_arr = this.splice(0, 1);
@@ -502,6 +581,10 @@ ArrayConstraint = function (options) {
 	 * @see push
 	 * @see pop
 	 * @see splice
+	 * @example
+	 *		var arr = cjs(['a','b','c']);
+	 *		arr.unshift('x','y'); // 5
+	 *		arr.toArray(); //['x','y','a','b','c']
 	 */
 	proto.unshift = function () {
 		this.splice.apply(this, ([0, 0]).concat(toArray(arguments)));
@@ -514,6 +597,10 @@ ArrayConstraint = function (options) {
 	 * @method concat
 	 * @param {...*} values - Arrays and/or values to concatenate to the resulting array.
 	 * @return {array} The concatenated array
+	 * @example
+	 *		var arr1 = cjs(['a','b','c']),
+	 *			arr2 = cjs(['x']);
+	 *		arr1.concat(arr2); // ['a','b','c','x']
 	 */
 	proto.concat = function () {
 		// Every argument could either be a JS array or array constraint
@@ -531,6 +618,9 @@ ArrayConstraint = function (options) {
 	 * @param {number} [begin=0] - Zero-based index at which to begin extraction.
 	 * @param {number} [end=this.length] - Zero-based index at which to end extraction. slice extracts up to but not including end.
 	 * @return {array} A JavaScript array
+	 * @example
+	 *		var arr = cjs(['a','b','c']);
+	 *		arr.slice(1); // ['b','c']
 	 */
 	proto.slice = function () {
 		// Just call the normal slice with the same arguments
@@ -546,6 +636,12 @@ ArrayConstraint = function (options) {
 	 * @method itemConstraint
 	 * @param {number|Constraint} key - The array index
 	 * @return {Constraint} - A constraint whose value is `this[key]`
+	 * @example
+	 *		var arr = cjs(['a','b','c']);
+	 *		var first_item = arr.itemConstraint(0);
+	 *		first_item.get(); // 'a'
+	 *		arr.item(0,'x');
+	 *		first_item.get(); // 'x'
 	 */
 	proto.itemConstraint = function(key) {
 		return new Constraint(function() {
@@ -620,6 +716,10 @@ extend(cjs, {
 	 * @param {Object} [options] - A set of options to control how the array constraint is evaluated
 	 * @return {cjs.ArrayConstraint} - A new array constraint object
 	 * @see cjs.ArrayConstraint
+	 * @example
+	 *		var arr = cjs.array({
+	 *			value: [1,2,3]
+	 *		});
 	 */
 	array: function (options) { return new ArrayConstraint(options); },
 	/** @expose cjs.ArrayConstraint */

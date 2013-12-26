@@ -194,12 +194,14 @@ var StateListener = function(selector, callback, context) {
 }(StateListener));
 
 /**
+ * ***Note:*** The preferred way to create a FSM is through the `cjs.fsm` function
  * This class represents a finite-state machine to track the state of an interface or component
  *
  * @private
  * @class cjs.FSM
  * @classdesc A finite-state machine
  * @param {string} ...state_names - Any number of state names for the FSM to have
+ * @see cjs.fsm
  */
 var FSM = function() {
 	this._states = {}; // simple substate representations
@@ -213,6 +215,9 @@ var FSM = function() {
 	/**
 	 * The name of this FSM's active state
 	 * @property {Constraint} cjs.FSM.state
+	 * @example
+	 *		var my_fsm = cjs.fsm("state1", "state2");
+	 *		my_fsm.state.get(); // 'state1'
 	 */
 	this.state = cjs(function() { // the name of the current state
 		if(this._curr_state) { return this._curr_state.getName(); }
@@ -239,6 +244,12 @@ var FSM = function() {
 	 * @method addState
 	 * @param {string} ...state_names - Any number of state names to add. The last state becomes the chain state
 	 * @return {FSM} - `this`
+	 *
+	 * @example
+	 *		var fsm = cjs.fsm()
+	 *					.addState('state1')
+	 *					.addState('state2')
+	 *					.addTransition('state2', cjs.on('click'));
 	 */
 	proto.addState = function() {
 		var state;
@@ -263,6 +274,9 @@ var FSM = function() {
 	 *
 	 * @method getState
 	 * @return {string} - The name of the currently active state
+	 * @example
+	 *		var my_fsm = cjs.fsm("state1", "state2");
+	 *		my_fsm.getState(); // 'state1'
 	 */
 	proto.getState = function() {
 		return this.state.get();
@@ -424,6 +438,9 @@ var FSM = function() {
 	 * @method startsAt
 	 * @param {string} state_name - The name of the state to start at
 	 * @return {FSM} - `this`
+	 * @example
+	 *		var x = cjs.fsm("a", "b");
+	 *		x.addTransition("a", "b", cjs.on("click"));
 	 */
 	proto.startsAt = function(state_name) {
 		var state = getStateWithName(this, state_name); // Get existing state
@@ -445,6 +462,9 @@ var FSM = function() {
 	 * @method is
 	 * @param {string} state_name - The name of the state to check against
 	 * @return {boolean} - `true` if the name of the active state is `state_name`. `false` otherwise
+	 * @example
+	 *		var x = cjs.fsm("a", "b");
+	 *		fsm.is("a"); // true, because a is the starting state
 	 */
 	proto.is = function(state_name) {
 		// get the current state name & compare
@@ -473,6 +493,9 @@ var FSM = function() {
 	 * @return {FSM} - `this`
 	 *
 	 * @see FSM.prototype.off
+	 * @example
+	 *		var x = cjs.fsm("a", "b");
+	 *		x.on("a->b", function() {...});
 	 */
 	proto.on = proto.addEventListener = function(spec_str, callback, context) {
 		var selector;
@@ -516,6 +539,8 @@ extend(cjs, {
 	 * @param {...string} state_names - An initial set of state names to add to the FSM
 	 * @return {FSM} - A new FSM
 	 * @see FSM
+	 * #example Creating a state machine with two states
+	 *		var my_state = cjs.fsm("state1", "state2");
 	 */
 	fsm: function() { return new FSM(arguments); },
 	/**
