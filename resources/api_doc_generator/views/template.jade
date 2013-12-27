@@ -82,8 +82,10 @@ html
 
     include ./_footer.jade
 script.
+  $("pre").addClass("prettyprint");
   var height_diff = 100;
   $(window).on('resize', function() {
     $(".sidebar").height(window.innerHeight-height_diff+"px"); 
   });
   $(".sidebar").height(window.innerHeight-height_diff+"px"); 
+  prettyPrint();
