@@ -1,58 +1,3 @@
-/**
- * ConstraintJS templates use a (Handlebas)[http://handlebarsjs.com/]. A template can be created with
- * `cjs.createTemplate`. The format is described below.
- * 
- * ## Basics
- *
- * ### Constraints
- * {{value}}
- *
- *
- * ### Literals
- * {{{literal}}}
- *
- *
- * ## Comments
- * {{! comment }}
- *
- * ## Constraint output
- * data-cjs-out
- * data-cjs-on
- *
- * ## Block Helpers
- *
- * ### Loops
- * {{#each}}
- * {{this}}
- * {{@key}}
- * {{@index}}
- * {{this}}
- * {{#else}}
- *
- * ### Conditions
- * {{#if}}
- * {{#elif}}
- * {{#else}}
- *
- * {{#unless}}
- *
- * ### State
- *
- * {{#state}}
- * {{#fsm}}
- *
- * ### With helper
- *
- * {{#with}}
- * {{this}}
- *
- * ## Partials
- *
- * {{>partial}}
- *
- *
- */
-
 var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" && child.literal; },
 	child_is_text				= function(child)	{ return child.isText; },
 	every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
@@ -651,6 +596,131 @@ extend(cjs, {
 	/**
 	 * Create a new template. If `context` is specified, then this function returns a DOM node with the specified template.
 	 * Otherwise, it returns a function that can be called with `context` and `[parent]` to create a new template.
+	 *
+	 * ConstraintJS templates use a (Handlebars)[http://handlebarsjs.com/]. A template can be created with
+	 * `cjs.createTemplate`. The format is described below.
+	 * 
+	 * ## Basics
+	 * ConstraintJS templates take standard HTML and add some features
+	 *
+	 * ### Constraints
+	 * Unary handlebars can contain expressions.
+	 *
+	 *      <h1>{{title}}</h1>
+	 *      <p>{{subtext.toUpperCase()+"!"}}</p>
+	 *
+	 * called with `{ title: cjs('hello'), subtext: 'world'}`:
+	 *
+	 *     <h1>hello</h1>
+	 *     <p>WORLD!</p>
+	 *
+	 * ### Literals
+	 * If the tags in a node should be treated as HTML, use triple braces: `{{{ literal_val }}}`.
+	 *
+	 *      <h1>{{title}}</h1>
+	 *      <p>{{{subtext}}}</p>
+	 *
+	 * called with `{ title: cjs('hello'), subtext: '<strong>steel</strong city'}`:
+	 *
+	 *     <h1>hello</h1>
+	 *     <p><strong>steel</strong> city</p>
+	 *
+	 *
+	 * ## Comments
+	 *
+	 *     {{! comments will be ignored in the output}}
+	 *
+	 * ## Constraint output
+	 *
+	 * To call `my_func` on event `(event-name)`, give any targets the attribute:
+	 *
+	 *     data-cjs-on-(event-name)=my_func
+	 * 
+	 * For example:
+	 *
+	 *     <div data-cjs-on-click=update_obj />
+	 * 
+	 * Will call `update_obj` (a property of the template's context when this div is clicked.
+	 *
+	 * To add the value of an input element to the template's context, use the property `data-cjs-out`:
+	 *
+	 *     <input data-cjs-out=user_name />
+	 *     <h1>Hello, {{user_name}}</h1>
+	 *
+	 * ## Block Helpers
+	 *
+	 * ### Loops
+	 *
+	 * To create an object for every item in an array or object, you can use the `{{#each}}` block helper.
+	 * `{{this}}` refers to the current item and `@key` and `@index` refer to the keys for arrays and objects
+	 * respectively.
+	 *     {{#each obj_name}}
+	 *         {{@key}}: {{this}
+	 *     {{/each}}
+	 *
+	 *     {{#each arr_name}}
+	 *         {{@index}}: {{this}
+	 *     {{/each}}
+	 *
+	 * If the length of the array is zero (or the object has no keys) then an `{{#else}}` block can be used: 
+	 *     
+	 *     {{#each arr_name}}
+	 *         {{@index}}: {{this}
+	 *         {{#else}}
+	 *             <strong>No items!</strong>
+	 *     {{/each}}
+	 *
+	 * ### Conditions
+	 * The `{{#if}}` block helper can vary the content of a template depending on some condition.
+	 * This block helper can have any number of sub-conditions with the related `{{#elif}}` and `{{#else}}` tags.
+	 *
+	 *     {{#if cond1}}
+	 *         Cond content
+	 *     {{#elif other_cond}}
+	 *         other_cond content
+	 *     {{#else}}
+	 *         else content
+	 *     {{/if}}
+	 *
+	 * The opposite of an `{{#if}}` block is `{{#unless}}`:
+	 *     {{#unless logged_in}}
+	 *         Not logged in!
+	 *     {{/unless}
+	 *
+	 * ### State
+	 *
+	 * The `{{#fsm}}` block helper can vary the content of a template depending on an FSM state
+	 *
+	 *     {{#fsm my_fsm}}
+	 *         {{#state1}}
+	 *             State1 content
+	 *         {{#state2}}
+	 *             State2 content
+	 *         {{#state3}}
+	 *             State3 content
+	 *     {{/fsm}}
+	 *
+	 * ### With helper
+	 *
+	 * The `{{#with}}` block helper changes the context in which constraints are evaluated.
+	 *
+	 *     {{#with obj}}
+	 *         Value: {{x}}
+	 *     {{/with}}
+	 *
+	 * when called with `{ obj: {x: 1} }` results in `Value: 1`
+	 *
+	 * ## Partials
+	 *
+	 * Partials allow templates to be nested.
+	 *
+	 *     var my_temp = cjs.createTemplate(...);
+	 *     cjs.registerPartial('my_template', my_temp);
+	 * Then, in any other template,
+	 *
+	 *     {{>my_template context}}
+	 * 
+	 * Nests a copy of `my_template` in `context`
 	 *
 	 * @method cjs.createTemplate
 	 * @param {string|dom} template - the template as either a string or a `script` tag whose contents are the template
