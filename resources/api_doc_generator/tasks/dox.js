@@ -20,8 +20,7 @@ module.exports = function(grunt) {
 			dest = this.data.dest,
 			indexPath = path.relative(process.cwd(), dest + path.sep + 'api.html'),
 			ignore = ignoredDirs.trim().replace(' ', '').split(','),
-			options = {
-			};
+			options = this.options();
 
 		// Cleanup any existing docs
 		rimraf.sync(dest);
@@ -29,7 +28,7 @@ module.exports = function(grunt) {
 		// Find, cleanup and validate all potential files
 		var files		= formatter.collectFiles(src, { ignore: ignore }, files),
 			doxedFiles	= formatter.doxFiles(src, dest, { raw: false }, files),
-			dox			= formatter.compileDox(doxedFiles),
+			dox			= formatter.compileDox(doxedFiles, options),
 			output		= formatter.render(dox, options),
 			dir			= path.dirname(indexPath);
 

@@ -57,14 +57,13 @@ function buildStructureForFile(file) {
 	};
 }
 
-var BRANCH = "v091",
-	BASE_URL = "https://github.com/soney/ConstraintJS/blob/v0.9.1/";
-var get_link = function(fname, line) {
-	var rv = BASE_URL+fname+"#L"+line;
+var BASE_URL = "https://github.com/soney/ConstraintJS/blob/";
+var get_link = function(fname, line, blob_name) {
+	var rv = BASE_URL+blob_name+'/'+fname+"#L"+line;
 	return rv;
 };
 
-var get_doc = function(doc_info) {
+var get_doc = function(doc_info, options) {
 	var info = {
 			type: false,
 			info: false,
@@ -74,7 +73,7 @@ var get_doc = function(doc_info) {
 		},
 		fname = doc_info.file,
 		doc = doc_info.doc,
-		link = get_link(fname, doc.line);
+		link = get_link(fname, doc.line, options.blob_name);
 	info.link = link;
 	info.fname = fname.replace("../src/", "");
 	info.line = doc.line;
@@ -205,7 +204,7 @@ exports.doxFiles = function(source, target, options, files) {
 	return files;
 };
 
-exports.compileDox = function(files) {
+exports.compileDox = function(files, options) {
 	var subjects = {};
 	files.forEach(function(file) {
 		var srcFile = file.sourceFile,
@@ -272,7 +271,7 @@ exports.compileDox = function(files) {
 	keys.forEach(function(key) {
 		var objs = key.replace(".prototype", "").split("."),
 			ctree = tree,
-			info = get_doc_info(subjects[key]);
+			info = get_doc_info(subjects[key], options);
 
 		var level = 0;
 		objs.forEach(function(obj, i) {
@@ -316,8 +315,8 @@ exports.compileDox = function(files) {
 	return tree;
 };
 
-var get_doc_info = function(docs) {
-	var subinfos = docs.map(function(x) { return get_doc(x); }),
+var get_doc_info = function(docs, options) {
+	var subinfos = docs.map(function(x) { return get_doc(x, options); }),
 		info = {
 			calltypes: [],
 			description: "",

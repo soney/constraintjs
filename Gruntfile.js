@@ -107,7 +107,8 @@ module.exports = function(grunt) {
 		},
 		dox: {
 			options: {
-				title: "ConstraintJS Documentation"
+				title: "ConstraintJS Documentation",
+				blob_name: "v<%= pkg.version %>"
 			},
 			files: {
 				src: enclosed_src_files,
