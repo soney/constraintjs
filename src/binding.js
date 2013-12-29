@@ -273,7 +273,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 	 *
 	 * @method cjs.text
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The desired text value
+	 * @param {*} ...values - The desired text value
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a dom element
 	 *
@@ -289,7 +289,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 *
 	 * @method cjs.html
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The desired html content
+	 * @param {*} ...values - The desired html content
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a dom element
 	 *
@@ -305,7 +305,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 *
 	 * @method cjs.val
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The value the element should have
+	 * @param {*} ...values - The value the element should have
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a text input element
 	 *
@@ -321,7 +321,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 *
 	 * @method cjs.class
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The list of classes the element should have. The binding automatically flattens them.
+	 * @param {*} ...values - The list of classes the element should have. The binding automatically flattens them.
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a dom element
 	 *
@@ -350,7 +350,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 *
 	 * @method cjs.children
 	 * @param {dom} element - The DOM element
-	 * @param {...*} elements - The elements to use as the constraint. The binding automatically flattens them.
+	 * @param {*} ...elements - The elements to use as the constraint. The binding automatically flattens them.
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem`, `child1`, and `child2` are dom elements
 	 *

@@ -552,7 +552,7 @@ extend(cjs, {
 	/**
 	 * @method cjs.fsm
 	 * @constructs FSM
-	 * @param {...string} state_names - An initial set of state names to add to the FSM
+	 * @param {string} ...state_names - An initial set of state names to add to the FSM
 	 * @return {FSM} - A new FSM
 	 * @see FSM
 	 * #example Creating a state machine with two states

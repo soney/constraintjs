@@ -609,7 +609,7 @@ Constraint = function (value, options) {
 	 * @method onChange
 	 * @param {function} callback
 	 * @param {*} [thisArg=window] - The context to use for `callback`
-	 * @param {...*} args - The first `args.length` arguments to `callback`
+	 * @param {*} ...args - The first `args.length` arguments to `callback`
 	 * @return {cjs.Constraint} - `this`
 	 * @see offChange
 	 *
@@ -705,13 +705,13 @@ Constraint = function (value, options) {
 	};
 
 	/**
-	 * Returns the last value in the array `[this].concat(args)` if every value is truthy. Otherwise, returns `false.
+	 * Returns the last value in the array `[this].concat(args)` if every value is truthy. Otherwise, returns `false`.
 	 * Every argument won't necessarily be evaluated. For instance:
 	 *
 	 * - `x = cjs(false); cjs.get(x.and(a))` does not evaluate `a`
 	 *
 	 * @method and
-	 * @param {...*} args - Any number of constraints or values to pass the "and" test
+	 * @param {*} ...args - Any number of constraints or values to pass the "and" test
 	 * @return {boolean|*} - `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
 	 *
 	 * @example
@@ -742,7 +742,7 @@ Constraint = function (value, options) {
 	 * - `y = cjs(true); cjs.get(y.or(b))` does not evaluate `b`
 	 *
 	 * @method or
-	 * @param {...*} args - Any number of constraints or values to pass the "or" test
+	 * @param {*} ...args - Any number of constraints or values to pass the "or" test
 	 * @return {boolean|*} - The first truthy value or `false` if there aren't any
 	 *
 	 * @example
@@ -785,7 +785,7 @@ Constraint = function (value, options) {
 	 * Property constraint modifier.
 	 *
 	 * @method prop
-	 * @param {...strings} args - Any number of properties to fetch
+	 * @param {strings} ...args - Any number of properties to fetch
 	 * @return {*} - A constraint whose value is `this[args[0]][args[1]]...`
 	 * @example
 	 * 
@@ -817,7 +817,7 @@ Constraint = function (value, options) {
 	/**
 	 * Addition constraint modifier
 	 * @method add
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() + args[0].get() + args[1].get() + ...`
 	 * @example
 	 *
@@ -830,7 +830,7 @@ Constraint = function (value, options) {
 	/**
 	 * Subtraction constraint modifier
 	 * @method sub
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
 	 * @example
 	 *
@@ -840,7 +840,7 @@ Constraint = function (value, options) {
 	/**
 	 * Multiplication constraint modifier
 	 * @method mul
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() * args[0].get() * args[1].get() * ...`
 	 * @example
 	 *
@@ -850,7 +850,7 @@ Constraint = function (value, options) {
 	/**
 	 * Division constraint modifier
 	 * @method div
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() / args[0].get() / args[1].get() / ...`
 	 * @example
 	 *
@@ -958,7 +958,7 @@ Constraint = function (value, options) {
 	/**
 	 * Max
 	 * @method max
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **highest** of `this.get()`, `args[0].get()`, `args[1].get()`...
 	 * @example
 	 *
@@ -967,7 +967,7 @@ Constraint = function (value, options) {
 	/**
 	 * Min
 	 * @method min
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **lowest** of `this.get()`, `args[0].get()`, `args[1].get()`...
 	 * @example
 	 *

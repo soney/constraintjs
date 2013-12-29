@@ -267,7 +267,7 @@ ArrayConstraint = function (options) {
 	 * The push() method mutates an array by appending the given elements and returning the new length of the array.
 	 *
 	 * @method push
-	 * @param {...*} elements - The set of elements to append to the end of the array
+	 * @param {*} ...elements - The set of elements to append to the end of the array
 	 * @return {number} - The new length of the array
 	 *
 	 * @see pop
@@ -471,7 +471,7 @@ ArrayConstraint = function (options) {
 	 * If howMany is 0, no elements are removed. In this case, you should specify at least one new element.
 	 * If howMany is greater than the number of elements left in the array starting at index,
 	 * then all of the elements through the end of the array will be deleted.
-	 * @param {...*} elements - The elements to add to the array. If you don't specify any elements,
+	 * @param {*} ...elements - The elements to add to the array. If you don't specify any elements,
 	 * splice simply removes elements from the array.
 	 * @return {array.*} - An array containing the removed elements. If only one element is removed,
 	 * an array of one element is returned. If no elements are removed, an empty array is returned.
@@ -575,7 +575,7 @@ ArrayConstraint = function (options) {
 	 * of the array.
 	 *
 	 * @method unshift
-	 * @param {...*} elements - The elements to be added
+	 * @param {*} ...elements - The elements to be added
 	 * @return {number} - The new array length
 	 *
 	 * @see shift
@@ -596,7 +596,7 @@ ArrayConstraint = function (options) {
 	 * The concat() method returns a new array comprised of this array joined with other array(s) and/or value(s).
 	 *
 	 * @method concat
-	 * @param {...*} values - Arrays and/or values to concatenate to the resulting array.
+	 * @param {*} ...values - Arrays and/or values to concatenate to the resulting array.
 	 * @return {array} The concatenated array
 	 * @example
 	 *     var arr1 = cjs(['a','b','c']),

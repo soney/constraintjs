@@ -43,7 +43,7 @@ mixin apidoclist(item)
               ul.related_links
                 each link in item.links
                   li.also_see
-                    a(href="#"+link)=link
+                    a(href="#"+link.replace(".","_"))=link
           .panel-footer
             if item.sourceLinks
               each link in item.sourceLinks

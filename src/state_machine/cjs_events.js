@@ -75,7 +75,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	 *
 	 * @private
 	 * @method _fire
-	 * @param {...*} events - Any number of events that will be passed to the transition
+	 * @param {*} ...events - Any number of events that will be passed to the transition
 	 */
 	proto._fire = function() {
 		var events = arguments;
@@ -108,7 +108,7 @@ extend(cjs, {
 	 * @constructs CJSEvent
 	 * @method cjs.on
 	 * @param {string} event_type - the type of event to listen for (e.g. mousedown, timeout)
-	 * @param {...element|number} [target=window] - Any number of target objects to listen to
+	 * @param {element|number} ...targets=window - Any number of target objects to listen to
 	 * @return {CJSEvent} - An event that can be attached to 
 	 * @example When the window resizes
 	 *

@@ -13,50 +13,6 @@ var fs = require('fs'),
 */
 var templatePath = exports.templatePath = '../views/template.jade';
 
-/**
-* Return a list of methods for the side navigation
-*
-* @param {Object} file
-* @return {Object} Object formatted for template nav helper
-* @api private
-*/
-function buildStructureForFile(file) {
-	var names = [];
-	var targetLink;
-
-	if (file.dox.length === 0) { return false; }
-
-	file.dox.forEach(function(method){
-		if (method.ctx && !method.ignore) { names.push(method.ctx.name); }
-	});
-
-	// How deep is your love?
-	// If the splitted currentFile (the file we are currently rendering) path got one folder
-	// in the path or more, add ../ for each level found
-	if(file.currentFile && file.currentFile.split(path.sep).length > 1 ){
-		// Depth of current file
-		var depth = file.currentFile.split(path.sep).length,
-		// Create a prefix with n "../"
-		prefix = new Array(depth).join('../');
-		// Set up target link with prefix
-		targetLink = prefix + file.targetFile;
-	} else {
-		// Link does not have to be altered
-		targetLink = file.targetFile;
-	}
-
-	return {
-		source: {
-			full: file.sourceFile,
-			dir: path.dirname(file.sourceFile),
-			file: path.basename(file.sourceFile)
-		},
-		target: file.targetFile,
-		methods: names,
-		link : targetLink
-	};
-}
-
 var BASE_URL = "https://github.com/soney/ConstraintJS/blob/";
 var get_link = function(fname, line, blob_name) {
 	var rv = BASE_URL+blob_name+'/'+fname+"#L"+line;
@@ -236,6 +192,7 @@ exports.compileDox = function(files, options) {
 					}
 				} else if(type === "see") {
 					tag.name = lends+tag.local;
+					tag.link = tag.name.replace(".", "_");
 				} else {
 				}
 			});
