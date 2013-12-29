@@ -1070,6 +1070,7 @@ is_map = function(obj) {
 
 extend(cjs, {
 	/**
+	 * Create a map constraint
 	 * @method cjs.map
 	 * @constructs cjs.MapConstraint
 	 * @param {Object} [options] - A set of options to control how the map constraint is evaluated

@@ -712,6 +712,7 @@ is_array = function(obj) {
 
 extend(cjs, {
 	/**
+	 * Create an array constraint
 	 * @method cjs.array
 	 * @constructs cjs.ArrayConstraint
 	 * @param {Object} [options] - A set of options to control how the array constraint is evaluated

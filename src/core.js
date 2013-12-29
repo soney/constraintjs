@@ -449,12 +449,12 @@ Constraint = function (value, options) {
 	 * @see invalidate
 	 *
 	 * @example
-	 *     var x = cjs(1);
-	 *     x.get(); // 1
-	 *     x.set(function() { return 2; });
-	 *     x.get(); // 2
-	 *     x.set('c');
-	 *     x.get(); // 'c'
+	 *    var x = cjs(1);
+	 *    x.get(); // 1
+	 *    x.set(function() { return 2; });
+	 *    x.get(); // 2
+	 *    x.set('c');
+	 *    x.get(); // 'c'
 	 */
 	proto.set = function (value, options) {
 		var old_value = this._value;

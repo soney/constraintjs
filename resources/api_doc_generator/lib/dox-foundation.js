@@ -97,7 +97,7 @@ exports.collectFiles = function(source, options, callback) {
 		files   = [];
 
 	// If more paths are given with the --source flag
-	if(source.length > 1){
+	if(source.length >= 1){
 		var dirtyPaths = source;
 
 		dirtyPaths.forEach(function(dirtyPath){
