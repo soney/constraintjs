@@ -1076,6 +1076,14 @@ extend(cjs, {
 	 * @param {Object} [options] - A set of options to control how the map constraint is evaluated
 	 * @return {cjs.MapConstraint} - A new map constraint object
 	 * @see cjs.MapConstraint
+	 * @example Creating a map constraint
+	 *
+	 *     var map_obj = cjs.map({
+	 *         value: { foo: 1 }
+	 *     });
+	 *     cobj.get('foo'); // 1
+	 *     cobj.put('bar', 2);
+	 *     cobj.get('bar') // 2
 	 */
 	map: function (arg0, arg1) { return new MapConstraint(arg0, arg1); },
 	/** @expose cjs.MapConstraint */
