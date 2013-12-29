@@ -101,21 +101,22 @@ body {
 	color: #aaa;
 	font-style: oblique;
 }
-.nav {
+.sidebar .nav {
 	/*
 	display: none;
 	*/
 	padding-left: 10px;
 }
-.nav li > a {
+.sidebar .nav li > a {
 	padding-top: 1px;
 	padding-bottom: 1px;
 }
-.nav.top {
+.sidebar .nav.top {
 	padding-left: 0px;
 }
-.nav.active {
-	display: block;
+.sidebar .nav li.active {
+	border-right: 2px solid red;
+	background-color: #F0F0F0;
 }
 .sidebar {
 	height: 500px;
@@ -126,8 +127,4 @@ body {
 li.haschildren > a {
 	font-weight: 800;
 	color: black;
-}
-li.active {
-	border-right: 2px solid red;
-	background-color: #F0F0F0;
 }
