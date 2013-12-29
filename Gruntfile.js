@@ -112,7 +112,7 @@ module.exports = function(grunt) {
 			},
 			files: {
 				src: enclosed_src_files,
-				dest: 'docs'
+				dest: 'api'
 			}
 		}
 	});

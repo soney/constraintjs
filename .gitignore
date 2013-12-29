@@ -1,7 +1,7 @@
 build
 dist
 annotated_source
-docs
+api
 *.swp
 node_modules
 *.DS_Store

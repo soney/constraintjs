@@ -18,7 +18,7 @@ module.exports = function(grunt) {
 	grunt.registerMultiTask('dox', 'Generate dox output ', function() {
 		var src = this.filesSrc,
 			dest = this.data.dest,
-			indexPath = path.relative(process.cwd(), dest + path.sep + 'api.html'),
+			indexPath = path.relative(process.cwd(), dest + path.sep + 'index.html'),
 			ignore = ignoredDirs.trim().replace(' ', '').split(','),
 			options = this.options();
 
