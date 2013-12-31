@@ -87,3 +87,75 @@ dt("FSM Constraint", 5, function() {
 	s2val.set(3);
 	equal(fsmc.get(), 3);
 });
+
+dt("FSM on", 42, function() {
+	var do_transition;
+	var fsm = cjs	.fsm()
+					.addState("state_1")
+					.addState("state_2")
+					.startsAt("state_1");
+	var t12 = fsm.addTransition("state_1", "state_2"),
+		t21 = fsm.addTransition("state_2", "state_1");
+	
+	var c01,c02,c03,c04,c05,c06,c07,c08,c09,c10,c11,c12,c13,c14;
+	c01=c02=c03=c04=c05=c06=c07=c08=c09=c10=c11=c12=c13=c14=0;
+	fsm.on("state_1 -> state_2",  function() { c01++; });
+	fsm.on("state_1 >- state_2",  function() { c02++; });
+	fsm.on("state_2 <- state_1",  function() { c03++; });
+	fsm.on("state_2 -< state_1",  function() { c04++; });
+	fsm.on("* -> state_2",        function() { c05++; });
+	fsm.on("state_1 -> *",        function() { c06++; });
+	fsm.on("*",                   function() { c07++; });
+	fsm.on("state_1 <-> state_2", function() { c08++; });
+	fsm.on("state_1 >-< state_2", function() { c09++; });
+	fsm.on("* -> state_1",        function() { c10++; });
+	fsm.on("state_2 -> state_1",  function() { c11++; });
+	fsm.on("state_2 >- state_1",  function() { c12++; });
+	fsm.on("state_1 <- state_2",  function() { c13++; });
+	fsm.on("state_1 -< state_2",  function() { c14++; });
+
+	equal(c01, 0);
+	equal(c02, 0);
+	equal(c03, 0);
+	equal(c04, 0);
+	equal(c05, 0);
+	equal(c06, 0);
+	equal(c07, 0);
+	equal(c08, 0);
+	equal(c09, 0);
+	equal(c10, 0);
+	equal(c11, 0);
+	equal(c12, 0);
+	equal(c13, 0);
+	equal(c14, 0);
+	t12();
+	equal(c01, 0);
+	equal(c02, 0);
+	equal(c03, 0);
+	equal(c04, 0);
+	equal(c05, 0);
+	equal(c06, 0);
+	equal(c07, 0);
+	equal(c08, 0);
+	equal(c09, 0);
+	equal(c10, 0);
+	equal(c11, 0);
+	equal(c12, 0);
+	equal(c13, 0);
+	equal(c14, 0);
+	t21();
+	equal(c01, 0);
+	equal(c02, 0);
+	equal(c03, 0);
+	equal(c04, 0);
+	equal(c05, 0);
+	equal(c06, 0);
+	equal(c07, 0);
+	equal(c08, 0);
+	equal(c09, 0);
+	equal(c10, 0);
+	equal(c11, 0);
+	equal(c12, 0);
+	equal(c13, 0);
+	equal(c14, 0);
+});

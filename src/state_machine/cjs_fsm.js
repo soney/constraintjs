@@ -35,8 +35,7 @@ var Transition = function(fsm, from_state, to_state, name) {
 		// do_transition should be called by the user's code
 		if(fsm.is(this.getFrom())) {
 			var args = toArray(arguments);
-			args.unshift(this);
-			args.unshift(this.getTo());
+			args.unshift(this.getTo(), this);
 			fsm._setState.apply(fsm, args);
 		}
 	};
@@ -61,7 +60,7 @@ var StateSelector = function(state_name) {
 	var proto = my.prototype;
 	proto.matches = function(state) {
 		// Supplied object should be a State object with the given name
-		return state instanceof State && (this._state_name === state || this._state_name === state.getName());
+		return this._state_name === state || (state instanceof State && this._state_name === state.getName());
 	};
 }(StateSelector));
 
@@ -406,18 +405,21 @@ var FSM = function() {
 	 * @param {State|string} state - The state to transition to
 	 * @param {Transition} transition - The transition that ran
 	 */
-	proto._setState = function(state, transition) {
-		var from_state = this.getState(); // the name of my current state
-		var to_state = isString(state) ? getStateWithName(this, state) : state;
+	proto._setState = function(state, transition, event) {
+		var from_state = this.getState(), // the name of my current state
+			to_state = isString(state) ? getStateWithName(this, state) : state,
+			listener_args = this._listeners.length > 0 ?
+				([event, transition, to_state, from_state]).concat(rest(arguments, 3)) : false;
 		if(!to_state) {
 			throw new Error("Could not find state '" + state + "'");
 		}
 		this.did_transition = true;
 
+
 		// Look for pre-transition callbacks
 		each(this._listeners, function(listener) {
 			if(listener.interested_in(transition, true)) {
-				listener.run(transition, to_state, from_state); // and run 'em
+				listener.run.apply(listener, listener_args); // and run 'em
 			}
 		});
 		this._curr_state = to_state;
@@ -425,10 +427,9 @@ var FSM = function() {
 		// Look for post-transition callbacks..
 		// and also callbacks that are interested in state entrance
 		each(this._listeners, function(listener) {
-			if(listener.interested_in(transition, false)) {
-				listener.run(transition, to_state, from_state); // and run 'em
-			} else if(listener.interested_in(to_state)) {
-				listener.run(transition, to_state, from_state); // and run 'em
+			if(listener.interested_in(transition, false) ||
+					listener.interested_in(to_state)) {
+				listener.run.apply(listener, listener_args); // and run 'em
 			}
 		});
 	};
