@@ -345,6 +345,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					context[attr.value] = getInputValueConstraint(element);
 				} else if((on_regex_match = attr.name.match(on_regex))) {
 					var event_name = on_regex_match[2];
+					console.log(event_name);
 					element.addEventListener(event_name, context[attr.value]);
 				} else {
 					var constraint = get_constraint(attr.value, context, lineage);

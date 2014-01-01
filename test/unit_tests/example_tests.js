@@ -19,7 +19,7 @@ dt("Cell", 0, function() {
 			"{{#state unset}}" +
 				"<span class='unset_cell' />" +
 			"{{#state editing}}" +
-				"<textarea data-cjs-on-keydown=keydown_ta />" +
+				"<textarea data-cjs-on-keydown=keydown_ta data-cjs-on-blur=blur_ta/>" +
 		"{{/fsm}}"
 	);
 	var edit_state = cjs.fsm("idle", "unset", "editing")
@@ -27,6 +27,7 @@ dt("Cell", 0, function() {
 	var value = cjs("hi");
 
 	var on_cancel = edit_state.addTransition("editing", "idle");
+	var on_confirm = edit_state.addTransition("editing", "idle");
 
 	var cell = tmplate({
 				edit_state: edit_state,
@@ -34,9 +35,15 @@ dt("Cell", 0, function() {
 				keydown_ta: function(event) {
 					if(event.keyCode === 27) { // esc
 						on_cancel(event);
-					} else if(event.keyCode === 27) { // enter
-						
+					} else if(event.keyCode === 13) { // enter
+						value.set(event.target.value);
+						on_confirm(event);
 					}
+				},
+				blur_ta: function(event) {
+					console.log("OK");
+					value.set(event.target.value);
+					on_confirm(event);
 				}
 		});
 	edit_state.addTransition("idle", "editing", cjs.on("click", cell));
@@ -45,7 +52,9 @@ dt("Cell", 0, function() {
 		textarea.value = value.get();
 		textarea.select();
 		textarea.focus();
+		textarea.addEventListener("blur", function() {
+			console.log(arguments);
+		});
 	});
-	window.cell = cell;
 	document.body.appendChild(cell);
 });
