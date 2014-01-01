@@ -69,7 +69,9 @@ var AnyStateSelector = function() { };
 (function(my) {
 	var proto = my.prototype;
 	// will match any state (but not transition)
-	proto.matches = function(state) {return state instanceof State;};
+	// Checking if it isn't a transition (rather than if it is a State) because sometimes, this is
+	// checked against state *names* rather than the state itself
+	proto.matches = function(state) { return !(state instanceof Transition);};
 }(AnyStateSelector));
 
 // Matches certain transitions (see transition formatting spec)
@@ -93,8 +95,8 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 }(TransitionSelector));
 
 // Multiple possibilities (read OR, not AND)
-var MultiSelector = function(selectors) {
-	this.selectors = selectors; // all of the selectors to test
+var MultiSelector = function() {
+	this.selectors = toArray(arguments); // all of the selectors to test
 };
 (function(my) {
 	var proto = my.prototype;
