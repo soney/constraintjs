@@ -345,7 +345,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					context[attr.value] = getInputValueConstraint(element);
 				} else if((on_regex_match = attr.name.match(on_regex))) {
 					var event_name = on_regex_match[2];
-					console.log(event_name);
 					element.addEventListener(event_name, context[attr.value]);
 				} else {
 					var constraint = get_constraint(attr.value, context, lineage);
@@ -494,7 +493,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 								}), true);
 							}
 							
-							return map(instance_children[i], get_instance_node);
+							return flatten(map(instance_children[i], get_instance_node), true);
 						}
 					}
 				};
@@ -522,7 +521,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 									} else {
 										children = memoized_children[state_name] = flatten(map(template.sub_states[state_name].children, do_child_create), true);
 									}
-									return map(children, get_instance_node);
+									return flatten(map(children, get_instance_node), true);
 								}
 							}
 						}
@@ -537,7 +536,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					return create_template_instance(child, new_context, new_lineage);
 				}));
 				return {
-					node: map(instance_children, get_instance_node)
+					node: flatten(map(instance_children, get_instance_node), true)
 				};
 			}
 		} else if (type === "partial_hb") {

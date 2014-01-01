@@ -11,28 +11,57 @@ dt("Two Eaches", 3, function() {
 	equal(tmplate.textContent, "12yoAC");
 });
 
-dt("Cell", 0, function() {
-	var tmplate = cjs.createTemplate(
-		"{{#fsm edit_state}}" +
-			"{{#state idle}}" +
-				"<span class='cell'>{{value}}</span>" +
-			"{{#state unset}}" +
-				"<span class='unset_cell' />" +
-			"{{#state editing}}" +
-				"<textarea data-cjs-on-keydown=keydown_ta data-cjs-on-blur=blur_ta/>" +
-		"{{/fsm}}"
-	);
-	var edit_state = cjs.fsm("idle", "unset", "editing")
-						.startsAt("idle");
-	var value = cjs("hi");
+var emulate_event = function(event_class, constructor_name, event_type, target, constructor_args, params) {
+		var ev = document.createEvent(event_class);
+		ev[constructor_name].apply(ev, ([event_type]).concat(constructor_args));
+		console.log(ev.keyCode);
+		if(params) {
+			for(var key in params) {
+				if(params.hasOwnProperty(key)) {
+					ev[key] = params[key];
+					console.log(key, ev[key], params[key]);
+				}
+			}
+		}
+		target.dispatchEvent(ev);
+	},
+	emulate_mouse_event = function(a,b,c,d) {
+		return emulate_event("MouseEvent", "initMouseEvent",a,b,c,d);
+	}
+	emulate_keyboard_event = function(a,b,k,d) {
+		var constructor_args = [true, true, document.defaultView, false, false, false, false, k, k];
+		return emulate_event("KeyboardEvent", "initKeyboardEvent",a,b,constructor_args,d);
+	};
 
-	var on_cancel = edit_state.addTransition("editing", "idle");
-	var on_confirm = edit_state.addTransition("editing", "idle");
+dt("Cell", 8, function() {
+	var value = cjs(""),
+		tmplate = cjs.createTemplate(
+			"{{#fsm edit_state}}" +
+				"{{#state idle}}" +
+					"{{#if value===''}}" +
+						"<span class='unset_cell'>(unset)</span>" +
+					"{{#else}}" +
+						"<span class='cell'>{{value}}</span>" +
+					"{{/if}}" +
+				"{{#state editing}}" +
+					"<textarea data-cjs-on-keydown=keydown_ta data-cjs-on-blur=blur_ta/>" +
+			"{{/fsm}}"
+		),
+		edit_state = cjs.fsm("idle", "editing")
+						.startsAt("idle")
+						.on("idle->editing", function() {
+							var textarea = cell.getElementsByTagName("textarea")[0];
+							textarea.value = value.get();
+							textarea.select();
+							textarea.focus();
+						});
+
 
 	var cell = tmplate({
 				edit_state: edit_state,
 				value: value,
 				keydown_ta: function(event) {
+					console.log(event);
 					if(event.keyCode === 27) { // esc
 						on_cancel(event);
 					} else if(event.keyCode === 13) { // enter
@@ -41,20 +70,41 @@ dt("Cell", 0, function() {
 					}
 				},
 				blur_ta: function(event) {
-					console.log("OK");
-					value.set(event.target.value);
-					on_confirm(event);
+					if(edit_state.is("editing")) {
+						value.set(event.target.value);
+						on_confirm(event);
+					}
 				}
 		});
-	edit_state.addTransition("idle", "editing", cjs.on("click", cell));
-	edit_state.on("idle->editing", function() {
-		var textarea = cell.getElementsByTagName("textarea")[0];
-		textarea.value = value.get();
-		textarea.select();
-		textarea.focus();
-		textarea.addEventListener("blur", function() {
-			console.log(arguments);
-		});
-	});
+
+	var on_cancel = edit_state.addTransition("editing", "idle"),
+		on_confirm = edit_state.addTransition("editing", "idle");
+	edit_state.addTransition("idle", "editing", cjs.on("click", cell))
+
 	document.body.appendChild(cell);
+	equal(cell.textContent, "(unset)");
+
+	emulate_mouse_event("click", cell);
+
+	equal(cell.childNodes[0].tagName, "TEXTAREA");
+
+	cell.childNodes[0].value = "something";
+
+	emulate_keyboard_event("keydown", cell.childNodes[0], 13); // enter
+
+	equal(value.get(), "something");
+/*
+	equal(cell.textContent, "something");
+
+	emulate_mouse_event("click", cell);
+
+	equal(cell.childNodes[0].tagName, "TEXTAREA");
+	equal(cell.childNodes[0].value, "something");
+
+	cell.childNodes[0].value = "other";
+	emulate_keyboard_event("keydown", cell.childNodes[0], {keyCode: 27}); // esc
+
+	equal(value.get(), "something");
+	equal(cell.textContent, "something");
+	*/
 });
