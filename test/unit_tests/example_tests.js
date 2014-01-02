@@ -14,12 +14,10 @@ dt("Two Eaches", 3, function() {
 var emulate_event = function(event_class, constructor_name, event_type, target, constructor_args, params) {
 		var ev = document.createEvent(event_class);
 		ev[constructor_name].apply(ev, ([event_type]).concat(constructor_args));
-		console.log(ev.keyCode);
 		if(params) {
 			for(var key in params) {
 				if(params.hasOwnProperty(key)) {
 					ev[key] = params[key];
-					console.log(key, ev[key], params[key]);
 				}
 			}
 		}
@@ -28,9 +26,32 @@ var emulate_event = function(event_class, constructor_name, event_type, target, 
 	emulate_mouse_event = function(a,b,c,d) {
 		return emulate_event("MouseEvent", "initMouseEvent",a,b,c,d);
 	}
-	emulate_keyboard_event = function(a,b,k,d) {
-		var constructor_args = [true, true, document.defaultView, false, false, false, false, k, k];
-		return emulate_event("KeyboardEvent", "initKeyboardEvent",a,b,constructor_args,d);
+	emulate_keyboard_event = function(event_class, target, key_code) {
+		var keyboardEvent = document.createEvent("KeyboardEvent");
+
+		var initMethod = typeof keyboardEvent.initKeyboardEvent !== 'undefined' ? "initKeyboardEvent" : "initKeyEvent";
+
+
+		keyboardEvent[initMethod](
+			"keydown",
+			true,      // bubbles oOooOOo0
+			true,      // cancelable   
+			window,    // view
+			false,     // ctrlKeyArg
+			false,     // altKeyArg
+			false,     // shiftKeyArg
+			false,     // metaKeyArg
+			key_code, 
+			key_code   // charCode   
+		);
+		keyboardEvent.keyCode = key_code;
+		keyboardEvent.keyCodeVal = key_code;
+		keyboardEvent.which = key_code;
+		
+
+		target.dispatchEvent(keyboardEvent); 
+		//var constructor_args = [true, true, document.defaultView, false, false, false, false, k, k];
+		//return emulate_event("KeyboardEvent", "initKeyboardEvent",a,b,constructor_args,d);
 	};
 
 dt("Cell", 8, function() {
@@ -61,10 +82,10 @@ dt("Cell", 8, function() {
 				edit_state: edit_state,
 				value: value,
 				keydown_ta: function(event) {
-					console.log(event);
-					if(event.keyCode === 27) { // esc
+					var keyCode = event.keyCodeVal || event.keyCode;
+					if(keyCode === 27) { // esc
 						on_cancel(event);
-					} else if(event.keyCode === 13) { // enter
+					} else if(keyCode === 13) { // enter
 						value.set(event.target.value);
 						on_confirm(event);
 					}
@@ -81,7 +102,6 @@ dt("Cell", 8, function() {
 		on_confirm = edit_state.addTransition("editing", "idle");
 	edit_state.addTransition("idle", "editing", cjs.on("click", cell))
 
-	document.body.appendChild(cell);
 	equal(cell.textContent, "(unset)");
 
 	emulate_mouse_event("click", cell);
@@ -93,7 +113,6 @@ dt("Cell", 8, function() {
 	emulate_keyboard_event("keydown", cell.childNodes[0], 13); // enter
 
 	equal(value.get(), "something");
-/*
 	equal(cell.textContent, "something");
 
 	emulate_mouse_event("click", cell);
@@ -102,9 +121,10 @@ dt("Cell", 8, function() {
 	equal(cell.childNodes[0].value, "something");
 
 	cell.childNodes[0].value = "other";
-	emulate_keyboard_event("keydown", cell.childNodes[0], {keyCode: 27}); // esc
+	emulate_keyboard_event("keydown", cell.childNodes[0], 27); // esc
 
 	equal(value.get(), "something");
 	equal(cell.textContent, "something");
-	*/
+
+	cjs.destroyTemplate(cell);
 });
