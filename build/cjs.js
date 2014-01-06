@@ -1277,7 +1277,7 @@ Constraint = function (value, options) {
 	 *
 	 * @method and
 	 * @param {*} ...args - Any number of constraints or values to pass the "and" test
-	 * @return {boolean|*} - `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
+	 * @return {cjs.Constraitnboolean|*} - A constraint whose value is `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
 	 *
 	 * @example
 	 *
@@ -1301,6 +1301,25 @@ Constraint = function (value, options) {
 	};
 
 	/**
+	 * Inline if function: similar to the javascript a ? b : c expression
+	 *
+	 * @method iif
+	 * @param {*} true_val - The value to return if `this` is truthy
+	 * @param {*} other_val - The value to return if `this` is falsy
+	 * @return {cjs.Constraint} - A constraint whose value is `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
+	 *
+	 * @example
+	 *
+	 *     var x = c1.iif(c2, c3);
+	 */
+	proto.iif = function(true_val, other_val) {
+		var me = this;
+		return new My(function() {
+			return me.get() ? cjs.get(true_val) : cjs.get(other_val);
+		});
+	};
+
+	/**
 	 * Returns the first truthy value in the array `[this].concat(args)`. If no value is truthy, returns `false`.
 	 * Every argument won't necessarily be evaluated. For instance:
 	 *
@@ -1308,7 +1327,7 @@ Constraint = function (value, options) {
 	 *
 	 * @method or
 	 * @param {*} ...args - Any number of constraints or values to pass the "or" test
-	 * @return {boolean|*} - The first truthy value or `false` if there aren't any
+	 * @return {cjs.Constraint} - A constraitn whose value is the first truthy value or `false` if there aren't any
 	 *
 	 * @example
 	 *
@@ -1752,6 +1771,7 @@ Constraint = function (value, options) {
 	 *     var valIsArray = val.instanceof(Array)
 	 */
 	proto.instanceOf = createConstraintModifier(function(a, b) { return a instanceof b;});
+
 } (Constraint));
 /** @lends */
 
