@@ -797,7 +797,7 @@ extend(cjs, {
 	 * @see cjs.resumeTemplate
 	 */
 	destroyTemplate:	function(dom_node) {
-							var index = get_template_instance_index(dom_node),
+							var index = get_template_instance_index(getFirstDOMChild(dom_node)),
 								instance = index >= 0 ? template_instances[index] : false;
 
 							if(instance) {
