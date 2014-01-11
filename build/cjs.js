@@ -721,7 +721,9 @@ var constraint_solver = {
 			if (node._options.cache_value !== false) {
 				// Check if dynamic value. If it is, then call it. If not, just fetch it
 				// set this to the node's cached value, which will be returned
-				node._cached_value = isFunction(node._value) && !node._options.literal ? node._value.call(node._options.context) : node._value;
+				node._cached_value = node._options.literal ? node._value :
+											(isFunction(node._value) ? node._value.call(node._options.context) :
+																		cjs.get(node._value));
 			} else if(isFunction(node._value)) {
 				// if it's just a non-cached function call, just call the function
 				node._value.call(node._options.context);
