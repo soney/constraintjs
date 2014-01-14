@@ -747,7 +747,7 @@ Constraint = function (value, options) {
 	 *
 	 * @example
 	 *
-	 *     var x = c1.iif(c2, c3);
+	 *     var x = is_selected.iif(selected_val, nonselected_val);
 	 */
 	proto.iif = function(true_val, other_val) {
 		var me = this;
