@@ -143,8 +143,8 @@ module.exports = function(grunt) {
 	grunt.loadTasks('./resources/api_doc_generator/tasks');
 
 	// Default task(s).
-	grunt.registerTask('default', ['jshint:source', 'concat', 'jshint:post_concat', 'qunit', 'uglify:production', 'dox']);
-	grunt.registerTask('dev', ['jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development']);
+	grunt.registerTask('default', ['clean', 'jshint:source', 'concat', 'jshint:post_concat', 'qunit', 'uglify:production', 'dox']);
+	grunt.registerTask('dev', ['clean', 'jshint:source', 'concat_sourcemap', 'jshint:post_concat', 'qunit', 'uglify:development']);
 	grunt.registerTask('package', ['clean', 'jshint:source', 'concat', 'jshint:post_concat', 'qunit', 'uglify:production', 'compress', 'dox']);
 	grunt.registerTask('docs', ['dox']);
 
