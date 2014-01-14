@@ -1,4 +1,4 @@
-//     ConstraintJS (CJS) <%= version %>
+//     ConstraintJS (CJS) 0.9.3
 //     ConstraintJS may be freely distributed under the MIT License
 //     http://cjs.from.so/
 
@@ -8,8 +8,6 @@
 /** @expose cjs */
 var cjs = (function (root) {
 "use strict";
-
-/*jslint eqnull: true */
 
 // Utility functions
 // -----------------
@@ -1876,7 +1874,7 @@ extend(cjs, {
 	 * @property {string} cjs.version
 	 * @see cjs.toString
 	 */
-	version: "<%= version %>", // This template will be filled in by the builder
+	version: "0.9.3", // This template will be filled in by the builder
 
 	/**
 	 * Print out the name and version of ConstraintJS
@@ -5046,13 +5044,6 @@ extend(cjs, {
 	isFSM: function(obj) { return obj instanceof FSM; }
 });
 
-/**
- * **Note:** the preferred way to create this object is with the `cjs.on` function
- * Creates an event that can be used in a finite-state machine transition
- * @class cjs.CJSEvent
- * @classdesc A constraint object communicates with the constraint solver to store and maintain constraint values
- * @see cjs.on
- */
 var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._listeners = []; // parent events that want to know when I fire
 	this._transitions = []; // a list of transitions that I'm attached to
@@ -6866,5 +6857,3 @@ if (typeof module !== 'undefined' && module.exports) {
 	/** @exports cjs */
 	module.exports = cjs;
 }
-
-//# sourceMappingURL=cjs.js.map
