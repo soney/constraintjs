@@ -1,9 +1,11 @@
 ##ConstraintJS
 [cjs.from.so/](http://cjs.from.so/ "ConstraintJS Website")
 
+### Using
+Use the download link on the [ConstraintJS website](http://cjs.from.so/ "ConstraintJS Website") to download the latest stable release.
 
 ### Building from source
-First, install [Grunt](http://gruntjs.com/installing-grunt, "Installing Grunt"). Then, from inside the cjs source directory, run:
+If you'd rather build from this repository, you must install [node.js](http://nodejs.org/, "node.js") and [Grunt](http://gruntjs.com/installing-grunt, "Installing Grunt"). Then, from inside the constraintjs source directory, run:
 
 	npm install .
 	grunt
