@@ -99,7 +99,7 @@ dt("Each", 3, function() {
 	equal(elem0, t1.childNodes[0]);
 });
 
-dt("Conditionals", 13, function() {
+dt("Conditionals", 21, function() {
 	var cond = cjs(true);
 	var t1 = cjs.createTemplate("<div>" +
 		"{{#if cond}}" +
@@ -115,6 +115,30 @@ dt("Conditionals", 13, function() {
 	equal(t1.textContent, "1")
 
 	var cond2 = cjs(true);
+	t1 = cjs.createTemplate("<div>" +
+		"{{#if cond}}" +
+		"1" +
+		"{{#elif cond2}}" +
+		"2" +
+		"{{/if}}"+
+	"</div>", {cond: cond, cond2: cond2});
+	equal(t1.textContent, "1")
+	cond.set(false);
+	equal(t1.textContent, "2")
+	cond.set(true);
+	equal(t1.textContent, "1")
+	cond2.set(true);
+	equal(t1.textContent, "1")
+	cond.set(false);
+	equal(t1.textContent, "2")
+	cond2.set(false);
+	equal(t1.textContent, "")
+	cond2.set(true);
+	equal(t1.textContent, "2")
+	cond.set(true);
+	equal(t1.textContent, "1")
+
+
 	var t2 = cjs.createTemplate("<div>" +
 		"{{#if cond}}" +
 		"<span>A</span>" +
@@ -165,7 +189,7 @@ dt("FSM", 3, function() {
 		"1" +
 		"{{#state s2}}" +
 		"2" +
-		"{{/if}}"+
+		"{{/fsm}}"+
 	"</div>", {my_fsm: my_fsm});
 	equal(t1.textContent, "1")
 	s1s2();

@@ -465,25 +465,27 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					getNodes: function() {
 						var len = template.sub_conditions.length,
 							cond = !!get_node_value(template.condition, context, lineage),
-							i = -1, children, memo_index;
+							i, children = false, memo_index;
 
 						if(template.reverse) {
 							cond = !cond;
 						}
 
 						if(cond) {
-							i = 0;
+							i = 0; children = template.children;
 						} else if(len > 0) {
 							for(i = 0; i<len; i++) {
 								cond = template.sub_conditions[i];
 
 								if(cond.condition === ELSE_COND || get_node_value(cond.condition, context, lineage)) {
-									i++; break;
+									children = cond.children;
+									i++;
+									break;
 								}
 							}
 						}
 
-						if(i < 0) {
+						if(!children) {
 							return [];
 						} else {
 							if(!instance_children[i]) {
