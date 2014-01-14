@@ -1,5 +1,5 @@
 ##ConstraintJS
-[cjs.from.so/](http://cjs.from.so/ "ConstraintJS Website")
+For documentation or the full ConstraintJS API, visit the ConstraintJS website: [cjs.from.so/](http://cjs.from.so/ "ConstraintJS Website")
 
 ### Using
 Use the download link on the [ConstraintJS website](http://cjs.from.so/ "ConstraintJS Website") to download the latest stable release.
