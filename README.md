@@ -7,7 +7,7 @@ For documentation or the full ConstraintJS API, visit [cjs.from.so/](http://cjs.
 
 ### Downloads
  * [Latest stable release](https://github.com/soney/constraintjs/releases/latest "Latest stable release")
- * [Latest beta release](https://raw.github.com/soney/constraintjs/master/build/cjs.js, "Latest beta release") (not recommended)
+ * [Latest beta release](https://raw.github.com/soney/constraintjs/master/build/cjs.js "Latest beta release") (not recommended)
 
 ### Building from source
 If you'd rather build from this repository, you must install [node.js](http://nodejs.org/ "node.js") and [Grunt](http://gruntjs.com/installing-grunt, "Grunt"). Then, from inside the constraintjs source directory, run:
