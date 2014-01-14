@@ -106,9 +106,7 @@ cjs.createTemplate($("#ex2code"), {}, $("#ex2"));</pre>
 <label>eyeTemplate:</label>
 <pre id="ex3_eye" class="prettyprint"></pre>
 <pre id="ex3_disp" class="prettyprint">
-var sliderTemplate = cjs.createTemplate($("#slider_template")),
-	eyeTemplate    = cjs.createTemplate($("#eye_template")),
-	eradius_slider = sliderTemplate({max: 90, min: 10, val: 50}),
+var eradius_slider = sliderTemplate({max: 90, min: 10, val: 50}),
 	eye_radius     = cjs(eradius_slider).toInt(),
 	pradius_slider = sliderTemplate({max: 90, min: 10, val: 20}),
 	pupil_radius   = cjs(pradius_slider).min(eye_radius),
@@ -117,14 +115,14 @@ var sliderTemplate = cjs.createTemplate($("#slider_template")),
 	mouse_y = cjs(0);
 
 var eyes = (['left', 'right']).map(function(float) {
-	var eye = eyeTemplate({fill: "white", size: eye_radius.mul(2), float: float}),
+	var eye   = eyeTemplate({fill: "white", size: eye_radius.mul(2), float: float}),
 		pupil = eyeTemplate({fill: "black", size: pupil_radius.mul(2), float: ""}),
 
 		eye_pos = cjs(function() { return $(eye).position(); }),
 		dx = eye_pos.prop("left").add(eye_radius).sub(mouse_x),
 		dy = eye_pos.prop("top").add(eye_radius).sub(mouse_y),
 		d  = dx.pow(2).add(dy.pow(2)).sqrt().min(eye_radius.sub(pupil_radius)),
-		angle = dy.atan2(dx),
+		angle    = dy.atan2(dx),
 		eye_left = eye_radius.sub(pupil_radius, d.mul(angle.cos())),
 		eye_top  = eye_radius.sub(pupil_radius, d.mul(angle.sin()));
 
