@@ -398,7 +398,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				node: node,
 				destroy: function() { if(txt_binding) txt_binding.destroy(true); },
 				pause: function() { if(txt_binding) txt_binding.pause(); },
-				resume: function() { if(txt_binding) txt_binding.resume(); },
+				resume: function() { if(txt_binding) txt_binding.resume(); }
 			};
 		} else if (type === "hb") {
 			var tag = template.tag;
