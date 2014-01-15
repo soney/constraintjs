@@ -1162,7 +1162,6 @@ Constraint = function (value, options) {
 			}
 		});
 		this.remove(silent);
-		//this._options = {};
 		this._changeListeners = [];
 		return this;
 	};
@@ -3798,7 +3797,6 @@ extend(cjs, {
 						options.on_destroy.call(options.context, silent);
 					}
 					node.destroy(silent);
-					node = null;
 				};
 
 				// Stop changing and remove it from the event queue if necessary
@@ -3940,9 +3938,6 @@ extend(cjs, {
 				constraint.destroy(silent);
 			});
 			args_map.destroy(silent);
-
-			args_map = null;
-			options = null;
 		};
 
 		// Run through every argument and call fn on it
