@@ -4,7 +4,7 @@ dt("Basic Text Bindings", 2, function() {
 	var x = cjs("Hello"),
 		y = cjs("World");
 	var dom_elem = document.createElement("div");
-	cjs.text(dom_elem, x, y);
+	cjs.bindText(dom_elem, x, y);
 	equal(dom_elem.textContent, "HelloWorld");
 	x.set("Goodbye");
 	equal(dom_elem.textContent, "GoodbyeWorld");
@@ -18,7 +18,7 @@ dt("Dynamic Text Bindings", 6, function() {
 	var dom_elem2 = document.createElement("div");
 
 	var elems = cjs([dom_elem1, dom_elem2]);
-	cjs.text(elems, x, y);
+	cjs.bindText(elems, x, y);
 
 	equal(dom_elem1.textContent, "HelloWorld");
 	equal(dom_elem2.textContent, "HelloWorld");
@@ -40,7 +40,7 @@ dt("Basic Text Bindings", 2, function() {
 	var x = cjs("Hello"),
 		y = cjs("World");
 	var dom_elem = document.createElement("div");
-	cjs.text(dom_elem, x, y);
+	cjs.bindText(dom_elem, x, y);
 	equal(dom_elem.textContent, "HelloWorld");
 	x.set("Goodbye");
 	equal(dom_elem.textContent, "GoodbyeWorld");
@@ -49,7 +49,7 @@ dt("Basic Text Bindings", 2, function() {
 dt("CSS Bindings", 1, function() {
 	var dom_elem = document.createElement("div");
 	var curr_map = cjs({});
-	cjs.css(dom_elem, curr_map);
+	cjs.bindCSS(dom_elem, curr_map);
 	curr_map.put("color", "red");
 	equal(dom_elem.style.color, "red");
 });
@@ -61,7 +61,7 @@ dt("Class Bindings", 15, function() {
 	ok(dom_elem.className.indexOf("class1") < 0, "No class 1");
 	ok(dom_elem.className.indexOf("class2") < 0, "No class 2");
 	ok(dom_elem.className.indexOf("existing_class") >= 0, "Old class still there");
-	cjs.class(dom_elem, classes);
+	cjs.bindClass(dom_elem, classes);
 	ok(dom_elem.className.indexOf("class1") < 0, "No class 1");
 	ok(dom_elem.className.indexOf("class2") < 0, "No class 2");
 	ok(dom_elem.className.indexOf("existing_class") >= 0, "Old class still there");
@@ -82,7 +82,7 @@ dt("Class Bindings", 15, function() {
 dt("Attr Bindings", 2, function() {
 	var dom_elem = document.createElement("div");
 	var attr_val = cjs("abc");
-	cjs.attr(dom_elem, "class", attr_val);
+	cjs.bindAttr(dom_elem, "class", attr_val);
 	equal(dom_elem.className, "abc");
 	attr_val.set("def");
 	equal(dom_elem.className, "def");
