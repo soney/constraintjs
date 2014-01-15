@@ -306,3 +306,40 @@ dt("Pause/Resume/Destroy templates", 7, function() {
 	x.set(5);
 	equal(tmplate.textContent, "4");
 });
+
+dt("Condition/State Combo", 7, function() {
+	var cond = cjs(false),
+		fsm = cjs	.fsm("state1", "state2")
+					.startsAt("state1");
+	var onetwo = fsm.addTransition("state1", "state2"),
+		twoone = fsm.addTransition("state2", "state1");
+	var tmplate = cjs.createTemplate(
+		"{{#fsm my_fsm}}" +
+			"{{#state state1}}" +
+				"{{#if cond}}" +
+					"A" +
+				"{{/if}}" +
+			"{{#state state2}}" +
+				"{{#unless cond}}" +
+					"B" +
+				"{{/unless}}" +
+		"{{/fsm}}", {
+			cond: cond,
+			my_fsm: fsm
+		});
+
+	equal(tmplate.textContent, "");
+	cond.set(true);
+	equal(tmplate.textContent, "A");
+	onetwo();
+	equal(tmplate.textContent, "");
+	cond.set(false);
+	equal(tmplate.textContent, "B");
+	cond.set(true);
+	equal(tmplate.textContent, "");
+	twoone();
+	equal(tmplate.textContent, "A");
+	cond.set(false);
+	equal(tmplate.textContent, "");
+
+});
