@@ -389,7 +389,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				node, txt_binding;
 			if(!literal) {
 				node = doc.createTextNode("");
-				txt_binding = cjs.text(node, val_constraint);
+				txt_binding = text_binding(node, val_constraint);
 			}
 			return {
 				type: type,
