@@ -5272,7 +5272,8 @@ var autoclose_nodes = {
 		when_open_sibling: ["elif", "else"]
 	},
 	"else": {
-		when_close_parent: ["if", "each"]
+		when_close_parent: ["if", "each"],
+		when_open_sibling: []
 	},
 	"state": {
 		when_open_sibling: ["state"]
