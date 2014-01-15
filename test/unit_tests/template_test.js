@@ -1,5 +1,4 @@
 module("Templates");
-						cjs.__debug = true;
 
 dt("Static Templates", 7, function() {
 	var empty_template = cjs.createTemplate("", {});
