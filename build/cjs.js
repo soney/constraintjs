@@ -2650,7 +2650,7 @@ extend(cjs, {
 
 // Maps use hashing to improve performance. By default, the hash is a simple toString
 // function
-var defaulthash = function (key) { return key.toString(); };
+var defaulthash = function (key) { return key+""; };
 
 // A string can also be specified as the hash, so that the hash is the result of calling
 // that property of the object
