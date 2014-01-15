@@ -14,7 +14,8 @@ var cjs = (function (root) {
 
 // Many of the functions here are from http://underscorejs.org/
 // Save bytes in the minified (but not gzipped) version:
-var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
+var ArrayProto = Array.prototype, ObjProto = Object.prototype,
+	FuncProto = Function.prototype, StringProto = String.prototype;
 
 // Create quick reference variables for speed access to core prototypes.
 var slice         = ArrayProto.slice,
@@ -31,10 +32,14 @@ var nativeSome    = ArrayProto.some,
 	nativeKeys    = Object.keys,
 	nativeFilter  = ArrayProto.filter,
 	nativeReduce  = ArrayProto.reduce,
-	nativeMap     = ArrayProto.map;
+	nativeMap     = ArrayProto.map,
+	nativeTrim    = StringProto.trim;
 
 //Bind a function to a context
 var bind = function (func, context) { return function () { return func.apply(context, arguments); }; },
+	trim = function(str){
+		return nativeTrim ? nativeTrim.call(str) : String(str).replace(new RegExp(/^\s+|\s+$/, 'g'), '');
+    },
 	doc	= root.document,
 	sTO = bind(root.setTimeout, root),
 	cTO = bind(root.clearTimeout, root),
@@ -4290,7 +4295,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		// and add all of the added classes
 		curr_class_name += map(ad.added, function(x) { return x.item; }).join(" ");
 
-		curr_class_name = curr_class_name.trim(); // and trim to remove extra spaces
+		curr_class_name = trim(curr_class_name); // and trim to remove extra spaces
 
 		element.className = curr_class_name; // finally, do the work of setting the class
 	}, []), // say that we don't have any classes to start with
@@ -4587,7 +4592,7 @@ var parse_single_state_spec = function(str) {
 // Parse one side of the transition
 var parse_state_spec = function(str) {
 	// Split by , and remove any excess spacing
-	var state_spec_strs = map(str.split(","), function(ss) { return ss.trim(); }); 
+	var state_spec_strs = map(str.split(","), function(ss) { return trim(ss); }); 
 
 	// The user only specified one state
 	if(state_spec_strs.length === 1) {
@@ -5129,8 +5134,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 /** @lends */
 
 var isElementOrWindow = function(elem) { return elem === root || isElement(elem); },
-	do_trim = function(x) { return x.trim(); },
-	split_and_trim = function(x) { return map(x.split(" "), do_trim); },
+	split_and_trim = function(x) { return map(x.split(" "), trim); },
 	timeout_event_type = "timeout";
 
 extend(cjs, {
@@ -6306,9 +6310,9 @@ extend(cjs, {
 	createTemplate:		function(template_str) {
 							if(!isString(template_str)) {
 								if(is_jquery_obj(template_str) || isNList(template_str)) {
-									template_str = template_str.length > 0 ? template_str[0].textContent.trim() : "";
+									template_str = template_str.length > 0 ? trim(template_str[0].textContent) : "";
 								} else if(isElement(template_str)) {
-									template_str = template_str.textContent.trim();
+									template_str = trim(template_str.textContent);
 								} else {
 									template_str = "" + template_str;
 								}
