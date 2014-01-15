@@ -253,17 +253,30 @@ dt("Parser test", 1, function() {
 	equal(tmplate.textContent, "{}}{");
 });
 
-dt("Each key/index", 2, function() {
+dt("Each key/index", 6, function() {
 	var arr = cjs(["a", "b"]);
-	//var obj = cjs({x: "x_val", y: "y_val"});
+	var obj = cjs({x: "x_val", y: "y_val"});
 	var tmplate = cjs.createTemplate("{{#each arr}}{{@index}}{{/each}}", {arr: arr});
 	equal(tmplate.textContent, "01");
 	arr.splice(0, 1);
 	equal(tmplate.textContent, "0");
-	/*
+	
 	tmplate = cjs.createTemplate("{{#each obj}}{{@key}}{{/each}}", {obj: obj});
 	equal(tmplate.textContent, "xy");
-	*/
+
+	var key1 = {},
+		key2 = {};
+	var dynamic_map = cjs.map({
+		keys: [key1, key2],
+		values: [1, 2]
+	});
+	var expected;
+	var func = function(key, val) {
+		equal(dynamic_map.get(key), val);
+		return val;
+	};
+	var tmplate = cjs.createTemplate("{{#each obj}}{{ this }}{{ func(@key, this) }}{{/each}}", {obj: dynamic_map, func: func});
+	equal(tmplate.textContent, "1122");
 });
 
 dt("Template out", 2, function() {

@@ -21,7 +21,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	},
 	get_instance_node = function(c) { return c.node || c.getNodes(); },
 	get_node_value = function(node, context, lineage, curr_bindings) {
-		var op, object, call_context, args;
+		var op, object, call_context, args, val, name, i;
 		if(!node) { return; }
 		switch(node.type) {
 			case THIS_EXP: return cjs.get(last(lineage).this_exp);
@@ -37,16 +37,19 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 							undefined;
 			case IDENTIFIER:
 				if(node.name[0] === "@") {
-					var name = node.name.slice(1);
-					for(var i = lineage.length-1; i>=0; i--) {
+					name = node.name.slice(1);
+					for(i = lineage.length-1; i>=0; i--) {
 						object = lineage[i].at;
 						if(object && has(object, name)) {
-							return cjs.get(object[name]);
+							val = object[name];
+							break;
 						}
 					}
-					return undefined;
+				} else {
+					val = context[node.name];
 				}
-				return cjs.get(context[node.name]);
+
+				return is_constraint(val) ? val.get() : val;
 			case MEMBER_EXP:
 				object = get_node_value(node.object, context, lineage, curr_bindings);
 				return compute_object_property(object, node.property, context, lineage, curr_bindings);
@@ -405,9 +408,21 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					type: type,
 					getNodes: function() {
 						arr_val = get_node_value(template.parsed_content, context, lineage);
-						if(!isArray(arr_val)) {
-							// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
-							arr_val = map(arr_val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
+
+						if(is_array(arr_val)) { // array constraint
+							arr_val = arr_val.toArray();
+						}
+
+						if(!isArray(arr_val)) { 
+							if(is_map(arr_val)) { // map constraint
+								arr_val = arr_val.entries();
+								each(arr_val, function(x) {
+									x.is_obj = IS_OBJ;
+								});
+							} else {
+								// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
+								arr_val = map(arr_val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
+							}
 						} else if(arr_val.length === 0 && template.else_child) {
 							arr_val = [ELSE_COND];
 						}
@@ -434,12 +449,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 							var v = added_info.item,
 								index = added_info.to,
 								is_else = v === ELSE_COND,
-								lastLineageItem = is_else ? false : {this_exp: v, at: ((v && v.is_obj === IS_OBJ) ? {key: cjs(v.key)} : { index: cjs(index)})},
+								lastLineageItem = is_else ? false : ((v && v.is_obj === IS_OBJ) ? {this_exp: v.value , at: {key: cjs.constraint(v.key)}} : {this_exp: v, at: {index: cjs.constraint(index)}}),
 								concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
 								vals = map(is_else ? template.else_child.children : template.children, function(child) {
 									var dom_child = create_template_instance(child, context, concated_lineage);
 									return get_instance_node(dom_child);
 								});
+
 							child_vals.splice(index, 0, vals);
 							lastLineages.splice(index, 0, lastLineageItem);
 						}, this);
@@ -656,12 +672,13 @@ extend(cjs, {
 	 * To create an object for every item in an array or object, you can use the `{{#each}}` block helper.
 	 * `{{this}}` refers to the current item and `@key` and `@index` refer to the keys for arrays and objects
 	 * respectively.
+	 *
 	 *     {{#each obj_name}}
-	 *         {{@key}}: {{this}
+	 *         {{@key}}: {{this}}
 	 *     {{/each}}
 	 *
 	 *     {{#each arr_name}}
-	 *         {{@index}}: {{this}
+	 *         {{@index}}: {{this}}
 	 *     {{/each}}
 	 *
 	 * If the length of the array is zero (or the object has no keys) then an `{{#else}}` block can be used: 
