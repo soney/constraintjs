@@ -89,9 +89,6 @@ extend(cjs, {
 				constraint.destroy(silent);
 			});
 			args_map.destroy(silent);
-
-			args_map = null;
-			options = null;
 		};
 
 		// Run through every argument and call fn on it

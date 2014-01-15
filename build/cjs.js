@@ -720,7 +720,7 @@ var constraint_solver = {
 				// Check if dynamic value. If it is, then call it. If not, just fetch it
 				// set this to the node's cached value, which will be returned
 				node._cached_value = node._options.literal ? node._value :
-											(isFunction(node._value) ? node._value.call(node._options.context) :
+											(isFunction(node._value) ? node._value.call(node._options.context || node) :
 																		cjs.get(node._value));
 			} else if(isFunction(node._value)) {
 				// if it's just a non-cached function call, just call the function
@@ -1162,7 +1162,7 @@ Constraint = function (value, options) {
 			}
 		});
 		this.remove(silent);
-		this._options = {};
+		//this._options = {};
 		this._changeListeners = [];
 		return this;
 	};

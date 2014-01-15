@@ -56,7 +56,6 @@ extend(cjs, {
 						options.on_destroy.call(options.context, silent);
 					}
 					node.destroy(silent);
-					node = null;
 				};
 
 				// Stop changing and remove it from the event queue if necessary
