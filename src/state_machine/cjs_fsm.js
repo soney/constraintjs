@@ -121,7 +121,7 @@ var parse_single_state_spec = function(str) {
 // Parse one side of the transition
 var parse_state_spec = function(str) {
 	// Split by , and remove any excess spacing
-	var state_spec_strs = map(str.split(","), function(ss) { return ss.trim(); }); 
+	var state_spec_strs = map(str.split(","), function(ss) { return trim(ss); }); 
 
 	// The user only specified one state
 	if(state_spec_strs.length === 1) {

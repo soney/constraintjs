@@ -768,9 +768,9 @@ extend(cjs, {
 	createTemplate:		function(template_str) {
 							if(!isString(template_str)) {
 								if(is_jquery_obj(template_str) || isNList(template_str)) {
-									template_str = template_str.length > 0 ? template_str[0].textContent.trim() : "";
+									template_str = template_str.length > 0 ? trim(template_str[0].textContent) : "";
 								} else if(isElement(template_str)) {
-									template_str = template_str.textContent.trim();
+									template_str = trim(template_str.textContent);
 								} else {
 									template_str = "" + template_str;
 								}

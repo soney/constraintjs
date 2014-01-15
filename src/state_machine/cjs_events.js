@@ -95,8 +95,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 /** @lends */
 
 var isElementOrWindow = function(elem) { return elem === root || isElement(elem); },
-	do_trim = function(x) { return x.trim(); },
-	split_and_trim = function(x) { return map(x.split(" "), do_trim); },
+	split_and_trim = function(x) { return map(x.split(" "), trim); },
 	timeout_event_type = "timeout";
 
 extend(cjs, {

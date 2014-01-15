@@ -5,7 +5,8 @@
 
 // Many of the functions here are from http://underscorejs.org/
 // Save bytes in the minified (but not gzipped) version:
-var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
+var ArrayProto = Array.prototype, ObjProto = Object.prototype,
+	FuncProto = Function.prototype, StringProto = String.prototype;
 
 // Create quick reference variables for speed access to core prototypes.
 var slice         = ArrayProto.slice,
@@ -22,10 +23,14 @@ var nativeSome    = ArrayProto.some,
 	nativeKeys    = Object.keys,
 	nativeFilter  = ArrayProto.filter,
 	nativeReduce  = ArrayProto.reduce,
-	nativeMap     = ArrayProto.map;
+	nativeMap     = ArrayProto.map,
+	nativeTrim    = StringProto.trim;
 
 //Bind a function to a context
 var bind = function (func, context) { return function () { return func.apply(context, arguments); }; },
+	trim = function(str){
+		return nativeTrim ? nativeTrim.call(str) : String(str).replace(new RegExp(/^\s+|\s+$/, 'g'), '');
+    },
 	doc	= root.document,
 	sTO = bind(root.setTimeout, root),
 	cTO = bind(root.clearTimeout, root),

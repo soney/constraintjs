@@ -340,7 +340,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		// and add all of the added classes
 		curr_class_name += map(ad.added, function(x) { return x.item; }).join(" ");
 
-		curr_class_name = curr_class_name.trim(); // and trim to remove extra spaces
+		curr_class_name = trim(curr_class_name); // and trim to remove extra spaces
 
 		element.className = curr_class_name; // finally, do the work of setting the class
 	}, []), // say that we don't have any classes to start with
