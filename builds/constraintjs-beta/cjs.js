@@ -63,7 +63,7 @@ var bind = function (func, context) { return function () { return func.apply(con
 
 
 var getTextContent, setTextContent;
-if(doc && doc.body && !doc.body.textContent) { // old IE
+if(doc && doc.body && 'textContent' in doc.body) { // old IE
 	getTextContent = function(node) { return node.innerText; };
 	setTextContent = function(node, val) { node.innerText = val; };
 } else {
