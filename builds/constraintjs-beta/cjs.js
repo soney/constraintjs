@@ -38,7 +38,7 @@ var nativeSome    = ArrayProto.some,
 //Bind a function to a context
 var bind = function (func, context) { return function () { return func.apply(context, arguments); }; },
 	trim = function(str){
-		return nativeTrim ? nativeTrim.call(str) : String(str).replace(new RegExp(/^\s+|\s+$/, 'g'), '');
+		return nativeTrim ? nativeTrim.call(str) : String(str).replace(/^\s+|\s+$/g, '');
     },
 	doc	= root.document,
 	sTO = bind(root.setTimeout, root),
