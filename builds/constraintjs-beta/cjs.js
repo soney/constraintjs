@@ -61,6 +61,16 @@ var bind = function (func, context) { return function () { return func.apply(con
 						">>>": function (a, b) { return a >>> b;}
 	};
 
+
+var getTextContent, setTextContent;
+if(doc && doc.body && !doc.body.textContent) { // old IE
+	getTextContent = function(node) { return node.innerText; };
+	setTextContent = function(node, val) { node.innerText = val; };
+} else {
+	getTextContent = function(node) { return node.textContent; };
+	setTextContent = function(node, val) { node.textContent = val; };
+}
+
 // Establish the object that gets returned to break out of a loop iteration.
 var breaker = {};
 
@@ -4236,7 +4246,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 	 *     cjs.bindText(my_elem, message);
 	 */
 var text_binding = create_textual_binding(function(element, value) { // set the escaped text of a node
-		element.textContent = value;
+		setTextContent(element, value);
 	}),
 
 	/**
@@ -5631,7 +5641,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	},
 	get_escaped_html = function(c) {
 		if(c.nodeType === 3) {
-			return escapeHTML(c.textContent);
+			return escapeHTML(getTextContent(c));
 		} else {
 			return escapeHTML(c.outerHTML);
 		}
@@ -6310,9 +6320,9 @@ extend(cjs, {
 	createTemplate:		function(template_str) {
 							if(!isString(template_str)) {
 								if(is_jquery_obj(template_str) || isNList(template_str)) {
-									template_str = template_str.length > 0 ? trim(template_str[0].textContent) : "";
+									template_str = template_str.length > 0 ? trim(getTextContent(template_str[0])) : "";
 								} else if(isElement(template_str)) {
-									template_str = trim(template_str.textContent);
+									template_str = trim(getTextContent(template_str));
 								} else {
 									template_str = "" + template_str;
 								}
