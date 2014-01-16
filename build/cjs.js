@@ -5940,8 +5940,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				}),
 				node, txt_binding;
 			if(!literal) {
-				node = doc.createTextNode("");
-				txt_binding = text_binding(node, val_constraint);
+				var curr_value = cjs.get(val_constraint);
+				if(isPolyDOM(curr_value)) {
+					node = getFirstDOMChild(curr_value);
+				} else {
+					node = doc.createTextNode(""+curr_value);
+					txt_binding = text_binding(node, val_constraint);
+				}
 			}
 			return {
 				type: type,
