@@ -29,7 +29,7 @@ var nativeSome    = ArrayProto.some,
 //Bind a function to a context
 var bind = function (func, context) { return function () { return func.apply(context, arguments); }; },
 	trim = function(str){
-		return nativeTrim ? nativeTrim.call(str) : String(str).replace(new RegExp(/^\s+|\s+$/, 'g'), '');
+		return nativeTrim ? nativeTrim.call(str) : String(str).replace(/^\s+|\s+$/g, '');
     },
 	doc	= root.document,
 	sTO = bind(root.setTimeout, root),
@@ -51,6 +51,16 @@ var bind = function (func, context) { return function () { return func.apply(con
 						"<<":  function (a, b) { return a << b; }, ">>": function (a, b) { return a >> b; },
 						">>>": function (a, b) { return a >>> b;}
 	};
+
+
+var getTextContent, setTextContent;
+if(doc && !('textContent' in doc.createElement('div'))) {
+	getTextContent = function(node) { return node.innerText; };
+	setTextContent = function(node, val) { node.innerText = val; };
+} else {
+	getTextContent = function(node) { return node.textContent; };
+	setTextContent = function(node, val) { node.textContent = val; };
+}
 
 // Establish the object that gets returned to break out of a loop iteration.
 var breaker = {};

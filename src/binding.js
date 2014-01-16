@@ -281,7 +281,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 	 *     cjs.bindText(my_elem, message);
 	 */
 var text_binding = create_textual_binding(function(element, value) { // set the escaped text of a node
-		element.textContent = value;
+		setTextContent(element, value);
 	}),
 
 	/**

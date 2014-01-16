@@ -89,7 +89,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	},
 	get_escaped_html = function(c) {
 		if(c.nodeType === 3) {
-			return escapeHTML(c.textContent);
+			return escapeHTML(getTextContent(c));
 		} else {
 			return escapeHTML(c.outerHTML);
 		}
@@ -768,9 +768,9 @@ extend(cjs, {
 	createTemplate:		function(template_str) {
 							if(!isString(template_str)) {
 								if(is_jquery_obj(template_str) || isNList(template_str)) {
-									template_str = template_str.length > 0 ? trim(template_str[0].textContent) : "";
+									template_str = template_str.length > 0 ? trim(getTextContent(template_str[0])) : "";
 								} else if(isElement(template_str)) {
-									template_str = trim(template_str.textContent);
+									template_str = trim(getTextContent(template_str));
 								} else {
 									template_str = "" + template_str;
 								}
