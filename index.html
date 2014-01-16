@@ -22,7 +22,7 @@
 				<div class="col-md-3 mainlinks">
 					<div class="row">
 						<div class="col-md-12">
-                    		<a href="builds/constraintjs-0.9.2.zip" class="btn btn-block btn-lg btn-primary"><span class="glyphicon glyphicon-download"></span> Download <span class="version">v0.9.2</span></a>
+                    		<a href="builds/constraintjs-0.9.3.zip" class="btn btn-block btn-lg btn-primary"><span class="glyphicon glyphicon-download"></span> Download <span class="version">v0.9.3</span></a>
 							<div class="filesize">10kb minified &amp; gzipped</div>
 						</div>
 					</div>
@@ -126,7 +126,7 @@ var eyes = (['left', 'right']).map(function(float) {
 		eye_left = eye_radius.sub(pupil_radius, d.mul(angle.cos())),
 		eye_top  = eye_radius.sub(pupil_radius, d.mul(angle.sin()));
 
-	cjs.css(pupil, {
+	cjs.bindCSS(pupil, {
 			position: "relative",
 			left: eye_left.add("px"),
 			top: eye_top.add("px")
@@ -231,7 +231,7 @@ $(window).on("mousemove", function(event) {
 					angle = dy.atan2(dx),
 					eye_left = eye_radius.sub(pupil_radius, d.mul(angle.cos())),
 					eye_top  = eye_radius.sub(pupil_radius, d.mul(angle.sin()));
-				cjs.css(pupil, {
+				cjs.bindCSS(pupil, {
 						position: "relative",
 						left: eye_left.add("px"),
 						top: eye_top.add("px"),
@@ -246,7 +246,7 @@ $(window).on("mousemove", function(event) {
 
 				return eye;
 			});
-			cjs.css($("#ex3"), "width", eye_radius.mul(4).add(20, "px"));
+			cjs.bindCSS($("#ex3"), "width", eye_radius.mul(4).add(20, "px"));
 
 			$(window).on("mousemove", function(event) {
 					mouse_x.set(event.pageX); mouse_y.set(event.pageY);

@@ -1,4 +1,4 @@
-//     ConstraintJS (CJS) 0.9.2
+//     ConstraintJS (CJS) 0.9.3
 //     ConstraintJS may be freely distributed under the MIT License
 //     http://cjs.from.so/
 
@@ -14,7 +14,8 @@ var cjs = (function (root) {
 
 // Many of the functions here are from http://underscorejs.org/
 // Save bytes in the minified (but not gzipped) version:
-var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
+var ArrayProto = Array.prototype, ObjProto = Object.prototype,
+	FuncProto = Function.prototype, StringProto = String.prototype;
 
 // Create quick reference variables for speed access to core prototypes.
 var slice         = ArrayProto.slice,
@@ -31,10 +32,14 @@ var nativeSome    = ArrayProto.some,
 	nativeKeys    = Object.keys,
 	nativeFilter  = ArrayProto.filter,
 	nativeReduce  = ArrayProto.reduce,
-	nativeMap     = ArrayProto.map;
+	nativeMap     = ArrayProto.map,
+	nativeTrim    = StringProto.trim;
 
 //Bind a function to a context
 var bind = function (func, context) { return function () { return func.apply(context, arguments); }; },
+	trim = function(str){
+		return nativeTrim ? nativeTrim.call(str) : String(str).replace(/^\s+|\s+$/g, '');
+    },
 	doc	= root.document,
 	sTO = bind(root.setTimeout, root),
 	cTO = bind(root.clearTimeout, root),
@@ -55,6 +60,16 @@ var bind = function (func, context) { return function () { return func.apply(con
 						"<<":  function (a, b) { return a << b; }, ">>": function (a, b) { return a >> b; },
 						">>>": function (a, b) { return a >>> b;}
 	};
+
+
+var getTextContent, setTextContent;
+if(doc && !('textContent' in doc.createElement('div'))) {
+	getTextContent = function(node) { return node.innerText; };
+	setTextContent = function(node, val) { node.innerText = val; };
+} else {
+	getTextContent = function(node) { return node.textContent; };
+	setTextContent = function(node, val) { node.textContent = val; };
+}
 
 // Establish the object that gets returned to break out of a loop iteration.
 var breaker = {};
@@ -719,7 +734,9 @@ var constraint_solver = {
 			if (node._options.cache_value !== false) {
 				// Check if dynamic value. If it is, then call it. If not, just fetch it
 				// set this to the node's cached value, which will be returned
-				node._cached_value = isFunction(node._value) && !node._options.literal ? node._value.call(node._options.context) : node._value;
+				node._cached_value = node._options.literal ? node._value :
+											(isFunction(node._value) ? node._value.call(node._options.context || node) :
+																		cjs.get(node._value));
 			} else if(isFunction(node._value)) {
 				// if it's just a non-cached function call, just call the function
 				node._value.call(node._options.context);
@@ -1012,12 +1029,12 @@ Constraint = function (value, options) {
 	 * @see invalidate
 	 *
 	 * @example
-	 *     var x = cjs(1);
-	 *     x.get(); // 1
-	 *     x.set(function() { return 2; });
-	 *     x.get(); // 2
-	 *     x.set('c');
-	 *     x.get(); // 'c'
+	 *    var x = cjs(1);
+	 *    x.get(); // 1
+	 *    x.set(function() { return 2; });
+	 *    x.get(); // 2
+	 *    x.set('c');
+	 *    x.get(); // 'c'
 	 */
 	proto.set = function (value, options) {
 		var old_value = this._value;
@@ -1160,7 +1177,6 @@ Constraint = function (value, options) {
 			}
 		});
 		this.remove(silent);
-		this._options = {};
 		this._changeListeners = [];
 		return this;
 	};
@@ -1172,7 +1188,7 @@ Constraint = function (value, options) {
 	 * @method onChange
 	 * @param {function} callback
 	 * @param {*} [thisArg=window] - The context to use for `callback`
-	 * @param {...*} args - The first `args.length` arguments to `callback`
+	 * @param {*} ...args - The first `args.length` arguments to `callback`
 	 * @return {cjs.Constraint} - `this`
 	 * @see offChange
 	 *
@@ -1268,14 +1284,14 @@ Constraint = function (value, options) {
 	};
 
 	/**
-	 * Returns the last value in the array `[this].concat(args)` if every value is truthy. Otherwise, returns `false.
+	 * Returns the last value in the array `[this].concat(args)` if every value is truthy. Otherwise, returns `false`.
 	 * Every argument won't necessarily be evaluated. For instance:
 	 *
 	 * - `x = cjs(false); cjs.get(x.and(a))` does not evaluate `a`
 	 *
 	 * @method and
-	 * @param {...*} args - Any number of constraints or values to pass the "and" test
-	 * @return {boolean|*} - `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
+	 * @param {*} ...args - Any number of constraints or values to pass the "and" test
+	 * @return {cjs.Constraitnboolean|*} - A constraint whose value is `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
 	 *
 	 * @example
 	 *
@@ -1299,14 +1315,33 @@ Constraint = function (value, options) {
 	};
 
 	/**
+	 * Inline if function: similar to the javascript a ? b : c expression
+	 *
+	 * @method iif
+	 * @param {*} true_val - The value to return if `this` is truthy
+	 * @param {*} other_val - The value to return if `this` is falsy
+	 * @return {cjs.Constraint} - A constraint whose value is `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
+	 *
+	 * @example
+	 *
+	 *     var x = is_selected.iif(selected_val, nonselected_val);
+	 */
+	proto.iif = function(true_val, other_val) {
+		var me = this;
+		return new My(function() {
+			return me.get() ? cjs.get(true_val) : cjs.get(other_val);
+		});
+	};
+
+	/**
 	 * Returns the first truthy value in the array `[this].concat(args)`. If no value is truthy, returns `false`.
 	 * Every argument won't necessarily be evaluated. For instance:
 	 *
 	 * - `y = cjs(true); cjs.get(y.or(b))` does not evaluate `b`
 	 *
 	 * @method or
-	 * @param {...*} args - Any number of constraints or values to pass the "or" test
-	 * @return {boolean|*} - The first truthy value or `false` if there aren't any
+	 * @param {*} ...args - Any number of constraints or values to pass the "or" test
+	 * @return {cjs.Constraint} - A constraitn whose value is the first truthy value or `false` if there aren't any
 	 *
 	 * @example
 	 *
@@ -1348,7 +1383,7 @@ Constraint = function (value, options) {
 	 * Property constraint modifier.
 	 *
 	 * @method prop
-	 * @param {...strings} args - Any number of properties to fetch
+	 * @param {strings} ...args - Any number of properties to fetch
 	 * @return {*} - A constraint whose value is `this[args[0]][args[1]]...`
 	 * @example
 	 * 
@@ -1380,7 +1415,7 @@ Constraint = function (value, options) {
 	/**
 	 * Addition constraint modifier
 	 * @method add
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() + args[0].get() + args[1].get() + ...`
 	 * @example
 	 *
@@ -1393,7 +1428,7 @@ Constraint = function (value, options) {
 	/**
 	 * Subtraction constraint modifier
 	 * @method sub
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
 	 * @example
 	 *
@@ -1403,7 +1438,7 @@ Constraint = function (value, options) {
 	/**
 	 * Multiplication constraint modifier
 	 * @method mul
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() * args[0].get() * args[1].get() * ...`
 	 * @example
 	 *
@@ -1413,7 +1448,7 @@ Constraint = function (value, options) {
 	/**
 	 * Division constraint modifier
 	 * @method div
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is `this.get() / args[0].get() / args[1].get() / ...`
 	 * @example
 	 *
@@ -1521,7 +1556,7 @@ Constraint = function (value, options) {
 	/**
 	 * Max
 	 * @method max
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **highest** of `this.get()`, `args[0].get()`, `args[1].get()`...
 	 * @example
 	 *
@@ -1530,7 +1565,7 @@ Constraint = function (value, options) {
 	/**
 	 * Min
 	 * @method min
-	 * @param {...number} args - Any number of constraints or numbers
+	 * @param {number} ...args - Any number of constraints or numbers
 	 * @return {number} - A constraint whose value is the **lowest** of `this.get()`, `args[0].get()`, `args[1].get()`...
 	 * @example
 	 *
@@ -1750,6 +1785,7 @@ Constraint = function (value, options) {
 	 *     var valIsArray = val.instanceof(Array)
 	 */
 	proto.instanceOf = createConstraintModifier(function(a, b) { return a instanceof b;});
+
 } (Constraint));
 /** @lends */
 
@@ -1852,7 +1888,7 @@ extend(cjs, {
 	 * @property {string} cjs.version
 	 * @see cjs.toString
 	 */
-	version: "0.9.2", // This template will be filled in by the builder
+	version: "0.9.3", // This template will be filled in by the builder
 
 	/**
 	 * Print out the name and version of ConstraintJS
@@ -2161,7 +2197,7 @@ ArrayConstraint = function (options) {
 	 * The push() method mutates an array by appending the given elements and returning the new length of the array.
 	 *
 	 * @method push
-	 * @param {...*} elements - The set of elements to append to the end of the array
+	 * @param {*} ...elements - The set of elements to append to the end of the array
 	 * @return {number} - The new length of the array
 	 *
 	 * @see pop
@@ -2365,7 +2401,7 @@ ArrayConstraint = function (options) {
 	 * If howMany is 0, no elements are removed. In this case, you should specify at least one new element.
 	 * If howMany is greater than the number of elements left in the array starting at index,
 	 * then all of the elements through the end of the array will be deleted.
-	 * @param {...*} elements - The elements to add to the array. If you don't specify any elements,
+	 * @param {*} ...elements - The elements to add to the array. If you don't specify any elements,
 	 * splice simply removes elements from the array.
 	 * @return {array.*} - An array containing the removed elements. If only one element is removed,
 	 * an array of one element is returned. If no elements are removed, an empty array is returned.
@@ -2469,7 +2505,7 @@ ArrayConstraint = function (options) {
 	 * of the array.
 	 *
 	 * @method unshift
-	 * @param {...*} elements - The elements to be added
+	 * @param {*} ...elements - The elements to be added
 	 * @return {number} - The new array length
 	 *
 	 * @see shift
@@ -2490,7 +2526,7 @@ ArrayConstraint = function (options) {
 	 * The concat() method returns a new array comprised of this array joined with other array(s) and/or value(s).
 	 *
 	 * @method concat
-	 * @param {...*} values - Arrays and/or values to concatenate to the resulting array.
+	 * @param {*} ...values - Arrays and/or values to concatenate to the resulting array.
 	 * @return {array} The concatenated array
 	 * @example
 	 *     var arr1 = cjs(['a','b','c']),
@@ -2606,6 +2642,7 @@ is_array = function(obj) {
 
 extend(cjs, {
 	/**
+	 * Create an array constraint
 	 * @method cjs.array
 	 * @constructs cjs.ArrayConstraint
 	 * @param {Object} [options] - A set of options to control how the array constraint is evaluated
@@ -2628,7 +2665,7 @@ extend(cjs, {
 
 // Maps use hashing to improve performance. By default, the hash is a simple toString
 // function
-var defaulthash = function (key) { return key.toString(); };
+var defaulthash = function (key) { return key+""; };
 
 // A string can also be specified as the hash, so that the hash is the result of calling
 // that property of the object
@@ -3695,11 +3732,20 @@ is_map = function(obj) {
 
 extend(cjs, {
 	/**
+	 * Create a map constraint
 	 * @method cjs.map
 	 * @constructs cjs.MapConstraint
 	 * @param {Object} [options] - A set of options to control how the map constraint is evaluated
 	 * @return {cjs.MapConstraint} - A new map constraint object
 	 * @see cjs.MapConstraint
+	 * @example Creating a map constraint
+	 *
+	 *     var map_obj = cjs.map({
+	 *         value: { foo: 1 }
+	 *     });
+	 *     cobj.get('foo'); // 1
+	 *     cobj.put('bar', 2);
+	 *     cobj.get('bar') // 2
 	 */
 	map: function (arg0, arg1) { return new MapConstraint(arg0, arg1); },
 	/** @expose cjs.MapConstraint */
@@ -3766,7 +3812,6 @@ extend(cjs, {
 						options.on_destroy.call(options.context, silent);
 					}
 					node.destroy(silent);
-					node = null;
 				};
 
 				// Stop changing and remove it from the event queue if necessary
@@ -3908,9 +3953,6 @@ extend(cjs, {
 				constraint.destroy(silent);
 			});
 			args_map.destroy(silent);
-
-			args_map = null;
-			options = null;
 		};
 
 		// Run through every argument and call fn on it
@@ -4194,30 +4236,30 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 	/**
 	 * Constrain a DOM node's text content
 	 *
-	 * @method cjs.text
+	 * @method cjs.bindText
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The desired text value
+	 * @param {*} ...values - The desired text value
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a dom element
 	 *
 	 *     var message = cjs('hello');
-	 *     cjs.text(my_elem, message);
+	 *     cjs.bindText(my_elem, message);
 	 */
 var text_binding = create_textual_binding(function(element, value) { // set the escaped text of a node
-		element.textContent = value;
+		setTextContent(element, value);
 	}),
 
 	/**
 	 * Constrain a DOM node's HTML content
 	 *
-	 * @method cjs.html
+	 * @method cjs.bindHTML
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The desired html content
+	 * @param {*} ...values - The desired html content
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a dom element
 	 *
 	 *     var message = cjs('<b>hello</b>');
-	 *     cjs.text(my_elem, message);
+	 *     cjs.bindHTML(my_elem, message);
 	 */
 	html_binding = create_textual_binding(function(element, value) { // set the non-escaped inner HTML of a node
 		element.innerHTML = value;
@@ -4226,14 +4268,14 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	/**
 	 * Constrain a DOM node's value
 	 *
-	 * @method cjs.val
+	 * @method cjs.bindValue
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The value the element should have
+	 * @param {*} ...values - The value the element should have
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a text input element
 	 *
 	 *     var value = cjs('hello');
-	 *     cjs.val(my_elem, message);
+	 *     cjs.bindValue(my_elem, message);
 	 */
 	val_binding = create_textual_binding(function(element, value) { // set the value of a node
 		element.val = value;
@@ -4242,14 +4284,14 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	/**
 	 * Constrain a DOM node's class names
 	 *
-	 * @method cjs.class
+	 * @method cjs.bindClass
 	 * @param {dom} element - The DOM element
-	 * @param {...*} values - The list of classes the element should have. The binding automatically flattens them.
+	 * @param {*} ...values - The list of classes the element should have. The binding automatically flattens them.
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem` is a dom element
 	 *
 	 *     var classes = cjs('class1 class2');
-	 *     cjs.class(my_elem, classes);
+	 *     cjs.bindClass(my_elem, classes);
 	 */
 	class_binding = create_list_binding(function(args) { // set the class of a node
 		return flatten(map(args, cjs.get), true);
@@ -4263,7 +4305,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		// and add all of the added classes
 		curr_class_name += map(ad.added, function(x) { return x.item; }).join(" ");
 
-		curr_class_name = curr_class_name.trim(); // and trim to remove extra spaces
+		curr_class_name = trim(curr_class_name); // and trim to remove extra spaces
 
 		element.className = curr_class_name; // finally, do the work of setting the class
 	}, []), // say that we don't have any classes to start with
@@ -4271,14 +4313,14 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	/**
 	 * Constrain a DOM node's children
 	 *
-	 * @method cjs.children
+	 * @method cjs.bindChildren
 	 * @param {dom} element - The DOM element
-	 * @param {...*} elements - The elements to use as the constraint. The binding automatically flattens them.
+	 * @param {*} ...elements - The elements to use as the constraint. The binding automatically flattens them.
 	 * @return {Binding} - A binding object
 	 * @example If `my_elem`, `child1`, and `child2` are dom elements
 	 *
 	 *     var nodes = cjs(child1, child2);
-	 *     cjs.children(my_elem, nodes);
+	 *     cjs.bindChildren(my_elem, nodes);
 	 */
 	children_binding = create_list_binding(function(args) {
 		var arg_val_arr = map(args, cjs.get);
@@ -4295,7 +4337,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	/**
 	 * Constrain a DOM node's CSS style
 	 *
-	 * @method cjs.css
+	 * @method cjs.bindCSS
 	 * @param {dom} element - The DOM element
 	 * @param {object} values - An object whose key-value pairs are the CSS property names and values respectively
 	 * @return {Binding} - A binding object representing the link from constraints to CSS styles
@@ -4304,7 +4346,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 *
 	 *     var color = cjs('red'),
 	 *     left = cjs(0);
-	 *     cjs.css(my_elem, {
+	 *     cjs.bindCSS(my_elem, {
 	 *         "background-color": color,
 	 *         left: left.add('px')
 	 *     });
@@ -4312,7 +4354,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	/**
 	 * Constrain a DOM node's CSS style
 	 *
-	 * @method cjs.css^2
+	 * @method cjs.bindCSS^2
 	 * @param {string} key - The name of the CSS attribute to constraint
 	 * @param {cjs.Constraint|string} value - The value of this CSS attribute
 	 * @return {Binding} - A binding object representing the link from constraints to elements
@@ -4320,7 +4362,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @example If `my_elem` is a dom element
 	 *
 	 *     var color = cjs('red');
-	 *     cjs.css(my_elem, ''background-color', color);
+	 *     cjs.bindCSS(my_elem, ''background-color', color);
 	 */
 	css_binding = create_obj_binding(function(element, key, value) {
 		element.style[camel_case(key)] = value;
@@ -4329,7 +4371,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	/**
 	 * Constrain a DOM node's attribute values
 	 *
-	 * @method cjs.attr
+	 * @method cjs.bindAttr
 	 * @param {dom} element - The DOM element
 	 * @param {object} values - An object whose key-value pairs are the attribute names and values respectively
 	 * @return {Binding} - A binding object representing the link from constraints to elements
@@ -4337,12 +4379,12 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * @example If `my_elem` is an input element
 	 *
 	 *     var default_txt = cjs('enter name');
-	 *     cjs.attr(my_elem, 'placeholder', default_txt);
+	 *     cjs.bindAttr(my_elem, 'placeholder', default_txt);
 	 */
 	/**
 	 * Constrain a DOM node's attribute value
 	 *
-	 * @method cjs.attr^2
+	 * @method cjs.bindAttr^2
 	 * @param {string} key - The name of the attribute to constraint
 	 * @param {cjs.Constraint|string} value - The value of this attribute
 	 * @return {Binding} - A binding object representing the link from constraints to elements
@@ -4351,7 +4393,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 *
 	 *     var default_txt = cjs('enter name'),
 	 *         name = cjs('my_name');
-	 *     cjs.attr(my_elem, {
+	 *     cjs.bindAttr(my_elem, {
 	 *         placeholder: default_txt,
 	 *         name: name
 	 *     });
@@ -4417,20 +4459,20 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 	};
 
 extend(cjs, {
-	/** @expose cjs.text */
-	text: text_binding,
-	/** @expose cjs.html */
-	html: html_binding,
-	/** @expose cjs.val */
-	val: val_binding,
-	/** @expose cjs.children */
-	children: children_binding,
-	/** @expose cjs.attr */
-	attr: attr_binding,
-	/** @expose cjs.css */
-	css: css_binding,
-	/** @expose cjs.class */
-	"class": class_binding,
+	/** @expose cjs.bindText */
+	bindText: text_binding,
+	/** @expose cjs.bindHTML */
+	bindHTML: html_binding,
+	/** @expose cjs.bindValue */
+	bindValue: val_binding,
+	/** @expose cjs.bindChildren */
+	bindChildren: children_binding,
+	/** @expose cjs.bindAttr */
+	bindAttr: attr_binding,
+	/** @expose cjs.bindCSS */
+	bindCSS: css_binding,
+	/** @expose cjs.bindClass */
+	bindClass: class_binding,
 	/** @expose cjs.inputValue */
 	inputValue: getInputValueConstraint,
 	/** @expose cjs.Binding */
@@ -4474,8 +4516,7 @@ var Transition = function(fsm, from_state, to_state, name) {
 		// do_transition should be called by the user's code
 		if(fsm.is(this.getFrom())) {
 			var args = toArray(arguments);
-			args.unshift(this);
-			args.unshift(this.getTo());
+			args.unshift(this.getTo(), this);
 			fsm._setState.apply(fsm, args);
 		}
 	};
@@ -4500,7 +4541,7 @@ var StateSelector = function(state_name) {
 	var proto = my.prototype;
 	proto.matches = function(state) {
 		// Supplied object should be a State object with the given name
-		return state instanceof State && (this._state_name === state || this._state_name === state.getName());
+		return this._state_name === state || (state instanceof State && this._state_name === state.getName());
 	};
 }(StateSelector));
 
@@ -4509,7 +4550,9 @@ var AnyStateSelector = function() { };
 (function(my) {
 	var proto = my.prototype;
 	// will match any state (but not transition)
-	proto.matches = function(state) {return state instanceof State;};
+	// Checking if it isn't a transition (rather than if it is a State) because sometimes, this is
+	// checked against state *names* rather than the state itself
+	proto.matches = function(state) { return !(state instanceof Transition);};
 }(AnyStateSelector));
 
 // Matches certain transitions (see transition formatting spec)
@@ -4533,8 +4576,8 @@ var TransitionSelector = function(pre, from_state_selector, to_state_selector) {
 }(TransitionSelector));
 
 // Multiple possibilities (read OR, not AND)
-var MultiSelector = function(selectors) {
-	this.selectors = selectors; // all of the selectors to test
+var MultiSelector = function() {
+	this.selectors = toArray(arguments); // all of the selectors to test
 };
 (function(my) {
 	var proto = my.prototype;
@@ -4559,7 +4602,7 @@ var parse_single_state_spec = function(str) {
 // Parse one side of the transition
 var parse_state_spec = function(str) {
 	// Split by , and remove any excess spacing
-	var state_spec_strs = map(str.split(","), function(ss) { return ss.trim(); }); 
+	var state_spec_strs = map(str.split(","), function(ss) { return trim(ss); }); 
 
 	// The user only specified one state
 	if(state_spec_strs.length === 1) {
@@ -4845,18 +4888,21 @@ var FSM = function() {
 	 * @param {State|string} state - The state to transition to
 	 * @param {Transition} transition - The transition that ran
 	 */
-	proto._setState = function(state, transition) {
-		var from_state = this.getState(); // the name of my current state
-		var to_state = isString(state) ? getStateWithName(this, state) : state;
+	proto._setState = function(state, transition, event) {
+		var from_state = this.getState(), // the name of my current state
+			to_state = isString(state) ? getStateWithName(this, state) : state,
+			listener_args = this._listeners.length > 0 ?
+				([event, transition, to_state, from_state]).concat(rest(arguments, 3)) : false;
 		if(!to_state) {
 			throw new Error("Could not find state '" + state + "'");
 		}
 		this.did_transition = true;
 
+
 		// Look for pre-transition callbacks
 		each(this._listeners, function(listener) {
 			if(listener.interested_in(transition, true)) {
-				listener.run(transition, to_state, from_state); // and run 'em
+				listener.run.apply(listener, listener_args); // and run 'em
 			}
 		});
 		this._curr_state = to_state;
@@ -4864,10 +4910,9 @@ var FSM = function() {
 		// Look for post-transition callbacks..
 		// and also callbacks that are interested in state entrance
 		each(this._listeners, function(listener) {
-			if(listener.interested_in(transition, false)) {
-				listener.run(transition, to_state, from_state); // and run 'em
-			} else if(listener.interested_in(to_state)) {
-				listener.run(transition, to_state, from_state); // and run 'em
+			if(listener.interested_in(transition, false) ||
+					listener.interested_in(to_state)) {
+				listener.run.apply(listener, listener_args); // and run 'em
 			}
 		});
 	};
@@ -4989,12 +5034,13 @@ extend(cjs, {
 	/** @expose cjs.FSM */
 	FSM: FSM,
 	/**
+	 * Create an FSM
 	 * @method cjs.fsm
 	 * @constructs FSM
-	 * @param {...string} state_names - An initial set of state names to add to the FSM
+	 * @param {string} ...state_names - An initial set of state names to add to the FSM
 	 * @return {FSM} - A new FSM
 	 * @see FSM
-	 * #example Creating a state machine with two states
+	 * @example Creating a state machine with two states
 	 *
 	 *     var my_state = cjs.fsm("state1", "state2");
 	 */
@@ -5078,7 +5124,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	 *
 	 * @private
 	 * @method _fire
-	 * @param {...*} events - Any number of events that will be passed to the transition
+	 * @param {*} ...events - Any number of events that will be passed to the transition
 	 */
 	proto._fire = function() {
 		var events = arguments;
@@ -5098,8 +5144,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 /** @lends */
 
 var isElementOrWindow = function(elem) { return elem === root || isElement(elem); },
-	do_trim = function(x) { return x.trim(); },
-	split_and_trim = function(x) { return map(x.split(" "), do_trim); },
+	split_and_trim = function(x) { return map(x.split(" "), trim); },
 	timeout_event_type = "timeout";
 
 extend(cjs, {
@@ -5111,7 +5156,7 @@ extend(cjs, {
 	 * @constructs CJSEvent
 	 * @method cjs.on
 	 * @param {string} event_type - the type of event to listen for (e.g. mousedown, timeout)
-	 * @param {...element|number} [target=window] - Any number of target objects to listen to
+	 * @param {element|number} ...targets=window - Any number of target objects to listen to
 	 * @return {CJSEvent} - An event that can be attached to 
 	 * @example When the window resizes
 	 *
@@ -5211,7 +5256,7 @@ var makeMap = function(str){
 var startTag = /^<([\-A-Za-z0-9_]+)((?:\s+[a-zA-Z0-9_\-]+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)>/,
 	endTag = /^<\/([\-A-Za-z0-9_]+)[^>]*>/,
 	handlebar = /^\{\{([#=!>|{\/])?\s*((?:(?:"[^"]*")|(?:'[^']*')|[^\}])*)\s*(\/?)\}?\}\}/,
-	attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^>\s]+)))?/g,
+	attr = /([\-A-Za-z0-9_]+)(?:\s*=\s*(?:(?:"((?:\\.|[^"])*)")|(?:'((?:\\.|[^'])*)')|([^\/>\s]+)))?/g,
 	HB_TYPE = "hb",
 	HTML_TYPE = "html";
 	
@@ -5241,7 +5286,8 @@ var autoclose_nodes = {
 		when_open_sibling: ["elif", "else"]
 	},
 	"else": {
-		when_close_parent: ["if", "each"]
+		when_close_parent: ["if", "each"],
+		when_open_sibling: []
 	},
 	"state": {
 		when_open_sibling: ["state"]
@@ -5527,7 +5573,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	},
 	get_instance_node = function(c) { return c.node || c.getNodes(); },
 	get_node_value = function(node, context, lineage, curr_bindings) {
-		var op, object, call_context, args;
+		var op, object, call_context, args, val, name, i;
 		if(!node) { return; }
 		switch(node.type) {
 			case THIS_EXP: return cjs.get(last(lineage).this_exp);
@@ -5543,16 +5589,19 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 							undefined;
 			case IDENTIFIER:
 				if(node.name[0] === "@") {
-					var name = node.name.slice(1);
-					for(var i = lineage.length-1; i>=0; i--) {
+					name = node.name.slice(1);
+					for(i = lineage.length-1; i>=0; i--) {
 						object = lineage[i].at;
 						if(object && has(object, name)) {
-							return cjs.get(object[name]);
+							val = object[name];
+							break;
 						}
 					}
-					return undefined;
+				} else {
+					val = context[node.name];
 				}
-				return cjs.get(context[node.name]);
+
+				return is_constraint(val) ? val.get() : val;
 			case MEMBER_EXP:
 				object = get_node_value(node.object, context, lineage, curr_bindings);
 				return compute_object_property(object, node.property, context, lineage, curr_bindings);
@@ -5592,7 +5641,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	},
 	get_escaped_html = function(c) {
 		if(c.nodeType === 3) {
-			return escapeHTML(c.textContent);
+			return escapeHTML(getTextContent(c));
 		} else {
 			return escapeHTML(c.outerHTML);
 		}
@@ -5892,7 +5941,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				node, txt_binding;
 			if(!literal) {
 				node = doc.createTextNode("");
-				txt_binding = cjs.text(node, val_constraint);
+				txt_binding = text_binding(node, val_constraint);
 			}
 			return {
 				type: type,
@@ -5901,7 +5950,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				node: node,
 				destroy: function() { if(txt_binding) txt_binding.destroy(true); },
 				pause: function() { if(txt_binding) txt_binding.pause(); },
-				resume: function() { if(txt_binding) txt_binding.resume(); },
+				resume: function() { if(txt_binding) txt_binding.resume(); }
 			};
 		} else if (type === "hb") {
 			var tag = template.tag;
@@ -5911,9 +5960,21 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					type: type,
 					getNodes: function() {
 						arr_val = get_node_value(template.parsed_content, context, lineage);
-						if(!isArray(arr_val)) {
-							// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
-							arr_val = map(arr_val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
+
+						if(is_array(arr_val)) { // array constraint
+							arr_val = arr_val.toArray();
+						}
+
+						if(!isArray(arr_val)) { 
+							if(is_map(arr_val)) { // map constraint
+								arr_val = arr_val.entries();
+								each(arr_val, function(x) {
+									x.is_obj = IS_OBJ;
+								});
+							} else {
+								// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
+								arr_val = map(arr_val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
+							}
 						} else if(arr_val.length === 0 && template.else_child) {
 							arr_val = [ELSE_COND];
 						}
@@ -5940,12 +6001,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 							var v = added_info.item,
 								index = added_info.to,
 								is_else = v === ELSE_COND,
-								lastLineageItem = is_else ? false : {this_exp: v, at: ((v && v.is_obj === IS_OBJ) ? {key: cjs(v.key)} : { index: cjs(index)})},
+								lastLineageItem = is_else ? false : ((v && v.is_obj === IS_OBJ) ? {this_exp: v.value , at: {key: cjs.constraint(v.key)}} : {this_exp: v, at: {index: cjs.constraint(index)}}),
 								concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
 								vals = map(is_else ? template.else_child.children : template.children, function(child) {
 									var dom_child = create_template_instance(child, context, concated_lineage);
 									return get_instance_node(dom_child);
 								});
+
 							child_vals.splice(index, 0, vals);
 							lastLineages.splice(index, 0, lastLineageItem);
 						}, this);
@@ -5971,25 +6033,27 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					getNodes: function() {
 						var len = template.sub_conditions.length,
 							cond = !!get_node_value(template.condition, context, lineage),
-							i = -1, children, memo_index;
+							i, children = false, memo_index;
 
 						if(template.reverse) {
 							cond = !cond;
 						}
 
 						if(cond) {
-							i = 0;
+							i = 0; children = template.children;
 						} else if(len > 0) {
 							for(i = 0; i<len; i++) {
 								cond = template.sub_conditions[i];
 
 								if(cond.condition === ELSE_COND || get_node_value(cond.condition, context, lineage)) {
-									i++; break;
+									children = cond.children;
+									i++;
+									break;
 								}
 							}
 						}
 
-						if(i < 0) {
+						if(!children) {
 							return [];
 						} else {
 							if(!instance_children[i]) {
@@ -5999,7 +6063,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 								}), true);
 							}
 							
-							return map(instance_children[i], get_instance_node);
+							return flatten(map(instance_children[i], get_instance_node), true);
 						}
 					}
 				};
@@ -6027,7 +6091,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 									} else {
 										children = memoized_children[state_name] = flatten(map(template.sub_states[state_name].children, do_child_create), true);
 									}
-									return map(children, get_instance_node);
+									return flatten(map(children, get_instance_node), true);
 								}
 							}
 						}
@@ -6042,7 +6106,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					return create_template_instance(child, new_context, new_lineage);
 				}));
 				return {
-					node: map(instance_children, get_instance_node)
+					node: flatten(map(instance_children, get_instance_node), true)
 				};
 			}
 		} else if (type === "partial_hb") {
@@ -6160,12 +6224,13 @@ extend(cjs, {
 	 * To create an object for every item in an array or object, you can use the `{{#each}}` block helper.
 	 * `{{this}}` refers to the current item and `@key` and `@index` refer to the keys for arrays and objects
 	 * respectively.
+	 *
 	 *     {{#each obj_name}}
-	 *         {{@key}}: {{this}
+	 *         {{@key}}: {{this}}
 	 *     {{/each}}
 	 *
 	 *     {{#each arr_name}}
-	 *         {{@index}}: {{this}
+	 *         {{@index}}: {{this}}
 	 *     {{/each}}
 	 *
 	 * If the length of the array is zero (or the object has no keys) then an `{{#else}}` block can be used: 
@@ -6255,9 +6320,9 @@ extend(cjs, {
 	createTemplate:		function(template_str) {
 							if(!isString(template_str)) {
 								if(is_jquery_obj(template_str) || isNList(template_str)) {
-									template_str = template_str.length > 0 ? template_str[0].textContent.trim() : "";
+									template_str = template_str.length > 0 ? trim(getTextContent(template_str[0])) : "";
 								} else if(isElement(template_str)) {
-									template_str = template_str.textContent.trim();
+									template_str = trim(getTextContent(template_str));
 								} else {
 									template_str = "" + template_str;
 								}
@@ -6303,7 +6368,7 @@ extend(cjs, {
 	 * @see cjs.resumeTemplate
 	 */
 	destroyTemplate:	function(dom_node) {
-							var index = get_template_instance_index(dom_node),
+							var index = get_template_instance_index(getFirstDOMChild(dom_node)),
 								instance = index >= 0 ? template_instances[index] : false;
 
 							if(instance) {
