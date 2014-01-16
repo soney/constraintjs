@@ -1752,7 +1752,7 @@ Constraint = function (value, options) {
 			pos: "+", neg: "-", not: "!", bitwiseNot: "~"
 		},
 		bi: { // Binary operators
-			eqStrct: "===",	neqStrict:  "!==",	eq:        "==",neq: "!=",
+			eqStrict: "===",neqStrict:  "!==",	eq:        "==",neq: "!=",
 			gt:      ">",	ge:         ">=",	lt:        "<",	le: "<=",
 			xor:     "^",	bitwiseAnd: "&",	bitwiseOr: "|",	mod: "%",
 			rightShift:">>",leftShift:  "<<",	unsignedRightShift: ">>>"
