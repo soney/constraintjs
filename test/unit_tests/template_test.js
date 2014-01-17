@@ -2,70 +2,70 @@ module("Templates");
 
 dt("Static Templates", 7, function() {
 	var empty_template = cjs.createTemplate("", {});
-	equal(empty_template.textContent, "");
+	equal(getTextContent(empty_template), "");
 	cjs.destroyTemplate(empty_template);
 
 	var hello_template = cjs.createTemplate("hello world", {});
-	equal(hello_template.textContent, "hello world");
+	equal(getTextContent(hello_template), "hello world");
 	cjs.destroyTemplate(hello_template);
 
 	var div_template = cjs.createTemplate("<div>hi</div>", {});
 	equal(div_template.tagName.toLowerCase(), "div");
-	equal(div_template.textContent, "hi");
+	equal(getTextContent(div_template), "hi");
 	cjs.destroyTemplate(div_template);
 
 	var nested_div_template = cjs.createTemplate("<div>hi <strong>world</strong></div>", {});
 	equal(nested_div_template.tagName.toLowerCase(), "div");
 	var strong_content = nested_div_template.getElementsByTagName("strong")[0];
-	equal(strong_content.textContent, "world");
+	equal(getTextContent(strong_content), "world");
 	cjs.destroyTemplate(nested_div_template);
 
 	var classed_template = cjs.createTemplate("<div class='my_class'>yo</div>", {});
-	equal(classed_template.className, "my_class");
+	equal(classed_template.className || classed_template['class'], "my_class");
 	cjs.destroyTemplate(classed_template);
 });
 
 dt("Dynamic Templates", 5, function() {
 	var t1 = cjs.createTemplate("{{x}}", {x: "hello world"});
-	equal(t1.textContent, "hello world");
+	equal(getTextContent(t1), "hello world");
 	cjs.destroyTemplate(t1);
 
 	var greet = cjs("hello");
 	var city = cjs("pittsburgh");
 	var tlate = document.createElement("script");
 	tlate.setAttribute("type", "cjs/template");
-	tlate.textContent = "{{greeting}}, {{city}}";
+	tlate.innerText = "{{greeting}}, {{city}}";
 	var t2 = cjs.createTemplate(tlate, {greeting: greet, city: city});
-	equal(t2.textContent, "hello, pittsburgh");
+	equal(getTextContent(t2), "hello, pittsburgh");
 	greet.set("bye");
-	equal(t2.textContent, "bye, pittsburgh");
+	equal(getTextContent(t2), "bye, pittsburgh");
 	city.set("world");
-	equal(t2.textContent, "bye, world");
+	equal(getTextContent(t2), "bye, world");
 	cjs.destroyTemplate(t2);
 	greet.destroy();
 	city.destroy();
 
 	var create_template_fn = cjs.createTemplate("{{x}}");
 	var template_instance = create_template_fn({x: 1});
-	equal(template_instance.textContent, "1");
+	equal(getTextContent(template_instance), "1");
 	cjs.destroyTemplate(template_instance);
 });
 
 dt("HTMLized Templates", 7, function() {
 	var x = cjs("X"), y = cjs("Y");
 	var t1 = cjs.createTemplate("{{{x}}}, {{y}}", {x: x, y: y});
-	equal(t1.textContent, "X, Y");
+	equal(getTextContent(t1), "X, Y");
 	x.set("<strong>X</strong>");
 	var strong_content = t1.getElementsByTagName("strong")[0];
-	equal(t1.textContent, "X, Y");
-	equal(strong_content.textContent, "X");
+	equal(getTextContent(t1), "X, Y");
+	equal(getTextContent(strong_content), "X");
 	y.set("<b>Y</b>");
-	equal(t1.textContent, "X, <b>Y</b>");
+	equal(getTextContent(t1), "X, <b>Y</b>");
 
 	var t2 = cjs.createTemplate("<div>{{{x}}}, {{y}}</div>", {x: x, y: y});
-	equal(t2.textContent, "X, <b>Y</b>");
+	equal(getTextContent(t2), "X, <b>Y</b>");
 	var strong_content = t2.getElementsByTagName("strong")[0];
-	equal(strong_content.textContent, "X");
+	equal(getTextContent(strong_content), "X");
 	equal(t2.tagName.toLowerCase(), "div");
 });
 
@@ -107,11 +107,11 @@ dt("Conditionals", 21, function() {
 		"2" +
 		"{{/if}}"+
 	"</div>", {cond: cond});
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 	cond.set(false);
-	equal(t1.textContent, "2")
+	equal(getTextContent(t1), "2")
 	cond.set(true);
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 
 	var cond2 = cjs(true);
 	t1 = cjs.createTemplate("<div>" +
@@ -121,21 +121,21 @@ dt("Conditionals", 21, function() {
 		"2" +
 		"{{/if}}"+
 	"</div>", {cond: cond, cond2: cond2});
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 	cond.set(false);
-	equal(t1.textContent, "2")
+	equal(getTextContent(t1), "2")
 	cond.set(true);
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 	cond2.set(true);
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 	cond.set(false);
-	equal(t1.textContent, "2")
+	equal(getTextContent(t1), "2")
 	cond2.set(false);
-	equal(t1.textContent, "")
+	equal(getTextContent(t1), "")
 	cond2.set(true);
-	equal(t1.textContent, "2")
+	equal(getTextContent(t1), "2")
 	cond.set(true);
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 
 
 	var t2 = cjs.createTemplate("<div>" +
@@ -148,21 +148,21 @@ dt("Conditionals", 21, function() {
 		"{{/if}}"+
 	"</div>", {cond: cond, cond2: cond2});
 	var cna1 = t2.childNodes[0];
-	equal(cna1.textContent, "A")
+	equal(getTextContent(cna1), "A")
 	cond.set(false);
 	var cnb1 = t2.childNodes[0];
-	equal(cnb1.textContent, "B")
+	equal(getTextContent(cnb1), "B")
 	cond.set(true);
 	var cna2 = t2.childNodes[0];
-	equal(cna2.textContent, "A")
+	equal(getTextContent(cna2), "A")
 	cond.set(false);
 	var cnb2 = t2.childNodes[0];
-	equal(cnb2.textContent, "B")
+	equal(getTextContent(cnb2), "B")
 	equal(cna1, cna2);
 	equal(cnb1, cnb2);
 	cond2.set(false);
 	var cnc2 = t2.childNodes[0];
-	equal(cnc2.textContent, "C")
+	equal(getTextContent(cnc2), "C")
 
 	var cond2 = cjs(true);
 	var t3 = cjs.createTemplate("<div>" +
@@ -170,11 +170,11 @@ dt("Conditionals", 21, function() {
 		"1" +
 		"{{/unless}}"+
 	"</div>", {cond: cond2});
-	equal(t3.textContent, "")
+	equal(getTextContent(t3), "")
 	cond2.set(false);
-	equal(t3.textContent, "1")
+	equal(getTextContent(t3), "1")
 	cond2.set(true);
-	equal(t3.textContent, "")
+	equal(getTextContent(t3), "")
 });
 
 dt("FSM", 3, function() {
@@ -190,11 +190,11 @@ dt("FSM", 3, function() {
 		"2" +
 		"{{/fsm}}"+
 	"</div>", {my_fsm: my_fsm});
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 	s1s2();
-	equal(t1.textContent, "2")
+	equal(getTextContent(t1), "2")
 	s2s1();
-	equal(t1.textContent, "1")
+	equal(getTextContent(t1), "1")
 });
 
 dt("Provided Parent", 4, function() {
@@ -202,16 +202,16 @@ dt("Provided Parent", 4, function() {
 	var x = cjs(1);
 	var template = cjs.createTemplate("{{this}}", x, elem);
 	equal(template, elem);
-	equal(template.textContent, "1");
+	equal(getTextContent(template), "1");
 	x.set(2);
-	equal(template.textContent, "2");
+	equal(getTextContent(template), "2");
 	equal(template, elem);
 });
 
 dt("FN Calls", 2, function() {
 	var abc = cjs.createTemplate("{{#each x}}{{plus_one(this)}}{{/each}}", {x: [1,2,3], plus_one: function(x){ return x+1; }});
 	equal(abc.childNodes.length, 3);
-	equal(abc.textContent, "234");
+	equal(getTextContent(abc), "234");
 });
 
 dt("Nested Templates", 2, function() {
@@ -219,7 +219,7 @@ dt("Nested Templates", 2, function() {
 	cjs.registerPartial("hello", hi_template);
 	var abc = cjs.createTemplate("{{> hello this}}", "world");
 	equal(abc.childNodes.length, 1);
-	equal(abc.textContent, "Hello, world");
+	equal(getTextContent(abc), "Hello, world");
 });
 
 dt("Template Comments", 2, function() {
@@ -230,38 +230,38 @@ dt("Template Comments", 2, function() {
 
 dt("With", 1, function() {
 	var tmplate = cjs.createTemplate("{{#with x}}{{a}}{{b}}{{../y}}{{/with}}", {x: {a: "a", b: "b"}, y: "y"});
-	equal(tmplate.textContent, "aby");
+	equal(getTextContent(tmplate), "aby");
 });
 
 dt("Each/Else", 5, function() {
 	var x = cjs([1,2]);
 	var tmplate = cjs.createTemplate("{{#each x}}{{this}}{{#else}}nothing{{/each}}", {x: x});
-	equal(tmplate.textContent, "12");
+	equal(getTextContent(tmplate), "12");
 	x.splice(0, 1);
-	equal(tmplate.textContent, "2");
+	equal(getTextContent(tmplate), "2");
 	x.splice(0, 1);
-	equal(tmplate.textContent, "nothing");
+	equal(getTextContent(tmplate), "nothing");
 	x.splice(0, 0, 2, 3);
-	equal(tmplate.textContent, "23");
+	equal(getTextContent(tmplate), "23");
 	x.splice(0, 2);
-	equal(tmplate.textContent, "nothing");
+	equal(getTextContent(tmplate), "nothing");
 });
 
 dt("Parser test", 1, function() {
 	var tmplate = cjs.createTemplate("{{'{}'}}{{\"}{\"}}", {});
-	equal(tmplate.textContent, "{}}{");
+	equal(getTextContent(tmplate), "{}}{");
 });
 
 dt("Each key/index", 6, function() {
 	var arr = cjs(["a", "b"]);
 	var obj = cjs({x: "x_val", y: "y_val"});
 	var tmplate = cjs.createTemplate("{{#each arr}}{{@index}}{{/each}}", {arr: arr});
-	equal(tmplate.textContent, "01");
+	equal(getTextContent(tmplate), "01");
 	arr.splice(0, 1);
-	equal(tmplate.textContent, "0");
+	equal(getTextContent(tmplate), "0");
 	
 	tmplate = cjs.createTemplate("{{#each obj}}{{@key}}{{/each}}", {obj: obj});
-	equal(tmplate.textContent, "xy");
+	equal(getTextContent(tmplate), "xy");
 
 	var key1 = {},
 		key2 = {};
@@ -275,7 +275,7 @@ dt("Each key/index", 6, function() {
 		return val;
 	};
 	var tmplate = cjs.createTemplate("{{#each obj}}{{ this }}{{ func(@key, this) }}{{/each}}", {obj: dynamic_map, func: func});
-	equal(tmplate.textContent, "1122");
+	equal(getTextContent(tmplate), "1122");
 });
 
 dt("Template out", 2, function() {
@@ -290,20 +290,20 @@ dt("Template out", 2, function() {
 dt("Pause/Resume/Destroy templates", 7, function() {
 	var x = cjs(1);
 	var tmplate = cjs.createTemplate("{{x}}", {x: x});
-	equal(tmplate.textContent, "1");
+	equal(getTextContent(tmplate), "1");
 	x.set(2);
-	equal(tmplate.textContent, "2");
+	equal(getTextContent(tmplate), "2");
 	cjs.pauseTemplate(tmplate);
-	equal(tmplate.textContent, "2");
+	equal(getTextContent(tmplate), "2");
 	x.set(3);
 	cjs.resumeTemplate(tmplate);
-	equal(tmplate.textContent, "3");
+	equal(getTextContent(tmplate), "3");
 	x.set(4);
-	equal(tmplate.textContent, "4");
+	equal(getTextContent(tmplate), "4");
 	cjs.destroyTemplate(tmplate);
-	equal(tmplate.textContent, "4");
+	equal(getTextContent(tmplate), "4");
 	x.set(5);
-	equal(tmplate.textContent, "4");
+	equal(getTextContent(tmplate), "4");
 });
 
 dt("Condition/State Combo", 7, function() {
@@ -327,18 +327,18 @@ dt("Condition/State Combo", 7, function() {
 			my_fsm: fsm
 		});
 
-	equal(tmplate.textContent, "");
+	equal(getTextContent(tmplate), "");
 	cond.set(true);
-	equal(tmplate.textContent, "A");
+	equal(getTextContent(tmplate), "A");
 	onetwo();
-	equal(tmplate.textContent, "");
+	equal(getTextContent(tmplate), "");
 	cond.set(false);
-	equal(tmplate.textContent, "B");
+	equal(getTextContent(tmplate), "B");
 	cond.set(true);
-	equal(tmplate.textContent, "");
+	equal(getTextContent(tmplate), "");
 	twoone();
-	equal(tmplate.textContent, "A");
+	equal(getTextContent(tmplate), "A");
 	cond.set(false);
-	equal(tmplate.textContent, "");
+	equal(getTextContent(tmplate), "");
 
 });

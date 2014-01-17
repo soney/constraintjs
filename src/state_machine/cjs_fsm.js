@@ -158,21 +158,21 @@ var parse_transition_spec = function(left_str, transition_str, right_str) {
 	} else { return null; } // There shouldn't be any way to get here...
 };
 
-var transition_separator_regex = new RegExp("^([\\sa-zA-Z0-9,\\-_*]+)((<->|>-<|->|>-|<-|-<)([\\sa-zA-Z0-9,\\-_*]+))?$");
+var transition_separator_regex = /^([\sa-zA-Z0-9,\-_*]+)((<->|>-<|->|>-|<-|-<)([\sa-zA-Z0-9,\-_*]+))?$/;
 // Given a string specifying a state or set of states, return a selector object
 var parse_spec = function(str) {
 	var matches = str.match(transition_separator_regex);
 	if(matches === null) {
 		return null; // Poorly formatted specification
 	} else {
-		if(matches[2] === undefined) {
-			// The user specified a state: "A": ["A", "A", undefined, undefined, undefined]
-			var states_str = matches[1];
-			return parse_state_spec(states_str);
-		} else {
+		if(matches[2]) {
 			// The user specified a transition: "A->b": ["A->b", "A", "->b", "->", "b"]
 			var from_state_str = matches[1], transition_str = matches[3], to_state_str = matches[4];
 			return parse_transition_spec(from_state_str, transition_str, to_state_str);
+		} else {
+			// The user specified a state: "A": ["A", "A", undefined, undefined, undefined]
+			var states_str = matches[1];
+			return parse_state_spec(states_str);
 		}
 	}
 };

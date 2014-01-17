@@ -32,8 +32,8 @@ var bind = function (func, context) { return function () { return func.apply(con
 		return nativeTrim ? nativeTrim.call(str) : String(str).replace(/^\s+|\s+$/g, '');
     },
 	doc	= root.document,
-	sTO = bind(root.setTimeout, root),
-	cTO = bind(root.clearTimeout, root),
+	sTO = function(a,b) { return root.setTimeout(a,b); },
+	cTO = function(a,b) { return root.clearTimeout(a,b); },
 	// Binary and unary operators will be used for constraint modifiers and for templates,
 	// which allow these operators to be used in constraints
 	unary_operators = { "+": function (a) { return +a; }, "-": function (a) { return -a; },

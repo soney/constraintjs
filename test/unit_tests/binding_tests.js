@@ -1,13 +1,17 @@
 module("Bindings");
 
+var getTextContent = function(node) {
+	return node.textContent || node.innerText;
+};
+
 dt("Basic Text Bindings", 2, function() {
 	var x = cjs("Hello"),
 		y = cjs("World");
 	var dom_elem = document.createElement("div");
 	cjs.bindText(dom_elem, x, y);
-	equal(dom_elem.textContent, "HelloWorld");
+	equal(getTextContent(dom_elem), "HelloWorld");
 	x.set("Goodbye");
-	equal(dom_elem.textContent, "GoodbyeWorld");
+	equal(getTextContent(dom_elem), "GoodbyeWorld");
 });
 
 dt("Dynamic Text Bindings", 6, function() {
@@ -20,20 +24,20 @@ dt("Dynamic Text Bindings", 6, function() {
 	var elems = cjs([dom_elem1, dom_elem2]);
 	cjs.bindText(elems, x, y);
 
-	equal(dom_elem1.textContent, "HelloWorld");
-	equal(dom_elem2.textContent, "HelloWorld");
+	equal(getTextContent(dom_elem1), "HelloWorld");
+	equal(getTextContent(dom_elem2), "HelloWorld");
 
 	x.set("Goodbye");
 
-	equal(dom_elem1.textContent, "GoodbyeWorld");
-	equal(dom_elem2.textContent, "GoodbyeWorld");
+	equal(getTextContent(dom_elem1), "GoodbyeWorld");
+	equal(getTextContent(dom_elem2), "GoodbyeWorld");
 
 	elems.pop();
 
 	y.set("Pittsburgh");
 
-	equal(dom_elem1.textContent, "GoodbyePittsburgh");
-	equal(dom_elem2.textContent, "GoodbyeWorld");
+	equal(getTextContent(dom_elem1), "GoodbyePittsburgh");
+	equal(getTextContent(dom_elem2), "GoodbyeWorld");
 });
 
 dt("Basic Text Bindings", 2, function() {
@@ -41,9 +45,9 @@ dt("Basic Text Bindings", 2, function() {
 		y = cjs("World");
 	var dom_elem = document.createElement("div");
 	cjs.bindText(dom_elem, x, y);
-	equal(dom_elem.textContent, "HelloWorld");
+	equal(getTextContent(dom_elem), "HelloWorld");
 	x.set("Goodbye");
-	equal(dom_elem.textContent, "GoodbyeWorld");
+	equal(getTextContent(dom_elem), "GoodbyeWorld");
 });
 
 dt("CSS Bindings", 1, function() {
@@ -82,8 +86,8 @@ dt("Class Bindings", 15, function() {
 dt("Attr Bindings", 2, function() {
 	var dom_elem = document.createElement("div");
 	var attr_val = cjs("abc");
-	cjs.bindAttr(dom_elem, "class", attr_val);
-	equal(dom_elem.className, "abc");
+	cjs.bindAttr(dom_elem, "id", attr_val);
+	equal(dom_elem.id, "abc");
 	attr_val.set("def");
-	equal(dom_elem.className, "def");
+	equal(dom_elem.id, "def");
 });
