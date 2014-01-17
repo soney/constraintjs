@@ -1,4 +1,4 @@
-//     ConstraintJS (CJS) 0.9.3-beta
+//     ConstraintJS (CJS) 0.9.4-beta
 //     ConstraintJS may be freely distributed under the MIT License
 //     http://cjs.from.so/
 
@@ -41,8 +41,8 @@ var bind = function (func, context) { return function () { return func.apply(con
 		return nativeTrim ? nativeTrim.call(str) : String(str).replace(/^\s+|\s+$/g, '');
     },
 	doc	= root.document,
-	sTO = bind(root.setTimeout, root),
-	cTO = bind(root.clearTimeout, root),
+	sTO = function(a,b) { return root.setTimeout(a,b); },
+	cTO = function(a,b) { return root.clearTimeout(a,b); },
 	// Binary and unary operators will be used for constraint modifiers and for templates,
 	// which allow these operators to be used in constraints
 	unary_operators = { "+": function (a) { return +a; }, "-": function (a) { return -a; },
@@ -1752,7 +1752,7 @@ Constraint = function (value, options) {
 			pos: "+", neg: "-", not: "!", bitwiseNot: "~"
 		},
 		bi: { // Binary operators
-			eqStrct: "===",	neqStrict:  "!==",	eq:        "==",neq: "!=",
+			eqStrict: "===",neqStrict:  "!==",	eq:        "==",neq: "!=",
 			gt:      ">",	ge:         ">=",	lt:        "<",	le: "<=",
 			xor:     "^",	bitwiseAnd: "&",	bitwiseOr: "|",	mod: "%",
 			rightShift:">>",leftShift:  "<<",	unsignedRightShift: ">>>"
@@ -1888,7 +1888,7 @@ extend(cjs, {
 	 * @property {string} cjs.version
 	 * @see cjs.toString
 	 */
-	version: "0.9.3-beta", // This template will be filled in by the builder
+	version: "0.9.4-beta", // This template will be filled in by the builder
 
 	/**
 	 * Print out the name and version of ConstraintJS
@@ -4639,21 +4639,21 @@ var parse_transition_spec = function(left_str, transition_str, right_str) {
 	} else { return null; } // There shouldn't be any way to get here...
 };
 
-var transition_separator_regex = new RegExp("^([\\sa-zA-Z0-9,\\-_*]+)((<->|>-<|->|>-|<-|-<)([\\sa-zA-Z0-9,\\-_*]+))?$");
+var transition_separator_regex = /^([\sa-zA-Z0-9,\-_*]+)((<->|>-<|->|>-|<-|-<)([\sa-zA-Z0-9,\-_*]+))?$/;
 // Given a string specifying a state or set of states, return a selector object
 var parse_spec = function(str) {
 	var matches = str.match(transition_separator_regex);
 	if(matches === null) {
 		return null; // Poorly formatted specification
 	} else {
-		if(matches[2] === undefined) {
-			// The user specified a state: "A": ["A", "A", undefined, undefined, undefined]
-			var states_str = matches[1];
-			return parse_state_spec(states_str);
-		} else {
+		if(matches[2]) {
 			// The user specified a transition: "A->b": ["A->b", "A", "->b", "->", "b"]
 			var from_state_str = matches[1], transition_str = matches[3], to_state_str = matches[4];
 			return parse_transition_spec(from_state_str, transition_str, to_state_str);
+		} else {
+			// The user specified a state: "A": ["A", "A", undefined, undefined, undefined]
+			var states_str = matches[1];
+			return parse_state_spec(states_str);
 		}
 	}
 };
@@ -5940,8 +5940,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				}),
 				node, txt_binding;
 			if(!literal) {
-				node = doc.createTextNode("");
-				txt_binding = text_binding(node, val_constraint);
+				var curr_value = cjs.get(val_constraint);
+				if(isPolyDOM(curr_value)) {
+					node = getFirstDOMChild(curr_value);
+				} else {
+					node = doc.createTextNode(""+curr_value);
+					txt_binding = text_binding(node, val_constraint);
+				}
 			}
 			return {
 				type: type,
