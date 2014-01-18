@@ -64,12 +64,34 @@ var bind = function (func, context) { return function () { return func.apply(con
 
 var getTextContent, setTextContent;
 if(doc && !('textContent' in doc.createElement('div'))) {
-	getTextContent = function(node) { return node.innerText; };
-	setTextContent = function(node, val) { node.innerText = val; };
+	getTextContent = function(node) {
+		return node && node.nodeType === 3 ? node.nodeValue : node.innerText;
+	};
+	setTextContent = function(node, val) {
+		if(node && node.nodeType === 3) {
+			node.nodeValue = val;
+		} else {
+			node.innerText = val;
+		}
+	};
 } else {
 	getTextContent = function(node) { return node.textContent; };
 	setTextContent = function(node, val) { node.textContent = val; };
 }
+
+var aEL = function(node, type, callback) {
+	if(node.addEventListener) {
+		node.addEventListener(type, callback);
+	} else {
+		node.attachEvent("on"+type, callback);
+	}
+}, rEL = function(node, type, callback) {
+	if(node.removeEventListener) {
+		node.removeEventListener(type, callback);
+	} else {
+		node.detachEvent("on"+type, callback);
+	}
+};
 
 // Establish the object that gets returned to break out of a loop iteration.
 var breaker = {};
@@ -4435,14 +4457,14 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 			activate = function() { // add all the event listeners for every input and event type
 				each(inp_change_events, function(event_type) {
 					each(inps, function(inp) {
-						inp.addEventListener(event_type, on_change);
+						aEL(inp, event_type, on_change);
 					});
 				});
 			},
 			deactivate = function() { // clear all the event listeners for every input and event type
 				each(inp_change_events, function(event_type) {
 					each(inps, function(inp) {
-						inp.removeEventListener(event_type, on_change);
+						rEL(inp, event_type, on_change);
 					});
 				});
 			},
@@ -4703,7 +4725,7 @@ var FSM = function() {
 	 *     my_fsm.state.get(); // 'state1'
 	 */
 	this.state = cjs(function() { // the name of the current state
-		if(this._curr_state) { return this._curr_state.getName(); }
+		if(this._curr_state) { return this._curr_state._name; }
 		else { return null; }
 	}, {
 		context: this
@@ -4861,6 +4883,8 @@ var FSM = function() {
 			to_state = b;
 			add_transition_fn = c;
 		}
+		if(isString(from_state) && !has(this._states, from_state)) { this._states[from_state] = new State(this, from_state); }
+		if(isString(to_state) && !has(this._states, to_state)) { this._states[to_state] = new State(this, to_state); }
 
 		// do_transition is a function that can be called to activate the transition
 		// Creates a new transition that will go from from_state to to_state
@@ -4944,7 +4968,7 @@ var FSM = function() {
 		var state = getStateWithName(this, state_name); // Get existing state
 		if(!state) {
 			// or create it if necessary
-			state = this.create_state(state_name);
+			state = this._states[state_name] = new State(this, state_name);
 		}
 		if(!this.did_transition) {
 			// If no transitions have occurred, set the current state to the one they specified
@@ -5202,7 +5226,7 @@ extend(cjs, {
 								} else {
 									each(targets, function(target) {
 										// otherwise, add the event listener to every one of my targets
-										target.addEventListener(event_type, listener);
+										aEL(target, event_type, listener);
 									});
 								}
 							});
@@ -5217,7 +5241,7 @@ extend(cjs, {
 											timeout_id = false;
 										}
 									} else {
-										target.removeEventListener(event_type, listener);
+										rEL(target, event_type, listener);
 									}
 								});
 							});
@@ -5477,7 +5501,7 @@ var parseTemplate = function(input_str, handler) {
 
 				if(last_stack && has(autoclose_nodes, last_stack.tag)) {
 					var autoclose_node = autoclose_nodes[last_stack.tag];
-					if(autoclose_node.when_open_sibling.indexOf(tagName) >= 0) {
+					if(indexOf(autoclose_node.when_open_sibling, tagName) >= 0) {
 						popStackUntilTag(last_stack.tag, HB_TYPE);
 						last_stack = getLatestHandlebarParent();
 					}
@@ -5492,8 +5516,8 @@ var parseTemplate = function(input_str, handler) {
 
 				if(has(sibling_rules, tagName)) {
 					var sibling_rule = sibling_rules[tagName];
-					if(sibling_rule.follows.indexOf(last_closed_hb_tag) < 0) {
-						if(!sibling_rule.or_parent || sibling_rule.or_parent.indexOf(last_stack.tag) < 0) {
+					if(indexOf(sibling_rule.follows, last_closed_hb_tag) < 0) {
+						if(!sibling_rule.or_parent || indexOf(sibling_rule.or_parent, last_stack.tag) < 0) {
 							var error_message = "'" + tagName + "' must follow a '" + sibling_rule.follows[0] + "'";
 							if(sibling_rule.or_parent) {
 								error_message += " or be inside of a '" + sibling_rule.or_parent[0] + "' tag";
@@ -5554,9 +5578,20 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	child_is_text				= function(child)	{ return child.isText; },
 	every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
 	any_child_is_dynamic_html	= function(arr)		{ return indexWhere(arr, child_is_dynamic_html) >= 0; },
+	outerHTML = function (node){
+		// if IE, Chrome take the internal method otherwise build one
+		return node.outerHTML || (
+			function(n){
+				var div = document.createElement('div'), h;
+				div.appendChild( n.cloneNode(true) );
+				h = div.innerHTML;
+				div = null;
+				return h;
+			})(node);
+	},
 	escapeHTML = function (unsafe) {
-		return unsafe	.replace(/&/g, "&amp;")	.replace(/</g, "&lt;")
-						.replace(/>/g, "&gt;")	.replace(/"/g, "&quot;")
+		return unsafe	.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+						.replace(/>/g, "&gt;") .replace(/"/g, "&quot;")
 						.replace(/'/g, "&#039;");
 	},
 	compute_object_property = function(object, prop_node, context, lineage, curr_bindings) {
@@ -5588,7 +5623,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				return op ? op(get_node_value(node.left, context, lineage, curr_bindings), get_node_value(node.right, context, lineage, curr_bindings)) :
 							undefined;
 			case IDENTIFIER:
-				if(node.name[0] === "@") {
+				if(node.name.charAt(0) === "@") {
 					name = node.name.slice(1);
 					for(i = lineage.length-1; i>=0; i--) {
 						object = lineage[i].at;
@@ -5643,7 +5678,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		if(c.nodeType === 3) {
 			return escapeHTML(getTextContent(c));
 		} else {
-			return escapeHTML(c.outerHTML);
+			return escapeHTML(outerHTML(c));
 		}
 	},
 	get_concatenated_inner_html_constraint = function(children, context, lineage, curr_bindings) {
@@ -5900,11 +5935,15 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					context[attr.value] = getInputValueConstraint(element);
 				} else if((on_regex_match = attr.name.match(on_regex))) {
 					var event_name = on_regex_match[2];
-					element.addEventListener(event_name, context[attr.value]);
+					aEL(element, event_name, context[attr.value]);
 				} else {
 					var constraint = get_constraint(attr.value, context, lineage);
 					if(is_constraint(constraint)) {
-						bindings.push(attr_binding(element, attr.name, constraint));
+						if(attr.name === "class") {
+							bindings.push(class_binding(element, constraint));
+						} else {
+							bindings.push(attr_binding(element, attr.name, constraint));
+						}
 					} else {
 						element.setAttribute(attr.name, constraint);
 					}
@@ -6010,7 +6049,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 								concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
 								vals = map(is_else ? template.else_child.children : template.children, function(child) {
 									var dom_child = create_template_instance(child, context, concated_lineage);
-									return get_instance_node(dom_child);
+									var instance_node =  get_instance_node(dom_child);
+									return instance_node;
 								});
 
 							child_vals.splice(index, 0, vals);
@@ -6420,6 +6460,9 @@ extend(cjs, {
 // -----------------
 // Uses [jsep](http://jsep.from.so/)
 
+// Node Types
+// ----------
+
 // This is the full set of types that any JSEP node can be.
 // Store them here to save space when minified
 var COMPOUND = 'Compound',
@@ -6435,11 +6478,12 @@ var COMPOUND = 'Compound',
 	CURR_LEVEL_EXP = 'CurrLevelExpression',
 
 jsep = (function() {
+
 	// Operations
 	// ----------
 	
 	// Set `t` to `true` to save space (when minified, not gzipped)
-	var	t = true,
+	var t = true,
 	// Use a quickly-accessible map to store all of the unary operators
 	// Values are set to `true` (it really doesn't matter)
 		unary_ops = {'-': t, '!': t, '~': t, '+': t},
@@ -6515,14 +6559,18 @@ jsep = (function() {
 			// `index` stores the character number we are currently at while `length` is a constant
 			// All of the gobbles below will modify `index` as we move along
 			var index = 0,
+				charAtFunc = expr.charAt,
+				charCodeAtFunc = expr.charCodeAt,
+				exprI = function(i) { return charAtFunc.call(expr, i); },
+				exprICode = function(i) { return charCodeAtFunc.call(expr, i); },
 				length = expr.length,
 
 				// Push `index` up to the next non-space character
 				gobbleSpaces = function() {
-					var ch = expr.charCodeAt(index);
+					var ch = exprICode(index);
 					// space or tab
 					while(ch === 32 || ch === 9) {
-						ch = expr.charCodeAt(++index);
+						ch = exprICode(++index);
 					}
 				},
 
@@ -6607,10 +6655,11 @@ jsep = (function() {
 				// An individual part of a binary expression:
 				// e.g. `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)` (because it's in parenthesis)
 				gobbleToken = function() {
-					var ch, curr_node, char, unop, to_check, tc_len;
+					var ch, curr_node, unop, to_check, tc_len;
 					
 					gobbleSpaces();
-					ch = expr.charCodeAt(index);
+					ch = exprICode(index);
+					
 					if(ch === 46 && expr.charCodeAt(index+1) === 47) {
 							index += 2;
 							return {
@@ -6660,22 +6709,37 @@ jsep = (function() {
 				// keep track of everything in the numeric literal and then calling `parseFloat` on that string
 				gobbleNumericLiteral = function() {
 					var number = '';
-					while(isDecimalDigit(expr.charCodeAt(index))) {
-						number += expr[index++];
+					while(isDecimalDigit(exprICode(index))) {
+						number += exprI(index++);
 					}
 
-					if(expr[index] === '.') { // can start with a decimal marker
-						number += expr[index++];
+					if(exprI(index) === '.') { // can start with a decimal marker
+						number += exprI(index++);
 
-						while(isDecimalDigit(expr.charCodeAt(index))) {
-							number += expr[index++];
+						while(isDecimalDigit(exprICode(index))) {
+							number += exprI(index++);
 						}
 					}
+					
+					if(exprI(index) === 'e' || exprI(index) === 'E') { // exponent marker
+						number += exprI(index++);
+						if(exprI(index) === '+' || exprI(index) === '-') { // exponent sign
+							number += exprI(index++);
+						}
+						while(isDecimalDigit(exprICode(index))) { //exponent itself
+							number += exprI(index++);
+						}
+						if(!isDecimalDigit(exprICode(index-1)) ) {
+							throw new Error('Expected exponent (' +
+									number + exprI(index) + ') at character ' + index);
+						}
+					}
+					
 
-					// Check to make sure this isn't a varible name that start with a number (123abc)
-					if(isIdentifierStart(expr.charCodeAt(index))) {
+					// Check to make sure this isn't a variable name that start with a number (123abc)
+					if(isIdentifierStart(exprICode(index))) {
 						throw new Error('Variable names cannot start with a number (' +
-									number + expr[index] + ') at character ' + index);
+									number + exprI(index) + ') at character ' + index);
 					}
 
 					return {
@@ -6688,16 +6752,16 @@ jsep = (function() {
 				// Parses a string literal, staring with single or double quotes with basic support for escape codes
 				// e.g. `"hello world"`, `'this is\nJSEP'`
 				gobbleStringLiteral = function() {
-					var str = '', quote = expr[index++], closed = false, ch;
+					var str = '', quote = exprI(index++), closed = false, ch;
 
 					while(index < length) {
-						ch = expr[index++];
+						ch = exprI(index++);
 						if(ch === quote) {
 							closed = true;
 							break;
 						} else if(ch === '\\') {
 							// Check for all of the common escape codes
-							ch = expr[index++];
+							ch = exprI(index++);
 							switch(ch) {
 								case 'n': str += '\n'; break;
 								case 'r': str += '\r'; break;
@@ -6724,17 +6788,19 @@ jsep = (function() {
 				
 				// Gobbles only identifiers
 				// e.g.: `foo`, `_value`, `$x1`
-				// Also, this function checs if that identifier is a literal:
+				// Also, this function checks if that identifier is a literal:
 				// (e.g. `true`, `false`, `null`) or `this`
 				gobbleIdentifier = function() {
-					var ch = expr.charCodeAt(index), start = index, identifier;
+					var ch = exprICode(index), start = index, identifier;
 
 					if(isIdentifierStart(ch)) {
 						index++;
+					} else {
+						throw new Error('Unexpected ' + exprI(index) + 'at character ' + index);
 					}
 
 					while(index < length) {
-						ch = expr.charCodeAt(index);
+						ch = exprICode(index);
 						if(isIdentifierPart(ch)) {
 							index++;
 						} else {
@@ -6766,7 +6832,7 @@ jsep = (function() {
 					var ch_i, args = [], node;
 					while(index < length) {
 						gobbleSpaces();
-						ch_i = expr[index];
+						ch_i = exprI(index);
 						if(ch_i === ')') { // done parsing
 							index++;
 							break;
@@ -6791,7 +6857,7 @@ jsep = (function() {
 					var ch_i, node, old_index;
 					node = gobbleIdentifier();
 					gobbleSpaces();
-					ch_i = expr[index];
+					ch_i = exprI(index);
 					while(ch_i === '.' || ch_i === '[' || ch_i === '(') {
 						if(ch_i === '.') {
 							index++;
@@ -6812,14 +6878,14 @@ jsep = (function() {
 								property: gobbleExpression()
 							};
 							gobbleSpaces();
-							ch_i = expr[index];
+							ch_i = exprI(index);
 							if(ch_i !== ']') {
 								throw new Error('Unclosed [ at character ' + index);
 							}
 							index++;
 							gobbleSpaces();
 						} else if(ch_i === '(') {
-							// A function call is being made; gobble all the araguments
+							// A function call is being made; gobble all the arguments
 							index++;
 							node = {
 								type: CALL_EXP,
@@ -6828,21 +6894,21 @@ jsep = (function() {
 							};
 						}
 						gobbleSpaces();
-						ch_i = expr[index];
+						ch_i = exprI(index);
 					}
 					return node;
 				},
 
-				// Responsible for parsing a group of things within paraenteses `()`
+				// Responsible for parsing a group of things within parentheses `()`
 				// This function assumes that it needs to gobble the opening parenthesis
-				// and then tries to gobble everything within that parenthesis, asusming
+				// and then tries to gobble everything within that parenthesis, assuming
 				// that the next thing it should see is the close parenthesis. If not,
 				// then the expression probably doesn't have a `)`
 				gobbleGroup = function() {
 					index++;
 					var node = gobbleExpression();
 					gobbleSpaces();
-					if(expr[index] === ')') {
+					if(exprI(index) === ')') {
 						index++;
 						return node;
 					} else {
@@ -6852,7 +6918,7 @@ jsep = (function() {
 				nodes = [], ch_i, node;
 				
 			while(index < length) {
-				ch_i = expr[index];
+				ch_i = exprI(index);
 
 				// Expressions can be separated by semicolons, commas, or just inferred without any
 				// separators
@@ -6865,7 +6931,7 @@ jsep = (function() {
 					// If we weren't able to find a binary expression and are out of room, then
 					// the expression passed in probably has too much
 					} else if(index < length) {
-						throw new Error("Unexpected '"+expr[index]+"' at character " + index);
+						throw new Error("Unexpected '"+exprI(index)+"' at character " + index);
 					}
 				}
 			}
@@ -6880,6 +6946,57 @@ jsep = (function() {
 				};
 			}
 		};
+
+	// To be filled in by the template
+	jsep.version = '0.9.4-beta';
+	jsep.toString = function() { return 'JavaScript Expression Parser (JSEP) v' + jsep.version; };
+
+	/**
+	 * @method jsep.addUnaryOp
+	 * @param {string} op_name The name of the unary op to add
+	 * @return jsep
+	 */
+	jsep.addUnaryOp = function(op_name) {
+		unary_ops[op_name] = t; return this;
+	};
+
+	/**
+	 * @method jsep.addBinaryOp
+	 * @param {string} op_name The name of the binary op to add
+	 * @param {number} precedence The precedence of the binary op (can be a float)
+	 * @return jsep
+	 */
+	jsep.addBinaryOp = function(op_name, precedence) {
+		max_binop_len = Math.max(op_name.length, max_binop_len);
+		binary_ops[op_name] = precedence;
+		return this;
+	};
+
+	/**
+	 * @method jsep.removeUnaryOp
+	 * @param {string} op_name The name of the unary op to remove
+	 * @return jsep
+	 */
+	jsep.removeUnaryOp = function(op_name) {
+		delete unary_ops[op_name];
+		if(op_name.length === max_unop_len) {
+			max_unop_len = getMaxKeyLen(unary_ops);
+		}
+		return this;
+	};
+
+	/**
+	 * @method jsep.removeBinaryOp
+	 * @param {string} op_name The name of the binary op to remove
+	 * @return jsep
+	 */
+	jsep.removeBinaryOp = function(op_name) {
+		delete binary_ops[op_name];
+		if(op_name.length === max_binop_len) {
+			max_binop_len = getMaxKeyLen(binary_ops);
+		}
+		return this;
+	};
 	return jsep;
 }());
 

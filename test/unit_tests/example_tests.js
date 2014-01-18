@@ -4,11 +4,11 @@ dt("Two Eaches", 3, function() {
 	var a1 = cjs([1,2,3]),
 		a2 = cjs(["A", "B", "C"]);
 	var tmplate = cjs.createTemplate("{{#each a1}}{{this}}{{/each}}{{#each a2}}{{this}}{{/each}}", {a1: a1, a2: a2});
-	equal(tmplate.textContent, "123ABC");
+	equal(getTextContent(tmplate), "123ABC");
 	a2.splice(1, 1);
-	equal(tmplate.textContent, "123AC");
+	equal(getTextContent(tmplate), "123AC");
 	a1.splice(2, 1, "yo");
-	equal(tmplate.textContent, "12yoAC");
+	equal(getTextContent(tmplate), "12yoAC");
 });
 
 var emulate_event = function(event_class, constructor_name, event_type, target, constructor_args, params) {
@@ -102,7 +102,7 @@ dt("Cell", 8, function() {
 		on_confirm = edit_state.addTransition("editing", "idle");
 	edit_state.addTransition("idle", "editing", cjs.on("click", cell))
 
-	equal(cell.textContent, "(unset)");
+	equal(getTextContent(cell), "(unset)");
 
 	emulate_mouse_event("click", cell);
 
@@ -113,7 +113,7 @@ dt("Cell", 8, function() {
 	emulate_keyboard_event("keydown", cell.childNodes[0], 13); // enter
 
 	equal(value.get(), "something");
-	equal(cell.textContent, "something");
+	equal(getTextContent(cell), "something");
 
 	emulate_mouse_event("click", cell);
 
@@ -124,7 +124,7 @@ dt("Cell", 8, function() {
 	emulate_keyboard_event("keydown", cell.childNodes[0], 27); // esc
 
 	equal(value.get(), "something");
-	equal(cell.textContent, "something");
+	equal(getTextContent(cell), "something");
 
 	cjs.destroyTemplate(cell);
 });
