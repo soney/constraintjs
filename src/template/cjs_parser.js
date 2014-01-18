@@ -231,7 +231,7 @@ var parseTemplate = function(input_str, handler) {
 
 				if(last_stack && has(autoclose_nodes, last_stack.tag)) {
 					var autoclose_node = autoclose_nodes[last_stack.tag];
-					if(autoclose_node.when_open_sibling.indexOf(tagName) >= 0) {
+					if(indexOf(autoclose_node.when_open_sibling, tagName) >= 0) {
 						popStackUntilTag(last_stack.tag, HB_TYPE);
 						last_stack = getLatestHandlebarParent();
 					}
@@ -246,8 +246,8 @@ var parseTemplate = function(input_str, handler) {
 
 				if(has(sibling_rules, tagName)) {
 					var sibling_rule = sibling_rules[tagName];
-					if(sibling_rule.follows.indexOf(last_closed_hb_tag) < 0) {
-						if(!sibling_rule.or_parent || sibling_rule.or_parent.indexOf(last_stack.tag) < 0) {
+					if(indexOf(sibling_rule.follows, last_closed_hb_tag) < 0) {
+						if(!sibling_rule.or_parent || indexOf(sibling_rule.or_parent, last_stack.tag) < 0) {
 							var error_message = "'" + tagName + "' must follow a '" + sibling_rule.follows[0] + "'";
 							if(sibling_rule.or_parent) {
 								error_message += " or be inside of a '" + sibling_rule.or_parent[0] + "' tag";

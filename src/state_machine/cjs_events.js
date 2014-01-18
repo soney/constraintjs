@@ -153,7 +153,7 @@ extend(cjs, {
 								} else {
 									each(targets, function(target) {
 										// otherwise, add the event listener to every one of my targets
-										target.addEventListener(event_type, listener);
+										aEL(target, event_type, listener);
 									});
 								}
 							});
@@ -168,7 +168,7 @@ extend(cjs, {
 											timeout_id = false;
 										}
 									} else {
-										target.removeEventListener(event_type, listener);
+										rEL(target, event_type, listener);
 									}
 								});
 							});

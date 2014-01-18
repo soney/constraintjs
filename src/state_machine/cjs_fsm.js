@@ -222,7 +222,7 @@ var FSM = function() {
 	 *     my_fsm.state.get(); // 'state1'
 	 */
 	this.state = cjs(function() { // the name of the current state
-		if(this._curr_state) { return this._curr_state.getName(); }
+		if(this._curr_state) { return this._curr_state._name; }
 		else { return null; }
 	}, {
 		context: this
@@ -380,6 +380,8 @@ var FSM = function() {
 			to_state = b;
 			add_transition_fn = c;
 		}
+		if(isString(from_state) && !has(this._states, from_state)) { this._states[from_state] = new State(this, from_state); }
+		if(isString(to_state) && !has(this._states, to_state)) { this._states[to_state] = new State(this, to_state); }
 
 		// do_transition is a function that can be called to activate the transition
 		// Creates a new transition that will go from from_state to to_state
@@ -463,7 +465,7 @@ var FSM = function() {
 		var state = getStateWithName(this, state_name); // Get existing state
 		if(!state) {
 			// or create it if necessary
-			state = this.create_state(state_name);
+			state = this._states[state_name] = new State(this, state_name);
 		}
 		if(!this.did_transition) {
 			// If no transitions have occurred, set the current state to the one they specified

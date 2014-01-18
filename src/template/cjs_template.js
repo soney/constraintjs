@@ -2,9 +2,20 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	child_is_text				= function(child)	{ return child.isText; },
 	every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
 	any_child_is_dynamic_html	= function(arr)		{ return indexWhere(arr, child_is_dynamic_html) >= 0; },
+	outerHTML = function (node){
+		// if IE, Chrome take the internal method otherwise build one
+		return node.outerHTML || (
+			function(n){
+				var div = document.createElement('div'), h;
+				div.appendChild( n.cloneNode(true) );
+				h = div.innerHTML;
+				div = null;
+				return h;
+			})(node);
+	},
 	escapeHTML = function (unsafe) {
-		return unsafe	.replace(/&/g, "&amp;")	.replace(/</g, "&lt;")
-						.replace(/>/g, "&gt;")	.replace(/"/g, "&quot;")
+		return unsafe	.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+						.replace(/>/g, "&gt;") .replace(/"/g, "&quot;")
 						.replace(/'/g, "&#039;");
 	},
 	compute_object_property = function(object, prop_node, context, lineage, curr_bindings) {
@@ -36,7 +47,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				return op ? op(get_node_value(node.left, context, lineage, curr_bindings), get_node_value(node.right, context, lineage, curr_bindings)) :
 							undefined;
 			case IDENTIFIER:
-				if(node.name[0] === "@") {
+				if(node.name.charAt(0) === "@") {
 					name = node.name.slice(1);
 					for(i = lineage.length-1; i>=0; i--) {
 						object = lineage[i].at;
@@ -91,7 +102,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		if(c.nodeType === 3) {
 			return escapeHTML(getTextContent(c));
 		} else {
-			return escapeHTML(c.outerHTML);
+			return escapeHTML(outerHTML(c));
 		}
 	},
 	get_concatenated_inner_html_constraint = function(children, context, lineage, curr_bindings) {
@@ -348,11 +359,15 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					context[attr.value] = getInputValueConstraint(element);
 				} else if((on_regex_match = attr.name.match(on_regex))) {
 					var event_name = on_regex_match[2];
-					element.addEventListener(event_name, context[attr.value]);
+					aEL(element, event_name, context[attr.value]);
 				} else {
 					var constraint = get_constraint(attr.value, context, lineage);
 					if(is_constraint(constraint)) {
-						bindings.push(attr_binding(element, attr.name, constraint));
+						if(attr.name === "class") {
+							bindings.push(class_binding(element, constraint));
+						} else {
+							bindings.push(attr_binding(element, attr.name, constraint));
+						}
 					} else {
 						element.setAttribute(attr.name, constraint);
 					}
@@ -458,7 +473,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 								concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
 								vals = map(is_else ? template.else_child.children : template.children, function(child) {
 									var dom_child = create_template_instance(child, context, concated_lineage);
-									return get_instance_node(dom_child);
+									var instance_node =  get_instance_node(dom_child);
+									return instance_node;
 								});
 
 							child_vals.splice(index, 0, vals);

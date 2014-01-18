@@ -55,12 +55,34 @@ var bind = function (func, context) { return function () { return func.apply(con
 
 var getTextContent, setTextContent;
 if(doc && !('textContent' in doc.createElement('div'))) {
-	getTextContent = function(node) { return node.innerText; };
-	setTextContent = function(node, val) { node.innerText = val; };
+	getTextContent = function(node) {
+		return node && node.nodeType === 3 ? node.nodeValue : node.innerText;
+	};
+	setTextContent = function(node, val) {
+		if(node && node.nodeType === 3) {
+			node.nodeValue = val;
+		} else {
+			node.innerText = val;
+		}
+	};
 } else {
 	getTextContent = function(node) { return node.textContent; };
 	setTextContent = function(node, val) { node.textContent = val; };
 }
+
+var aEL = function(node, type, callback) {
+	if(node.addEventListener) {
+		node.addEventListener(type, callback);
+	} else {
+		node.attachEvent("on"+type, callback);
+	}
+}, rEL = function(node, type, callback) {
+	if(node.removeEventListener) {
+		node.removeEventListener(type, callback);
+	} else {
+		node.detachEvent("on"+type, callback);
+	}
+};
 
 // Establish the object that gets returned to break out of a loop iteration.
 var breaker = {};

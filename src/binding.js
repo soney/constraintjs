@@ -470,14 +470,14 @@ var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
 			activate = function() { // add all the event listeners for every input and event type
 				each(inp_change_events, function(event_type) {
 					each(inps, function(inp) {
-						inp.addEventListener(event_type, on_change);
+						aEL(inp, event_type, on_change);
 					});
 				});
 			},
 			deactivate = function() { // clear all the event listeners for every input and event type
 				each(inp_change_events, function(event_type) {
 					each(inps, function(inp) {
-						inp.removeEventListener(event_type, on_change);
+						rEL(inp, event_type, on_change);
 					});
 				});
 			},
