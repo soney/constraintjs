@@ -11,47 +11,48 @@ dt("Two Eaches", 3, function() {
 	equal(getTextContent(tmplate), "12yoAC");
 });
 
-var emulate_event = function(event_class, constructor_name, event_type, target, constructor_args, params) {
-		var ev = document.createEvent(event_class);
-		ev[constructor_name].apply(ev, ([event_type]).concat(constructor_args));
-		if(params) {
-			for(var key in params) {
-				if(params.hasOwnProperty(key)) {
-					ev[key] = params[key];
-				}
-			}
+var emulate_mouse_event = function(event_type, target) {
+		if(document.createEvent) {
+			var ev = document.createEvent("MouseEvent");
+			ev.initMouseEvent(event_type, true, true, window,
+    0, 0, 0, 80, 20, false, false, false, false, 0, null);
+			target.dispatchEvent(ev);
+		} else if(document.createEventObject) {
+			var evObj = document.createEventObject();
+			target.fireEvent('on' + event_type, evObj);
 		}
-		target.dispatchEvent(ev);
-	},
-	emulate_mouse_event = function(a,b,c,d) {
-		return emulate_event("MouseEvent", "initMouseEvent",a,b,c,d);
 	}
 	emulate_keyboard_event = function(event_class, target, key_code) {
-		var keyboardEvent = document.createEvent("KeyboardEvent");
+		if(document.createEvent) {
+			var keyboardEvent = document.createEvent("KeyboardEvent");
 
-		var initMethod = typeof keyboardEvent.initKeyboardEvent !== 'undefined' ? "initKeyboardEvent" : "initKeyEvent";
+			var initMethod = typeof keyboardEvent.initKeyboardEvent !== 'undefined' ? "initKeyboardEvent" : "initKeyEvent";
 
 
-		keyboardEvent[initMethod](
-			"keydown",
-			true,      // bubbles oOooOOo0
-			true,      // cancelable   
-			window,    // view
-			false,     // ctrlKeyArg
-			false,     // altKeyArg
-			false,     // shiftKeyArg
-			false,     // metaKeyArg
-			key_code, 
-			key_code   // charCode   
-		);
-		keyboardEvent.keyCode = key_code;
-		keyboardEvent.keyCodeVal = key_code;
-		keyboardEvent.which = key_code;
-		
+			keyboardEvent[initMethod](
+				event_class,
+				true,      // bubbles oOooOOo0
+				true,      // cancelable   
+				window,    // view
+				false,     // ctrlKeyArg
+				false,     // altKeyArg
+				false,     // shiftKeyArg
+				false,     // metaKeyArg
+				key_code, 
+				key_code   // charCode   
+			);
+			keyboardEvent.keyCode = key_code;
+			keyboardEvent.keyCodeVal = key_code;
+			keyboardEvent.which = key_code;
+			
 
-		target.dispatchEvent(keyboardEvent); 
-		//var constructor_args = [true, true, document.defaultView, false, false, false, false, k, k];
-		//return emulate_event("KeyboardEvent", "initKeyboardEvent",a,b,constructor_args,d);
+			target.dispatchEvent(keyboardEvent); 
+		} else if(document.createEventObject) {
+			var evObj = document.createEventObject();
+			evObj.keyCode = key_code;
+			evObj.target = target;
+			target.fireEvent('on'+event_class, evObj);
+		}
 	};
 
 dt("Cell", 8, function() {
@@ -73,7 +74,7 @@ dt("Cell", 8, function() {
 						.on("idle->editing", function() {
 							var textarea = cell.getElementsByTagName("textarea")[0];
 							textarea.value = value.get();
-							textarea.select();
+							//textarea.select();
 							textarea.focus();
 						});
 
