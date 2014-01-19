@@ -690,6 +690,8 @@ var Constraint, // Declare here, will be defined later
 			}, arg1));
 		} else if(isPolyDOM(arg0)) {
 			return cjs.inputValue(arg0);
+		} else if(is_constraint(arg0)) {
+			return new Constraint(arg0, arg1);
 		} else if(isObject(arg0) && !isFunction(arg0)) {
 			return new MapConstraint(extend({
 				value: arg0
@@ -1011,7 +1013,8 @@ Constraint = function (value, options) {
 	this._changeListeners = []; // A list of callbacks that will be called when I'm nullified
 	this._tstamp = 0; // Marks the last time I was updated
 
-	if(this._options.literal || !isFunction(this._value)) { // We already have a value that doesn't need to be computed
+	if(this._options.literal || (!isFunction(this._value) && !is_constraint(this._value))) {
+		// We already have a value that doesn't need to be computed
 		this._valid = true; // Tracks whether or not the cached value if valid
 		this._cached_value = this._value; // Caches the node's value
 	} else {
@@ -3948,7 +3951,7 @@ extend(cjs, {
 			hash: memoize_default_hash,
 			equals: memoize_default_equals,
 			context: root,
-			literal_values: false
+			literal_values: true
 		}, options);
 
 		// Map from args to value

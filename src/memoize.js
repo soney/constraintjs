@@ -62,7 +62,7 @@ extend(cjs, {
 			hash: memoize_default_hash,
 			equals: memoize_default_equals,
 			context: root,
-			literal_values: false
+			literal_values: true
 		}, options);
 
 		// Map from args to value

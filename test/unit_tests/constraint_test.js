@@ -128,3 +128,18 @@ dt("Modifiers", 21, function() {
 	equal(negx.get(), -x.get());
 	equal(not_3.get(), false);
 });
+
+dt("Setting as constraint", 7, function() {
+	var x = cjs(1);
+	var y = cjs(x);
+	var z = cjs(3);
+	equal(x.get(), 1);
+	equal(y.get(), 1);
+	x.set(2);
+	equal(x.get(), 2);
+	equal(y.get(), 2);
+	y.set(z);
+	equal(x.get(), 2);
+	equal(y.get(), 3);
+	equal(z.get(), 3);
+});
