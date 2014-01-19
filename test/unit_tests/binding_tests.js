@@ -1,7 +1,11 @@
 module("Bindings");
 
 var getTextContent = function(node) {
-	return node.textContent || node.innerText;
+	if(node.textContent || node.textContent==="") {
+		return node.textContent;
+	} else {
+		return node.innerText;
+	}
 };
 
 dt("Basic Text Bindings", 2, function() {
