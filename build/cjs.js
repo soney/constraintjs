@@ -4007,10 +4007,14 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 		}
 	},
 	remove_node = function(child_node) {
-		// Utility to remove a child DOM node
-		var parentNode = child_node.parentNode;
-		if(parentNode !== null) {
-			parentNode.removeChild(child_node);
+		if(has(root, "jQuery")) {
+			root.jQuery(child_node).remove();
+		} else {
+			// Utility to remove a child DOM node
+			var parentNode = child_node.parentNode;
+			if(parentNode !== null) {
+				parentNode.removeChild(child_node);
+			}
 		}
 	},
 	remove_index = function(parent_node, index) {
