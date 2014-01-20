@@ -22,6 +22,7 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 		if(children.length > index) {
 			child_node = children[index];
 			parent_node.removeChild(child_node);
+			return child_node;
 		}
 	},
 	move_child = function(parent_node, to_index, from_index) {
@@ -35,6 +36,7 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 				}
 				insert_at(child_node, parent_node, to_index);
 			}
+			return child_node;
 		}
 	},
 	// Check if jQuery is available
@@ -75,45 +77,35 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
  * @classdesc Bind a DOM node property to a constraint value
  */
 var Binding = function(options) {
-	var targets = options.targets, // the DOM nodes
-		onAdd = options.onAdd, // optional function to be called when a new target is added
-		onRemove = options.onRemove, // optional function to be called when a target is removed
-		onMove = options.onMove, // optional function to be called when a target is moved
-		setter = options.setter, // a function that sets the attribute value
+	this.options = options;
+	this.targets = options.targets; // the DOM nodes
+	var setter = options.setter, // a function that sets the attribute value
 		getter = options.getter, // a function that gets the attribute value
 		init_val = options.init_val, // the value of the attribute before the binding was set
 		curr_value, // used in live fn
 		last_value, // used in live fn
 		old_targets = [], // used in live fn
-		onDestroy = options.onDestroy, // a function to be called when the binding is destroyed
-		// create a separate function to 
 		do_update = function() {
 			this._timeout_id = false; // Make it clear that I don't have a timeout set
-			var new_targets = filter(get_dom_array(targets), isAnyElement); // update the list of targets
+			var new_targets = filter(get_dom_array(this.targets), isAnyElement); // update the list of targets
 
-			if(onAdd || onRemove || onMove) { // If the user passed in anything to call when targets change, call it
-				var diff = get_array_diff(old_targets, new_targets);
-				each(onRemove && diff.removed, function(removed) { onRemove(removed.from_item, removed.from); });
-				each(onAdd && diff.added, function(added) { onAdd(added.item, added.to); });
-				each(onMove && diff.moved, function(moved) { onMove(moved.item, moved.to_index, moved.from_index); });
-				old_targets = new_targets;
+			if(has(options, "onChange")) {
+				options.onChange.call(this, curr_value, last_value);
 			}
 
 			// For every target, update the attribute
 			each(new_targets, function(target) {
-				setter(target, curr_value, last_value);
-			});
+				setter.call(this, target, curr_value, last_value);
+			}, this);
 
 			// track the last value so that next time we call diff
 			last_value = curr_value;
 		};
-
-	this.onDestroy = onDestroy;
 	this._throttle_delay = false; // Optional throttling to improve performance
 	this._timeout_id = false; // tracks the timeout that helps throttle
 
 	if(isFunction(init_val)) { // If init_val is a getter, call it on the first element
-		last_value = init_val(get_dom_array(targets[0]));
+		last_value = init_val(get_dom_array(this.targets[0]));
 	} else { // Otherwise, just take it as is
 		last_value = init_val;
 	}
@@ -136,6 +128,16 @@ var Binding = function(options) {
 (function(my) {
 	/** @lends cjs.Binding.prototype */
 	var proto = my.prototype;
+	proto.setOptions = function(new_opts) {
+		var hadOnAdd = has(this.options, "onAdd");
+		extend(this.options, new_opts);
+		if(!hadOnAdd && has(this.options, "onAdd")) {
+			var targs = isArray(this.targets) ? this.targets[0] : this.targets;
+			each(targs.childNodes, function(child, index) {
+				this.options.onAdd.call(this, child, index);
+			}, this);
+		}
+	};
 	/**
 	 * Pause binding (no updates to the attribute until resume is called)
 	 *
@@ -188,8 +190,11 @@ var Binding = function(options) {
 	 */
 	proto.destroy = function() {
 		this.$live_fn.destroy();
-		if(this.onDestroy) {
-			this.onDestroy();
+		if(this.options.onDestroy) {
+			this.options.onDestroy();
+		}
+		if(this.options.coreDestroy) {
+			this.options.coreDestroy();
 		}
 	};
 }(Binding));
@@ -209,7 +214,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 				getter: bind(val.get, val), // use the constraint's value as the getter
 				setter: list_binding_setter,
 				init_val: list_binding_init_value,
-				onDestroy: function() {
+				coreDestroy: function() {
 					val.destroy(); // Clean up the constraint when we are done
 				}
 			});
@@ -355,9 +360,31 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		return map(flatten(arg_val_arr, true), make_node);
 	}, function(element, value, old_value) {
 		var ad = get_array_diff(old_value, value);
-		each(ad.removed, function(removed_info) { remove_index(element, removed_info.from); });
-		each(ad.added, function(added_info) { insert_at(added_info.item, element, added_info.to); });
-		each(ad.moved, function(moved_info) { move_child(element, moved_info.to_index, moved_info.from_index); });
+		each(ad.removed, function(removed_info) {
+			var child_node = remove_index(element, removed_info.from);
+			if(this.options.onRemove) {
+				this.options.onRemove.call(this, child_node, removed_info.from);
+			}
+		}, this);
+		each(ad.added, function(added_info) {
+			var child_node = added_info.item;
+			insert_at(child_node, element, added_info.to);
+			if(this.options.onAdd) {
+				this.options.onAdd.call(this, child_node, added_info.to);
+			}
+		}, this);
+		each(ad.moved, function(moved_info) {
+			var child_node = move_child(element, moved_info.to_index, moved_info.from_index);
+			if(this.options.onMove) {
+				this.options.onMove.call(this, child_node, moved_info.to_index, moved_info.from_index);
+			}
+		}, this);
+
+		if(this.options.onIndexChange) {
+			each(ad.index_changed, function(ic_info) {
+				this.options.onIndexChange.call(this, ic_info.item, ic_info.to, ic_info.from);
+			}, this);
+		}
 	}, function(element) {
 		return toArray(element.childNodes);
 	}),

@@ -254,6 +254,9 @@ var toArray = function (obj) {
 var hOP = ObjProto.hasOwnProperty,
 	has = function (obj, key) {
 		return hOP.call(obj, key);
+	},
+	hasAny = function(obj) {
+		return any(rest(arguments), function(x) { return has(obj, x); });
 	};
 
 // Run through each element and calls `iterator` where `this` === `context`

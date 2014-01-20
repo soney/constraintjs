@@ -340,5 +340,45 @@ dt("Condition/State Combo", 7, function() {
 	equal(getTextContent(tmplate), "A");
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
+});
 
+dt("onEvent Actions", 10, function() {
+	var x = cjs(1);
+	var change_count = 0,
+		destroy_count = 0;
+	var tlate = cjs.createTemplate("{{x onChange:changed onDestroy:destroyed}}", {
+		x: x,
+		changed: function() {
+			change_count++;
+		},
+		destroyed: function() {
+			destroy_count++;
+		}
+	});
+	equal(getTextContent(tlate), "1");
+	equal(change_count, 0);
+	x.set(2);
+	equal(getTextContent(tlate), "2");
+	equal(change_count, 1);
+	equal(destroy_count, 0);
+	cjs.destroyTemplate(tlate);
+	equal(destroy_count, 1);
+
+	var add_count = removed_count = moved_count = iccount = dstroy_count = 0;
+	var arr = cjs(['a']);
+	var tlate = cjs.createTemplate("{{#each arr onAdd:added, onRemove:removed, onMove:moved, onIndexChange:iChanged, onDestroy:destroyed}}<span>{{this}}</span>{{/each}}", {
+		arr: arr,
+		added: function() { add_count++; },
+		removed: function() { removed_count++; },
+		moved: function() { moved_count++; },
+		iChanged: function() { iccount++; },
+		destroyed: function() { destroy_count++; }
+	});
+	arr.push('b', 'c');
+	equal(add_count, 3);
+	arr.splice(2, 1);
+	equal(removed_count, 1);
+	arr.splice(0, 1);
+	equal(removed_count, 2);
+	equal(iccount, 1);
 });

@@ -1,7 +1,7 @@
 var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" && child.literal; },
 	child_is_text				= function(child)	{ return child.isText; },
 	every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
-	any_child_is_dynamic_html	= function(arr)		{ return indexWhere(arr, child_is_dynamic_html) >= 0; },
+	any_child_is_dynamic_html	= function(arr)		{ return any(arr, child_is_dynamic_html); },
 	outerHTML = function (node){
 		// if IE, Chrome take the internal method otherwise build one
 		return node.outerHTML || (
@@ -18,8 +18,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 						.replace(/>/g, "&gt;") .replace(/"/g, "&quot;")
 						.replace(/'/g, "&#039;");
 	},
-	compute_object_property = function(object, prop_node, context, lineage, curr_bindings) {
-		return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage, curr_bindings) : prop_node.name] :
+	compute_object_property = function(object, prop_node, context, lineage) {
+		return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
 						undefined;
 	},
 	ELSE_COND = {},
@@ -30,8 +30,28 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		return {type: COMPOUND,
 				body: node.type === COMPOUND ? rest(node.body) : [] };
 	},
+	body_event_options = function(node) {
+		var rv = {};
+		if(node.type === COMPOUND) {
+			each(node.body, function(n) {
+				if(n.type === BINARY_EXP && n.operator === ":" && n.left.type === IDENTIFIER) {
+					if(n.left.name.match(/^on\w+/)) {
+						rv[n.left.name] = n.right;
+					}
+				}
+			});
+		}
+		return rv;
+	},
+	parse_options = function(options, context, lineage) {
+		var new_opts = {};
+		each(options, function(opt, name) {
+			new_opts[name] = get_node_value(opt, context, lineage);
+		});
+		return new_opts;
+	},
 	get_instance_node = function(c) { return c.node || c.getNodes(); },
-	get_node_value = function(node, context, lineage, curr_bindings) {
+	get_node_value = function(node, context, lineage) {
 		var op, object, call_context, args, val, name, i;
 		if(!node) { return; }
 		switch(node.type) {
@@ -39,12 +59,12 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			case LITERAL: return node.value;
 			case UNARY_EXP:
 				op = unary_operators[node.operator];
-				return op ? op(get_node_value(node.argument, context, lineage, curr_bindings)) :
+				return op ? op(get_node_value(node.argument, context, lineage)) :
 							undefined;
 			case BINARY_EXP:
 			case LOGICAL_EXP:
 				op = binary_operators[node.operator];
-				return op ? op(get_node_value(node.left, context, lineage, curr_bindings), get_node_value(node.right, context, lineage, curr_bindings)) :
+				return op ? op(get_node_value(node.left, context, lineage), get_node_value(node.right, context, lineage)) :
 							undefined;
 			case IDENTIFIER:
 				if(node.name.charAt(0) === "@") {
@@ -62,34 +82,34 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 
 				return is_constraint(val) ? val.get() : val;
 			case MEMBER_EXP:
-				object = get_node_value(node.object, context, lineage, curr_bindings);
-				return compute_object_property(object, node.property, context, lineage, curr_bindings);
+				object = get_node_value(node.object, context, lineage);
+				return compute_object_property(object, node.property, context, lineage);
 			case COMPOUND:
-				return get_node_value(node.body[0], context, lineage, curr_bindings);
+				return get_node_value(node.body[0], context, lineage);
 			case CURR_LEVEL_EXP:
 				object = last(lineage).this_exp;
-				return compute_object_property(object, node.argument, context, lineage, curr_bindings);
+				return compute_object_property(object, node.argument, context, lineage);
 			case PARENT_EXP:
 				object = (lineage && lineage.length > 1) ? lineage[lineage.length - 2].this_exp : undefined;
-				return compute_object_property(object, node.argument, context, lineage, curr_bindings);
+				return compute_object_property(object, node.argument, context, lineage);
 			case CALL_EXP:
 				if(node.callee.type === MEMBER_EXP) {
-					call_context = get_node_value(node.callee.object, context, lineage, curr_bindings);
-					object = compute_object_property(call_context, node.callee.property, context, lineage, curr_bindings);
+					call_context = get_node_value(node.callee.object, context, lineage);
+					object = compute_object_property(call_context, node.callee.property, context, lineage);
 				} else {
 					call_context = root;
-					object = get_node_value(node.callee, context, lineage, curr_bindings);
+					object = get_node_value(node.callee, context, lineage);
 				}
 
 				if(object && isFunction(object)) {
 					args = map(node['arguments'], function(arg) {
-						return get_node_value(arg, context, lineage, curr_bindings);
+						return get_node_value(arg, context, lineage);
 					});
 					return object.apply(call_context, args);
 				}
 		}
 	},
-	create_node_constraint = function(node, context, lineage, curr_bindings) {
+	create_node_constraint = function(node, context, lineage) {
 		var args = arguments;
 		if(node.type === LITERAL) {
 			return get_node_value.apply(root, args);
@@ -105,7 +125,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			return escapeHTML(outerHTML(c));
 		}
 	},
-	get_concatenated_inner_html_constraint = function(children, context, lineage, curr_bindings) {
+	get_concatenated_inner_html_constraint = function(children, context, lineage) {
 		var args = arguments;
 		return cjs(function() {
 			return map(children, function(child) {
@@ -142,7 +162,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				});
 	},
 	hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/,
-	get_constraint = function(str, context, lineage, curr_bindings) {
+	get_constraint = function(str, context, lineage) {
 		var has_constraint = false,
 			strs = [],
 			index, match_val, len, context_val;
@@ -238,8 +258,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				if(unary) {
 					last_pop = {
 						type: "unary_hb",
-						parsed_content: parsed_content,
+						obj: first_body(parsed_content),
 						literal: literal,
+						options: body_event_options(parsed_content),
 						tag: tag
 					};
 
@@ -250,7 +271,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					last_pop = {
 						type: "hb",
 						tag: tag,
-						children: []
+						children: [],
+						options: body_event_options(parsed_content)
 					};
 					switch(tag) {
 						case "each":
@@ -329,13 +351,14 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	create_template_instance = function(template, context, lineage, parent_dom_node) {
 		var type = template.type,
 			instance_children,
-			element;
+			element, options;
 
 		if(type === "chars") {
 			return {type: type, node: doc.createTextNode(template.str) };
 		} else if(type === "root" || type === "html") {
 			var args = arguments,
-				on_regex_match;
+				on_regex_match,
+				bindings = [], binding, binding_opts;
 			instance_children = map(template.children, function(child) {
 				return create_template_instance(child, context, lineage);
 			});
@@ -351,8 +374,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			} else {
 				element = doc.createElement(template.tag);
 			}
-
-			var bindings = [];
 
 			each(template.attributes, function(attr) {
 				if(attr.name.match(name_regex)) {
@@ -376,10 +397,27 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 
 			if(any_child_is_dynamic_html(template.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
 				var concatenated_html = get_concatenated_inner_html_constraint(instance_children, context, lineage);
-				bindings.push(concatenated_html, html_binding(element, concatenated_html));
+				binding = html_binding(element, concatenated_html);
+				binding_opts = {};
+
+				each(filter(template.children, child_is_dynamic_html), function(child) {
+					extend(binding_opts, parse_options(child.options, context, lineage));
+				});
+
+				binding.setOptions(binding_opts);
+				bindings.push(concatenated_html, binding);
+
 			} else {
 				var children_constraint = get_concatenated_children_constraint(instance_children, args);
-				bindings.push(children_constraint, children_binding(element, children_constraint));
+				binding	= children_binding(element, children_constraint);
+				binding_opts = {};
+
+				each(template.children, function(child) {
+					extend(binding_opts, parse_options(child.options, context, lineage));
+				});
+
+				binding.setOptions(binding_opts);
+				bindings.push(children_constraint, binding);
 			}
 
 			return {
@@ -396,21 +434,23 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				}
 			};
 		} else if(type === "unary_hb") {
-			var textNode, parsed_elem = first_body(template.parsed_content),
-				literal = template.literal,
+			var textNode, parsed_elem = template.obj,
 				val_constraint = cjs(function() {
 					return get_node_value(parsed_elem, context, lineage);
 				}),
 				node, txt_binding;
-			if(!literal) {
+			options = parse_options(template.options, context, lineage);
+			if(!template.literal) {
 				var curr_value = cjs.get(val_constraint);
 				if(isPolyDOM(curr_value)) {
 					node = getFirstDOMChild(curr_value);
 				} else {
 					node = doc.createTextNode(""+curr_value);
 					txt_binding = text_binding(node, val_constraint);
+					txt_binding.setOptions(options);
 				}
 			}
+
 			return {
 				type: type,
 				literal: template.literal,
@@ -424,6 +464,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			var tag = template.tag;
 			if(tag === "each") {
 				var old_arr_val = [], arr_val, lastLineages = [], child_vals = [];
+				options = parse_options(template.options, context, lineage);
 				return {
 					type: type,
 					getNodes: function() {
