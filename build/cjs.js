@@ -4006,23 +4006,12 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 			parent_node.insertBefore(child_node, before_child);
 		}
 	},
-	remove_node = function(child_node) {
-		if(has(root, "jQuery")) {
-			root.jQuery(child_node).remove();
-		} else {
-			// Utility to remove a child DOM node
-			var parentNode = child_node.parentNode;
-			if(parentNode !== null) {
-				parentNode.removeChild(child_node);
-			}
-		}
-	},
 	remove_index = function(parent_node, index) {
 		// Utility to remove a child DOM node by index
 		var children = parent_node.childNodes, child_node;
 		if(children.length > index) {
 			child_node = children[index];
-			remove_node(child_node);
+			parent_node.removeChild(child_node);
 		}
 	},
 	move_child = function(parent_node, to_index, from_index) {
