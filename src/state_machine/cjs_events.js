@@ -94,7 +94,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 }(CJSEvent));
 /** @lends */
 
-var isElementOrWindow = function(elem) { return elem === root || isElement(elem); },
+var isElementOrWindow = function(elem) { return elem === root || isPolyDOM(elem); },
 	split_and_trim = function(x) { return map(x.split(" "), trim); },
 	timeout_event_type = "timeout";
 
@@ -178,7 +178,7 @@ extend(cjs, {
 
 							event_type_val = split_and_trim(cjs.get(event_type));
 							// only use DOM elements (or the window) as my target
-							targets = filter(get_dom_array(rest_args), isElementOrWindow);
+							targets = flatten(map(filter(get_dom_array(rest_args), isElementOrWindow), getDOMChildren , true));
 
 							// when entering the state, add the event listeners, then remove them when leaving the state
 							fsm	.on(state_selector, on_listener)

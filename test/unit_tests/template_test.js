@@ -221,6 +221,37 @@ dt("Nested Templates", 2, function() {
 	equal(abc.childNodes.length, 1);
 	equal(getTextContent(abc), "Hello, world");
 });
+dt("Custom Partials", 7, function() {
+	var add_count = 0, remove_count = 0, a = cjs(1);
+
+	cjs.registerCustomPartial("my_custom_partial", {
+		createNode: function(arg) {
+			equal(arg, a.get());
+			return document.createElement('span');
+		},
+		onAdd: function() {
+			add_count++;
+		},
+		onRemove: function() {
+			remove_count++;
+		}
+	});
+	var is_showing = cjs(true);
+	var my_template = cjs.createTemplate(
+		"{{#if is_showing}}" +
+			"{{> my_custom_partial a}}" +
+		"{{/if}}"
+	, {is_showing: is_showing, a: a});
+	equal(add_count, 1);
+	equal(remove_count, 0);
+	is_showing.set(false);
+	equal(add_count, 1);
+	equal(remove_count, 1);
+	a.set(2);
+	is_showing.set(true);
+	equal(add_count, 2);
+	equal(remove_count, 1);
+});
 
 dt("Template Comments", 2, function() {
 	var tmplate = cjs.createTemplate("{{! comment 1 }}{{!comment2}}{{#each num}}<!--some html comment-->{{/each}}", {num: [1,2,3]});
@@ -342,6 +373,7 @@ dt("Condition/State Combo", 7, function() {
 	equal(getTextContent(tmplate), "");
 });
 
+/*
 dt("onEvent Actions", 10, function() {
 	var x = cjs(1);
 	var change_count = 0,
@@ -382,3 +414,4 @@ dt("onEvent Actions", 10, function() {
 	equal(removed_count, 2);
 	equal(iccount, 1);
 });
+*/

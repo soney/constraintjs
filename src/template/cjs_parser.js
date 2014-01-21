@@ -27,41 +27,42 @@ var empty = makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,m
 // Special Elements (can contain anything)
 	special = makeMap("script,style");
 
+var IF_TAG    = "if",
+	ELIF_TAG  = "elif",
+	ELSE_TAG  = "else",
+	STATE_TAG = "state",
+	EACH_TAG  = "each",
+	WITH_TAG  = "with",
+	FSM_TAG   = "fsm",
+	UNLESS_TAG= "unless";
 
 // Dictates what parents children must have; state must be a direct descendent of diagram
-var parent_rules = {
-	"state": { parent: ["fsm"] },
-	"elif": { parent: ["if"] },
-	"else": { parent: ["if", "each"] }
-};
+var parent_rules = {};
+parent_rules[STATE_TAG] = { parent: [FSM_TAG] };
+parent_rules[ELIF_TAG] = { parent: [IF_TAG] };
+parent_rules[ELSE_TAG] = { parent: [IF_TAG, EACH_TAG] };
 
-var autoclose_nodes = {
-	"elif": {
-		when_open_sibling: ["elif", "else"]
-	},
-	"else": {
-		when_close_parent: ["if", "each"],
-		when_open_sibling: []
-	},
-	"state": {
-		when_open_sibling: ["state"]
-	}
+var autoclose_nodes = {};
+autoclose_nodes[ELIF_TAG] =  { when_open_sibling: [ELIF_TAG, ELSE_TAG] };
+autoclose_nodes[ELSE_TAG] =  {
+	when_close_parent: [IF_TAG, EACH_TAG],
+	when_open_sibling: []
 };
+autoclose_nodes[STATE_TAG] = { when_open_sibling: [STATE_TAG] };
 
 // elsif and else must come after either if or elsif
-var sibling_rules = {
-	"elif": {
-		follows: ["elif"], //what it may follow
-		or_parent: ["if"] //or the parent can be 'if'
-	},
-	"else": {
-		follows: ["elif"],
-		or_parent: ["if", "each"]
-	},
-	"state": {
-		follows: ["state"],
-		or_parent: ["fsm"]
-	}
+var sibling_rules = {};
+sibling_rules[ELIF_TAG] = {
+	follows: [ELIF_TAG], //what it may follow
+	or_parent: [IF_TAG] //or the parent can be 'if'
+};
+sibling_rules[ELSE_TAG] = {
+	follows: [ELIF_TAG],
+	or_parent: [IF_TAG, EACH_TAG]
+};
+sibling_rules[STATE_TAG] = {
+	follows: [STATE_TAG],
+	or_parent: [FSM_TAG]
 };
 
 var parseTemplate = function(input_str, handler) {
@@ -302,4 +303,131 @@ var parseTemplate = function(input_str, handler) {
 			last_closed_hb_tag = tagName;
 		}
 	}
+},
+create_template = function(template_str) {
+	var root = {
+		children: [],
+		type: ROOT_TYPE
+	}, stack = [root],
+	last_pop = false, has_container = false, fsm_stack = [], condition_stack = [];
+
+	parseTemplate(template_str, {
+		startHTML: function(tag, attributes, unary) {
+			last_pop = {
+				type: HTML_TYPE,
+				tag: tag,
+				attributes: attributes,
+				unary: unary,
+				children: []
+			};
+
+			last(stack).children.push(last_pop);
+
+			if(!unary) {
+				stack.push(last_pop);
+			}
+		},
+		endHTML: function(tag) {
+			last_pop = stack.pop();
+		},
+		HTMLcomment: function(str) {
+			last_pop = {
+				type: COMMENT_TYPE,
+				str: str
+			};
+			last(stack).children.push(last_pop);
+		},
+		chars: function(str) {
+			last_pop = {
+				type: CHARS_TYPE,
+				str: str
+			};
+			last(stack).children.push(last_pop);
+		},
+		startHB: function(tag, parsed_content, unary, literal) {
+			if(unary) {
+				last_pop = {
+					type: UNARY_HB_TYPE,
+					obj: first_body(parsed_content),
+					literal: literal,
+					//options: body_event_options(parsed_content),
+					tag: tag
+				};
+
+				last(stack).children.push(last_pop);
+			} else {
+				var push_onto_children = true;
+
+				last_pop = {
+					type: HB_TYPE,
+					tag: tag,
+					children: [],
+					//options: body_event_options(parsed_content)
+				};
+				switch(tag) {
+					case EACH_TAG:
+						last_pop.parsed_content = rest_body(parsed_content);
+						last_pop.else_child = false;
+						break;
+					case UNLESS_TAG:
+					case IF_TAG:
+						last_pop.reverse = tag === UNLESS_TAG;
+						last_pop.sub_conditions = [];
+						last_pop.condition = rest_body(parsed_content);
+						condition_stack.push(last_pop);
+						break;
+					case ELIF_TAG:
+					case ELSE_TAG:
+						var last_stack = last(stack);
+						if(last_stack.type === HB_TYPE && last_stack.tag === EACH_TAG) {
+							last_stack.else_child = last_pop;
+						} else {
+							last(condition_stack).sub_conditions.push(last_pop);
+						}
+						last_pop.condition = tag === ELSE_TAG ? ELSE_COND : rest_body(parsed_content);
+						push_onto_children = false;
+						break;
+					case EACH_TAG:
+					case FSM_TAG:
+						last_pop.fsm_target = rest_body(parsed_content);
+						last_pop.sub_states = {};
+						fsm_stack.push(last_pop);
+						break;
+					case STATE_TAG:
+						var state_name = parsed_content.body[1].name;
+						last(fsm_stack).sub_states[state_name] = last_pop;
+						push_onto_children = false;
+						break;
+					case WITH_TAG:
+						last_pop.content = rest_body(parsed_content);
+						break;
+				}
+				if(push_onto_children) {
+					last(stack).children.push(last_pop);
+				}
+				stack.push(last_pop);
+			}
+		},
+		endHB: function(tag) {
+			switch(tag) {
+				case IF_TAG:
+				case UNLESS_TAG:
+					condition_stack.pop();
+					break;
+				case FSM_TAG:
+					fsm_stack.pop();
+			}
+			stack.pop();
+		},
+		partialHB: function(tagName, parsed_content) {
+			last_pop = {
+				type: PARTIAL_HB_TYPE,
+				tag: tagName,
+				content: rest_body(parsed_content)
+			};
+
+			last(stack).children.push(last_pop);
+		}
+	});
+	return root;
 };
