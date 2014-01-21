@@ -484,6 +484,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						old_arr_val = arr_val;
 
 						onremove_each(removed_nodes);
+						destroy_each(removed_nodes);
 						onadd_each(added_nodes);
 
 						return flatten(child_vals, true);
@@ -616,11 +617,11 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 				instance = get_template_instance(dom_node);
 			return {
 				node: dom_node,
-				pause: function() { instance.pause(); },
+				pause: function() { if(instance) instance.pause(); },
 				destroy: function() { cjs.destroyTemplate(dom_node); },
-				onAdd: function() { instance.onAdd(); },
-				onRemove: function() { instance.onRemove(); },
-				resume: function() { instance.resume(); }
+				onAdd: function() { if(instance) instance.onAdd(); },
+				onRemove: function() { if(instance) instance.onRemove(); },
+				resume: function() { if(instance) instance.resume(); }
 			};
 		} else if (type === COMMENT_TYPE) {
 			return {
@@ -853,7 +854,7 @@ extend(cjs, {
 	 *  * `onRemove(dom_node)`: A function that is called when `dom_node` is removed from the DOM tree
 	 *  * `pause(dom_node)`: A function that is called when the template has been paused (usually with `pauseTemplate`)
 	 *  * `resume(dom_node)`: A function that is called when the template has been resumed (usually with `resumeTemplate`)
-	 *  * `destroy(dom_node)`: A function that is called when the template has been destroyed (usually with `destroyTemplate`)
+	 *  * `destroyNode(dom_node)`: A function that is called when the template has been destroyed (usually with `destroyTemplate`)
 	 *
 	 * @method cjs.registerCustomPartial
 	 * @param {string} name - The name that this partial can be referred to as
@@ -867,6 +868,9 @@ extend(cjs, {
 	 *			createNode: function(context) {
 	 *				return document.createElement('span');
 	 *			},
+	 *			destroyNode: function(dom_node) {
+	 *				// something like: completely_destroy(dom_node);
+	 *			}
 	 *			onAdd: function(dom_node) {
 	 *				// something like: do_init(dom_node);
 	 *			},
@@ -879,9 +883,6 @@ extend(cjs, {
 	 *			resume: function(dom_node) {
 	 *				// something like: resume_bindings(dom_node);
 	 *			},
-	 *			destroy: function(dom_node) {
-	 *				// something like: completely_destroy(dom_node);
-	 *			}
 	 *     });
 	 * Then, in any other template,
 	 *
@@ -891,13 +892,13 @@ extend(cjs, {
 	 */
 	registerCustomPartial: function(name, options) {
 		partials[name] = function() {
-			var node = options.createNode.apply(this, arguments),
+			var node = getFirstDOMChild(options.createNode.apply(this, arguments)),
 				id = instance_id++;
 
 			template_instances[id] = {
 				onAdd: function() { if(options.onAdd) { options.onAdd.call(this, node); } },
 				onRemove: function() { if(options.onRemove) { options.onRemove.call(this, node); } },
-				destroy: function() { if(options.destroy) { options.destroy.call(this, node); } },
+				destroy: function() { if(options.destroyNode) { options.destroyNode.call(this, node); } },
 				pause: function() { if(options.pause) { options.pause.call(this, node); } },
 				resume: function() { if(options.resume) { options.resume.call(this, node); } }
 			};

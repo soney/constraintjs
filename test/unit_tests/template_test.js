@@ -220,6 +220,8 @@ dt("Nested Templates", 2, function() {
 	var abc = cjs.createTemplate("{{> hello this}}", "world");
 	equal(abc.childNodes.length, 1);
 	equal(getTextContent(abc), "Hello, world");
+	cjs.pauseTemplate(abc);
+	cjs.resumeTemplate(abc);
 });
 dt("Custom Partials", 7, function() {
 	var add_count = 0, remove_count = 0, a = cjs(1);
