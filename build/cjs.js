@@ -370,12 +370,23 @@ var reduce = function(obj, iterator, memo) {
 	return memo;
 };
 
-// Longest common subsequence between two arrays, based on
-// the [rosetta code implementation](http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript)
-var popsym = function (index, x, y, symbols, r, n, equality_check) {
+var sparse_indexof = function(arr,item,start_index,equals) {
+	//indexOf is wonky with sparse arrays
+	var i = start_index,len = arr.length;
+	while(i<len) {
+		if(equals(arr[i], item)) {
+			return i;
+		}
+		i++;
+	}
+	return -1;
+},
+popsym = function (index, x, y, symbols, r, n, equality_check) {
+	// Longest common subsequence between two arrays, based on
+	// the [rosetta code implementation](http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript)
 		var s = x[index],
 			pos = symbols[s] + 1;
-		pos = indexOf(y, s, pos > r ? pos : r, equality_check);
+		pos = sparse_indexof(y, s, pos > r ? pos : r, equality_check || eqeqeq);
 		if (pos < 0) { pos = n; }
 		symbols[s] = pos;
 		return pos;
@@ -469,8 +480,17 @@ var get_index_moved = function(info) {
 		var item = info[1].item;
 		return {item: item, from: info[0].index, to: info[1].index, from_item: info[0].item, to_item: item};
 	}, 
-	add_indicies = function(x, i) {
-		return {item: x, index: i};
+	add_indicies = function(arr) {
+		// suppose you have array `arr` defined by:
+		// arr = []; arr[10] = 'hi';
+		// Looping through arr with arr.forEach (or cjs's map) would only produce the 10th item.
+		// this function is declared to make sure every item is looped through
+		var i = 0, len = arr.length, rv = [];
+		while(i<len) {
+			rv[i] = {item: arr[i], index: i};
+			i++;
+		}
+		return rv;
 	},
 	add_from_to_indicies = function(info) {
 		return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
@@ -485,8 +505,8 @@ var get_index_moved = function(info) {
 var array_source_map = function (from, to, equality_check) {
 	var eq = equality_check || eqeqeq,
 		item_aware_equality_check = function (a, b) { return eq(a ? a.item : a, b ? b.item : b); },
-		indexed_from = map(from, add_indicies),
-		indexed_to = map(to, add_indicies),
+		indexed_from = add_indicies(from),
+		indexed_to = add_indicies(to),
 		indexed_common_subsequence = map(indexed_lcs(from, to), add_from_to_indicies),
 		indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
 		indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
@@ -498,21 +518,23 @@ var array_source_map = function (from, to, equality_check) {
 	var added_indicies = map(indexed_added, get_index),
 		moved_indicies = map(indexed_moved, get_to),
 		ics_indicies = map(indexed_common_subsequence, get_to),
-		to_mappings = map(to, function (item, index) {
-				var info, info_index;
-
-				// Added items
-				if ((info_index = indexOf(added_indicies, index)) >= 0) {
-					info = indexed_added[info_index];
-					return { to: index, to_item: item, item: item };
-				} else if ((info_index = indexOf(moved_indicies, index)) >= 0) {
-					info = indexed_moved[info_index];
-					return { to: index, to_item: item, item: item, from: info.from, from_item: info.from_item };
-				} else if ((info_index = indexOf(ics_indicies, index)) >= 0) {
-					info = indexed_common_subsequence[info_index];
-					return { to: index, to_item: item, item: item, from: info.from, from_item: from[info.from] };
-				}
-			});
+		to_mappings = [],
+		i = 0, len = to.length, info, info_index, item;
+	while(i<len) {
+		item = to[i];
+		// Added items
+		if ((info_index = indexOf(added_indicies, i)) >= 0) {
+			info = indexed_added[info_index];
+			to_mappings[i] = { to: i, to_item: item, item: item };
+		} else if ((info_index = indexOf(moved_indicies, i)) >= 0) {
+			info = indexed_moved[info_index];
+			to_mappings[i] = { to: i, to_item: item, item: item, from: info.from, from_item: info.from_item };
+		} else if ((info_index = indexOf(ics_indicies, i)) >= 0) {
+			info = indexed_common_subsequence[info_index];
+			to_mappings[i] = { to: i, to_item: item, item: item, from: info.from, from_item: from[info.from] };
+		}
+		i++;
+	}
 
 	return to_mappings.concat(map(indexed_removed, add_from_and_from_item));
 };
