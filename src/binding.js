@@ -128,16 +128,6 @@ var Binding = function(options) {
 (function(my) {
 	/** @lends cjs.Binding.prototype */
 	var proto = my.prototype;
-	proto.setOptions = function(new_opts) {
-		var hadOnAdd = has(this.options, "onAdd");
-		extend(this.options, new_opts);
-		if(!hadOnAdd && has(this.options, "onAdd")) {
-			var targs = isArray(this.targets) ? this.targets[0] : this.targets;
-			each(targs.childNodes, function(child, index) {
-				this.options.onAdd.call(this, child, index);
-			}, this);
-		}
-	};
 	/**
 	 * Pause binding (no updates to the attribute until resume is called)
 	 *

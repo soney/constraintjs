@@ -38,28 +38,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 		return {type: COMPOUND,
 				body: node.type === COMPOUND ? rest(node.body) : [] };
 	},
-	/*
-	body_event_options = function(node) {
-		var rv = {};
-		if(node.type === COMPOUND) {
-			each(node.body, function(n) {
-				if(n.type === BINARY_EXP && n.operator === ":" && n.left.type === IDENTIFIER) {
-					if(n.left.name.match(/^on\w+/)) {
-						rv[n.left.name] = n.right;
-					}
-				}
-			});
-		}
-		return rv;
-	},
-	parse_options = function(options, context, lineage) {
-		var new_opts = {};
-		each(options, function(opt, name) {
-			new_opts[name] = get_node_value(opt, context, lineage);
-		});
-		return new_opts;
-	},
-	*/
 	get_instance_nodes = function(c) { return c.node || c.getNodes(); },
 	get_node_value = function(node, context, lineage) {
 		var op, object, call_context, args, val, name, i;
@@ -243,7 +221,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			instance_children,
 			element,
 			active_children;
-		//var options;
 
 		if(type === CHARS_TYPE) {
 			return {type: type, node: doc.createTextNode(template.str) };
@@ -251,7 +228,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			var args = arguments,
 				on_regex_match,
 				bindings = [], binding;
-			//var binding_opts;
 			instance_children = map(template.children, function(child) {
 				return create_template_instance(child, context, lineage);
 			});
@@ -291,28 +267,10 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			if(any_child_is_dynamic_html(template.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
 				var concatenated_html = get_concatenated_inner_html_constraint(instance_children, context, lineage);
 				binding = html_binding(element, concatenated_html);
-				/*
-				binding_opts = {};
-
-				each(filter(template.children, child_is_dynamic_html), function(child) {
-					extend(binding_opts, parse_options(child.options, context, lineage));
-				});
-
-				binding.setOptions(binding_opts);
-				*/
 				bindings.push(concatenated_html, binding);
 			} else {
 				var children_constraint = get_concatenated_children_constraint(instance_children, args);
 				binding	= children_binding(element, children_constraint);
-				/*
-				binding_opts = {};
-
-				each(template.children, function(child) {
-					extend(binding_opts, parse_options(child.options, context, lineage));
-				});
-
-				binding.setOptions(binding_opts);
-				*/
 				bindings.push(children_constraint, binding);
 			}
 
@@ -343,7 +301,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					return get_node_value(parsed_elem, context, lineage);
 				}),
 				node, txt_binding;
-			//options = parse_options(template.options, context, lineage);
 			if(!template.literal) {
 				var curr_value = cjs.get(val_constraint);
 				if(isPolyDOM(curr_value)) {
@@ -351,7 +308,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 				} else {
 					node = doc.createTextNode(""+curr_value);
 					txt_binding = text_binding(node, val_constraint);
-					//txt_binding.setOptions(options);
 				}
 			}
 
@@ -376,14 +332,16 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			if(tag === EACH_TAG) {
 				var old_arr_val = [], arr_val, lastLineages = [], child_vals = [];
 				active_children = [];
-				//options = parse_options(template.options, context, lineage);
 				return {
 					type: type,
 					onRemove: function() { each(active_children, onremove_each); },
 					onAdd: function() { each(active_children, onadd_each); },
 					pause: function() { each(active_children, pause_each); },
 					resume: function() { each(active_children, resume_each); },
-					destroy: function() { each(active_children, destroy_each); },
+					destroy: function() {
+						each(active_children, destroy_each);
+						active_children = [];
+					},
 					getNodes: function() {
 						arr_val = get_node_value(template.parsed_content, context, lineage);
 
@@ -482,7 +440,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					onAdd: function() { onadd_each(active_children); },
 					pause: function() { pause_each(active_children); },
 					resume: function() { resume_each(active_children); },
-					destroy: function() { destroy_each(active_children); },
+					destroy: function() {
+						if(old_index >= 0) {
+							destroy_each(active_children);
+							active_children=[];
+							old_index=-1;
+						}
+					},
 					getNodes: function() {
 						var len = template.sub_conditions.length,
 							cond = !!get_node_value(template.condition, context, lineage),
@@ -538,7 +502,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 				return {
 					pause: function() { pause_each(active_children); },
 					resume: function() { resume_each(active_children); },
-					destroy: function() { destroy_each(active_children); },
+					destroy: function() {
+						if(old_state) {
+							destroy_each(active_children);
+							active_children = [];
+							old_state = false;
+						}
+					},
 					onRemove: function() { this.pause(); },
 					onAdd: function() { this.resume(); },
 					type: type,
@@ -632,7 +602,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 				node: doc.createComment(template.str)
 			};
 		}
-		return { node: [] };
+		return {node: [] };
 	},
 	partials = {},
 	custom_partials = {},

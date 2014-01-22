@@ -361,8 +361,7 @@ create_template = function(template_str) {
 				last_pop = {
 					type: HB_TYPE,
 					tag: tag,
-					children: [],
-					//options: body_event_options(parsed_content)
+					children: []
 				};
 				switch(tag) {
 					case EACH_TAG:

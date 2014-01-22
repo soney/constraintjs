@@ -375,7 +375,7 @@ dt("Condition/State Combo", 7, function() {
 	equal(getTextContent(tmplate), "");
 });
 
-dt("Templateducken", 7, function() {
+dt("Templateducken", 19, function() {
 	var sub_destroy_count = 0,
 		destroy_count = 0;
 	cjs.registerCustomPartial("my_custom_sub_template", {
@@ -404,16 +404,27 @@ dt("Templateducken", 7, function() {
 			cjs.destroyTemplate(node);
 		}
 	});
-	var ct2 = cjs.createTemplate("{{#each arr}}{{>my_custom_template x+1 y+1}}{{/each}}", {
+	var arr = cjs([1,2]);
+	var cond = cjs(true);
+	var ct2 = cjs.createTemplate("{{#if cond}}{{#each arr}}{{>my_custom_template x+1 y+1}}{{/each}}{{/if}}", {
 		x: 0,
 		y: 10,
-		arr: [1]
+		arr: arr,
+		cond: cond
 	});
 
-	equal(getTextContent(ct2), '16', 'textContent right');
-	cjs.destroyTemplate(ct2);
+	equal(getTextContent(ct2), '1616', 'textContent right');
+	cond.set(false);
+	equal(getTextContent(ct2), '', 'textContent right');
+	cond.set(true);
+	equal(getTextContent(ct2), '1616', 'textContent right');
+	arr.splice(0,1);
 	equal(destroy_count, 1, 'proper destroy count');
 	equal(sub_destroy_count, 1, 'proper subdestroy count');
+	arr.splice(0,0,'x');
+	cjs.destroyTemplate(ct2);
+	equal(destroy_count, 3, 'proper destroy count');
+	equal(sub_destroy_count, 3, 'proper subdestroy count');
 });
 /*
 dt("onEvent Actions", 10, function() {
