@@ -263,6 +263,9 @@ var toArray = function (obj) {
 var hOP = ObjProto.hasOwnProperty,
 	has = function (obj, key) {
 		return hOP.call(obj, key);
+	},
+	hasAny = function(obj) {
+		return any(rest(arguments), function(x) { return has(obj, x); });
 	};
 
 // Run through each element and calls `iterator` where `this` === `context`
@@ -690,6 +693,8 @@ var Constraint, // Declare here, will be defined later
 			}, arg1));
 		} else if(isPolyDOM(arg0)) {
 			return cjs.inputValue(arg0);
+		} else if(is_constraint(arg0)) {
+			return new Constraint(arg0, arg1);
 		} else if(isObject(arg0) && !isFunction(arg0)) {
 			return new MapConstraint(extend({
 				value: arg0
@@ -1011,7 +1016,8 @@ Constraint = function (value, options) {
 	this._changeListeners = []; // A list of callbacks that will be called when I'm nullified
 	this._tstamp = 0; // Marks the last time I was updated
 
-	if(this._options.literal || !isFunction(this._value)) { // We already have a value that doesn't need to be computed
+	if(this._options.literal || (!isFunction(this._value) && !is_constraint(this._value))) {
+		// We already have a value that doesn't need to be computed
 		this._valid = true; // Tracks whether or not the cached value if valid
 		this._cached_value = this._value; // Caches the node's value
 	} else {
@@ -3948,7 +3954,7 @@ extend(cjs, {
 			hash: memoize_default_hash,
 			equals: memoize_default_equals,
 			context: root,
-			literal_values: false
+			literal_values: true
 		}, options);
 
 		// Map from args to value
@@ -4003,19 +4009,13 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 			parent_node.insertBefore(child_node, before_child);
 		}
 	},
-	remove_node = function(child_node) {
-		// Utility to remove a child DOM node
-		var parentNode = child_node.parentNode;
-		if(parentNode !== null) {
-			parentNode.removeChild(child_node);
-		}
-	},
 	remove_index = function(parent_node, index) {
 		// Utility to remove a child DOM node by index
 		var children = parent_node.childNodes, child_node;
 		if(children.length > index) {
 			child_node = children[index];
-			remove_node(child_node);
+			parent_node.removeChild(child_node);
+			return child_node;
 		}
 	},
 	move_child = function(parent_node, to_index, from_index) {
@@ -4029,6 +4029,7 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
 				}
 				insert_at(child_node, parent_node, to_index);
 			}
+			return child_node;
 		}
 	},
 	// Check if jQuery is available
@@ -4069,45 +4070,35 @@ var make_node = function(item) { // Check if the argument is a DOM node or creat
  * @classdesc Bind a DOM node property to a constraint value
  */
 var Binding = function(options) {
-	var targets = options.targets, // the DOM nodes
-		onAdd = options.onAdd, // optional function to be called when a new target is added
-		onRemove = options.onRemove, // optional function to be called when a target is removed
-		onMove = options.onMove, // optional function to be called when a target is moved
-		setter = options.setter, // a function that sets the attribute value
+	this.options = options;
+	this.targets = options.targets; // the DOM nodes
+	var setter = options.setter, // a function that sets the attribute value
 		getter = options.getter, // a function that gets the attribute value
 		init_val = options.init_val, // the value of the attribute before the binding was set
 		curr_value, // used in live fn
 		last_value, // used in live fn
 		old_targets = [], // used in live fn
-		onDestroy = options.onDestroy, // a function to be called when the binding is destroyed
-		// create a separate function to 
 		do_update = function() {
 			this._timeout_id = false; // Make it clear that I don't have a timeout set
-			var new_targets = filter(get_dom_array(targets), isAnyElement); // update the list of targets
+			var new_targets = filter(get_dom_array(this.targets), isAnyElement); // update the list of targets
 
-			if(onAdd || onRemove || onMove) { // If the user passed in anything to call when targets change, call it
-				var diff = get_array_diff(old_targets, new_targets);
-				each(onRemove && diff.removed, function(removed) { onRemove(removed.from_item, removed.from); });
-				each(onAdd && diff.added, function(added) { onAdd(added.item, added.to); });
-				each(onMove && diff.moved, function(moved) { onMove(moved.item, moved.to_index, moved.from_index); });
-				old_targets = new_targets;
+			if(has(options, "onChange")) {
+				options.onChange.call(this, curr_value, last_value);
 			}
 
 			// For every target, update the attribute
 			each(new_targets, function(target) {
-				setter(target, curr_value, last_value);
-			});
+				setter.call(this, target, curr_value, last_value);
+			}, this);
 
 			// track the last value so that next time we call diff
 			last_value = curr_value;
 		};
-
-	this.onDestroy = onDestroy;
 	this._throttle_delay = false; // Optional throttling to improve performance
 	this._timeout_id = false; // tracks the timeout that helps throttle
 
 	if(isFunction(init_val)) { // If init_val is a getter, call it on the first element
-		last_value = init_val(get_dom_array(targets[0]));
+		last_value = init_val(get_dom_array(this.targets[0]));
 	} else { // Otherwise, just take it as is
 		last_value = init_val;
 	}
@@ -4182,8 +4173,11 @@ var Binding = function(options) {
 	 */
 	proto.destroy = function() {
 		this.$live_fn.destroy();
-		if(this.onDestroy) {
-			this.onDestroy();
+		if(this.options.onDestroy) {
+			this.options.onDestroy();
+		}
+		if(this.options.coreDestroy) {
+			this.options.coreDestroy();
 		}
 	};
 }(Binding));
@@ -4203,7 +4197,7 @@ var create_list_binding = function(list_binding_getter, list_binding_setter, lis
 				getter: bind(val.get, val), // use the constraint's value as the getter
 				setter: list_binding_setter,
 				init_val: list_binding_init_value,
-				onDestroy: function() {
+				coreDestroy: function() {
 					val.destroy(); // Clean up the constraint when we are done
 				}
 			});
@@ -4349,9 +4343,31 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 		return map(flatten(arg_val_arr, true), make_node);
 	}, function(element, value, old_value) {
 		var ad = get_array_diff(old_value, value);
-		each(ad.removed, function(removed_info) { remove_index(element, removed_info.from); });
-		each(ad.added, function(added_info) { insert_at(added_info.item, element, added_info.to); });
-		each(ad.moved, function(moved_info) { move_child(element, moved_info.to_index, moved_info.from_index); });
+		each(ad.removed, function(removed_info) {
+			var child_node = remove_index(element, removed_info.from);
+			if(this.options.onRemove) {
+				this.options.onRemove.call(this, child_node, removed_info.from);
+			}
+		}, this);
+		each(ad.added, function(added_info) {
+			var child_node = added_info.item;
+			insert_at(child_node, element, added_info.to);
+			if(this.options.onAdd) {
+				this.options.onAdd.call(this, child_node, added_info.to);
+			}
+		}, this);
+		each(ad.moved, function(moved_info) {
+			var child_node = move_child(element, moved_info.to_index, moved_info.from_index);
+			if(this.options.onMove) {
+				this.options.onMove.call(this, child_node, moved_info.to_index, moved_info.from_index);
+			}
+		}, this);
+
+		if(this.options.onIndexChange) {
+			each(ad.index_changed, function(ic_info) {
+				this.options.onIndexChange.call(this, ic_info.item, ic_info.to, ic_info.from);
+			}, this);
+		}
 	}, function(element) {
 		return toArray(element.childNodes);
 	}),
@@ -5167,7 +5183,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 }(CJSEvent));
 /** @lends */
 
-var isElementOrWindow = function(elem) { return elem === root || isElement(elem); },
+var isElementOrWindow = function(elem) { return elem === root || isPolyDOM(elem); },
 	split_and_trim = function(x) { return map(x.split(" "), trim); },
 	timeout_event_type = "timeout";
 
@@ -5251,7 +5267,7 @@ extend(cjs, {
 
 							event_type_val = split_and_trim(cjs.get(event_type));
 							// only use DOM elements (or the window) as my target
-							targets = filter(get_dom_array(rest_args), isElementOrWindow);
+							targets = flatten(map(filter(get_dom_array(rest_args), isElementOrWindow), getDOMChildren , true));
 
 							// when entering the state, add the event listeners, then remove them when leaving the state
 							fsm	.on(state_selector, on_listener)
@@ -5297,41 +5313,42 @@ var empty = makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,m
 // Special Elements (can contain anything)
 	special = makeMap("script,style");
 
+var IF_TAG    = "if",
+	ELIF_TAG  = "elif",
+	ELSE_TAG  = "else",
+	STATE_TAG = "state",
+	EACH_TAG  = "each",
+	WITH_TAG  = "with",
+	FSM_TAG   = "fsm",
+	UNLESS_TAG= "unless";
 
 // Dictates what parents children must have; state must be a direct descendent of diagram
-var parent_rules = {
-	"state": { parent: ["fsm"] },
-	"elif": { parent: ["if"] },
-	"else": { parent: ["if", "each"] }
-};
+var parent_rules = {};
+parent_rules[STATE_TAG] = { parent: [FSM_TAG] };
+parent_rules[ELIF_TAG] = { parent: [IF_TAG] };
+parent_rules[ELSE_TAG] = { parent: [IF_TAG, EACH_TAG] };
 
-var autoclose_nodes = {
-	"elif": {
-		when_open_sibling: ["elif", "else"]
-	},
-	"else": {
-		when_close_parent: ["if", "each"],
-		when_open_sibling: []
-	},
-	"state": {
-		when_open_sibling: ["state"]
-	}
+var autoclose_nodes = {};
+autoclose_nodes[ELIF_TAG] =  { when_open_sibling: [ELIF_TAG, ELSE_TAG] };
+autoclose_nodes[ELSE_TAG] =  {
+	when_close_parent: [IF_TAG, EACH_TAG],
+	when_open_sibling: []
 };
+autoclose_nodes[STATE_TAG] = { when_open_sibling: [STATE_TAG] };
 
 // elsif and else must come after either if or elsif
-var sibling_rules = {
-	"elif": {
-		follows: ["elif"], //what it may follow
-		or_parent: ["if"] //or the parent can be 'if'
-	},
-	"else": {
-		follows: ["elif"],
-		or_parent: ["if", "each"]
-	},
-	"state": {
-		follows: ["state"],
-		or_parent: ["fsm"]
-	}
+var sibling_rules = {};
+sibling_rules[ELIF_TAG] = {
+	follows: [ELIF_TAG], //what it may follow
+	or_parent: [IF_TAG] //or the parent can be 'if'
+};
+sibling_rules[ELSE_TAG] = {
+	follows: [ELIF_TAG],
+	or_parent: [IF_TAG, EACH_TAG]
+};
+sibling_rules[STATE_TAG] = {
+	follows: [STATE_TAG],
+	or_parent: [FSM_TAG]
 };
 
 var parseTemplate = function(input_str, handler) {
@@ -5572,12 +5589,146 @@ var parseTemplate = function(input_str, handler) {
 			last_closed_hb_tag = tagName;
 		}
 	}
+},
+create_template = function(template_str) {
+	var root = {
+		children: [],
+		type: ROOT_TYPE
+	}, stack = [root],
+	last_pop = false, has_container = false, fsm_stack = [], condition_stack = [];
+
+	parseTemplate(template_str, {
+		startHTML: function(tag, attributes, unary) {
+			last_pop = {
+				type: HTML_TYPE,
+				tag: tag,
+				attributes: attributes,
+				unary: unary,
+				children: []
+			};
+
+			last(stack).children.push(last_pop);
+
+			if(!unary) {
+				stack.push(last_pop);
+			}
+		},
+		endHTML: function(tag) {
+			last_pop = stack.pop();
+		},
+		HTMLcomment: function(str) {
+			last_pop = {
+				type: COMMENT_TYPE,
+				str: str
+			};
+			last(stack).children.push(last_pop);
+		},
+		chars: function(str) {
+			last_pop = {
+				type: CHARS_TYPE,
+				str: str
+			};
+			last(stack).children.push(last_pop);
+		},
+		startHB: function(tag, parsed_content, unary, literal) {
+			if(unary) {
+				last_pop = {
+					type: UNARY_HB_TYPE,
+					obj: first_body(parsed_content),
+					literal: literal,
+					//options: body_event_options(parsed_content),
+					tag: tag
+				};
+
+				last(stack).children.push(last_pop);
+			} else {
+				var push_onto_children = true;
+
+				last_pop = {
+					type: HB_TYPE,
+					tag: tag,
+					children: []
+				};
+				switch(tag) {
+					case EACH_TAG:
+						last_pop.parsed_content = rest_body(parsed_content);
+						last_pop.else_child = false;
+						break;
+					case UNLESS_TAG:
+					case IF_TAG:
+						last_pop.reverse = tag === UNLESS_TAG;
+						last_pop.sub_conditions = [];
+						last_pop.condition = rest_body(parsed_content);
+						condition_stack.push(last_pop);
+						break;
+					case ELIF_TAG:
+					case ELSE_TAG:
+						var last_stack = last(stack);
+						if(last_stack.type === HB_TYPE && last_stack.tag === EACH_TAG) {
+							last_stack.else_child = last_pop;
+						} else {
+							last(condition_stack).sub_conditions.push(last_pop);
+						}
+						last_pop.condition = tag === ELSE_TAG ? ELSE_COND : rest_body(parsed_content);
+						push_onto_children = false;
+						break;
+					case EACH_TAG:
+					case FSM_TAG:
+						last_pop.fsm_target = rest_body(parsed_content);
+						last_pop.sub_states = {};
+						fsm_stack.push(last_pop);
+						break;
+					case STATE_TAG:
+						var state_name = parsed_content.body[1].name;
+						last(fsm_stack).sub_states[state_name] = last_pop;
+						push_onto_children = false;
+						break;
+					case WITH_TAG:
+						last_pop.content = rest_body(parsed_content);
+						break;
+				}
+				if(push_onto_children) {
+					last(stack).children.push(last_pop);
+				}
+				stack.push(last_pop);
+			}
+		},
+		endHB: function(tag) {
+			switch(tag) {
+				case IF_TAG:
+				case UNLESS_TAG:
+					condition_stack.pop();
+					break;
+				case FSM_TAG:
+					fsm_stack.pop();
+			}
+			stack.pop();
+		},
+		partialHB: function(tagName, parsed_content) {
+			last_pop = {
+				type: PARTIAL_HB_TYPE,
+				tag: tagName,
+				content: rest_body(parsed_content)
+			};
+
+			last(stack).children.push(last_pop);
+		}
+	});
+	return root;
 };
 
-var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" && child.literal; },
+var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TYPE && child.literal; },
 	child_is_text				= function(child)	{ return child.isText; },
 	every_child_is_text			= function(arr)		{ return every(arr, child_is_text); },
-	any_child_is_dynamic_html	= function(arr)		{ return indexWhere(arr, child_is_dynamic_html) >= 0; },
+	any_child_is_dynamic_html	= function(arr)		{ return any(arr, child_is_dynamic_html); },
+	PARTIAL_HB_TYPE = "partial_hb",
+	UNARY_HB_TYPE = "unary_hb",
+	CHARS_TYPE = "chars",
+	ROOT_TYPE = "root",
+	COMMENT_TYPE = "comment",
+
+	TEMPLATE_INSTANCE_PROP = "data-cjs-template-instance",
+
 	outerHTML = function (node){
 		// if IE, Chrome take the internal method otherwise build one
 		return node.outerHTML || (
@@ -5594,8 +5745,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 						.replace(/>/g, "&gt;") .replace(/"/g, "&quot;")
 						.replace(/'/g, "&#039;");
 	},
-	compute_object_property = function(object, prop_node, context, lineage, curr_bindings) {
-		return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage, curr_bindings) : prop_node.name] :
+	compute_object_property = function(object, prop_node, context, lineage) {
+		return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
 						undefined;
 	},
 	ELSE_COND = {},
@@ -5606,8 +5757,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		return {type: COMPOUND,
 				body: node.type === COMPOUND ? rest(node.body) : [] };
 	},
-	get_instance_node = function(c) { return c.node || c.getNodes(); },
-	get_node_value = function(node, context, lineage, curr_bindings) {
+	get_instance_nodes = function(c) { return c.node || c.getNodes(); },
+	get_node_value = function(node, context, lineage) {
 		var op, object, call_context, args, val, name, i;
 		if(!node) { return; }
 		switch(node.type) {
@@ -5615,12 +5766,12 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			case LITERAL: return node.value;
 			case UNARY_EXP:
 				op = unary_operators[node.operator];
-				return op ? op(get_node_value(node.argument, context, lineage, curr_bindings)) :
+				return op ? op(get_node_value(node.argument, context, lineage)) :
 							undefined;
 			case BINARY_EXP:
 			case LOGICAL_EXP:
 				op = binary_operators[node.operator];
-				return op ? op(get_node_value(node.left, context, lineage, curr_bindings), get_node_value(node.right, context, lineage, curr_bindings)) :
+				return op ? op(get_node_value(node.left, context, lineage), get_node_value(node.right, context, lineage)) :
 							undefined;
 			case IDENTIFIER:
 				if(node.name.charAt(0) === "@") {
@@ -5638,34 +5789,34 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 
 				return is_constraint(val) ? val.get() : val;
 			case MEMBER_EXP:
-				object = get_node_value(node.object, context, lineage, curr_bindings);
-				return compute_object_property(object, node.property, context, lineage, curr_bindings);
+				object = get_node_value(node.object, context, lineage);
+				return compute_object_property(object, node.property, context, lineage);
 			case COMPOUND:
-				return get_node_value(node.body[0], context, lineage, curr_bindings);
+				return get_node_value(node.body[0], context, lineage);
 			case CURR_LEVEL_EXP:
 				object = last(lineage).this_exp;
-				return compute_object_property(object, node.argument, context, lineage, curr_bindings);
+				return compute_object_property(object, node.argument, context, lineage);
 			case PARENT_EXP:
 				object = (lineage && lineage.length > 1) ? lineage[lineage.length - 2].this_exp : undefined;
-				return compute_object_property(object, node.argument, context, lineage, curr_bindings);
+				return compute_object_property(object, node.argument, context, lineage);
 			case CALL_EXP:
 				if(node.callee.type === MEMBER_EXP) {
-					call_context = get_node_value(node.callee.object, context, lineage, curr_bindings);
-					object = compute_object_property(call_context, node.callee.property, context, lineage, curr_bindings);
+					call_context = get_node_value(node.callee.object, context, lineage);
+					object = compute_object_property(call_context, node.callee.property, context, lineage);
 				} else {
 					call_context = root;
-					object = get_node_value(node.callee, context, lineage, curr_bindings);
+					object = get_node_value(node.callee, context, lineage);
 				}
 
 				if(object && isFunction(object)) {
 					args = map(node['arguments'], function(arg) {
-						return get_node_value(arg, context, lineage, curr_bindings);
+						return get_node_value(arg, context, lineage);
 					});
 					return object.apply(call_context, args);
 				}
 		}
 	},
-	create_node_constraint = function(node, context, lineage, curr_bindings) {
+	create_node_constraint = function(node, context, lineage) {
 		var args = arguments;
 		if(node.type === LITERAL) {
 			return get_node_value.apply(root, args);
@@ -5681,18 +5832,18 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			return escapeHTML(outerHTML(c));
 		}
 	},
-	get_concatenated_inner_html_constraint = function(children, context, lineage, curr_bindings) {
+	get_concatenated_inner_html_constraint = function(children, context, lineage) {
 		var args = arguments;
 		return cjs(function() {
 			return map(children, function(child) {
-				if(child.type === "unary_hb") {
+				if(child.type === UNARY_HB_TYPE) {
 					if(child.literal) {
 						return get_node_value(child.val, context, lineage);
 					} else {
 						return escapeHTML(get_node_value(child.val, context, lineage));
 					}
 				} else {
-					var child_val = get_instance_node(child);
+					var child_val = get_instance_nodes(child);
 
 					if(isArray(child_val)) {
 						return map(child_val, get_escaped_html).join("");
@@ -5707,7 +5858,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		return cjs(function() {
 					var rv = [];
 					each(children, function(child) {
-						var c_plural = get_instance_node(child);
+						var c_plural = get_instance_nodes(child);
 						if(isArray(c_plural)) {
 							rv.push.apply(rv, c_plural);
 						} else {
@@ -5718,7 +5869,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 				});
 	},
 	hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/,
-	get_constraint = function(str, context, lineage, curr_bindings) {
+	get_constraint = function(str, context, lineage) {
 		var has_constraint = false,
 			strs = [],
 			index, match_val, len, context_val;
@@ -5770,156 +5921,40 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 	},
 	name_regex = /^(data-)?cjs-out$/,
 	on_regex = /^(data-)?cjs-on-(\w+)$/,
-	create_template = function(template_str) {
-		var root = {
-			children: [],
-			type: "root"
-		}, stack = [root],
-		last_pop = false, has_container = false, fsm_stack = [], condition_stack = [];
-
-		parseTemplate(template_str, {
-			startHTML: function(tag, attributes, unary) {
-				last_pop = {
-					type: "html",
-					tag: tag,
-					attributes: attributes,
-					unary: unary,
-					children: []
-				};
-
-				last(stack).children.push(last_pop);
-
-				if(!unary) {
-					stack.push(last_pop);
-				}
-			},
-			endHTML: function(tag) {
-				last_pop = stack.pop();
-			},
-			HTMLcomment: function(str) {
-				last_pop = {
-					type: "comment",
-					str: str
-				};
-				last(stack).children.push(last_pop);
-			},
-			chars: function(str) {
-				last_pop = {
-					type: "chars",
-					str: str
-				};
-				last(stack).children.push(last_pop);
-			},
-			startHB: function(tag, parsed_content, unary, literal) {
-				if(unary) {
-					last_pop = {
-						type: "unary_hb",
-						parsed_content: parsed_content,
-						literal: literal,
-						tag: tag
-					};
-
-					last(stack).children.push(last_pop);
-				} else {
-					var push_onto_children = true;
-
-					last_pop = {
-						type: "hb",
-						tag: tag,
-						children: []
-					};
-					switch(tag) {
-						case "each":
-							last_pop.parsed_content = rest_body(parsed_content);
-							last_pop.else_child = false;
-							break;
-						case "unless":
-						case "if":
-							last_pop.reverse = tag === "unless";
-							last_pop.sub_conditions = [];
-							last_pop.condition = rest_body(parsed_content);
-							condition_stack.push(last_pop);
-							break;
-						case "elif":
-						case "else":
-							push_onto_children = false;
-							var last_stack = last(stack);
-							if(last_stack.type === "hb" && last_stack.tag === "each") {
-								last_stack.else_child = last_pop;
-							} else {
-								last(condition_stack).sub_conditions.push(last_pop);
-							}
-							last_pop.condition = tag === "else" ? ELSE_COND : rest_body(parsed_content);
-							break;
-						case "each":
-						case "fsm":
-							last_pop.fsm_target = rest_body(parsed_content);
-							last_pop.sub_states = {};
-							fsm_stack.push(last_pop);
-							break;
-						case "state":
-							var state_name = parsed_content.body[1].name;
-							last(fsm_stack).sub_states[state_name] = last_pop;
-							push_onto_children = false;
-							break;
-						case "with":
-							last_pop.content = rest_body(parsed_content);
-							break;
-					}
-					if(push_onto_children) {
-						last(stack).children.push(last_pop);
-					}
-					stack.push(last_pop);
-				}
-			},
-			endHB: function(tag) {
-				switch(tag) {
-					case "if":
-					case "unless":
-						condition_stack.pop();
-						break;
-					case "fsm":
-						fsm_stack.pop();
-				}
-				stack.pop();
-			},
-			partialHB: function(tagName, parsed_content) {
-				last_pop = {
-					type: "partial_hb",
-					tag: tagName,
-					content: rest_body(parsed_content)
-				};
-
-				last(stack).children.push(last_pop);
-			}
-		});
-		return root;
-	},
 	call_each = function(arr, prop_name) {
+		var args = rest(arguments, 2);
 		each(arr, function(x) {
 			if(has(x, prop_name)) {
-				x[prop_name]();
+				x[prop_name].apply(x, args);
 			}
 		});
 	},
+	pause_each    = function(arr) { call_each.apply(this, ([arr, "pause"]).concat(rest(arguments))); },
+	resume_each   = function(arr) { call_each.apply(this, ([arr, "resume"]).concat(rest(arguments))); },
+	destroy_each  = function(arr) { call_each.apply(this, ([arr, "destroy"]).concat(rest(arguments))); },
+	onadd_each    = function(arr) { call_each.apply(this, ([arr, "onAdd"]).concat(rest(arguments))); },
+	onremove_each = function(arr) { call_each.apply(this, ([arr, "onRemove"]).concat(rest(arguments))); },
+
 	create_template_instance = function(template, context, lineage, parent_dom_node) {
 		var type = template.type,
 			instance_children,
-			element;
+			element,
+			active_children;
 
-		if(type === "chars") {
+		if(type === CHARS_TYPE) {
 			return {type: type, node: doc.createTextNode(template.str) };
-		} else if(type === "root" || type === "html") {
+		} else if(type === ROOT_TYPE || type === HTML_TYPE) {
 			var args = arguments,
-				on_regex_match;
+				on_regex_match,
+				bindings = [], binding;
 			instance_children = map(template.children, function(child) {
 				return create_template_instance(child, context, lineage);
 			});
 
-			if(type === "root") {
+			if(type === ROOT_TYPE) {
 				if(parent_dom_node) {
 					element = parent_dom_node;
-				} else if(instance_children.length === 1 && template.children[0].type === "html") {
+				} else if(instance_children.length === 1 && template.children[0].type === HTML_TYPE) {
 					return instance_children[0];
 				} else {
 					element = doc.createElement("span");
@@ -5927,8 +5962,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 			} else {
 				element = doc.createElement(template.tag);
 			}
-
-			var bindings = [];
 
 			each(template.attributes, function(attr) {
 				if(attr.name.match(name_regex)) {
@@ -5952,33 +5985,42 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 
 			if(any_child_is_dynamic_html(template.children)) { // this is where it starts to suck...every child's innerHTML has to be taken and concatenated
 				var concatenated_html = get_concatenated_inner_html_constraint(instance_children, context, lineage);
-				bindings.push(concatenated_html, html_binding(element, concatenated_html));
+				binding = html_binding(element, concatenated_html);
+				bindings.push(concatenated_html, binding);
 			} else {
 				var children_constraint = get_concatenated_children_constraint(instance_children, args);
-				bindings.push(children_constraint, children_binding(element, children_constraint));
+				binding	= children_binding(element, children_constraint);
+				bindings.push(children_constraint, binding);
 			}
 
 			return {
 				node: element,
 				type: type,
+				onAdd:   function() {
+					resume_each(bindings);
+					onadd_each(instance_children);
+				},
+				onRemove:  function() {
+					pause_each(bindings);
+					onremove_each(instance_children);
+				},
 				pause: function() {
-					call_each(instance_children.concat(bindings), "pause");
+					pause_each(instance_children.concat(bindings));
 				},
 				resume: function() {
-					call_each(instance_children.concat(bindings), "resume");
+					resume_each(instance_children.concat(bindings));
 				},
 				destroy: function() {
-					call_each(instance_children.concat(bindings), "destroy");
+					destroy_each(instance_children.concat(bindings));
 				}
 			};
-		} else if(type === "unary_hb") {
-			var textNode, parsed_elem = first_body(template.parsed_content),
-				literal = template.literal,
+		} else if(type === UNARY_HB_TYPE) {
+			var textNode, parsed_elem = template.obj,
 				val_constraint = cjs(function() {
 					return get_node_value(parsed_elem, context, lineage);
 				}),
 				node, txt_binding;
-			if(!literal) {
+			if(!template.literal) {
 				var curr_value = cjs.get(val_constraint);
 				if(isPolyDOM(curr_value)) {
 					node = getFirstDOMChild(curr_value);
@@ -5987,21 +6029,38 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					txt_binding = text_binding(node, val_constraint);
 				}
 			}
+
 			return {
 				type: type,
 				literal: template.literal,
 				val: parsed_elem,
 				node: node,
-				destroy: function() { if(txt_binding) txt_binding.destroy(true); },
+				destroy: function() {
+					if(txt_binding) {
+						txt_binding.destroy(true);
+					}
+					val_constraint.destroy(true);
+				},
 				pause: function() { if(txt_binding) txt_binding.pause(); },
-				resume: function() { if(txt_binding) txt_binding.resume(); }
+				resume: function() { if(txt_binding) txt_binding.resume(); },
+				onRemove: function() { this.pause(); },
+				onAdd: function() { this.resume(); }
 			};
-		} else if (type === "hb") {
+		} else if (type === HB_TYPE) {
 			var tag = template.tag;
-			if(tag === "each") {
+			if(tag === EACH_TAG) {
 				var old_arr_val = [], arr_val, lastLineages = [], child_vals = [];
+				active_children = [];
 				return {
 					type: type,
+					onRemove: function() { each(active_children, onremove_each); },
+					onAdd: function() { each(active_children, onadd_each); },
+					pause: function() { each(active_children, pause_each); },
+					resume: function() { each(active_children, resume_each); },
+					destroy: function() {
+						each(active_children, destroy_each);
+						active_children = [];
+					},
 					getNodes: function() {
 						arr_val = get_node_value(template.parsed_content, context, lineage);
 
@@ -6024,7 +6083,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 						}
 
 						var diff = get_array_diff(old_arr_val, arr_val, map_aware_array_eq),
-							rv = [];
+							rv = [],
+							added_nodes = [], removed_nodes = [];
 						each(diff.index_changed, function(ic_info) {
 							var lastLineageItem = lastLineages[ic_info.from];
 							if(lastLineageItem && lastLineageItem.at && lastLineageItem.at.index) {
@@ -6034,51 +6094,83 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 						each(diff.removed, function(removed_info) {
 							var index = removed_info.from,
 								lastLineageItem = lastLineages[index];
-							child_vals.splice(index, 1);
+
+							removed_nodes.push.apply(removed_nodes, active_children[index]);
+
+							removeIndex(child_vals, index);
+							removeIndex(active_children, index);
 							if(lastLineageItem && lastLineageItem.at) {
-								each(lastLineageItem.at, function(v) {
-									v.destroy(true);
-								});
+								each(lastLineageItem.at, function(v) { v.destroy(true); });
 							}
 						});
 						each(diff.added, function(added_info) {
 							var v = added_info.item,
 								index = added_info.to,
 								is_else = v === ELSE_COND,
-								lastLineageItem = is_else ? false : ((v && v.is_obj === IS_OBJ) ? {this_exp: v.value , at: {key: cjs.constraint(v.key)}} : {this_exp: v, at: {index: cjs.constraint(index)}}),
+								lastLineageItem = is_else ? false : ((v && v.is_obj === IS_OBJ) ? {this_exp: v.value , at: {key: cjs.constraint(v.key)}} :
+																									{this_exp: v, at: {index: cjs.constraint(index)}}),
 								concated_lineage = is_else ? lineage : lineage.concat(lastLineageItem),
-								vals = map(is_else ? template.else_child.children : template.children, function(child) {
-									var dom_child = create_template_instance(child, context, concated_lineage);
-									var instance_node =  get_instance_node(dom_child);
-									return instance_node;
+								children = is_else ? template.else_child.children : template.children,
+								child_nodes = map(children, function(child) {
+									return create_template_instance(child, context, concated_lineage);
+								}),
+								vals = map(child_nodes, function(child_node) {
+									return get_instance_nodes(child_node);
 								});
 
+							active_children.splice(index, 0, child_nodes);
 							child_vals.splice(index, 0, vals);
 							lastLineages.splice(index, 0, lastLineageItem);
+
+							added_nodes.push.apply(added_nodes, child_nodes);
 						}, this);
 						each(diff.moved, function(moved_info) {
 							var from_index = moved_info.from_index,
 								to_index = moved_info.to_index,
 								dom_elem = mdom[from_index],
+								child_nodes = active_children[from_index],
 								lastLineageItem = lastLineages[from_index];
 
-							child_vals.splice(from_index, 1);
+							removeIndex(active_children, from_index);
+							active_children.splice(to_index, 0, child_nodes);
+
+							removeIndex(child_vals, from_index);
 							child_vals.splice(to_index, 0, dom_elem);
-							lastLineages.splice(from_index, 1);
+
+							removeIndex(lastLineages, from_index);
 							lastLineages.splice(to_index, 0, lastLineageItem);
 						});
 						old_arr_val = arr_val;
+
+						onremove_each(removed_nodes);
+						destroy_each(removed_nodes);
+						onadd_each(added_nodes);
+
 						return flatten(child_vals, true);
 					}
 				};
-			} else if(tag === "if" || tag === "unless") {
+			} else if(tag === IF_TAG || tag === UNLESS_TAG) {
 				instance_children = [];
+				active_children = [];
+				var old_index = -1;
 				return {
 					type: type,
+					onRemove: function() { onremove_each(active_children); },
+					onAdd: function() { onadd_each(active_children); },
+					pause: function() { pause_each(active_children); },
+					resume: function() { resume_each(active_children); },
+					destroy: function() {
+						if(old_index >= 0) {
+							destroy_each(active_children);
+							active_children=[];
+							old_index=-1;
+						}
+					},
 					getNodes: function() {
 						var len = template.sub_conditions.length,
 							cond = !!get_node_value(template.condition, context, lineage),
-							i, children = false, memo_index;
+							i, children = false, memo_index, rv;
+
 
 						if(template.reverse) {
 							cond = !cond;
@@ -6098,52 +6190,82 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 							}
 						}
 
+						if(old_index !== i) { onremove_each(active_children); }
+
 						if(!children) {
-							return [];
+							rv = active_children = [];
 						} else {
-							if(!instance_children[i]) {
+							if(instance_children[i]) {
+								active_children = instance_children[i];
+							} else {
 								children = i===0 ? template.children : template.sub_conditions[i-1].children;
-								instance_children[i] =  flatten(map(children, function(child) {
+								active_children = instance_children[i] = map(children, function(child) {
 									return create_template_instance(child, context, lineage);
-								}), true);
+								});
 							}
 							
-							return flatten(map(instance_children[i], get_instance_node), true);
+							rv = flatten(map(active_children, get_instance_nodes), true);
 						}
+
+						if(old_index !== i) { onadd_each(active_children); }
+
+						old_index = i;
+
+						return rv;
 					}
 				};
-			} else if(tag === "fsm") {
-				var memoized_children = {};
+			} else if(tag === FSM_TAG) {
+				var memoized_children = {},
+					old_state = false;
+				active_children = [];
 				return {
+					pause: function() { pause_each(active_children); },
+					resume: function() { resume_each(active_children); },
+					destroy: function() {
+						if(old_state) {
+							destroy_each(active_children);
+							active_children = [];
+							old_state = false;
+						}
+					},
+					onRemove: function() { this.pause(); },
+					onAdd: function() { this.resume(); },
 					type: type,
 					getNodes: function() {
 						var fsm = get_node_value(template.fsm_target, context, lineage),
 							state = fsm.getState(),
 							do_child_create = function(child) {
 								return create_template_instance(child, context, lineage);
-							}, state_name;
+							}, state_name,
+							rv = [];
 
-						if(!lineage) {
-							lineage = [];
+						if(old_state !== state) {
+							onremove_each(active_children);
 						}
 
 						for(state_name in template.sub_states) {
 							if(template.sub_states.hasOwnProperty(state_name)) {
 								if(state === state_name) {
-									var children;
 									if(has(memoized_children, state_name)) {
-										children = memoized_children[state_name];
+										active_children = memoized_children[state_name];
+										onadd_each(active_children);
 									} else {
-										children = memoized_children[state_name] = flatten(map(template.sub_states[state_name].children, do_child_create), true);
+										active_children = memoized_children[state_name] = map(template.sub_states[state_name].children, do_child_create);
 									}
-									return flatten(map(children, get_instance_node), true);
+									rv = flatten(map(active_children, get_instance_nodes), true);
 								}
 							}
 						}
-						return [];
+
+						if(old_state !== state) {
+							onadd_each(active_children);
+						}
+						old_state = state;
+
+						return rv;
 					}
 				};
-			} else if(tag === "with") {
+			} else if(tag === WITH_TAG) {
 				var new_context = get_node_value(template.content, context, lineage),
 					new_lineage = lineage.concat({this_exp: new_context});
 
@@ -6151,27 +6273,58 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 					return create_template_instance(child, new_context, new_lineage);
 				}));
 				return {
-					node: flatten(map(instance_children, get_instance_node), true)
+					pause: function() { pause_each(instance_children); },
+					resume: function() { resume_each(instance_children); },
+					onRemove: function() { onremove_each(instance_children); },
+					onAdd: function() { onadd_each(instance_children); },
+					destroy: function() { destroy_each(instance_children); },
+					node: flatten(map(instance_children, get_instance_nodes), true)
 				};
 			}
-		} else if (type === "partial_hb") {
-			var partial = partials[template.tag],
-				concated_context = get_node_value(template.content, context, lineage),
-				nodes = partial(concated_context);
+		} else if (type === PARTIAL_HB_TYPE) {
+			var partial, dom_node, instance,
+				parsed_content = template.content,
+				concated_context = parsed_content.type === COMPOUND ?
+										map(parsed_content.body, function(x) {
+											return get_node_value(x, context, lineage);
+										}) : [get_node_value(template.content, context, lineage)],
+				is_custom = false;
+
+			if(has(partials, template.tag)) {
+				partial = partials[template.tag];
+				dom_node = partial.apply(root, concated_context);
+				instance = get_template_instance(dom_node);
+			} else if(has(custom_partials, template.tag)) {
+				partial = custom_partials[template.tag];
+				instance = partial.apply(root, concated_context);
+				dom_node = instance.node;
+				is_custom = true;
+			} else {
+				throw new Error("Could not find partial with name '"+template.tag+"'");
+			}
 			return {
-				node: nodes,
-				pause: function() { nodes.pause(); },
-				destroy: function() { nodes.destroy(); },
-				resume: function() { ndoes.resume(); }
+				node: dom_node,
+				pause: function() { if(instance) instance.pause(); },
+				destroy: function() {
+					if(is_custom) {
+						instance.destroy();
+					} else {
+						cjs.destroyTemplate(dom_node);
+					}
+				},
+				onAdd: function() { if(instance) instance.onAdd(); },
+				onRemove: function() { if(instance) instance.onRemove(); },
+				resume: function() { if(instance) instance.resume(); }
 			};
-		} else if (type === "comment") {
+		} else if (type === COMMENT_TYPE) {
 			return {
 				node: doc.createComment(template.str)
 			};
 		}
-		return { node: [] };
+		return {node: [] };
 	},
 	partials = {},
+	custom_partials = {},
 	isPolyDOM = function(x) {
 		return is_jquery_obj(x) || isNList(x) || isAnyElement(x);
 	},
@@ -6179,6 +6332,10 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 		if(is_jquery_obj(x) || isNList(x))	{ return x[0]; }
 		else if(isAnyElement(x))			{ return x; }
 		else								{ return false; }
+	},
+	getDOMChildren = function(x) {
+		if(is_jquery_obj(x) || isNList(x))	{ return toArray(x); }
+		else								{ return x; }
 	},
 	template_instance_nodes = [],
 	template_instances = [],
@@ -6191,12 +6348,12 @@ var child_is_dynamic_html		= function(child)	{ return child.type === "unary_hb" 
 
 		template_instances[id] = instance;
 		template_instance_nodes[id] = node;
-		node.setAttribute("data-cjs-template-instance", id);
+		node.setAttribute(TEMPLATE_INSTANCE_PROP, id);
 
 		return node;
 	},
 	get_template_instance_index = function(dom_node) {
-		var instance_id = dom_node.getAttribute("data-cjs-template-instance");
+		var instance_id = dom_node.getAttribute(TEMPLATE_INSTANCE_PROP);
 		if(!instance_id) {
 			instance_id = indexOf(template_instance_nodes, dom_node);
 		}
@@ -6381,6 +6538,67 @@ extend(cjs, {
 								return bind(memoize_template, template);
 							}
 						},
+
+	/**
+	 * Register a *custom* partial that can be used in other templates
+	 *
+	 * Options are (only `createNode` is mandatory):
+	 *  * `createNode(...)`: A function that returns a new dom node any time this partial is invoked (called with the arguments passed into the partial)
+	 *  * `onAdd(dom_node)`: A function that is called when `dom_node` is added to the DOM tree
+	 *  * `onRemove(dom_node)`: A function that is called when `dom_node` is removed from the DOM tree
+	 *  * `pause(dom_node)`: A function that is called when the template has been paused (usually with `pauseTemplate`)
+	 *  * `resume(dom_node)`: A function that is called when the template has been resumed (usually with `resumeTemplate`)
+	 *  * `destroyNode(dom_node)`: A function that is called when the template has been destroyed (usually with `destroyTemplate`)
+	 *
+	 * @method cjs.registerCustomPartial
+	 * @param {string} name - The name that this partial can be referred to as
+	 * @param {Object} options - The set of options (described in the description)
+	 * @return {cjs} - `cjs`
+	 * @see cjs.registerPartial
+	 * @see cjs.unregisterPartial
+	 * @example Registering a custom partial named `my_custom_partial`
+	 *
+	 *     cjs.registerCustomPartial('my_custom_partial', {
+	 *			createNode: function(context) {
+	 *				return document.createElement('span');
+	 *			},
+	 *			destroyNode: function(dom_node) {
+	 *				// something like: completely_destroy(dom_node);
+	 *			}
+	 *			onAdd: function(dom_node) {
+	 *				// something like: do_init(dom_node);
+	 *			},
+	 *			onRemove: function(dom_node) {
+	 *				// something like: cleanup(dom_node);
+	 *			},
+	 *			pause: function(dom_node) {
+	 *				// something like: pause_bindings(dom_node);
+	 *			},
+	 *			resume: function(dom_node) {
+	 *				// something like: resume_bindings(dom_node);
+	 *			},
+	 *     });
+	 * Then, in any other template,
+	 *
+	 *     {{>my_template context}}
+	 * 
+	 * Nests a copy of `my_template` in `context`
+	 */
+	registerCustomPartial: function(name, options) {
+		custom_partials[name] = function() {
+			var node = getFirstDOMChild(options.createNode.apply(this, arguments));
+			return {
+				node: node,
+				onAdd: function() { if(options.onAdd) { options.onAdd.call(this, node); } },
+				onRemove: function() { if(options.onRemove) { options.onRemove.call(this, node); } },
+				destroy: function() { if(options.destroyNode) { options.destroyNode.call(this, node); } },
+				pause: function() { if(options.pause) { options.pause.call(this, node); } },
+				resume: function() { if(options.resume) { options.resume.call(this, node); } }
+			};
+		};
+		return this;
+	},
+
 	/**
 	 * Register a partial that can be used in other templates
 	 *
@@ -6389,8 +6607,21 @@ extend(cjs, {
 	 * @param {Template} value - The template
 	 * @return {cjs} - `cjs`
 	 * @see cjs.unregisterPartial
+	 * @see cjs.registerCustomPartial
+	 * @example Registering a partial named `my_temp`
+	 *
+	 *     var my_temp = cjs.createTemplate(...);
+	 *     cjs.registerPartial('my_template', my_temp);
+	 * Then, in any other template,
+	 *
+	 *     {{>my_template context}}
+	 * 
+	 * Nests a copy of `my_template` in `context`
 	 */
-	registerPartial:	function(name, value) { partials[name] = value; return this;},
+	registerPartial:	function(name, value) {
+		partials[name] = value;
+		return this;
+	},
 
 	/**
 	 * Unregister a partial for other templates
@@ -6399,6 +6630,7 @@ extend(cjs, {
 	 * @param {string} name - The name of the partial
 	 * @return {cjs} - `cjs`
 	 * @see cjs.registerPartial
+	 * @see cjs.registerCustomPartial
 	 */
 	unregisterPartial:	function(name) { delete partials[name]; return this;},
 
@@ -6417,8 +6649,8 @@ extend(cjs, {
 								instance = index >= 0 ? template_instances[index] : false;
 
 							if(instance) {
-								instance.destroy();
 								delete template_instances[index];
+								instance.destroy();
 							}
 							return this;
 						},

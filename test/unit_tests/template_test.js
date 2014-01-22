@@ -220,6 +220,39 @@ dt("Nested Templates", 2, function() {
 	var abc = cjs.createTemplate("{{> hello this}}", "world");
 	equal(abc.childNodes.length, 1);
 	equal(getTextContent(abc), "Hello, world");
+	cjs.pauseTemplate(abc);
+	cjs.resumeTemplate(abc);
+});
+dt("Custom Partials", 7, function() {
+	var add_count = 0, remove_count = 0, a = cjs(1);
+
+	cjs.registerCustomPartial("my_custom_partial", {
+		createNode: function(arg) {
+			equal(arg, a.get());
+			return document.createElement('span');
+		},
+		onAdd: function() {
+			add_count++;
+		},
+		onRemove: function() {
+			remove_count++;
+		}
+	});
+	var is_showing = cjs(true);
+	var my_template = cjs.createTemplate(
+		"{{#if is_showing}}" +
+			"{{> my_custom_partial a}}" +
+		"{{/if}}"
+	, {is_showing: is_showing, a: a});
+	equal(add_count, 1);
+	equal(remove_count, 0);
+	is_showing.set(false);
+	equal(add_count, 1);
+	equal(remove_count, 1);
+	a.set(2);
+	is_showing.set(true);
+	equal(add_count, 2);
+	equal(remove_count, 1);
 });
 
 dt("Template Comments", 2, function() {
@@ -340,5 +373,98 @@ dt("Condition/State Combo", 7, function() {
 	equal(getTextContent(tmplate), "A");
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
-
 });
+
+dt("Templateducken", 19, function() {
+	var sub_destroy_count = 0,
+		destroy_count = 0;
+	cjs.registerCustomPartial("my_custom_sub_template", {
+		createNode: function(x, y) {
+			var node = document.createElement("span");
+			equal(x, 3, 'x is 3');
+			equal(y, 13, 'y is 13');
+			node.textContent = node.innerText = x+y;
+			return node;
+		},
+		destroyNode: function(node) {
+			sub_destroy_count++;
+		}
+	});
+	var custom_template_content = cjs.createTemplate("{{>my_custom_sub_template x+2 y+2}}");
+	cjs.registerCustomPartial("my_custom_template", {
+		createNode: function(x, y) {
+			var node = document.createElement("span");
+			custom_template_content({x: x, y: y}, node);
+			equal(x, 1, 'x is 1');
+			equal(y, 11, 'y is 11');
+			return node;
+		},
+		destroyNode: function(node) {
+			destroy_count++;
+			cjs.destroyTemplate(node);
+		}
+	});
+	var arr = cjs([1,2]);
+	var cond = cjs(true);
+	var ct2 = cjs.createTemplate("{{#if cond}}{{#each arr}}{{>my_custom_template x+1 y+1}}{{/each}}{{/if}}", {
+		x: 0,
+		y: 10,
+		arr: arr,
+		cond: cond
+	});
+
+	equal(getTextContent(ct2), '1616', 'textContent right');
+	cond.set(false);
+	equal(getTextContent(ct2), '', 'textContent right');
+	cond.set(true);
+	equal(getTextContent(ct2), '1616', 'textContent right');
+	arr.splice(0,1);
+	equal(destroy_count, 1, 'proper destroy count');
+	equal(sub_destroy_count, 1, 'proper subdestroy count');
+	arr.splice(0,0,'x');
+	cjs.destroyTemplate(ct2);
+	equal(destroy_count, 3, 'proper destroy count');
+	equal(sub_destroy_count, 3, 'proper subdestroy count');
+});
+/*
+dt("onEvent Actions", 10, function() {
+	var x = cjs(1);
+	var change_count = 0,
+		destroy_count = 0;
+	var tlate = cjs.createTemplate("{{x onChange:changed onDestroy:destroyed}}", {
+		x: x,
+		changed: function() {
+			change_count++;
+		},
+		destroyed: function() {
+			destroy_count++;
+		}
+	});
+	equal(getTextContent(tlate), "1");
+	equal(change_count, 0);
+	x.set(2);
+	equal(getTextContent(tlate), "2");
+	equal(change_count, 1);
+	equal(destroy_count, 0);
+	cjs.destroyTemplate(tlate);
+	equal(destroy_count, 1);
+
+	var add_count = removed_count = moved_count = iccount = dstroy_count = 0;
+	var arr = cjs(['a']);
+	var tlate = cjs.createTemplate("{{#each arr onAdd:added, onRemove:removed, onMove:moved, onIndexChange:iChanged, onDestroy:destroyed}}<span>{{this}}</span>{{/each}}", {
+		arr: arr,
+		added: function() { add_count++; },
+		removed: function() { removed_count++; },
+		moved: function() { moved_count++; },
+		iChanged: function() { iccount++; },
+		destroyed: function() { destroy_count++; }
+	});
+	arr.push('b', 'c');
+	equal(add_count, 3);
+	arr.splice(2, 1);
+	equal(removed_count, 1);
+	arr.splice(0, 1);
+	equal(removed_count, 2);
+	equal(iccount, 1);
+});
+*/
