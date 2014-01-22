@@ -5738,6 +5738,8 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 	ROOT_TYPE = "root",
 	COMMENT_TYPE = "comment",
 
+	TEMPLATE_INSTANCE_PROP = "data-cjs-template-instance",
+
 	outerHTML = function (node){
 		// if IE, Chrome take the internal method otherwise build one
 		return node.outerHTML || (
@@ -6341,14 +6343,31 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 				};
 			}
 		} else if (type === PARTIAL_HB_TYPE) {
-			var partial = partials[template.tag],
+			var partial, dom_node, instance,
 				concated_context = get_node_value(template.content, context, lineage),
-				dom_node = partial(concated_context),
+				is_custom = false;
+			if(has(partials, template.tag)) {
+				partial = partials[template.tag];
+				dom_node = partial(concated_context);
 				instance = get_template_instance(dom_node);
+			} else if(has(custom_partials, template.tag)) {
+				partial = custom_partials[template.tag];
+				instance = partial(concated_context);
+				dom_node = instance.node;
+				is_custom = true;
+			} else {
+				throw new Error("Could not find partial with name '"+template.tag+"'");
+			}
 			return {
 				node: dom_node,
 				pause: function() { if(instance) instance.pause(); },
-				destroy: function() { cjs.destroyTemplate(dom_node); },
+				destroy: function() {
+					if(is_custom) {
+						instance.destroy();
+					} else {
+						cjs.destroyTemplate(dom_node);
+					}
+				},
 				onAdd: function() { if(instance) instance.onAdd(); },
 				onRemove: function() { if(instance) instance.onRemove(); },
 				resume: function() { if(instance) instance.resume(); }
@@ -6361,6 +6380,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 		return { node: [] };
 	},
 	partials = {},
+	custom_partials = {},
 	isPolyDOM = function(x) {
 		return is_jquery_obj(x) || isNList(x) || isAnyElement(x);
 	},
@@ -6384,12 +6404,12 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 
 		template_instances[id] = instance;
 		template_instance_nodes[id] = node;
-		node.setAttribute("data-cjs-template-instance", id);
+		node.setAttribute(TEMPLATE_INSTANCE_PROP, id);
 
 		return node;
 	},
 	get_template_instance_index = function(dom_node) {
-		var instance_id = dom_node.getAttribute("data-cjs-template-instance");
+		var instance_id = dom_node.getAttribute(TEMPLATE_INSTANCE_PROP);
 		if(!instance_id) {
 			instance_id = indexOf(template_instance_nodes, dom_node);
 		}
@@ -6621,21 +6641,16 @@ extend(cjs, {
 	 * Nests a copy of `my_template` in `context`
 	 */
 	registerCustomPartial: function(name, options) {
-		partials[name] = function() {
-			var node = getFirstDOMChild(options.createNode.apply(this, arguments)),
-				id = instance_id++;
-
-			template_instances[id] = {
+		custom_partials[name] = function() {
+			var node = getFirstDOMChild(options.createNode.apply(this, arguments));
+			return {
+				node: node,
 				onAdd: function() { if(options.onAdd) { options.onAdd.call(this, node); } },
 				onRemove: function() { if(options.onRemove) { options.onRemove.call(this, node); } },
 				destroy: function() { if(options.destroyNode) { options.destroyNode.call(this, node); } },
 				pause: function() { if(options.pause) { options.pause.call(this, node); } },
 				resume: function() { if(options.resume) { options.resume.call(this, node); } }
 			};
-			template_instance_nodes[id] = node;
-			node.setAttribute("data-cjs-template-instance", id);
-
-			return node;
 		};
 		return this;
 	},
@@ -6690,8 +6705,8 @@ extend(cjs, {
 								instance = index >= 0 ? template_instances[index] : false;
 
 							if(instance) {
-								instance.destroy();
 								delete template_instances[index];
+								instance.destroy();
 							}
 							return this;
 						},
