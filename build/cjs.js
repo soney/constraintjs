@@ -6109,31 +6109,11 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 				//options = parse_options(template.options, context, lineage);
 				return {
 					type: type,
-					onRemove: function() {
-						each(active_children, function(ac) {
-							onremove_each(ac);
-						});
-					},
-					onAdd: function() {
-						each(active_children, function(ac) {
-							onadd_each(active_children);
-						});
-					},
-					pause: function() {
-						each(active_children, function(ac) {
-							pause_each(active_children);
-						});
-					},
-					resume: function() {
-						each(active_children, function(ac) {
-							resume_each(active_children);
-						});
-					},
-					destroy: function() {
-						each(active_children, function(ac) {
-							destroy_each(active_children);
-						});
-					},
+					onRemove: function() { each(active_children, onremove_each); },
+					onAdd: function() { each(active_children, onadd_each); },
+					pause: function() { each(active_children, pause_each); },
+					resume: function() { each(active_children, resume_each); },
+					destroy: function() { each(active_children, destroy_each); },
 					getNodes: function() {
 						arr_val = get_node_value(template.parsed_content, context, lineage);
 
@@ -6344,15 +6324,20 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			}
 		} else if (type === PARTIAL_HB_TYPE) {
 			var partial, dom_node, instance,
-				concated_context = get_node_value(template.content, context, lineage),
+				parsed_content = template.content,
+				concated_context = parsed_content.type === COMPOUND ?
+										map(parsed_content.body, function(x) {
+											return get_node_value(x, context, lineage);
+										}) : [get_node_value(template.content, context, lineage)],
 				is_custom = false;
+
 			if(has(partials, template.tag)) {
 				partial = partials[template.tag];
-				dom_node = partial(concated_context);
+				dom_node = partial.apply(root, concated_context);
 				instance = get_template_instance(dom_node);
 			} else if(has(custom_partials, template.tag)) {
 				partial = custom_partials[template.tag];
-				instance = partial(concated_context);
+				instance = partial.apply(root, concated_context);
 				dom_node = instance.node;
 				is_custom = true;
 			} else {
