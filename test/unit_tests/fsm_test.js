@@ -49,12 +49,15 @@ asyncTest("cjs.on", function() {
 							.startsAt("state_1")
 							.addTransition("state_2", cjs.on("timeout", 50))
 							.addState("state_2")
-							.addTransition("state_1", cjs.on("timeout", 50));
+							.addTransition("state_1", cjs.on("timeout", 50).guard(function() {
+								return true;
+							}));
 			ok(fsm.is("state_1"));
 			setTimeout(function() {
 				ok(fsm.is("state_2"));
 				setTimeout(function() {
 					ok(fsm.is("state_1"));
+					fsm.destroy();
 					take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM"], function(response) {
 						ok(!response.illegal_strs, "Make sure nothing was allocated");
 						start();

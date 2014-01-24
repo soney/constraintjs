@@ -11,8 +11,9 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._on_add_transition = onAddTransition; // optional listener for when a transition is added
 	this._on_remove_transition = onRemoveTransition; // optional listener for when a transition is removed
 	this._live_fns = {}; // one per transitions
-	if(parent) {
-		parent._listeners.push({event:this, filter: filter}); // add an item to my parent's listener if i have a parent
+	this._parent = parent;
+	if(this._parent) {
+		this._parent._listeners.push({event:this, filter: filter}); // add an item to my parent's listener if i have a parent
 	}
 };
 
@@ -48,6 +49,9 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		if(this._on_add_transition) {
 			this._live_fns[transition.id()] = this._on_add_transition(transition);
 		}
+		if(this._parent) {
+			this._parent._addTransition(transition);
+		}
 	};
 
 	/**
@@ -67,6 +71,9 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 			var tid = transition.id();
 			this._live_fns[tid].destroy();
 			delete this._live_fns[tid];
+		}
+		if(this._parent) {
+			this._parent._removeTransition(transition);
 		}
 	};
 
@@ -128,7 +135,7 @@ extend(cjs, {
 					var targets = [],
 						timeout_id = false,
 						event_type_val = [],
-						listener = bind(transition.run, transition),
+						listener = bind(this._fire, this),
 						fsm = transition.getFSM(),
 						from = transition.getFrom(),
 						state_selector = new StateSelector(from),
