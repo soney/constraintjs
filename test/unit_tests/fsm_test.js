@@ -48,6 +48,9 @@ asyncTest("cjs.on", function() {
 							.addState("state_2")
 							.startsAt("state_1")
 							.addTransition("state_2", cjs.on("timeout", 50))
+							.addTransition("state_2", cjs.on("timeout", 0).guard(function() {
+								return false;
+							}))
 							.addState("state_2")
 							.addTransition("state_1", cjs.on("timeout", 50).guard(function() {
 								return true;

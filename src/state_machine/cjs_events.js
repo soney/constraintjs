@@ -49,8 +49,8 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		if(this._on_add_transition) {
 			this._live_fns[transition.id()] = this._on_add_transition(transition);
 		}
-		if(this._parent) {
-			this._parent._addTransition(transition);
+		if(this._parent && parent._on_add_transition) {
+			this._parent._on_add_transition(transition);
 		}
 	};
 
@@ -72,8 +72,8 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 			this._live_fns[tid].destroy();
 			delete this._live_fns[tid];
 		}
-		if(this._parent) {
-			this._parent._removeTransition(transition);
+		if(this._parent && this._parent._on_remove_transition) {
+			this._parent._on_remove_transition(transition);
 		}
 	};
 

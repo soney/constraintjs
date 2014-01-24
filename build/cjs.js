@@ -1,4 +1,4 @@
-//     ConstraintJS (CJS) 0.9.4-beta
+//     ConstraintJS (CJS) <%= version %>
 //     ConstraintJS may be freely distributed under the MIT License
 //     http://cjs.from.so/
 
@@ -8,6 +8,8 @@
 /** @expose cjs */
 var cjs = (function (root) {
 "use strict";
+
+/*jslint eqnull: true */
 
 // Utility functions
 // -----------------
@@ -1938,7 +1940,7 @@ extend(cjs, {
 	 * @property {string} cjs.version
 	 * @see cjs.toString
 	 */
-	version: "0.9.4-beta", // This template will be filled in by the builder
+	version: "<%= version %>", // This template will be filled in by the builder
 
 	/**
 	 * Print out the name and version of ConstraintJS
@@ -5116,6 +5118,13 @@ extend(cjs, {
 	isFSM: function(obj) { return obj instanceof FSM; }
 });
 
+/**
+ * **Note:** the preferred way to create this object is with the `cjs.on` function
+ * Creates an event that can be used in a finite-state machine transition
+ * @class cjs.CJSEvent
+ * @classdesc A constraint object communicates with the constraint solver to store and maintain constraint values
+ * @see cjs.on
+ */
 var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._listeners = []; // parent events that want to know when I fire
 	this._transitions = []; // a list of transitions that I'm attached to
@@ -5160,8 +5169,8 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		if(this._on_add_transition) {
 			this._live_fns[transition.id()] = this._on_add_transition(transition);
 		}
-		if(this._parent) {
-			this._parent._addTransition(transition);
+		if(this._parent && parent._on_add_transition) {
+			this._parent._on_add_transition(transition);
 		}
 	};
 
@@ -5183,8 +5192,8 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 			this._live_fns[tid].destroy();
 			delete this._live_fns[tid];
 		}
-		if(this._parent) {
-			this._parent._removeTransition(transition);
+		if(this._parent && this._parent._on_remove_transition) {
+			this._parent._on_remove_transition(transition);
 		}
 	};
 
@@ -7209,7 +7218,7 @@ jsep = (function() {
 		};
 
 	// To be filled in by the template
-	jsep.version = '0.9.4-beta';
+	jsep.version = '<%= version %>';
 	jsep.toString = function() { return 'JavaScript Expression Parser (JSEP) v' + jsep.version; };
 
 	/**
@@ -7269,3 +7278,5 @@ if (typeof module !== 'undefined' && module.exports) {
 	/** @exports cjs */
 	module.exports = cjs;
 }
+
+//# sourceMappingURL=cjs.js.map
