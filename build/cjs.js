@@ -5169,7 +5169,7 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		if(this._on_add_transition) {
 			this._live_fns[transition.id()] = this._on_add_transition(transition);
 		}
-		if(this._parent && parent._on_add_transition) {
+		if(this._parent && this._parent._on_add_transition) {
 			this._parent._on_add_transition(transition);
 		}
 	};
