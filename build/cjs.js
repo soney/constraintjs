@@ -5144,7 +5144,14 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	 *         return ready === true;
 	 *     });
 	 */
-	proto.guard = function(filter) {
+	proto.guard = function(filter, filter_eq) {
+		//Assume filter is the name of a paroperty
+		if(!isFunction(filter)) {
+			var prop_name = filter;
+			filter = function(event) {
+				return event && event[prop_name] === filter_eq;
+			};
+		}
 		return new CJSEvent(this, filter);
 	};
 
