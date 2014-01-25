@@ -527,13 +527,12 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						for(state_name in template.sub_states) {
 							if(template.sub_states.hasOwnProperty(state_name)) {
 								if(state === state_name) {
-									if(has(memoized_children, state_name)) {
-										active_children = memoized_children[state_name];
-										onadd_each(active_children);
-									} else {
-										active_children = memoized_children[state_name] = map(template.sub_states[state_name].children, do_child_create);
+									if(!has(memoized_children, state_name)) {
+										memoized_children[state_name] = map(template.sub_states[state_name].children, do_child_create);
 									}
+									active_children = memoized_children[state_name];
 									rv = flatten(map(active_children, get_instance_nodes), true);
+									break;
 								}
 							}
 						}
@@ -565,37 +564,44 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 		} else if (type === PARTIAL_HB_TYPE) {
 			var partial, dom_node, instance,
 				parsed_content = template.content,
-				concated_context = parsed_content.type === COMPOUND ?
+				get_context = function() {
+					return parsed_content.type === COMPOUND ?
 										map(parsed_content.body, function(x) {
 											return get_node_value(x, context, lineage);
-										}) : [get_node_value(template.content, context, lineage)],
+										}) : [get_node_value(template.content, context, lineage)];
+				},
 				is_custom = false;
 
 			if(has(partials, template.tag)) {
 				partial = partials[template.tag];
-				dom_node = partial.apply(root, concated_context);
+				dom_node = partial.apply(root, get_context());
 				instance = get_template_instance(dom_node);
 			} else if(has(custom_partials, template.tag)) {
 				partial = custom_partials[template.tag];
-				instance = partial.apply(root, concated_context);
+				instance = partial.apply(root, get_context());
 				dom_node = instance.node;
 				is_custom = true;
 			} else {
 				throw new Error("Could not find partial with name '"+template.tag+"'");
 			}
+
 			return {
 				node: dom_node,
-				pause: function() { if(instance) instance.pause(); },
+				pause: function() { if(instance) instance.pause(dom_node); },
 				destroy: function() {
 					if(is_custom) {
-						instance.destroy();
+						instance.destroy(dom_node);
 					} else {
 						cjs.destroyTemplate(dom_node);
 					}
 				},
-				onAdd: function() { if(instance) instance.onAdd(); },
-				onRemove: function() { if(instance) instance.onRemove(); },
-				resume: function() { if(instance) instance.resume(); }
+				onAdd: function() {
+					if(instance) {
+						instance.onAdd.apply(instance, ([dom_node]).concat(get_context()));
+					}
+				},
+				onRemove: function() { if(instance) instance.onRemove(dom_node); },
+				resume: function() { if(instance) instance.resume(dom_node); }
 			};
 		} else if (type === COMMENT_TYPE) {
 			return {
@@ -870,11 +876,11 @@ extend(cjs, {
 			var node = getFirstDOMChild(options.createNode.apply(this, arguments));
 			return {
 				node: node,
-				onAdd: function() { if(options.onAdd) { options.onAdd.call(this, node); } },
-				onRemove: function() { if(options.onRemove) { options.onRemove.call(this, node); } },
-				destroy: function() { if(options.destroyNode) { options.destroyNode.call(this, node); } },
-				pause: function() { if(options.pause) { options.pause.call(this, node); } },
-				resume: function() { if(options.resume) { options.resume.call(this, node); } }
+				onAdd: function() { if(options.onAdd) { options.onAdd.apply(this, arguments); } },
+				onRemove: function() { if(options.onRemove) { options.onRemove.apply(this, arguments); } },
+				destroy: function() { if(options.destroyNode) { options.destroyNode.apply(this, arguments); } },
+				pause: function() { if(options.pause) { options.pause.apply(this, arguments); } },
+				resume: function() { if(options.resume) { options.resume.apply(this, arguments); } }
 			};
 		};
 		return this;
