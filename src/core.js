@@ -119,12 +119,13 @@ var constraint_solver = {
 		var node = this,
 			stack = constraint_solver.stack,
 			stack_len = stack.length,
-			demanding_var, dependency_edge;
+			demanding_var, dependency_edge, tstamp;
 		
 		if (stack_len > 0) { // There's a constraint that's asking for my value
 			// Let's call it demanding_var
 			demanding_var = stack[stack_len - 1];
 			dependency_edge = node._outEdges[demanding_var._id];
+			tstamp = demanding_var._tstamp+1;
 
 			// If there's already a dependency set up, mark it as still being used by setting its timestamp to the demanding
 			// variable's timestamp + `1` (because that variable's timestamp will be incrememted later on, so they will be equal)
@@ -132,7 +133,7 @@ var constraint_solver = {
 			// Code in the this.nullify will check this timestamp and remove the dependency if it's out of date
 			if(dependency_edge) {
 				// Update timestamp
-				dependency_edge.tstamp++;
+				dependency_edge.tstamp = tstamp;
 			} else {
 				// Make sure that the dependency should be added
 				if (node._options.auto_add_outgoing_dependencies !== false &&
@@ -140,7 +141,7 @@ var constraint_solver = {
 						auto_add_outgoing !== false) {
 					// and add it if it should
 					node._outEdges[demanding_var._id] =
-						demanding_var._inEdges[node._id] = {from: node, to: demanding_var, tstamp: demanding_var._tstamp + 1};
+						demanding_var._inEdges[node._id] = {from: node, to: demanding_var, tstamp: tstamp};
 				}
 			}
 		}

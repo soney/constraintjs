@@ -80,6 +80,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			case PARENT_EXP:
 				object = (lineage && lineage.length > 1) ? lineage[lineage.length - 2].this_exp : undefined;
 				return compute_object_property(object, node.argument, context, lineage);
+			case CONDITIONAL_EXP:
+				return get_node_value(node.test, context, lineage) ? get_node_value(node.consequent, context, lineage) :
+																get_node_value(node.alternate, context, lineage);
 			case CALL_EXP:
 				if(node.callee.type === MEMBER_EXP) {
 					call_context = get_node_value(node.callee.object, context, lineage);
@@ -330,7 +333,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 		} else if (type === HB_TYPE) {
 			var tag = template.tag;
 			if(tag === EACH_TAG) {
-				var old_arr_val = [], arr_val, lastLineages = [], child_vals = [];
+				var old_arr_val = [], arr_val, lastLineages = [];
 				active_children = [];
 				return {
 					type: type,
@@ -378,7 +381,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 
 							removed_nodes.push.apply(removed_nodes, active_children[index]);
 
-							removeIndex(child_vals, index);
 							removeIndex(active_children, index);
 							if(lastLineageItem && lastLineageItem.at) {
 								each(lastLineageItem.at, function(v) { v.destroy(true); });
@@ -394,13 +396,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 								children = is_else ? template.else_child.children : template.children,
 								child_nodes = map(children, function(child) {
 									return create_template_instance(child, context, concated_lineage);
-								}),
-								vals = map(child_nodes, function(child_node) {
-									return get_instance_nodes(child_node);
 								});
 
 							active_children.splice(index, 0, child_nodes);
-							child_vals.splice(index, 0, vals);
 							lastLineages.splice(index, 0, lastLineageItem);
 
 							added_nodes.push.apply(added_nodes, child_nodes);
@@ -415,18 +413,23 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 							removeIndex(active_children, from_index);
 							active_children.splice(to_index, 0, child_nodes);
 
-							removeIndex(child_vals, from_index);
-							child_vals.splice(to_index, 0, dom_elem);
-
 							removeIndex(lastLineages, from_index);
 							lastLineages.splice(to_index, 0, lastLineageItem);
 						});
+
+
 						old_arr_val = arr_val;
 
 						onremove_each(removed_nodes);
 						destroy_each(removed_nodes);
 						onadd_each(added_nodes);
 
+						var child_vals = map(active_children, function(child_nodes) {
+							var instance_nodes = flatten(map(child_nodes, function(child_node) {
+								return get_instance_nodes(child_node);
+							}), true);
+							return instance_nodes;
+						});
 						return flatten(child_vals, true);
 					}
 				};
@@ -451,7 +454,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						var len = template.sub_conditions.length,
 							cond = !!get_node_value(template.condition, context, lineage),
 							i, children = false, memo_index, rv;
-
 
 						if(template.reverse) {
 							cond = !cond;

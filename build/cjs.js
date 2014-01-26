@@ -744,12 +744,13 @@ var constraint_solver = {
 		var node = this,
 			stack = constraint_solver.stack,
 			stack_len = stack.length,
-			demanding_var, dependency_edge;
+			demanding_var, dependency_edge, tstamp;
 		
 		if (stack_len > 0) { // There's a constraint that's asking for my value
 			// Let's call it demanding_var
 			demanding_var = stack[stack_len - 1];
 			dependency_edge = node._outEdges[demanding_var._id];
+			tstamp = demanding_var._tstamp+1;
 
 			// If there's already a dependency set up, mark it as still being used by setting its timestamp to the demanding
 			// variable's timestamp + `1` (because that variable's timestamp will be incrememted later on, so they will be equal)
@@ -757,7 +758,7 @@ var constraint_solver = {
 			// Code in the this.nullify will check this timestamp and remove the dependency if it's out of date
 			if(dependency_edge) {
 				// Update timestamp
-				dependency_edge.tstamp++;
+				dependency_edge.tstamp = tstamp;
 			} else {
 				// Make sure that the dependency should be added
 				if (node._options.auto_add_outgoing_dependencies !== false &&
@@ -765,7 +766,7 @@ var constraint_solver = {
 						auto_add_outgoing !== false) {
 					// and add it if it should
 					node._outEdges[demanding_var._id] =
-						demanding_var._inEdges[node._id] = {from: node, to: demanding_var, tstamp: demanding_var._tstamp + 1};
+						demanding_var._inEdges[node._id] = {from: node, to: demanding_var, tstamp: tstamp};
 				}
 			}
 		}
@@ -5835,6 +5836,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			case PARENT_EXP:
 				object = (lineage && lineage.length > 1) ? lineage[lineage.length - 2].this_exp : undefined;
 				return compute_object_property(object, node.argument, context, lineage);
+			case CONDITIONAL_EXP:
+				return get_node_value(node.test, context, lineage) ? get_node_value(node.consequent, context, lineage) :
+																get_node_value(node.alternate, context, lineage);
 			case CALL_EXP:
 				if(node.callee.type === MEMBER_EXP) {
 					call_context = get_node_value(node.callee.object, context, lineage);
@@ -6085,7 +6089,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 		} else if (type === HB_TYPE) {
 			var tag = template.tag;
 			if(tag === EACH_TAG) {
-				var old_arr_val = [], arr_val, lastLineages = [], child_vals = [];
+				var old_arr_val = [], arr_val, lastLineages = [];
 				active_children = [];
 				return {
 					type: type,
@@ -6133,7 +6137,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 
 							removed_nodes.push.apply(removed_nodes, active_children[index]);
 
-							removeIndex(child_vals, index);
 							removeIndex(active_children, index);
 							if(lastLineageItem && lastLineageItem.at) {
 								each(lastLineageItem.at, function(v) { v.destroy(true); });
@@ -6149,13 +6152,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 								children = is_else ? template.else_child.children : template.children,
 								child_nodes = map(children, function(child) {
 									return create_template_instance(child, context, concated_lineage);
-								}),
-								vals = map(child_nodes, function(child_node) {
-									return get_instance_nodes(child_node);
 								});
 
 							active_children.splice(index, 0, child_nodes);
-							child_vals.splice(index, 0, vals);
 							lastLineages.splice(index, 0, lastLineageItem);
 
 							added_nodes.push.apply(added_nodes, child_nodes);
@@ -6170,18 +6169,23 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 							removeIndex(active_children, from_index);
 							active_children.splice(to_index, 0, child_nodes);
 
-							removeIndex(child_vals, from_index);
-							child_vals.splice(to_index, 0, dom_elem);
-
 							removeIndex(lastLineages, from_index);
 							lastLineages.splice(to_index, 0, lastLineageItem);
 						});
+
+
 						old_arr_val = arr_val;
 
 						onremove_each(removed_nodes);
 						destroy_each(removed_nodes);
 						onadd_each(added_nodes);
 
+						var child_vals = map(active_children, function(child_nodes) {
+							var instance_nodes = flatten(map(child_nodes, function(child_node) {
+								return get_instance_nodes(child_node);
+							}), true);
+							return instance_nodes;
+						});
 						return flatten(child_vals, true);
 					}
 				};
@@ -6206,7 +6210,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						var len = template.sub_conditions.length,
 							cond = !!get_node_value(template.condition, context, lineage),
 							i, children = false, memo_index, rv;
-
 
 						if(template.reverse) {
 							cond = !cond;
@@ -6730,10 +6733,6 @@ extend(cjs, {
 						}
 });
 
-// Expression parser
-// -----------------
-// Uses [jsep](http://jsep.from.so/)
-
 // Node Types
 // ----------
 
@@ -6748,16 +6747,24 @@ var COMPOUND = 'Compound',
 	UNARY_EXP = 'UnaryExpression',
 	BINARY_EXP = 'BinaryExpression',
 	LOGICAL_EXP = 'LogicalExpression',
+    CONDITIONAL_EXP = 'ConditionalExpression',
 	PARENT_EXP = 'ParentExpression',
 	CURR_LEVEL_EXP = 'CurrLevelExpression',
 
+	throwError = function(message, index) {
+		var error = new Error(message + ' at character ' + index);
+		error.index = index;
+		error.dedscription = message;
+		throw error;
+	},
+	
 jsep = (function() {
 
 	// Operations
 	// ----------
 	
 	// Set `t` to `true` to save space (when minified, not gzipped)
-	var t = true,
+		var t = true,
 	// Use a quickly-accessible map to store all of the unary operators
 	// Values are set to `true` (it really doesn't matter)
 		unary_ops = {'-': t, '!': t, '~': t, '+': t},
@@ -6815,8 +6822,8 @@ jsep = (function() {
 		},
 		isIdentifierStart = function(ch) {
 			return (ch === 36) || (ch === 95) || // `$` and `_`
-					(ch === 64) || // @
 					(ch >= 65 && ch <= 90) || // A...Z
+					(ch === 64) || // @
 					(ch >= 97 && ch <= 122); // a...z
 		},
 		isIdentifierPart = function(ch) {
@@ -6875,55 +6882,59 @@ jsep = (function() {
 					left = gobbleToken();
 					biop = gobbleBinaryOp();
 
-					// If there wasn't a binary operator, just return the leftmost node
-					if(!biop) {
-						return left;
-					}
+					if(biop) {
+						// If there wasn't a binary operator, just return the leftmost node
 
-					// Otherwise, we need to start a stack to properly place the binary operations in their
-					// precedence structure
-					biop_info = { value: biop, prec: binaryPrecedence(biop)};
+						// Otherwise, we need to start a stack to properly place the binary operations in their
+						// precedence structure
+						biop_info = { value: biop, prec: binaryPrecedence(biop)};
 
-					right = gobbleToken();
-					if(!right) {
-						throw new Error("Expected expression after " + biop + " at character " + index);
-					}
-					stack = [left, biop_info, right];
-
-					// Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
-					while((biop = gobbleBinaryOp())) {
-						prec = binaryPrecedence(biop);
-
-						if(prec === 0) {
-							break;
+						right = gobbleToken();
+						if(!right) {
+							throwError("Expected expression after " + biop, index);
 						}
-						biop_info = { value: biop, prec: prec };
+						stack = [left, biop_info, right];
 
-						// Reduce: make a binary expression from the three topmost entries.
-						while ((stack.length > 2) && (prec <= stack[stack.length - 2].prec)) {
-							right = stack.pop();
-							biop = stack.pop().value;
-							left = stack.pop();
-							node = createBinaryExpression(biop, left, right);
+						// Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
+						while((biop = gobbleBinaryOp())) {
+							prec = binaryPrecedence(biop);
+
+							if(prec === 0) {
+								break;
+							}
+							biop_info = { value: biop, prec: prec };
+
+							// Reduce: make a binary expression from the three topmost entries.
+							while ((stack.length > 2) && (prec <= stack[stack.length - 2].prec)) {
+								right = stack.pop();
+								biop = stack.pop().value;
+								left = stack.pop();
+								node = createBinaryExpression(biop, left, right);
+								stack.push(node);
+							}
+
+							node = gobbleToken();
+							if(!node) {
+								throwError("Expected expression after " + biop, index);
+							}
+							stack.push(biop_info);
 							stack.push(node);
 						}
 
-						node = gobbleToken();
-						if(!node) {
-							throw new Error("Expected expression after " + biop + " at character " + index);
+						i = stack.length - 1;
+						node = stack[i];
+						while(i > 1) {
+							node = createBinaryExpression(stack[i - 1].value, stack[i - 2], node); 
+							i -= 2;
 						}
-						stack.push(biop_info);
-						stack.push(node);
+						return node;
+					} else { // if(!biop)
+						gobbleSpaces();
+						if(exprI(index) === '?') { // Conditional
+							return gobbleConditional(left);
+						}
+						return left;
 					}
-
-					i = stack.length - 1;
-					node = stack[i];
-					while(i > 1) {
-						node = createBinaryExpression(stack[i - 1].value, stack[i - 2], node); 
-						i -= 2;
-					}
-
-					return node;
 				},
 
 				// An individual part of a binary expression:
@@ -6933,7 +6944,7 @@ jsep = (function() {
 					
 					gobbleSpaces();
 					ch = exprICode(index);
-					
+
 					if(ch === 46 && expr.charCodeAt(index+1) === 47) {
 							index += 2;
 							return {
@@ -7004,16 +7015,15 @@ jsep = (function() {
 							number += exprI(index++);
 						}
 						if(!isDecimalDigit(exprICode(index-1)) ) {
-							throw new Error('Expected exponent (' +
-									number + exprI(index) + ') at character ' + index);
+							throwError('Expected exponent (' + number + exprI(index) + ')', index);
 						}
 					}
 					
 
 					// Check to make sure this isn't a variable name that start with a number (123abc)
 					if(isIdentifierStart(exprICode(index))) {
-						throw new Error('Variable names cannot start with a number (' +
-									number + exprI(index) + ') at character ' + index);
+						throwError( 'Variable names cannot start with a number (' +
+									number + exprI(index) + ')', index);
 					}
 
 					return {
@@ -7050,7 +7060,7 @@ jsep = (function() {
 					}
 
 					if(!closed) {
-						throw new Error('Unclosed quote after "'+str+'"');
+						throwError('Unclosed quote after "'+str+'"', index);
 					}
 
 					return {
@@ -7070,7 +7080,7 @@ jsep = (function() {
 					if(isIdentifierStart(ch)) {
 						index++;
 					} else {
-						throw new Error('Unexpected ' + exprI(index) + 'at character ' + index);
+						throwError('Unexpected ' + exprI(index), index);
 					}
 
 					while(index < length) {
@@ -7115,7 +7125,7 @@ jsep = (function() {
 						} else {
 							node = gobbleExpression();
 							if(!node || node.type === COMPOUND) {
-								throw new Error('Expected comma at character ' + index);
+								throwError('Expected comma', index);
 							}
 							args.push(node);
 						}
@@ -7154,7 +7164,7 @@ jsep = (function() {
 							gobbleSpaces();
 							ch_i = exprI(index);
 							if(ch_i !== ']') {
-								throw new Error('Unclosed [ at character ' + index);
+								throwError('Unclosed [', index);
 							}
 							index++;
 							gobbleSpaces();
@@ -7186,7 +7196,31 @@ jsep = (function() {
 						index++;
 						return node;
 					} else {
-						throw new Error('Unclosed ( at character ' + index);
+						throwError('Unclosed (', index);
+					}
+				},
+				gobbleConditional = function(test) {
+					var consequent, alternate;
+					index++;
+					consequent = gobbleExpression();
+					if(!consequent) {
+						throwError('Expected expression', index);
+					}
+					gobbleSpaces();
+					if(exprI(index) === ':') {
+						index++;
+						alternate = gobbleExpression();
+						if(!alternate) {
+							throwError('Expected expression', index);
+						}
+						return {
+							type: CONDITIONAL_EXP,
+							test: test,
+							consequent: consequent,
+							alternate: alternate
+						};
+					} else {
+						throwError('Expected :', index);
 					}
 				},
 				nodes = [], ch_i, node;
@@ -7205,7 +7239,7 @@ jsep = (function() {
 					// If we weren't able to find a binary expression and are out of room, then
 					// the expression passed in probably has too much
 					} else if(index < length) {
-						throw new Error("Unexpected '"+exprI(index)+"' at character " + index);
+						throwError('Unexpected "' + exprI(index) + '"', index);
 					}
 				}
 			}
@@ -7220,60 +7254,8 @@ jsep = (function() {
 				};
 			}
 		};
-
-	// To be filled in by the template
-	jsep.version = '0.9.4-beta';
-	jsep.toString = function() { return 'JavaScript Expression Parser (JSEP) v' + jsep.version; };
-
-	/**
-	 * @method jsep.addUnaryOp
-	 * @param {string} op_name The name of the unary op to add
-	 * @return jsep
-	 */
-	jsep.addUnaryOp = function(op_name) {
-		unary_ops[op_name] = t; return this;
-	};
-
-	/**
-	 * @method jsep.addBinaryOp
-	 * @param {string} op_name The name of the binary op to add
-	 * @param {number} precedence The precedence of the binary op (can be a float)
-	 * @return jsep
-	 */
-	jsep.addBinaryOp = function(op_name, precedence) {
-		max_binop_len = Math.max(op_name.length, max_binop_len);
-		binary_ops[op_name] = precedence;
-		return this;
-	};
-
-	/**
-	 * @method jsep.removeUnaryOp
-	 * @param {string} op_name The name of the unary op to remove
-	 * @return jsep
-	 */
-	jsep.removeUnaryOp = function(op_name) {
-		delete unary_ops[op_name];
-		if(op_name.length === max_unop_len) {
-			max_unop_len = getMaxKeyLen(unary_ops);
-		}
-		return this;
-	};
-
-	/**
-	 * @method jsep.removeBinaryOp
-	 * @param {string} op_name The name of the binary op to remove
-	 * @return jsep
-	 */
-	jsep.removeBinaryOp = function(op_name) {
-		delete binary_ops[op_name];
-		if(op_name.length === max_binop_len) {
-			max_binop_len = getMaxKeyLen(binary_ops);
-		}
-		return this;
-	};
 	return jsep;
 }());
-
 return cjs;
 }(this));
 

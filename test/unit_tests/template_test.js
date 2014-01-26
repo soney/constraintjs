@@ -374,6 +374,35 @@ dt("Condition/State Combo", 7, function() {
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
 });
+dt("If within else", 7, function() {
+	var arr = cjs([]),
+		cond = cjs(false);
+
+	var tmplate = cjs.createTemplate(
+		"{{#each arr}}" +
+			"{{@index}}" +
+			"{{#else}}" +
+				"{{#if cond}}" +
+					"nothing" +
+				"{{/if}}" +
+		"{{/each}}", {
+		arr: arr,
+		cond: cond
+	});
+	equal(getTextContent(tmplate), "");
+	cond.set(true);
+	equal(getTextContent(tmplate), "nothing");
+	arr.push('a');
+	equal(getTextContent(tmplate), "0");
+	cond.set(false);
+	equal(getTextContent(tmplate), "0");
+	cond.set(true);
+	equal(getTextContent(tmplate), "0");
+	arr.splice(0, 1);
+	equal(getTextContent(tmplate), "nothing");
+	cond.set(false);
+	equal(getTextContent(tmplate), "");
+});
 
 dt("Templateducken", 19, function() {
 	var sub_destroy_count = 0,
