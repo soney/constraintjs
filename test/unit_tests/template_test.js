@@ -404,6 +404,25 @@ dt("If within else", 7, function() {
 	equal(getTextContent(tmplate), "");
 });
 
+dt("Ternary", 5, function() {
+	var cond = cjs(false);
+
+	var tmplate = cjs.createTemplate(
+		"{{cond ? 'a'+'b' : 'b'+'c'}}",
+		 {
+			cond: cond
+		});
+	equal(getTextContent(tmplate), "bc");
+	cond.set(true);
+	equal(getTextContent(tmplate), "ab");
+	cond.set(false);
+	equal(getTextContent(tmplate), "bc");
+	cond.set(false);
+	equal(getTextContent(tmplate), "bc");
+	cond.set(true);
+	equal(getTextContent(tmplate), "ab");
+});
+
 dt("Templateducken", 19, function() {
 	var sub_destroy_count = 0,
 		destroy_count = 0;
