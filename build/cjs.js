@@ -37,6 +37,7 @@ var nativeSome    = ArrayProto.some,
 
 //Bind a function to a context
 var bind = function (func, context) { return function () { return func.apply(context, arguments); }; },
+	bindArgs = function(func) { var args = rest(arguments, 1); return function() { return func.apply(this, args); }; },
 	trim = function(str){
 		return nativeTrim ? nativeTrim.call(str) : String(str).replace(/^\s+|\s+$/g, '');
     },
@@ -5908,32 +5909,43 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					return rv;
 				});
 	},
-	hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/,
+	hb_regex = /^\{\{([^\}]+)\}\}/,
 	get_constraint = function(str, context, lineage) {
 		var has_constraint = false,
 			strs = [],
-			index, match_val, len, context_val;
+			index, match_val, len = 0, substr,
+			last_val_is_str = false;
+
 		while(str.length > 0) {
 			index =  str.indexOf("{");
-			if(index < 0) {
-				strs.push(str);
-				break;
-			} else {
+
+			if(index === 0) {
 				match_val = str.match(hb_regex);
 				if(match_val) {
-					len = match_val[0].length;
-					context_val = context[match_val[1]];
-					str = str.substr(len);
-					strs.push(context_val);
+					strs[len++] = cjs(bindArgs(get_node_value, jsep(match_val[1]), context, lineage));
+					str = str.substr(match_val[0].length);
 
-					if(!has_constraint && (is_constraint(context_val) || is_array(context_val))) {
-						has_constraint = true;
-					}
-				} else {
-					strs.push(str.substr(0, index));
-					str = str.substr(index);
+					last_val_is_str = false;
+					has_constraint = true;
+					continue;
+				} else { // !match_val
+					index++; // capture this '{' in index
 				}
 			}
+
+			if(index < 0) {
+				index = str.length;
+			}
+
+			substr = str.substr(0, index);
+			str = str.substr(index);
+
+			if(last_val_is_str) {
+				strs[len-1] = strs[len-1] + substr;
+			} else {
+				strs[len++] = substr;
+			}
+			last_val_is_str = true;
 		}
 
 		if(has_constraint) {

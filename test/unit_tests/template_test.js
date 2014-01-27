@@ -474,6 +474,20 @@ dt("Templateducken", 19, function() {
 	equal(destroy_count, 3, 'proper destroy count');
 	equal(sub_destroy_count, 3, 'proper subdestroy count');
 });
+
+dt("Dyn Class", 5, function() {
+	var is_active = cjs(false);
+	var tlate = cjs.createTemplate("<div class='class1 {class2 {{is_active ? \"active\" : \"inactive\"}}'>hi!</div>", {
+		is_active: is_active
+	});
+	equal(getTextContent(tlate), "hi!");
+	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
+	is_active.set(true);
+	equal(tlate.className || tlate['class'], "class1 {class2 active");
+	is_active.set(false);
+	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
+	equal(getTextContent(tlate), "hi!");
+});
 /*
 dt("onEvent Actions", 10, function() {
 	var x = cjs(1);
