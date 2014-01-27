@@ -37,6 +37,7 @@ var nativeSome    = ArrayProto.some,
 
 //Bind a function to a context
 var bind = function (func, context) { return function () { return func.apply(context, arguments); }; },
+	bindArgs = function(func) { var args = rest(arguments, 1); return function() { return func.apply(this, args); }; },
 	trim = function(str){
 		return nativeTrim ? nativeTrim.call(str) : String(str).replace(/^\s+|\s+$/g, '');
     },
@@ -370,12 +371,23 @@ var reduce = function(obj, iterator, memo) {
 	return memo;
 };
 
-// Longest common subsequence between two arrays, based on
-// the [rosetta code implementation](http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript)
-var popsym = function (index, x, y, symbols, r, n, equality_check) {
+var sparse_indexof = function(arr,item,start_index,equals) {
+	//indexOf is wonky with sparse arrays
+	var i = start_index,len = arr.length;
+	while(i<len) {
+		if(equals(arr[i], item)) {
+			return i;
+		}
+		i++;
+	}
+	return -1;
+},
+popsym = function (index, x, y, symbols, r, n, equality_check) {
+	// Longest common subsequence between two arrays, based on
+	// the [rosetta code implementation](http://rosettacode.org/wiki/Longest_common_subsequence#JavaScript)
 		var s = x[index],
 			pos = symbols[s] + 1;
-		pos = indexOf(y, s, pos > r ? pos : r, equality_check);
+		pos = sparse_indexof(y, s, pos > r ? pos : r, equality_check || eqeqeq);
 		if (pos < 0) { pos = n; }
 		symbols[s] = pos;
 		return pos;
@@ -469,8 +481,17 @@ var get_index_moved = function(info) {
 		var item = info[1].item;
 		return {item: item, from: info[0].index, to: info[1].index, from_item: info[0].item, to_item: item};
 	}, 
-	add_indicies = function(x, i) {
-		return {item: x, index: i};
+	add_indicies = function(arr) {
+		// suppose you have array `arr` defined by:
+		// arr = []; arr[10] = 'hi';
+		// Looping through arr with arr.forEach (or cjs's map) would only produce the 10th item.
+		// this function is declared to make sure every item is looped through
+		var i = 0, len = arr.length, rv = [];
+		while(i<len) {
+			rv[i] = {item: arr[i], index: i};
+			i++;
+		}
+		return rv;
 	},
 	add_from_to_indicies = function(info) {
 		return {item: info.item, from: info.indicies[0], to: info.indicies[1]};
@@ -485,8 +506,8 @@ var get_index_moved = function(info) {
 var array_source_map = function (from, to, equality_check) {
 	var eq = equality_check || eqeqeq,
 		item_aware_equality_check = function (a, b) { return eq(a ? a.item : a, b ? b.item : b); },
-		indexed_from = map(from, add_indicies),
-		indexed_to = map(to, add_indicies),
+		indexed_from = add_indicies(from),
+		indexed_to = add_indicies(to),
 		indexed_common_subsequence = map(indexed_lcs(from, to), add_from_to_indicies),
 		indexed_removed = diff(indexed_from, indexed_common_subsequence, item_aware_equality_check),
 		indexed_added = diff(indexed_to, indexed_common_subsequence, item_aware_equality_check),
@@ -498,21 +519,23 @@ var array_source_map = function (from, to, equality_check) {
 	var added_indicies = map(indexed_added, get_index),
 		moved_indicies = map(indexed_moved, get_to),
 		ics_indicies = map(indexed_common_subsequence, get_to),
-		to_mappings = map(to, function (item, index) {
-				var info, info_index;
-
-				// Added items
-				if ((info_index = indexOf(added_indicies, index)) >= 0) {
-					info = indexed_added[info_index];
-					return { to: index, to_item: item, item: item };
-				} else if ((info_index = indexOf(moved_indicies, index)) >= 0) {
-					info = indexed_moved[info_index];
-					return { to: index, to_item: item, item: item, from: info.from, from_item: info.from_item };
-				} else if ((info_index = indexOf(ics_indicies, index)) >= 0) {
-					info = indexed_common_subsequence[info_index];
-					return { to: index, to_item: item, item: item, from: info.from, from_item: from[info.from] };
-				}
-			});
+		to_mappings = [],
+		i = 0, len = to.length, info, info_index, item;
+	while(i<len) {
+		item = to[i];
+		// Added items
+		if ((info_index = indexOf(added_indicies, i)) >= 0) {
+			info = indexed_added[info_index];
+			to_mappings[i] = { to: i, to_item: item, item: item };
+		} else if ((info_index = indexOf(moved_indicies, i)) >= 0) {
+			info = indexed_moved[info_index];
+			to_mappings[i] = { to: i, to_item: item, item: item, from: info.from, from_item: info.from_item };
+		} else if ((info_index = indexOf(ics_indicies, i)) >= 0) {
+			info = indexed_common_subsequence[info_index];
+			to_mappings[i] = { to: i, to_item: item, item: item, from: info.from, from_item: from[info.from] };
+		}
+		i++;
+	}
 
 	return to_mappings.concat(map(indexed_removed, add_from_and_from_item));
 };
@@ -722,12 +745,13 @@ var constraint_solver = {
 		var node = this,
 			stack = constraint_solver.stack,
 			stack_len = stack.length,
-			demanding_var, dependency_edge;
+			demanding_var, dependency_edge, tstamp;
 		
 		if (stack_len > 0) { // There's a constraint that's asking for my value
 			// Let's call it demanding_var
 			demanding_var = stack[stack_len - 1];
 			dependency_edge = node._outEdges[demanding_var._id];
+			tstamp = demanding_var._tstamp+1;
 
 			// If there's already a dependency set up, mark it as still being used by setting its timestamp to the demanding
 			// variable's timestamp + `1` (because that variable's timestamp will be incrememted later on, so they will be equal)
@@ -735,7 +759,7 @@ var constraint_solver = {
 			// Code in the this.nullify will check this timestamp and remove the dependency if it's out of date
 			if(dependency_edge) {
 				// Update timestamp
-				dependency_edge.tstamp++;
+				dependency_edge.tstamp = tstamp;
 			} else {
 				// Make sure that the dependency should be added
 				if (node._options.auto_add_outgoing_dependencies !== false &&
@@ -743,7 +767,7 @@ var constraint_solver = {
 						auto_add_outgoing !== false) {
 					// and add it if it should
 					node._outEdges[demanding_var._id] =
-						demanding_var._inEdges[node._id] = {from: node, to: demanding_var, tstamp: demanding_var._tstamp + 1};
+						demanding_var._inEdges[node._id] = {from: node, to: demanding_var, tstamp: tstamp};
 				}
 			}
 		}
@@ -5100,8 +5124,9 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	this._on_add_transition = onAddTransition; // optional listener for when a transition is added
 	this._on_remove_transition = onRemoveTransition; // optional listener for when a transition is removed
 	this._live_fns = {}; // one per transitions
-	if(parent) {
-		parent._listeners.push({event:this, filter: filter}); // add an item to my parent's listener if i have a parent
+	this._parent = parent;
+	if(this._parent) {
+		this._parent._listeners.push({event:this, filter: filter}); // add an item to my parent's listener if i have a parent
 	}
 };
 
@@ -5121,7 +5146,14 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 	 *         return ready === true;
 	 *     });
 	 */
-	proto.guard = function(filter) {
+	proto.guard = function(filter, filter_eq) {
+		//Assume filter is the name of a paroperty
+		if(!isFunction(filter)) {
+			var prop_name = filter;
+			filter = function(event) {
+				return event && event[prop_name] === filter_eq;
+			};
+		}
 		return new CJSEvent(this, filter);
 	};
 
@@ -5136,6 +5168,9 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		this._transitions.push(transition);
 		if(this._on_add_transition) {
 			this._live_fns[transition.id()] = this._on_add_transition(transition);
+		}
+		if(this._parent && this._parent._on_add_transition) {
+			this._parent._on_add_transition(transition);
 		}
 	};
 
@@ -5156,6 +5191,9 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 			var tid = transition.id();
 			this._live_fns[tid].destroy();
 			delete this._live_fns[tid];
+		}
+		if(this._parent && this._parent._on_remove_transition) {
+			this._parent._on_remove_transition(transition);
 		}
 	};
 
@@ -5217,7 +5255,7 @@ extend(cjs, {
 					var targets = [],
 						timeout_id = false,
 						event_type_val = [],
-						listener = bind(transition.run, transition),
+						listener = bind(this._fire, this),
 						fsm = transition.getFSM(),
 						from = transition.getFrom(),
 						state_selector = new StateSelector(from),
@@ -5799,6 +5837,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			case PARENT_EXP:
 				object = (lineage && lineage.length > 1) ? lineage[lineage.length - 2].this_exp : undefined;
 				return compute_object_property(object, node.argument, context, lineage);
+			case CONDITIONAL_EXP:
+				return get_node_value(node.test, context, lineage) ? get_node_value(node.consequent, context, lineage) :
+																get_node_value(node.alternate, context, lineage);
 			case CALL_EXP:
 				if(node.callee.type === MEMBER_EXP) {
 					call_context = get_node_value(node.callee.object, context, lineage);
@@ -5868,32 +5909,43 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					return rv;
 				});
 	},
-	hb_regex = /^\{\{([\-A-Za-z0-9_]+)\}\}/,
+	hb_regex = /^\{\{([^\}]+)\}\}/,
 	get_constraint = function(str, context, lineage) {
 		var has_constraint = false,
 			strs = [],
-			index, match_val, len, context_val;
+			index, match_val, len = 0, substr,
+			last_val_is_str = false;
+
 		while(str.length > 0) {
 			index =  str.indexOf("{");
-			if(index < 0) {
-				strs.push(str);
-				break;
-			} else {
+
+			if(index === 0) {
 				match_val = str.match(hb_regex);
 				if(match_val) {
-					len = match_val[0].length;
-					context_val = context[match_val[1]];
-					str = str.substr(len);
-					strs.push(context_val);
+					strs[len++] = cjs(bindArgs(get_node_value, jsep(match_val[1]), context, lineage));
+					str = str.substr(match_val[0].length);
 
-					if(!has_constraint && (is_constraint(context_val) || is_array(context_val))) {
-						has_constraint = true;
-					}
-				} else {
-					strs.push(str.substr(0, index));
-					str = str.substr(index);
+					last_val_is_str = false;
+					has_constraint = true;
+					continue;
+				} else { // !match_val
+					index++; // capture this '{' in index
 				}
 			}
+
+			if(index < 0) {
+				index = str.length;
+			}
+
+			substr = str.substr(0, index);
+			str = str.substr(index);
+
+			if(last_val_is_str) {
+				strs[len-1] = strs[len-1] + substr;
+			} else {
+				strs[len++] = substr;
+			}
+			last_val_is_str = true;
 		}
 
 		if(has_constraint) {
@@ -6049,7 +6101,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 		} else if (type === HB_TYPE) {
 			var tag = template.tag;
 			if(tag === EACH_TAG) {
-				var old_arr_val = [], arr_val, lastLineages = [], child_vals = [];
+				var old_arr_val = [], arr_val, lastLineages = [];
 				active_children = [];
 				return {
 					type: type,
@@ -6097,7 +6149,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 
 							removed_nodes.push.apply(removed_nodes, active_children[index]);
 
-							removeIndex(child_vals, index);
 							removeIndex(active_children, index);
 							if(lastLineageItem && lastLineageItem.at) {
 								each(lastLineageItem.at, function(v) { v.destroy(true); });
@@ -6113,13 +6164,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 								children = is_else ? template.else_child.children : template.children,
 								child_nodes = map(children, function(child) {
 									return create_template_instance(child, context, concated_lineage);
-								}),
-								vals = map(child_nodes, function(child_node) {
-									return get_instance_nodes(child_node);
 								});
 
 							active_children.splice(index, 0, child_nodes);
-							child_vals.splice(index, 0, vals);
 							lastLineages.splice(index, 0, lastLineageItem);
 
 							added_nodes.push.apply(added_nodes, child_nodes);
@@ -6134,18 +6181,23 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 							removeIndex(active_children, from_index);
 							active_children.splice(to_index, 0, child_nodes);
 
-							removeIndex(child_vals, from_index);
-							child_vals.splice(to_index, 0, dom_elem);
-
 							removeIndex(lastLineages, from_index);
 							lastLineages.splice(to_index, 0, lastLineageItem);
 						});
+
+
 						old_arr_val = arr_val;
 
 						onremove_each(removed_nodes);
 						destroy_each(removed_nodes);
 						onadd_each(added_nodes);
 
+						var child_vals = map(active_children, function(child_nodes) {
+							var instance_nodes = flatten(map(child_nodes, function(child_node) {
+								return get_instance_nodes(child_node);
+							}), true);
+							return instance_nodes;
+						});
 						return flatten(child_vals, true);
 					}
 				};
@@ -6170,7 +6222,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						var len = template.sub_conditions.length,
 							cond = !!get_node_value(template.condition, context, lineage),
 							i, children = false, memo_index, rv;
-
 
 						if(template.reverse) {
 							cond = !cond;
@@ -6246,13 +6297,12 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						for(state_name in template.sub_states) {
 							if(template.sub_states.hasOwnProperty(state_name)) {
 								if(state === state_name) {
-									if(has(memoized_children, state_name)) {
-										active_children = memoized_children[state_name];
-										onadd_each(active_children);
-									} else {
-										active_children = memoized_children[state_name] = map(template.sub_states[state_name].children, do_child_create);
+									if(!has(memoized_children, state_name)) {
+										memoized_children[state_name] = map(template.sub_states[state_name].children, do_child_create);
 									}
+									active_children = memoized_children[state_name];
 									rv = flatten(map(active_children, get_instance_nodes), true);
+									break;
 								}
 							}
 						}
@@ -6284,37 +6334,44 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 		} else if (type === PARTIAL_HB_TYPE) {
 			var partial, dom_node, instance,
 				parsed_content = template.content,
-				concated_context = parsed_content.type === COMPOUND ?
+				get_context = function() {
+					return parsed_content.type === COMPOUND ?
 										map(parsed_content.body, function(x) {
 											return get_node_value(x, context, lineage);
-										}) : [get_node_value(template.content, context, lineage)],
+										}) : [get_node_value(template.content, context, lineage)];
+				},
 				is_custom = false;
 
 			if(has(partials, template.tag)) {
 				partial = partials[template.tag];
-				dom_node = partial.apply(root, concated_context);
+				dom_node = partial.apply(root, get_context());
 				instance = get_template_instance(dom_node);
 			} else if(has(custom_partials, template.tag)) {
 				partial = custom_partials[template.tag];
-				instance = partial.apply(root, concated_context);
+				instance = partial.apply(root, get_context());
 				dom_node = instance.node;
 				is_custom = true;
 			} else {
 				throw new Error("Could not find partial with name '"+template.tag+"'");
 			}
+
 			return {
 				node: dom_node,
-				pause: function() { if(instance) instance.pause(); },
+				pause: function() { if(instance) instance.pause(dom_node); },
 				destroy: function() {
 					if(is_custom) {
-						instance.destroy();
+						instance.destroy(dom_node);
 					} else {
 						cjs.destroyTemplate(dom_node);
 					}
 				},
-				onAdd: function() { if(instance) instance.onAdd(); },
-				onRemove: function() { if(instance) instance.onRemove(); },
-				resume: function() { if(instance) instance.resume(); }
+				onAdd: function() {
+					if(instance) {
+						instance.onAdd.apply(instance, ([dom_node]).concat(get_context()));
+					}
+				},
+				onRemove: function() { if(instance) instance.onRemove(dom_node); },
+				resume: function() { if(instance) instance.resume(dom_node); }
 			};
 		} else if (type === COMMENT_TYPE) {
 			return {
@@ -6589,11 +6646,11 @@ extend(cjs, {
 			var node = getFirstDOMChild(options.createNode.apply(this, arguments));
 			return {
 				node: node,
-				onAdd: function() { if(options.onAdd) { options.onAdd.call(this, node); } },
-				onRemove: function() { if(options.onRemove) { options.onRemove.call(this, node); } },
-				destroy: function() { if(options.destroyNode) { options.destroyNode.call(this, node); } },
-				pause: function() { if(options.pause) { options.pause.call(this, node); } },
-				resume: function() { if(options.resume) { options.resume.call(this, node); } }
+				onAdd: function() { if(options.onAdd) { options.onAdd.apply(this, arguments); } },
+				onRemove: function() { if(options.onRemove) { options.onRemove.apply(this, arguments); } },
+				destroy: function() { if(options.destroyNode) { options.destroyNode.apply(this, arguments); } },
+				pause: function() { if(options.pause) { options.pause.apply(this, arguments); } },
+				resume: function() { if(options.resume) { options.resume.apply(this, arguments); } }
 			};
 		};
 		return this;
@@ -6688,10 +6745,6 @@ extend(cjs, {
 						}
 });
 
-// Expression parser
-// -----------------
-// Uses [jsep](http://jsep.from.so/)
-
 // Node Types
 // ----------
 
@@ -6706,16 +6759,24 @@ var COMPOUND = 'Compound',
 	UNARY_EXP = 'UnaryExpression',
 	BINARY_EXP = 'BinaryExpression',
 	LOGICAL_EXP = 'LogicalExpression',
+    CONDITIONAL_EXP = 'ConditionalExpression',
 	PARENT_EXP = 'ParentExpression',
 	CURR_LEVEL_EXP = 'CurrLevelExpression',
 
+	throwError = function(message, index) {
+		var error = new Error(message + ' at character ' + index);
+		error.index = index;
+		error.dedscription = message;
+		throw error;
+	},
+	
 jsep = (function() {
 
 	// Operations
 	// ----------
 	
 	// Set `t` to `true` to save space (when minified, not gzipped)
-	var t = true,
+		var t = true,
 	// Use a quickly-accessible map to store all of the unary operators
 	// Values are set to `true` (it really doesn't matter)
 		unary_ops = {'-': t, '!': t, '~': t, '+': t},
@@ -6773,8 +6834,8 @@ jsep = (function() {
 		},
 		isIdentifierStart = function(ch) {
 			return (ch === 36) || (ch === 95) || // `$` and `_`
-					(ch === 64) || // @
 					(ch >= 65 && ch <= 90) || // A...Z
+					(ch === 64) || // @
 					(ch >= 97 && ch <= 122); // a...z
 		},
 		isIdentifierPart = function(ch) {
@@ -6806,6 +6867,38 @@ jsep = (function() {
 					}
 				},
 
+				gobbleExpression = function() {
+					var test = gobbleBinaryExpression(),
+						consequent, alternate;
+
+					gobbleSpaces();
+					if(exprI(index) === '?') {
+						index++;
+						consequent = gobbleExpression();
+						if(!consequent) {
+							throwError('Expected expression', index);
+						}
+						gobbleSpaces();
+						if(exprI(index) === ':') {
+							index++;
+							alternate = gobbleExpression();
+							if(!alternate) {
+								throwError('Expected expression', index);
+							}
+							return {
+								type: CONDITIONAL_EXP,
+								test: test,
+								consequent: consequent,
+								alternate: alternate
+							};
+						} else {
+							throwError('Expected :', index);
+						}
+					} else {
+						return test;
+					}
+				},
+
 				// Search for the operation portion of the string (e.g. `+`, `===`)
 				// Start by taking the longest possible binary operations (3 characters: `===`, `!==`, `>>>`)
 				// and move down from 3 to 2 to 1 character until a matching binary operation is found
@@ -6825,7 +6918,7 @@ jsep = (function() {
 
 				// This function is responsible for gobbling an individual expression,
 				// e.g. `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
-				gobbleExpression = function() {
+				gobbleBinaryExpression = function() {
 					var ch_i, node, biop, prec, stack, biop_info, left, right, i;
 
 					// First, try to get the leftmost thing
@@ -6844,7 +6937,7 @@ jsep = (function() {
 
 					right = gobbleToken();
 					if(!right) {
-						throw new Error("Expected expression after " + biop + " at character " + index);
+						throwError("Expected expression after " + biop, index);
 					}
 					stack = [left, biop_info, right];
 
@@ -6868,7 +6961,7 @@ jsep = (function() {
 
 						node = gobbleToken();
 						if(!node) {
-							throw new Error("Expected expression after " + biop + " at character " + index);
+							throwError("Expected expression after " + biop, index);
 						}
 						stack.push(biop_info);
 						stack.push(node);
@@ -6880,7 +6973,6 @@ jsep = (function() {
 						node = createBinaryExpression(stack[i - 1].value, stack[i - 2], node); 
 						i -= 2;
 					}
-
 					return node;
 				},
 
@@ -6891,7 +6983,7 @@ jsep = (function() {
 					
 					gobbleSpaces();
 					ch = exprICode(index);
-					
+
 					if(ch === 46 && expr.charCodeAt(index+1) === 47) {
 							index += 2;
 							return {
@@ -6962,16 +7054,15 @@ jsep = (function() {
 							number += exprI(index++);
 						}
 						if(!isDecimalDigit(exprICode(index-1)) ) {
-							throw new Error('Expected exponent (' +
-									number + exprI(index) + ') at character ' + index);
+							throwError('Expected exponent (' + number + exprI(index) + ')', index);
 						}
 					}
 					
 
 					// Check to make sure this isn't a variable name that start with a number (123abc)
 					if(isIdentifierStart(exprICode(index))) {
-						throw new Error('Variable names cannot start with a number (' +
-									number + exprI(index) + ') at character ' + index);
+						throwError( 'Variable names cannot start with a number (' +
+									number + exprI(index) + ')', index);
 					}
 
 					return {
@@ -7008,7 +7099,7 @@ jsep = (function() {
 					}
 
 					if(!closed) {
-						throw new Error('Unclosed quote after "'+str+'"');
+						throwError('Unclosed quote after "'+str+'"', index);
 					}
 
 					return {
@@ -7028,7 +7119,7 @@ jsep = (function() {
 					if(isIdentifierStart(ch)) {
 						index++;
 					} else {
-						throw new Error('Unexpected ' + exprI(index) + 'at character ' + index);
+						throwError('Unexpected ' + exprI(index), index);
 					}
 
 					while(index < length) {
@@ -7073,7 +7164,7 @@ jsep = (function() {
 						} else {
 							node = gobbleExpression();
 							if(!node || node.type === COMPOUND) {
-								throw new Error('Expected comma at character ' + index);
+								throwError('Expected comma', index);
 							}
 							args.push(node);
 						}
@@ -7112,7 +7203,7 @@ jsep = (function() {
 							gobbleSpaces();
 							ch_i = exprI(index);
 							if(ch_i !== ']') {
-								throw new Error('Unclosed [ at character ' + index);
+								throwError('Unclosed [', index);
 							}
 							index++;
 							gobbleSpaces();
@@ -7144,7 +7235,7 @@ jsep = (function() {
 						index++;
 						return node;
 					} else {
-						throw new Error('Unclosed ( at character ' + index);
+						throwError('Unclosed (', index);
 					}
 				},
 				nodes = [], ch_i, node;
@@ -7163,7 +7254,7 @@ jsep = (function() {
 					// If we weren't able to find a binary expression and are out of room, then
 					// the expression passed in probably has too much
 					} else if(index < length) {
-						throw new Error("Unexpected '"+exprI(index)+"' at character " + index);
+						throwError('Unexpected "' + exprI(index) + '"', index);
 					}
 				}
 			}
@@ -7178,60 +7269,8 @@ jsep = (function() {
 				};
 			}
 		};
-
-	// To be filled in by the template
-	jsep.version = '0.9.4-beta';
-	jsep.toString = function() { return 'JavaScript Expression Parser (JSEP) v' + jsep.version; };
-
-	/**
-	 * @method jsep.addUnaryOp
-	 * @param {string} op_name The name of the unary op to add
-	 * @return jsep
-	 */
-	jsep.addUnaryOp = function(op_name) {
-		unary_ops[op_name] = t; return this;
-	};
-
-	/**
-	 * @method jsep.addBinaryOp
-	 * @param {string} op_name The name of the binary op to add
-	 * @param {number} precedence The precedence of the binary op (can be a float)
-	 * @return jsep
-	 */
-	jsep.addBinaryOp = function(op_name, precedence) {
-		max_binop_len = Math.max(op_name.length, max_binop_len);
-		binary_ops[op_name] = precedence;
-		return this;
-	};
-
-	/**
-	 * @method jsep.removeUnaryOp
-	 * @param {string} op_name The name of the unary op to remove
-	 * @return jsep
-	 */
-	jsep.removeUnaryOp = function(op_name) {
-		delete unary_ops[op_name];
-		if(op_name.length === max_unop_len) {
-			max_unop_len = getMaxKeyLen(unary_ops);
-		}
-		return this;
-	};
-
-	/**
-	 * @method jsep.removeBinaryOp
-	 * @param {string} op_name The name of the binary op to remove
-	 * @return jsep
-	 */
-	jsep.removeBinaryOp = function(op_name) {
-		delete binary_ops[op_name];
-		if(op_name.length === max_binop_len) {
-			max_binop_len = getMaxKeyLen(binary_ops);
-		}
-		return this;
-	};
 	return jsep;
 }());
-
 return cjs;
 }(this));
 

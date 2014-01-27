@@ -23,3 +23,10 @@ dt("Array Diff with custom equals", 3, function() {
 	equal(ad.added.length, 0);
 	equal(ad.moved.length, 1);
 });
+
+dt("Array Dif with empty items", 1, function() {
+	var arr1 = [],
+		arr2 = [];
+	arr1[2]=arr2[1]='hi';
+	deepEqual(cjs.arrayDiff(arr1, arr2), cjs.arrayDiff([undefined, undefined, 'hi'], [undefined, 'hi']));
+});

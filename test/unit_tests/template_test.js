@@ -374,6 +374,54 @@ dt("Condition/State Combo", 7, function() {
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
 });
+dt("If within else", 7, function() {
+	var arr = cjs([]),
+		cond = cjs(false);
+
+	var tmplate = cjs.createTemplate(
+		"{{#each arr}}" +
+			"{{@index}}" +
+			"{{#else}}" +
+				"{{#if cond}}" +
+					"nothing" +
+				"{{/if}}" +
+		"{{/each}}", {
+		arr: arr,
+		cond: cond
+	});
+	equal(getTextContent(tmplate), "");
+	cond.set(true);
+	equal(getTextContent(tmplate), "nothing");
+	arr.push('a');
+	equal(getTextContent(tmplate), "0");
+	cond.set(false);
+	equal(getTextContent(tmplate), "0");
+	cond.set(true);
+	equal(getTextContent(tmplate), "0");
+	arr.splice(0, 1);
+	equal(getTextContent(tmplate), "nothing");
+	cond.set(false);
+	equal(getTextContent(tmplate), "");
+});
+
+dt("Ternary", 5, function() {
+	var cond = cjs(false);
+
+	var tmplate = cjs.createTemplate(
+		"{{cond ? 'a'+'b' : 'b'+'c'}}",
+		 {
+			cond: cond
+		});
+	equal(getTextContent(tmplate), "bc");
+	cond.set(true);
+	equal(getTextContent(tmplate), "ab");
+	cond.set(false);
+	equal(getTextContent(tmplate), "bc");
+	cond.set(false);
+	equal(getTextContent(tmplate), "bc");
+	cond.set(true);
+	equal(getTextContent(tmplate), "ab");
+});
 
 dt("Templateducken", 19, function() {
 	var sub_destroy_count = 0,
@@ -425,6 +473,20 @@ dt("Templateducken", 19, function() {
 	cjs.destroyTemplate(ct2);
 	equal(destroy_count, 3, 'proper destroy count');
 	equal(sub_destroy_count, 3, 'proper subdestroy count');
+});
+
+dt("Dyn Class", 5, function() {
+	var is_active = cjs(false);
+	var tlate = cjs.createTemplate("<div class='class1 {class2 {{is_active ? \"active\" : \"inactive\"}}'>hi!</div>", {
+		is_active: is_active
+	});
+	equal(getTextContent(tlate), "hi!");
+	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
+	is_active.set(true);
+	equal(tlate.className || tlate['class'], "class1 {class2 active");
+	is_active.set(false);
+	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
+	equal(getTextContent(tlate), "hi!");
 });
 /*
 dt("onEvent Actions", 10, function() {
