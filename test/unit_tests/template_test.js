@@ -1,5 +1,13 @@
 module("Templates");
 
+var hasAttr = function(elem, name) {
+	if(elem.hasAttribute) {
+		return elem.hasAttribute(name);
+	} else {
+		return elem.getAttribute(name);
+	}
+};
+
 dt("Static Templates", 7, function() {
 	var empty_template = cjs.createTemplate("", {});
 	equal(getTextContent(empty_template), "");
@@ -487,6 +495,22 @@ dt("Dyn Class", 5, function() {
 	is_active.set(false);
 	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
 	equal(getTextContent(tlate), "hi!");
+});
+
+dt("Fill Attribute", 5, function() {
+	var is_disabled = cjs(false);
+	var tlate = cjs.createTemplate("<button disabled={{is_disabled}}>my_button</button>", {
+		is_disabled: is_disabled
+	});
+	equal(hasAttr(tlate, "disabled"), false);
+	is_disabled.set(true);
+	equal(hasAttr(tlate, "disabled"), true);
+	is_disabled.set(false);
+	equal(hasAttr(tlate, "disabled"), false);
+	is_disabled.set(true);
+	equal(hasAttr(tlate, "disabled"), true);
+	is_disabled.set(false);
+	equal(hasAttr(tlate, "disabled"), false);
 });
 /*
 dt("onEvent Actions", 10, function() {

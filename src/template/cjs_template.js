@@ -155,6 +155,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 	hb_regex = /^\{\{([^\}]+)\}\}/,
 	get_constraint = function(str, context, lineage) {
 		var has_constraint = false,
+			has_str = false,
 			strs = [],
 			index, match_val, len = 0, substr,
 			last_val_is_str = false;
@@ -188,21 +189,22 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			} else {
 				strs[len++] = substr;
 			}
-			last_val_is_str = true;
+			has_str = last_val_is_str = true;
 		}
 
 		if(has_constraint) {
-			return cjs(function() {
-				return map(strs, function(str) {
-					if(is_constraint(str)) {
-						return str.get();
-					} else if(is_array(str)) {
-						return str.join(" ");
-					} else {
-						return "" + str;
-					}
-				}).join("");
-			});
+			return (!has_str && strs.length===1) ? strs[0] :
+					cjs(function() {
+						return map(strs, function(str) {
+							if(is_constraint(str)) {
+								return str.get();
+							} else if(is_array(str)) {
+								return str.join(" ");
+							} else {
+								return "" + str;
+							}
+						}).join("");
+					});
 		} else {
 			return strs.join("");
 		}
@@ -259,18 +261,19 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			}
 
 			each(template.attributes, function(attr) {
-				if(attr.name.match(name_regex)) {
-					context[attr.value] = getInputValueConstraint(element);
-				} else if((on_regex_match = attr.name.match(on_regex))) {
+				var name = attr.name, value = attr.value;
+				if(name.match(name_regex)) {
+					context[value] = getInputValueConstraint(element);
+				} else if((on_regex_match = name.match(on_regex))) {
 					var event_name = on_regex_match[2];
-					aEL(element, event_name, context[attr.value]);
+					aEL(element, event_name, context[value]);
 				} else {
-					var constraint = get_constraint(attr.value, context, lineage);
+					var constraint = get_constraint(value, context, lineage);
 					if(is_constraint(constraint)) {
 						if(attr.name === "class") {
 							bindings.push(class_binding(element, constraint));
 						} else {
-							bindings.push(attr_binding(element, attr.name, constraint));
+							bindings.push(attr_binding(element, name, constraint));
 						}
 					} else {
 						element.setAttribute(attr.name, constraint);

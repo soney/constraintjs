@@ -444,7 +444,11 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 *     });
 	 */
 	attr_binding = create_obj_binding(function(element, key, value) {
-		element.setAttribute(key, value);
+		if(fillAttrs[key] && !value) { // attributes like disabled that should be there or not
+			element.removeAttribute(key);
+		} else {
+			element.setAttribute(key, value);
+		}
 	});
 
 var inp_change_events = ["keyup", "input", "paste", "propertychange", "change"],
