@@ -6221,10 +6221,11 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					resume: function() { resume_each(active_children); },
 					destroy: function() {
 						if(old_index >= 0) {
-							destroy_each(active_children);
+							//destroy_each(active_children);
 							active_children=[];
 							old_index=-1;
 						}
+						each(instance_children, destroy_each);
 					},
 					getNodes: function() {
 						var len = template.sub_conditions.length,
