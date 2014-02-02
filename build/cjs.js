@@ -5886,7 +5886,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					if(child.literal) {
 						return get_node_value(child.val, context, lineage);
 					} else {
-						return escapeHTML(get_node_value(child.val, context, lineage));
+						return escapeHTML(get_node_value(child.val, context, lineage)+"");
 					}
 				} else {
 					var child_val = get_instance_nodes(child);

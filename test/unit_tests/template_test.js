@@ -59,7 +59,7 @@ dt("Dynamic Templates", 5, function() {
 	cjs.destroyTemplate(template_instance);
 });
 
-dt("HTMLized Templates", 7, function() {
+dt("HTMLized Templates", 10, function() {
 	var x = cjs("X"), y = cjs("Y");
 	var t1 = cjs.createTemplate("{{{x}}}, {{y}}", {x: x, y: y});
 	equal(getTextContent(t1), "X, Y");
@@ -75,6 +75,12 @@ dt("HTMLized Templates", 7, function() {
 	var strong_content = t2.getElementsByTagName("strong")[0];
 	equal(getTextContent(strong_content), "X");
 	equal(t2.tagName.toLowerCase(), "div");
+
+	var t3 = cjs.createTemplate("<div>something<span>{{{x}}}</span></div>", {x: x});
+	equal(getTextContent(t3), "somethingX");
+	var strong_content = t3.getElementsByTagName("span")[0];
+	equal(getTextContent(strong_content), "X");
+	equal(t3.tagName.toLowerCase(), "div");
 });
 
 dt("Attributes", 4, function() {
