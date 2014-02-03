@@ -101,3 +101,19 @@ dt("Map Optimization", 20, function() {
 	equal(x.get(), 11);
 	equal(eval_count, 3);
 });
+
+dt("Item values are constraints", 5, function() {
+	var m = cjs({});
+	var ma = m.itemConstraint('a');
+	ok(m.isEmpty());
+	equal(ma.get(), undefined);
+	m.put('a', cjs(1));
+	equal(ma.get(), 1);
+	m.put('a', cjs(2));
+	equal(ma.get(), 2);
+	m.remove('a');
+	equal(ma.get(), undefined);
+	m.destroy();
+	ma.destroy();
+	m = ma = null;
+});
