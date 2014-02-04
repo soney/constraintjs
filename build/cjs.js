@@ -1,4 +1,4 @@
-//     ConstraintJS (CJS) 0.9.4-beta
+//     ConstraintJS (CJS) 0.9.4
 //     ConstraintJS may be freely distributed under the MIT License
 //     http://cjs.from.so/
 
@@ -1940,7 +1940,7 @@ extend(cjs, {
 	 * @property {string} cjs.version
 	 * @see cjs.toString
 	 */
-	version: "0.9.4-beta", // This template will be filled in by the builder
+	version: "0.9.4", // This template will be filled in by the builder
 
 	/**
 	 * Print out the name and version of ConstraintJS
@@ -6454,6 +6454,7 @@ extend(cjs, {
 	 *
 	 * ### Literals
 	 * If the tags in a node should be treated as HTML, use triple braces: `{{{ literal_val }}}`.
+	 * These literals (triple braces) should be created immediately under a DOM node.
 	 *
 	 *      <h1>{{title}}</h1>
 	 *      <p>{{{subtext}}}</p>

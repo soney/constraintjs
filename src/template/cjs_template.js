@@ -692,6 +692,7 @@ extend(cjs, {
 	 *
 	 * ### Literals
 	 * If the tags in a node should be treated as HTML, use triple braces: `{{{ literal_val }}}`.
+	 * These literals (triple braces) should be created immediately under a DOM node.
 	 *
 	 *      <h1>{{title}}</h1>
 	 *      <p>{{{subtext}}}</p>
