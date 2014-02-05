@@ -1,4 +1,4 @@
-//     ConstraintJS (CJS) 0.9.4
+//     ConstraintJS (CJS) 0.9.5-beta
 //     ConstraintJS may be freely distributed under the MIT License
 //     http://cjs.from.so/
 
@@ -1940,7 +1940,7 @@ extend(cjs, {
 	 * @property {string} cjs.version
 	 * @see cjs.toString
 	 */
-	version: "0.9.4", // This template will be filled in by the builder
+	version: "0.9.5-beta", // This template will be filled in by the builder
 
 	/**
 	 * Print out the name and version of ConstraintJS
