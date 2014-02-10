@@ -143,3 +143,11 @@ dt("Setting as constraint", 7, function() {
 	equal(y.get(), 3);
 	equal(z.get(), 3);
 });
+
+dt("Parsed Constraints", 2, function() {
+	 var a = cjs(1);
+	 var x = cjs.createParsedConstraint("a+b", {a: a, b: cjs(2)})
+	 equal(x.get(), 3);
+	 a.set(2);
+	 equal(x.get(), 4);
+});

@@ -100,15 +100,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 				}
 		}
 	},
-	create_node_constraint = function(node, context, lineage) {
-		var args = arguments;
-		if(node.type === LITERAL) {
-			return get_node_value.apply(root, args);
-		}
-		return cjs(function() {
-			return get_node_value.apply(root, args);
-		});
-	},
 	get_escaped_html = function(c) {
 		if(c.nodeType === 3) {
 			return escapeHTML(getTextContent(c));
@@ -990,5 +981,31 @@ extend(cjs, {
 							var instance = get_template_instance(dom_node);
 							if(instance) { instance.resume(); }
 							return this;
-						}
+						},
+
+	/**
+	 * Parses a string and returns a constraint whose value represents the result of `eval`ing
+	 * that string
+	 *
+	 * @method cjs.createParsedConstraint
+	 * @param {string} str - The string to parse
+	 * @param {object} context - The context in which to look for variables
+	 * @return {cjs.Cosntraint} - Whether the template was successfully resumed
+	 * @example
+	 * var a = cjs(1);
+	 * var x = cjs.createParsedConstraint("a+b", {a: a, b: cjs(2)})
+	 * x.get(); // 3
+	 * a.set(2);
+	 * x.get(); // 4
+	 */
+	createParsedConstraint: function(str, context) {
+		var node = jsep(str);
+		if(node.type === LITERAL) {
+			return node.value;
+		}
+
+		return cjs(function() {
+			return get_node_value(node, context, [context]);
+		});
+	}
 });
