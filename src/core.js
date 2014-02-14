@@ -326,24 +326,30 @@ var constraint_solver = {
 	// Clear all of the dependencies
 	clearEdges: function(node, silent) {
 		var loud = silent !== true,
-			node_id = node._id;
+			node_id = node._id,
+			edge, key, inEdges = node._inEdges,
+			outEdges = node._outEdges;
 
 		if(loud) { this.wait(); }
 
 		// Clear the incoming edges
-		each(node._inEdges, function (edge, key) {
-			delete edge.from._outEdges[node_id];
-			delete node._inEdges[key];
-		});
-		// and the outgoing edges
-		each(node._outEdges, function (edge, key) {
-			var toNode = edge.to;
-			
-			if (loud) { constraint_solver.nullify(toNode); }
+		for(key in inEdges) {
+			if(has(inEdges, key)) {
+				delete inEdges[key].from._outEdges[node_id];
+				delete inEdges[key];
+			}
+		}
 
-			delete toNode._inEdges[node_id];
-			delete node._outEdges[key];
-		});
+		// and the outgoing edges
+		for(key in outEdges) {
+			if(has(outEdges, key)) {
+				var toNode = outEdges[key].to;
+				if (loud) { constraint_solver.nullify(toNode); }
+				
+				delete toNode._inEdges[node_id];
+				delete outEdges[key];
+			}
+		}
 
 		if(loud) { this.signal(); }
 	},
