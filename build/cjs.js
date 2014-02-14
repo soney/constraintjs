@@ -799,9 +799,10 @@ var constraint_solver = {
 		return node._cached_value;
 	},
 	
-	// Utility function to mark a listener as being in the call stack
+	// Utility function to mark a listener as being in the call stack. `this` refers to the constraint node here
 	add_in_call_stack: function(nl) {
 		nl.in_call_stack = true;
+		nl.node._num_listeners_in_call_stack++;
 	},
 	nullify: function(node) {
 		// Unfortunately, running nullification listeners can, in some cases cause nullify to be indirectly called by itself
@@ -950,29 +951,27 @@ var constraint_solver = {
 	running_listeners: false,
 	// Clear all of the dependencies
 	clearEdges: function(node, silent) {
-		if(silent !== true) {
-			this.wait();
-		}
-		var node_id = node._id;
+		var loud = silent !== true,
+			node_id = node._id;
+
+		if(loud) { this.wait(); }
+
 		// Clear the incoming edges
 		each(node._inEdges, function (edge, key) {
-			var fromNode = edge.from;
-			delete fromNode._outEdges[node_id];
+			delete edge.from._outEdges[node_id];
 			delete node._inEdges[key];
 		});
 		// and the outgoing edges
 		each(node._outEdges, function (edge, key) {
 			var toNode = edge.to;
 			
-			if (silent !== true) {
-				constraint_solver.nullify(toNode);
-			}
+			if (loud) { constraint_solver.nullify(toNode); }
+
 			delete toNode._inEdges[node_id];
 			delete node._outEdges[key];
 		});
-		if(silent !== true) {
-			this.signal();
-		}
+
+		if(loud) { this.signal(); }
 	},
 	run_nullified_listeners: function () {
 		var nullified_info, callback, context;
@@ -985,6 +984,7 @@ var constraint_solver = {
 				context = nullified_info.context || root;
 
 				nullified_info.in_call_stack = false;
+				nullified_info.node._num_listeners_in_call_stack--;
 				// If in debugging mode, then call the callback outside of a `try` statement
 				if(cjs.__debug) {
 					callback.apply(context, nullified_info.args);
@@ -1004,6 +1004,7 @@ var constraint_solver = {
 	},
 	remove_from_call_stack: function(info) {
 		remove(this.nullified_call_stack, info);
+		info.node._num_listeners_in_call_stack--;
 	}
 };
 
@@ -1039,6 +1040,7 @@ Constraint = function (value, options) {
 	this._inEdges = {}; // The nodes that I depend on, key is link to edge object (with properties toNode=this, fromNode)
 	this._changeListeners = []; // A list of callbacks that will be called when I'm nullified
 	this._tstamp = 0; // Marks the last time I was updated
+	this._num_listeners_in_call_stack = 0; // the number of listeners that are in the call stack
 
 	if(this._options.literal || (!isFunction(this._value) && !is_constraint(this._value))) {
 		// We already have a value that doesn't need to be computed
@@ -1222,12 +1224,17 @@ Constraint = function (value, options) {
 	 *     x.destroy(); // ...x is no longer needed
 	 */
 	proto.destroy = function (silent) {
-		each(this._changeListeners, function(cl) {
-			// remove it from the call stack
-			if (cl.in_call_stack) {
-				constraint_solver.remove_from_call_stack(cl);
-			}
-		});
+		if(this._num_listeners_in_call_stack > 0) {
+			each(this._changeListeners, function(cl) {
+				// remove it from the call stack
+				if (cl.in_call_stack) {
+					constraint_solver.remove_from_call_stack(cl);
+					if(this._num_listeners_in_call_stack === 0) {
+						return breaker;
+					}
+				}
+			}, this);
+		}
 		this.remove(silent);
 		this._changeListeners = [];
 		return this;
@@ -1257,7 +1264,8 @@ Constraint = function (value, options) {
 			callback: callback, // function
 			context: thisArg, // 'this' when called
 			args: slice.call(arguments, 2), // arguments to pass into the callback
-			in_call_stack: false // internally keeps track of if this function will be called in the near future
+			in_call_stack: false, // internally keeps track of if this function will be called in the near future
+			node: this
 		});
 		if(this._options.run_on_add_listener !== false) {
 			// Make sure my current value is up to date but don't add outgoing constraints.
@@ -1296,6 +1304,7 @@ Constraint = function (value, options) {
 				if (cl.in_call_stack) {
 					constraint_solver.remove_from_call_stack(cl);
 				}
+				delete cl.node;
 				// Only searching for the last one
 				break;
 			}
