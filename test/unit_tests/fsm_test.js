@@ -41,34 +41,33 @@ dt("addTransition Types", 5, function() {
 
 asyncTest("cjs.on", function() {
 	expect(4);
-	clear_snapshots(function() {
-		take_snapshot([], function(response) {
-			var fsm = cjs	.fsm()
-							.addState("state_1")
-							.addState("state_2")
-							.startsAt("state_1")
-							.addTransition("state_2", cjs.on("timeout", 50))
-							.addTransition("state_2", cjs.on("timeout", 0).guard(function() {
-								return false;
-							}))
-							.addState("state_2")
-							.addTransition("state_1", cjs.on("timeout", 50).guard(function() {
-								return true;
-							}));
-			ok(fsm.is("state_1"));
-			setTimeout(function() {
-				ok(fsm.is("state_2"));
-				setTimeout(function() {
-					ok(fsm.is("state_1"));
-					fsm.destroy();
-					take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM"], function(response) {
-						ok(!response.illegal_strs, "Make sure nothing was allocated");
-						start();
+	var e1 = cjs.on("timeout", 50),
+		e2 = cjs.on("timeout", 0).guard(function() {
+						return false;
+					}),
+		e3 = cjs.on("timeout", 50).guard(function() {
+						return true;
 					});
-				}, 50);
-			}, 75);
-		});
-	});
+	var fsm = cjs	.fsm()
+					.addState("state_1")
+					.addState("state_2")
+					.startsAt("state_1")
+					.addTransition("state_2", e1)
+					.addTransition("state_2", e2)
+					.addState("state_2")
+					.addTransition("state_1", e3);
+	ok(fsm.is("state_1"));
+	setTimeout(function() {
+		ok(fsm.is("state_2"));
+		setTimeout(function() {
+			ok(fsm.is("state_1"));
+			fsm.destroy();
+			take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM"], function(response) {
+				ok(!response.illegal_strs, "Make sure nothing was allocated");
+				start();
+			});
+		}, 50);
+	}, 75);
 });
 
 dt("FSM Constraint", 5, function() {
