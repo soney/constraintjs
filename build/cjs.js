@@ -805,7 +805,7 @@ var constraint_solver = {
 	
 	// Utility function to mark a listener as being in the call stack. `this` refers to the constraint node here
 	add_in_call_stack: function(nl) {
-		nl.in_call_stack = true;
+		nl.in_call_stack++;
 		nl.node._num_listeners_in_call_stack++;
 	},
 	nullify: function(node) {
@@ -993,7 +993,7 @@ var constraint_solver = {
 				callback = nullified_info.callback;
 				context = nullified_info.context || root;
 
-				nullified_info.in_call_stack = false;
+				nullified_info.in_call_stack--;
 				nullified_info.node._num_listeners_in_call_stack--;
 				// If in debugging mode, then call the callback outside of a `try` statement
 				if(cjs.__debug) {
@@ -1013,8 +1013,11 @@ var constraint_solver = {
 		}
 	},
 	remove_from_call_stack: function(info) {
-		remove(this.nullified_call_stack, info);
-		info.node._num_listeners_in_call_stack--;
+		while(info.in_call_stack > 0) {
+			remove(this.nullified_call_stack, info);
+			info.in_call_stack--;
+			info.node._num_listeners_in_call_stack--;
+		}
 	}
 };
 
@@ -1237,7 +1240,7 @@ Constraint = function (value, options) {
 		if(this._num_listeners_in_call_stack > 0) {
 			each(this._changeListeners, function(cl) {
 				// remove it from the call stack
-				if (cl.in_call_stack) {
+				if (cl.in_call_stack>0) {
 					constraint_solver.remove_from_call_stack(cl);
 					if(this._num_listeners_in_call_stack === 0) {
 						return breaker;
@@ -1274,7 +1277,7 @@ Constraint = function (value, options) {
 			callback: callback, // function
 			context: thisArg, // 'this' when called
 			args: slice.call(arguments, 2), // arguments to pass into the callback
-			in_call_stack: false, // internally keeps track of if this function will be called in the near future
+			in_call_stack: 0, // internally keeps track of if this function will be called in the near future
 			node: this
 		});
 		if(this._options.run_on_add_listener !== false) {
@@ -1311,7 +1314,7 @@ Constraint = function (value, options) {
 				// Then get rid of it
 				removeIndex(this._changeListeners, i);
 				// And remove it if it's in the callback
-				if (cl.in_call_stack) {
+				if (cl.in_call_stack>0) {
 					constraint_solver.remove_from_call_stack(cl);
 				}
 				delete cl.node;
