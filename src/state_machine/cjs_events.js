@@ -72,12 +72,12 @@ var CJSEvent = function(parent, filter, onAddTransition, onRemoveTransition) {
 		if(remove(this._transitions, transition)) {
 			if(this._on_remove_transition) {
 				this._on_remove_transition(transition);
-			}
 
-			// clear the live fn
-			var tid = transition.id();
-			this._live_fns[tid].destroy();
-			delete this._live_fns[tid];
+				// clear the live fn
+				var tid = transition.id();
+				this._live_fns[tid].destroy();
+				delete this._live_fns[tid];
+			}
 		}
 		if(this._parent && this._parent._on_remove_transition) {
 			this._parent._on_remove_transition(transition);

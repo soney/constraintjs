@@ -29,13 +29,10 @@
 
 	var connected;
 	var timeout_id = setTimeout(function() {
-		root.clear_snapshots = function(callback) {
-			callback();
-		};
-
 		root.take_snapshot = function(forbidden_tokens, callback) {
 			callback({
-				ililegal_strs: false
+				ililegal_strs: false,
+				checked: false
 			});
 		};
 
@@ -45,10 +42,6 @@
 
 	do_command("ping", {}, function() {
 		clearTimeout(timeout_id);
-		root.clear_snapshots = function(callback) {
-			do_command("clear_snapshots", {}, callback);
-		};
-
 		root.take_snapshot = function(forbidden_tokens, callback) {
 			do_command("take_snapshot", {forbidden_tokens: forbidden_tokens}, callback);
 		};
@@ -69,14 +62,12 @@
 	root.dt = function(name, num_tests, callback) {
 		asyncTest(name, function() {
 			expect(num_tests + 1);
-			clear_snapshots(function() {
-				take_snapshot([], function(response) {
-					callback();
-					take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
-						ok(!response.illegal_strs, "Make sure nothing was allocated");
-						start();
-					});
-				});
+			callback();
+			take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
+				var message = response.illegal_strs ? "Found " + response.illegal_strs + " allocated." :
+														"Nothing was allocated " + (response.checked===false ? "(did not check)" : "(checked)");
+				ok(!response.illegal_strs, message);
+				start();
 			});
 		});
 	};

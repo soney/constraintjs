@@ -81,7 +81,7 @@ chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
 								for(j = 0; j<cfslen; j++) {
 									cfs = check_for_strings[j];
 									if(name.substring(0, cfs.length) === cfs) {
-										illegal_strs = true;
+										illegal_strs = cfs;
 										bad_nodes.push(node);
 										break outer;
 									}

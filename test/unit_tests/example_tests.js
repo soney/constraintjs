@@ -9,6 +9,10 @@ dt("Two Eaches", 3, function() {
 	equal(getTextContent(tmplate), "123AC");
 	a1.splice(2, 1, "yo");
 	equal(getTextContent(tmplate), "12yoAC");
+
+	a1.destroy();
+	a2.destroy();
+	cjs.destroyTemplate(tmplate);
 });
 
 var emulate_mouse_event = function(event_type, target) {
@@ -128,4 +132,6 @@ dt("Cell", 8, function() {
 	equal(getTextContent(cell), "something");
 
 	cjs.destroyTemplate(cell);
+	edit_state.destroy();
+	value.destroy();
 });

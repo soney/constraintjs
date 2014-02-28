@@ -81,6 +81,10 @@ dt("HTMLized Templates", 10, function() {
 	var strong_content = t3.getElementsByTagName("span")[0];
 	equal(getTextContent(strong_content), "X");
 	equal(t3.tagName.toLowerCase(), "div");
+
+	cjs.destroyTemplate(t1);
+	cjs.destroyTemplate(t2);
+	cjs.destroyTemplate(t3);
 });
 
 dt("Attributes", 4, function() {
@@ -96,6 +100,11 @@ dt("Attributes", 4, function() {
 	equal(t2.className, "classX class2 another_class");
 	second_class.set("classY");
 	equal(t2.className, "classX classY another_class");
+
+	cjs.destroyTemplate(t1);
+	cjs.destroyTemplate(t2);
+	the_class.destroy();
+	second_class.destroy();
 });
 
 dt("Each", 3, function() {
@@ -110,6 +119,9 @@ dt("Each", 3, function() {
 	elems.push(4);
 	equal(t1.childNodes.length, 4);
 	equal(elem0, t1.childNodes[0]);
+
+	cjs.destroyTemplate(t1);
+	elems.destroy();
 });
 
 dt("Conditionals", 21, function() {
@@ -127,6 +139,7 @@ dt("Conditionals", 21, function() {
 	cond.set(true);
 	equal(getTextContent(t1), "1")
 
+	cjs.destroyTemplate(t1);
 	var cond2 = cjs(true);
 	t1 = cjs.createTemplate("<div>" +
 		"{{#if cond}}" +
@@ -189,6 +202,12 @@ dt("Conditionals", 21, function() {
 	equal(getTextContent(t3), "1")
 	cond2.set(true);
 	equal(getTextContent(t3), "")
+
+	cjs.destroyTemplate(t1);
+	cjs.destroyTemplate(t2);
+	cjs.destroyTemplate(t3);
+	cond.destroy();
+	cond2.destroy();
 });
 
 dt("FSM", 3, function() {
@@ -209,6 +228,9 @@ dt("FSM", 3, function() {
 	equal(getTextContent(t1), "2")
 	s2s1();
 	equal(getTextContent(t1), "1")
+
+	cjs.destroyTemplate(t1);
+	my_fsm.destroy();
 });
 
 dt("Provided Parent", 4, function() {
@@ -220,12 +242,17 @@ dt("Provided Parent", 4, function() {
 	x.set(2);
 	equal(getTextContent(template), "2");
 	equal(template, elem);
+
+	x.destroy();
+	cjs.destroyTemplate(template);
 });
 
 dt("FN Calls", 2, function() {
 	var abc = cjs.createTemplate("{{#each x}}{{plus_one(this)}}{{/each}}", {x: [1,2,3], plus_one: function(x){ return x+1; }});
 	equal(abc.childNodes.length, 3);
 	equal(getTextContent(abc), "234");
+
+	cjs.destroyTemplate(abc);
 });
 
 dt("Nested Templates", 2, function() {
@@ -236,7 +263,11 @@ dt("Nested Templates", 2, function() {
 	equal(getTextContent(abc), "Hello, world");
 	cjs.pauseTemplate(abc);
 	cjs.resumeTemplate(abc);
+
+	cjs.destroyTemplate(abc);
+	cjs.unregisterPartial("hello");
 });
+
 dt("Custom Partials", 7, function() {
 	var add_count = 0, remove_count = 0, a = cjs(1);
 
@@ -267,17 +298,24 @@ dt("Custom Partials", 7, function() {
 	is_showing.set(true);
 	equal(add_count, 2);
 	equal(remove_count, 1);
+
+	cjs.destroyTemplate(my_template);
+	is_showing.destroy();
+	a.destroy();
+	cjs.unregisterPartial("my_custom_partial");
 });
 
 dt("Template Comments", 2, function() {
 	var tmplate = cjs.createTemplate("{{! comment 1 }}{{!comment2}}{{#each num}}<!--some html comment-->{{/each}}", {num: [1,2,3]});
 	equal(tmplate.childNodes.length, 3);
 	equal(tmplate.childNodes[0].nodeType, 8);
+	cjs.destroyTemplate(tmplate);
 });
 
 dt("With", 1, function() {
 	var tmplate = cjs.createTemplate("{{#with x}}{{a}}{{b}}{{../y}}{{/with}}", {x: {a: "a", b: "b"}, y: "y"});
 	equal(getTextContent(tmplate), "aby");
+	cjs.destroyTemplate(tmplate);
 });
 
 dt("Each/Else", 5, function() {
@@ -292,11 +330,14 @@ dt("Each/Else", 5, function() {
 	equal(getTextContent(tmplate), "23");
 	x.splice(0, 2);
 	equal(getTextContent(tmplate), "nothing");
+	cjs.destroyTemplate(tmplate);
+	x.destroy();
 });
 
 dt("Parser test", 1, function() {
 	var tmplate = cjs.createTemplate("{{'{}'}}{{\"}{\"}}", {});
 	equal(getTextContent(tmplate), "{}}{");
+	cjs.destroyTemplate(tmplate);
 });
 
 dt("Each key/index", 6, function() {
@@ -306,6 +347,7 @@ dt("Each key/index", 6, function() {
 	equal(getTextContent(tmplate), "01");
 	arr.splice(0, 1);
 	equal(getTextContent(tmplate), "0");
+	cjs.destroyTemplate(tmplate);
 	
 	tmplate = cjs.createTemplate("{{#each obj}}{{@key}}{{/each}}", {obj: obj});
 	equal(getTextContent(tmplate), "xy");
@@ -321,8 +363,14 @@ dt("Each key/index", 6, function() {
 		equal(dynamic_map.get(key), val);
 		return val;
 	};
-	var tmplate = cjs.createTemplate("{{#each obj}}{{ this }}{{ func(@key, this) }}{{/each}}", {obj: dynamic_map, func: func});
+	cjs.destroyTemplate(tmplate);
+
+	tmplate = cjs.createTemplate("{{#each obj}}{{ this }}{{ func(@key, this) }}{{/each}}", {obj: dynamic_map, func: func});
 	equal(getTextContent(tmplate), "1122");
+	cjs.destroyTemplate(tmplate);
+	dynamic_map.destroy();
+	arr.destroy();
+	obj.destroy();
 });
 
 dt("Template out", 2, function() {
@@ -332,6 +380,7 @@ dt("Template out", 2, function() {
 	tmplate.value = "hello";
 	context.x.invalidate();
 	equal(context.x.get(), "hello");
+	cjs.destroyTemplate(tmplate);
 });
 
 dt("Pause/Resume/Destroy templates", 7, function() {
@@ -351,6 +400,8 @@ dt("Pause/Resume/Destroy templates", 7, function() {
 	equal(getTextContent(tmplate), "4");
 	x.set(5);
 	equal(getTextContent(tmplate), "4");
+	cjs.destroyTemplate(tmplate);
+	x.destroy();
 });
 
 dt("Condition/State Combo", 7, function() {
@@ -387,6 +438,10 @@ dt("Condition/State Combo", 7, function() {
 	equal(getTextContent(tmplate), "A");
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
+
+	cjs.destroyTemplate(tmplate);
+	fsm.destroy();
+	cond.destroy();
 });
 dt("If within else", 7, function() {
 	var arr = cjs([]),
@@ -416,6 +471,10 @@ dt("If within else", 7, function() {
 	equal(getTextContent(tmplate), "nothing");
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
+
+	cjs.destroyTemplate(tmplate);
+	arr.destroy();
+	cond.destroy();
 });
 
 dt("Ternary", 5, function() {
@@ -435,6 +494,9 @@ dt("Ternary", 5, function() {
 	equal(getTextContent(tmplate), "bc");
 	cond.set(true);
 	equal(getTextContent(tmplate), "ab");
+
+	cjs.destroyTemplate(tmplate);
+	cond.destroy();
 });
 
 dt("Templateducken", 19, function() {
@@ -487,6 +549,12 @@ dt("Templateducken", 19, function() {
 	cjs.destroyTemplate(ct2);
 	equal(destroy_count, 3, 'proper destroy count');
 	equal(sub_destroy_count, 3, 'proper subdestroy count');
+
+	cjs.destroyTemplate(ct2);
+	cond.destroy();
+	arr.destroy();
+	cjs.unregisterPartial("my_custom_template");
+	cjs.unregisterPartial("my_custom_sub_template");
 });
 
 dt("Dyn Class", 5, function() {
@@ -501,6 +569,9 @@ dt("Dyn Class", 5, function() {
 	is_active.set(false);
 	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
 	equal(getTextContent(tlate), "hi!");
+
+	cjs.destroyTemplate(tlate);
+	is_active.destroy();
 });
 
 dt("Fill Attribute", 5, function() {
@@ -517,46 +588,7 @@ dt("Fill Attribute", 5, function() {
 	equal(hasAttr(tlate, "disabled"), true);
 	is_disabled.set(false);
 	equal(hasAttr(tlate, "disabled"), false);
-});
-/*
-dt("onEvent Actions", 10, function() {
-	var x = cjs(1);
-	var change_count = 0,
-		destroy_count = 0;
-	var tlate = cjs.createTemplate("{{x onChange:changed onDestroy:destroyed}}", {
-		x: x,
-		changed: function() {
-			change_count++;
-		},
-		destroyed: function() {
-			destroy_count++;
-		}
-	});
-	equal(getTextContent(tlate), "1");
-	equal(change_count, 0);
-	x.set(2);
-	equal(getTextContent(tlate), "2");
-	equal(change_count, 1);
-	equal(destroy_count, 0);
-	cjs.destroyTemplate(tlate);
-	equal(destroy_count, 1);
 
-	var add_count = removed_count = moved_count = iccount = dstroy_count = 0;
-	var arr = cjs(['a']);
-	var tlate = cjs.createTemplate("{{#each arr onAdd:added, onRemove:removed, onMove:moved, onIndexChange:iChanged, onDestroy:destroyed}}<span>{{this}}</span>{{/each}}", {
-		arr: arr,
-		added: function() { add_count++; },
-		removed: function() { removed_count++; },
-		moved: function() { moved_count++; },
-		iChanged: function() { iccount++; },
-		destroyed: function() { destroy_count++; }
-	});
-	arr.push('b', 'c');
-	equal(add_count, 3);
-	arr.splice(2, 1);
-	equal(removed_count, 1);
-	arr.splice(0, 1);
-	equal(removed_count, 2);
-	equal(iccount, 1);
+	cjs.destroyTemplate(tlate);
+	is_disabled.destroy();
 });
-*/

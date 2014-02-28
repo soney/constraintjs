@@ -41,34 +41,31 @@ dt("addTransition Types", 5, function() {
 
 asyncTest("cjs.on", function() {
 	expect(4);
-	clear_snapshots(function() {
-		take_snapshot([], function(response) {
-			var fsm = cjs	.fsm()
-							.addState("state_1")
-							.addState("state_2")
-							.startsAt("state_1")
-							.addTransition("state_2", cjs.on("timeout", 50))
-							.addTransition("state_2", cjs.on("timeout", 0).guard(function() {
-								return false;
-							}))
-							.addState("state_2")
-							.addTransition("state_1", cjs.on("timeout", 50).guard(function() {
-								return true;
-							}));
+	var fsm = cjs	.fsm()
+					.addState("state_1")
+					.addState("state_2")
+					.startsAt("state_1")
+					.addTransition("state_2", cjs.on("timeout", 50))
+					.addTransition("state_2", cjs.on("timeout", 0).guard(function() {
+						return false;
+					}))
+					.addState("state_2")
+					.addTransition("state_1", cjs.on("timeout", 50).guard(function() {
+						return true;
+					}));
+	ok(fsm.is("state_1"));
+	setTimeout(function() {
+		ok(fsm.is("state_2"));
+		setTimeout(function() {
 			ok(fsm.is("state_1"));
-			setTimeout(function() {
-				ok(fsm.is("state_2"));
-				setTimeout(function() {
-					ok(fsm.is("state_1"));
-					fsm.destroy();
-					take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM"], function(response) {
-						ok(!response.illegal_strs, "Make sure nothing was allocated");
-						start();
-					});
-				}, 50);
-			}, 75);
-		});
-	});
+			fsm.destroy();
+			fsm = null;
+			take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
+				ok(!response.illegal_strs, "Make sure nothing was allocated");
+				start();
+			});
+		}, 50);
+	}, 75);
 });
 
 dt("FSM Constraint", 5, function() {
@@ -92,6 +89,9 @@ dt("FSM Constraint", 5, function() {
 	equal(fsmc.get(), 2);
 	s2val.set(3);
 	equal(fsmc.get(), 3);
+
+	fsmc.destroy();
+	fsm.destroy();
 });
 
 dt("FSM on", 42, function() {
@@ -141,4 +141,6 @@ dt("FSM on", 42, function() {
 	equal(c07, 2); equal(c08, 2); equal(c09, 2);
 	equal(c10, 1); equal(c11, 1); equal(c12, 1);
 	equal(c13, 1); equal(c14, 1);
+
+	fsm.destroy();
 });

@@ -254,7 +254,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 			each(template.attributes, function(attr) {
 				var name = attr.name, value = attr.value;
 				if(name.match(name_regex)) {
-					context[value] = getInputValueConstraint(element);
+					bindings.push((context[value] = getInputValueConstraint(element)));
 				} else if((on_regex_match = name.match(on_regex))) {
 					var event_name = on_regex_match[2];
 					aEL(element, event_name, context[value]);
@@ -450,7 +450,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					resume: function() { resume_each(active_children); },
 					destroy: function() {
 						if(old_index >= 0) {
-							//destroy_each(active_children);
+							destroy_each(active_children);
 							active_children=[];
 							old_index=-1;
 						}
@@ -928,7 +928,11 @@ extend(cjs, {
 	 * @see cjs.registerPartial
 	 * @see cjs.registerCustomPartial
 	 */
-	unregisterPartial:	function(name) { delete partials[name]; return this;},
+	unregisterPartial:	function(name) {
+		delete partials[name];
+		delete custom_partials[name];
+		return this;
+	},
 
 	/**
 	 * Destroy a template instance

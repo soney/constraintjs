@@ -22,4 +22,6 @@ dt("Basic Memoization", 8, function() {
 	x.set(2);
 	equal(memoized_fn(1), 6);
 	equal(num_calls, 3);
+
+	memoized_fn.destroy();
 });

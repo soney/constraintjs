@@ -27,6 +27,8 @@ dt("Basic Maps", 16, function() {
 	map.remove("a");
 	equal(map.indexOf("c"), 1);
 	equal(map.keyForValue(2), "b");
+
+	map.destroy();
 });
 
 dt("Constraints on items", 5, function() {
@@ -48,7 +50,6 @@ dt("Constraints on items", 5, function() {
 	equal(ma.get(), 'no a');
 	m.destroy();
 	ma.destroy();
-	m = ma = null;
 });
 
 dt("Map Optimization", 20, function() {
@@ -100,6 +101,10 @@ dt("Map Optimization", 20, function() {
 	m2.put('a', 11);
 	equal(x.get(), 11);
 	equal(eval_count, 3);
+
+	m.destroy();
+	m2.destroy();
+	x.destroy();
 });
 
 dt("Item values are constraints", 5, function() {
