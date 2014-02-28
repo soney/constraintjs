@@ -81,10 +81,7 @@ dt("HTMLized Templates", 10, function() {
 	var strong_content = t3.getElementsByTagName("span")[0];
 	equal(getTextContent(strong_content), "X");
 	equal(t3.tagName.toLowerCase(), "div");
-<<<<<<< HEAD
 
-=======
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 	cjs.destroyTemplate(t1);
 	cjs.destroyTemplate(t2);
 	cjs.destroyTemplate(t3);
@@ -103,16 +100,11 @@ dt("Attributes", 4, function() {
 	equal(t2.className, "classX class2 another_class");
 	second_class.set("classY");
 	equal(t2.className, "classX classY another_class");
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(t1);
 	cjs.destroyTemplate(t2);
 	the_class.destroy();
 	second_class.destroy();
-=======
-	cjs.destroyTemplate(t1);
-	cjs.destroyTemplate(t2);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Each", 3, function() {
@@ -127,13 +119,9 @@ dt("Each", 3, function() {
 	elems.push(4);
 	equal(t1.childNodes.length, 4);
 	equal(elem0, t1.childNodes[0]);
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(t1);
 	elems.destroy();
-=======
-	cjs.destroyTemplate(t1);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Conditionals", 21, function() {
@@ -214,18 +202,12 @@ dt("Conditionals", 21, function() {
 	equal(getTextContent(t3), "1")
 	cond2.set(true);
 	equal(getTextContent(t3), "")
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(t1);
 	cjs.destroyTemplate(t2);
 	cjs.destroyTemplate(t3);
 	cond.destroy();
 	cond2.destroy();
-=======
-	cjs.destroyTemplate(t1);
-	cjs.destroyTemplate(t2);
-	cjs.destroyTemplate(t3);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("FSM", 3, function() {
@@ -246,13 +228,9 @@ dt("FSM", 3, function() {
 	equal(getTextContent(t1), "2")
 	s2s1();
 	equal(getTextContent(t1), "1")
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(t1);
 	my_fsm.destroy();
-=======
-	cjs.destroyTemplate(t1);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Provided Parent", 4, function() {
@@ -264,11 +242,8 @@ dt("Provided Parent", 4, function() {
 	x.set(2);
 	equal(getTextContent(template), "2");
 	equal(template, elem);
-<<<<<<< HEAD
 
 	x.destroy();
-=======
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 	cjs.destroyTemplate(template);
 });
 
@@ -276,10 +251,7 @@ dt("FN Calls", 2, function() {
 	var abc = cjs.createTemplate("{{#each x}}{{plus_one(this)}}{{/each}}", {x: [1,2,3], plus_one: function(x){ return x+1; }});
 	equal(abc.childNodes.length, 3);
 	equal(getTextContent(abc), "234");
-<<<<<<< HEAD
 
-=======
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 	cjs.destroyTemplate(abc);
 });
 
@@ -291,13 +263,9 @@ dt("Nested Templates", 2, function() {
 	equal(getTextContent(abc), "Hello, world");
 	cjs.pauseTemplate(abc);
 	cjs.resumeTemplate(abc);
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(abc);
 	cjs.unregisterPartial("hello");
-=======
-	cjs.destroyTemplate(hi_template);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Custom Partials", 8, function() {
@@ -333,16 +301,12 @@ dt("Custom Partials", 8, function() {
 	is_showing.set(true);
 	equal(add_count, 2);
 	equal(remove_count, 1);
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(my_template);
 	is_showing.destroy();
 	a.destroy();
 	cjs.unregisterPartial("my_custom_partial");
 	equal(destroy_count, 1);
-=======
-	cjs.destroyTemplate(my_template);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Template Comments", 2, function() {
@@ -371,10 +335,8 @@ dt("Each/Else", 5, function() {
 	x.splice(0, 2);
 	equal(getTextContent(tmplate), "nothing");
 	cjs.destroyTemplate(tmplate);
-<<<<<<< HEAD
+
 	x.destroy();
-=======
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Parser test", 1, function() {
@@ -408,7 +370,6 @@ dt("Each key/index", 6, function() {
 		return val;
 	};
 	cjs.destroyTemplate(tmplate);
-<<<<<<< HEAD
 
 	tmplate = cjs.createTemplate("{{#each obj}}{{ this }}{{ func(@key, this) }}{{/each}}", {obj: dynamic_map, func: func});
 	equal(getTextContent(tmplate), "1122");
@@ -416,11 +377,6 @@ dt("Each key/index", 6, function() {
 	dynamic_map.destroy();
 	arr.destroy();
 	obj.destroy();
-=======
-	tmplate = cjs.createTemplate("{{#each obj}}{{ this }}{{ func(@key, this) }}{{/each}}", {obj: dynamic_map, func: func});
-	equal(getTextContent(tmplate), "1122");
-	cjs.destroyTemplate(tmplate);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Template out", 2, function() {
@@ -451,10 +407,7 @@ dt("Pause/Resume/Destroy templates", 7, function() {
 	x.set(5);
 	equal(getTextContent(tmplate), "4");
 	cjs.destroyTemplate(tmplate);
-<<<<<<< HEAD
 	x.destroy();
-=======
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Condition/State Combo", 7, function() {
@@ -491,14 +444,10 @@ dt("Condition/State Combo", 7, function() {
 	equal(getTextContent(tmplate), "A");
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(tmplate);
 	fsm.destroy();
 	cond.destroy();
-=======
-	cjs.destroyTemplate(tmplate);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 dt("If within else", 7, function() {
 	var arr = cjs([]),
@@ -528,14 +477,10 @@ dt("If within else", 7, function() {
 	equal(getTextContent(tmplate), "nothing");
 	cond.set(false);
 	equal(getTextContent(tmplate), "");
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(tmplate);
 	arr.destroy();
 	cond.destroy();
-=======
-	cjs.destroyTemplate(tmplate);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Ternary", 5, function() {
@@ -555,13 +500,9 @@ dt("Ternary", 5, function() {
 	equal(getTextContent(tmplate), "bc");
 	cond.set(true);
 	equal(getTextContent(tmplate), "ab");
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(tmplate);
 	cond.destroy();
-=======
-	cjs.destroyTemplate(tmplate);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Templateducken", 19, function() {
@@ -614,16 +555,12 @@ dt("Templateducken", 19, function() {
 	cjs.destroyTemplate(ct2);
 	equal(destroy_count, 3, 'proper destroy count');
 	equal(sub_destroy_count, 3, 'proper subdestroy count');
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(ct2);
 	cond.destroy();
 	arr.destroy();
 	cjs.unregisterPartial("my_custom_template");
 	cjs.unregisterPartial("my_custom_sub_template");
-=======
-	cjs.destroyTemplate(ct2);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Dyn Class", 5, function() {
@@ -638,13 +575,9 @@ dt("Dyn Class", 5, function() {
 	is_active.set(false);
 	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
 	equal(getTextContent(tlate), "hi!");
-<<<<<<< HEAD
 
 	cjs.destroyTemplate(tlate);
 	is_active.destroy();
-=======
-	cjs.destroyTemplate(tlate);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 });
 
 dt("Fill Attribute", 5, function() {
@@ -661,33 +594,6 @@ dt("Fill Attribute", 5, function() {
 	equal(hasAttr(tlate, "disabled"), true);
 	is_disabled.set(false);
 	equal(hasAttr(tlate, "disabled"), false);
-<<<<<<< HEAD
-=======
-	cjs.destroyTemplate(tlate);
-});
-/*
-dt("onEvent Actions", 10, function() {
-	var x = cjs(1);
-	var change_count = 0,
-		destroy_count = 0;
-	var tlate = cjs.createTemplate("{{x onChange:changed onDestroy:destroyed}}", {
-		x: x,
-		changed: function() {
-			change_count++;
-		},
-		destroyed: function() {
-			destroy_count++;
-		}
-	});
-	equal(getTextContent(tlate), "1");
-	equal(change_count, 0);
-	x.set(2);
-	equal(getTextContent(tlate), "2");
-	equal(change_count, 1);
-	equal(destroy_count, 0);
-	cjs.destroyTemplate(tlate);
-	equal(destroy_count, 1);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 
 	cjs.destroyTemplate(tlate);
 	is_disabled.destroy();

@@ -41,21 +41,10 @@ dt("addTransition Types", 5, function() {
 
 asyncTest("cjs.on", function() {
 	expect(4);
-<<<<<<< HEAD
-=======
-	var e1 = cjs.on("timeout", 50),
-		e2 = cjs.on("timeout", 0).guard(function() {
-						return false;
-					}),
-		e3 = cjs.on("timeout", 50).guard(function() {
-						return true;
-					});
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 	var fsm = cjs	.fsm()
 					.addState("state_1")
 					.addState("state_2")
 					.startsAt("state_1")
-<<<<<<< HEAD
 					.addTransition("state_2", cjs.on("timeout", 50))
 					.addTransition("state_2", cjs.on("timeout", 0).guard(function() {
 						return false;
@@ -64,24 +53,14 @@ asyncTest("cjs.on", function() {
 					.addTransition("state_1", cjs.on("timeout", 50).guard(function() {
 						return true;
 					}));
-=======
-					.addTransition("state_2", e1)
-					.addTransition("state_2", e2)
-					.addState("state_2")
-					.addTransition("state_1", e3);
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 	ok(fsm.is("state_1"));
 	setTimeout(function() {
 		ok(fsm.is("state_2"));
 		setTimeout(function() {
 			ok(fsm.is("state_1"));
 			fsm.destroy();
-<<<<<<< HEAD
 			fsm = null;
 			take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
-=======
-			take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM"], function(response) {
->>>>>>> 9079dbc37102b20afbab5ce0d6df958bd76d67b1
 				ok(!response.illegal_strs, "Make sure nothing was allocated");
 				start();
 			});
