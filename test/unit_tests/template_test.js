@@ -268,8 +268,8 @@ dt("Nested Templates", 2, function() {
 	cjs.unregisterPartial("hello");
 });
 
-dt("Custom Partials", 7, function() {
-	var add_count = 0, remove_count = 0, a = cjs(1);
+dt("Custom Partials", 8, function() {
+	var add_count = 0, remove_count = 0, destroy_count=0, a = cjs(1);
 
 	cjs.registerCustomPartial("my_custom_partial", {
 		createNode: function(arg) {
@@ -281,6 +281,9 @@ dt("Custom Partials", 7, function() {
 		},
 		onRemove: function() {
 			remove_count++;
+		},
+		destroyNode: function() {
+			destroy_count++;
 		}
 	});
 	var is_showing = cjs(true);
@@ -303,6 +306,7 @@ dt("Custom Partials", 7, function() {
 	is_showing.destroy();
 	a.destroy();
 	cjs.unregisterPartial("my_custom_partial");
+	equal(destroy_count, 1);
 });
 
 dt("Template Comments", 2, function() {
