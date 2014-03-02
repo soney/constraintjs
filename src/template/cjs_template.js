@@ -994,12 +994,13 @@ extend(cjs, {
 	 * @param {string} str - The string to parse
 	 * @param {object} context - The context in which to look for variables
 	 * @return {cjs.Cosntraint} - Whether the template was successfully resumed
-	 * @example
-	 * var a = cjs(1);
-	 * var x = cjs.createParsedConstraint("a+b", {a: a, b: cjs(2)})
-	 * x.get(); // 3
-	 * a.set(2);
-	 * x.get(); // 4
+	 * @example Creating a parsed constraint `x`
+	 *
+	 *     var a = cjs(1);
+	 *     var x = cjs.createParsedConstraint("a+b", {a: a, b: cjs(2)})
+	 *     x.get(); // 3
+	 *     a.set(2);
+	 *     x.get(); // 4
 	 */
 	createParsedConstraint: function(str, context) {
 		var node = jsep(str);
