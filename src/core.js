@@ -146,7 +146,9 @@ var constraint_solver = {
 			}
 		}
 
+		// This node is waiting for an asyncronous value
 		if(node._paused_info) {
+			// So return its temporary value until then
 			return node._paused_info.temporaryValue;
 		} else if (!node._valid) {
 			// If the node's cached value is invalid...
@@ -165,14 +167,21 @@ var constraint_solver = {
 				node._cached_value = node._options.literal ? node._value :
 											(isFunction(node._value) ? node._value.call(node._options.context || node, node) :
 																		cjs.get(node._value));
-				if(constraint_solver._paused_node && constraint_solver._paused_node.node === node) {
-					node._paused_info = constraint_solver._paused_node;
-					delete constraint_solver._paused_node;
-				}
 
+				// The node paused as if this was going to be an asyncronous value but it ended up being syncronous.
+				// Use that to set the value
 				if(node._sync_value) {
 					node._cached_value = node._sync_value.value;
 					delete node._sync_value;
+				} else if(constraint_solver._paused_node && constraint_solver._paused_node.node === node) {
+					// The node said it would have an asyncronous value and it did
+					// Save the paused information to the node and remove it from the constraint solver
+					node._paused_info = constraint_solver._paused_node;
+					delete constraint_solver._paused_node;
+					//Restore the stack to avoid adding a self-dependency
+					stack.length = stack_len;
+					// And return the temporary value
+					return node._paused_info.temporaryValue;
 				}
 			} else if(isFunction(node._value)) {
 				// if it's just a non-cached function call, just call the function
@@ -186,27 +195,27 @@ var constraint_solver = {
 		return node._cached_value;
 	},
 
+	// Called when a constraint's getter is paused
 	pauseNodeGetter: function(temporaryValue) {
 		constraint_solver._paused_node = {
 			temporaryValue: temporaryValue,
 			node: this
 		};
 	},
+	// Called when a constraint's getter is resumed
 	resumeNodeGetter: function(value) {
-		var node = this,
-			old_stack = constraint_solver.stack,
-			outgoingEdges = node._outEdges,
-			toNullify = map(outgoingEdges, function(edge) {
-				return edge.to;
-			});
+		var node = this, old_stack;
 
+		// Hey! The node said its value would be asyncronous but it ended up being syncronous
+		// We know because, it paused and then resumed before the constraint solver's paused node information could even
+		// be removed.
 		if(constraint_solver._paused_node && constraint_solver._paused_node.node === node) {
 			delete constraint_solver._paused_node;
-			node._sync_value = {
-				value: value
-			};
-			return;
+			node._sync_value = { value: value };
 		} else {
+			// Nullify every dependent node and update this node's cached value
+			old_stack = constraint_solver.stack;
+
 			delete node._paused_info;
 			node._tstamp++;
 			node._valid = true;
@@ -224,7 +233,9 @@ var constraint_solver = {
 				value.call(node._options.context);
 			}
 
-			constraint_solver.nullify.apply(constraint_solver, toNullify);
+			constraint_solver.nullify.apply(constraint_solver, map(node._outEdges, function(edge) {
+				return edge.to;
+			}));
 			constraint_solver.stack = old_stack;
 		}
 	},
@@ -240,8 +251,8 @@ var constraint_solver = {
 		// the bottom of this function
 		var i, outgoingEdges, toNodeID, invalid, curr_node, equals, old_value, new_value, changeListeners,
 			to_nullify = toArray(arguments),
-			to_nullify_len = 1,
-			is_root = !this._is_nullifying;
+			to_nullify_len = to_nullify.length,
+			is_root = !this._is_nullifying,curr_node_id;
 
 		if (is_root) {
 			// This variable is used to track `is_root` for any potential future calls
@@ -283,6 +294,7 @@ var constraint_solver = {
 
 					// Then, get every outgoing edge and add it to the nullify queue
 					outgoingEdges = curr_node._outEdges;
+					curr_node_id = curr_node._id;
 					for (toNodeID in outgoingEdges) {
 						if (has(outgoingEdges, toNodeID)) {
 							var outgoingEdge = outgoingEdges[toNodeID];
@@ -292,7 +304,7 @@ var constraint_solver = {
 							// any more and remove it
 							if (outgoingEdge.tstamp < dependentNode._tstamp) {
 								delete curr_node._outEdges[toNodeID];
-								delete dependentNode._inEdges[node._id];
+								delete dependentNode._inEdges[curr_node_id];
 							} else {
 								// But if the dependency still is being used, then add it to the nullification
 								// queue
@@ -679,8 +691,31 @@ Constraint = function (value, options) {
 		return this;
 	};
 
-	proto.pauseGetter  = function () { return constraint_solver.pauseNodeGetter.apply(this, arguments); };
-	proto.resumeGetter = function () { return constraint_solver.resumeNodeGetter.apply(this, arguments); };
+	/**
+	 * Signal that this constraint's value will be computed later. For instance, for asyncronous values.
+	 *
+	 * @method pauseGetter
+	 * @param {*} temporaryValue - The temporary value to use for this node until it is resumed
+	 * @return {cjs.Constraint} - `this`
+	 * @see resumeGetter
+	 */
+	proto.pauseGetter  = function () {
+		constraint_solver.pauseNodeGetter.apply(this, arguments);
+		return this;
+	};
+	/**
+	 * Signal that this Constraint, which has been paused with `pauseGetter` now has a value.
+	 *
+	 * @method resumeGetter
+	 * @param {*} value - This node's value
+	 * @return {cjs.Constraint} - `this`
+	 * @see pauseGetter
+	 *
+	 */
+	proto.resumeGetter = function () {
+		constraint_solver.resumeNodeGetter.apply(this, arguments);
+		return this;
+	};
 
 	/**
 	 * Call `callback` as soon as this constraint's value is invalidated. Note that if the constraint's value

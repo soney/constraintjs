@@ -151,3 +151,82 @@ dt("Parsed Constraints", 2, function() {
 	 a.set(2);
 	 equal(x.get(), 4);
 });
+
+dt("Parsed Constraints", 2, function() {
+	 var a = cjs(1);
+	 var x = cjs.createParsedConstraint("a+b", {a: a, b: cjs(2)})
+	 equal(x.get(), 3);
+	 a.set(2);
+	 equal(x.get(), 4);
+});
+
+dt("Pause Syncronous Getter", 5, function() {
+	var eval_count = 0;
+	var a = cjs(function(node) {
+		node.pauseGetter(1);
+		node.resumeGetter(10);
+	});
+	var live_fn = cjs.liven(function() {
+		eval_count++;
+		a.get();
+	});
+	var b = a.add(1);
+	equal(eval_count, 1);
+	equal(a.get(), 10);
+	equal(eval_count, 1);
+	equal(b.get(), 11);
+	equal(eval_count, 1);
+
+	a.destroy();
+	b.destroy();
+	live_fn.destroy();
+});
+dtAsync("Pause Asyncronous Getter", 25, function(ready_callback) {
+	var x = 0;
+	var a = cjs(function(node) {
+		node.pauseGetter(1);
+		x++;
+		setTimeout(function() {
+			x++;
+			node.resumeGetter(10);
+		}, 50);
+	});
+	equal(x, 0);
+	var b = a.add(1);
+	equal(a.get(), 1);
+	equal(x, 1);
+	equal(b.get(), 2);
+	equal(x, 1);
+
+	setTimeout(function() {
+		equal(x, 1); 
+		equal(a.get(), 1);
+		equal(x, 1); 
+		equal(b.get(), 2);
+		equal(x, 1); 
+	}, 25);
+	setTimeout(function() {
+		equal(x, 2); 
+		equal(a.get(), 10);
+		equal(x, 2); 
+		equal(b.get(), 11);
+		equal(x, 2); 
+	}, 100);
+	setTimeout(function() {
+		equal(x, 2); 
+		equal(a.get(), 10);
+		equal(x, 2); 
+		equal(b.get(), 11);
+		equal(x, 2); 
+	}, 150);
+	setTimeout(function() {
+		equal(x, 2); 
+		equal(a.get(), 10);
+		equal(x, 2); 
+		equal(b.get(), 11);
+		equal(x, 2); 
+		a.destroy();
+		b.destroy();
+		ready_callback();
+	}, 200);
+});

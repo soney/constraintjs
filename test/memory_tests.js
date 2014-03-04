@@ -71,4 +71,18 @@
 			});
 		});
 	};
+
+	root.dtAsync = function(name, num_tests, callback) {
+		asyncTest(name, function() {
+			expect(num_tests + 1);
+			callback(function() {
+				take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
+					var message = response.illegal_strs ? "Found " + response.illegal_strs + " allocated." :
+															"Nothing was allocated " + (response.checked===false ? "(did not check)" : "(checked)");
+					ok(!response.illegal_strs, message);
+					start();
+				});
+			});
+		});
+	};
 }(this));
