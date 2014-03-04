@@ -27,6 +27,7 @@ var slice         = ArrayProto.slice,
 // are declared here.
 var nativeSome    = ArrayProto.some,
 	nativeIndexOf = ArrayProto.indexOf,
+	nativeLastIndexOf = ArrayProto.lastIndexOf,
 	nativeEvery   = ArrayProto.every,
 	nativeForEach = ArrayProto.forEach,
 	nativeKeys    = Object.keys,
@@ -333,25 +334,39 @@ var extend = function (obj) {
 	
 // Return the first item in arr where test is true
 var indexWhere = function (arr, test, start_index) {
-	var i, len = arr.length;
-	for (i = start_index || 0; i < len; i++) {
-		if (test(arr[i], i)) { return i; }
-	}
-	return -1;
-};
+		var i, len = arr.length;
+		for (i = start_index || 0; i < len; i++) {
+			if (test(arr[i], i)) { return i; }
+		}
+		return -1;
+	},
+	lastIndexWhere = function(arr, test) {
+		var i, len = arr.length;
+		for (i = len-1; i >= 0; i--) {
+			if (test(arr[i], i)) { return i; }
+		}
+		return -1;
+	};
 
 // The default equality check function
 var eqeqeq = function (a, b) { return a === b; };
 
 // Return the first item in arr equal to item (where equality is defined in equality_check)
 var indexOf = function (arr, item, start_index, equality_check) {
-	if(!equality_check && !start_index && nativeIndexOf && arr.indexOf === nativeIndexOf) {
-		return arr.indexOf(item);
-	} else {
-		equality_check = equality_check || eqeqeq;
-		return indexWhere(arr, function (x) { return equality_check(item, x); }, start_index);
-	}
-};
+		if(!equality_check && !start_index && nativeIndexOf && arr.indexOf === nativeIndexOf) {
+			return arr.indexOf(item);
+		} else {
+			equality_check = equality_check || eqeqeq;
+			return indexWhere(arr, function (x) { return equality_check(item, x); }, start_index);
+		}
+	}, lastIndexOf = function(arr, item, equality_check) {
+		if(nativeLastIndexOf && arr.lastIndexOf === nativeLastIndexOf) {
+			return arr.lastIndexOf(item);
+		} else {
+			equality_check = equality_check || eqeqeq;
+			return lastIndexWhere(arr, function (x) { return equality_check(item, x); });
+		}
+	};
 	
 // Remove an item in an array
 var remove = function (arr, obj) {
@@ -776,15 +791,18 @@ var constraint_solver = {
 			}
 		}
 
-		// If the node's cached value is invalid...
-		if (!node._valid) {
-			// Push node onto the stack to make it clear that it's being fetched
-			stack[stack_len] = node;
-			// Mark it as valid
-			node._valid = true;
-
+		if(node._paused_info) {
+			return node._paused_info.temporaryValue;
+		} else if (!node._valid) {
+			// If the node's cached value is invalid...
 			// Set the timestamp before fetching in case a constraint depends on itself
 			node._tstamp++;
+
+			// Push node onto the stack to make it clear that it's being fetched
+			stack[stack_len] = node;
+
+			// Mark it as valid
+			node._valid = true;
 
 			if (node._options.cache_value !== false) {
 				// Check if dynamic value. If it is, then call it. If not, just fetch it
@@ -792,15 +810,68 @@ var constraint_solver = {
 				node._cached_value = node._options.literal ? node._value :
 											(isFunction(node._value) ? node._value.call(node._options.context || node, node) :
 																		cjs.get(node._value));
+				if(constraint_solver._paused_node && constraint_solver._paused_node.node === node) {
+					node._paused_info = constraint_solver._paused_node;
+					delete constraint_solver._paused_node;
+				}
+
+				if(node._sync_value) {
+					node._cached_value = node._sync_value.value;
+					delete node._sync_value;
+				}
 			} else if(isFunction(node._value)) {
 				// if it's just a non-cached function call, just call the function
 				node._value.call(node._options.context);
 			}
+
 			// Pop the item off the stack
 			stack.length = stack_len;
 		}
 
 		return node._cached_value;
+	},
+
+	pauseNodeGetter: function(temporaryValue) {
+		constraint_solver._paused_node = {
+			temporaryValue: temporaryValue,
+			node: this
+		};
+	},
+	resumeNodeGetter: function(value) {
+		var node = this,
+			old_stack = constraint_solver.stack,
+			outgoingEdges = node._outEdges,
+			toNullify = map(outgoingEdges, function(edge) {
+				return edge.to;
+			});
+
+		if(constraint_solver._paused_node && constraint_solver._paused_node.node === node) {
+			delete constraint_solver._paused_node;
+			node._sync_value = {
+				value: value
+			};
+			return;
+		} else {
+			delete node._paused_info;
+			node._tstamp++;
+			node._valid = true;
+
+			constraint_solver.stack = [node];
+
+			if (node._options.cache_value !== false) {
+				// Check if dynamic value. If it is, then call it. If not, just fetch it
+				// set this to the node's cached value, which will be returned
+				node._cached_value = node._options.literal ? value :
+											(isFunction(value) ? value.call(node._options.context || node, node) :
+																		cjs.get(value));
+			} else if(isFunction(node._value)) {
+				// if it's just a non-cached function call, just call the function
+				value.call(node._options.context);
+			}
+
+			constraint_solver.nullify.apply(constraint_solver, toNullify);
+			constraint_solver.stack = old_stack;
+		}
 	},
 	
 	// Utility function to mark a listener as being in the call stack. `this` refers to the constraint node here
@@ -808,12 +879,12 @@ var constraint_solver = {
 		nl.in_call_stack++;
 		nl.node._num_listeners_in_call_stack++;
 	},
-	nullify: function(node) {
+	nullify: function() {
 		// Unfortunately, running nullification listeners can, in some cases cause nullify to be indirectly called by itself
 		// (as in while running `nullify`). The variable is_root will prevent another call to `run_nullification_listeners` at
 		// the bottom of this function
 		var i, outgoingEdges, toNodeID, invalid, curr_node, equals, old_value, new_value, changeListeners,
-			to_nullify = [node],
+			to_nullify = toArray(arguments),
 			to_nullify_len = 1,
 			is_root = !this._is_nullifying;
 
@@ -1252,6 +1323,9 @@ Constraint = function (value, options) {
 		this._changeListeners = [];
 		return this;
 	};
+
+	proto.pauseGetter  = function () { return constraint_solver.pauseNodeGetter.apply(this, arguments); };
+	proto.resumeGetter = function () { return constraint_solver.resumeNodeGetter.apply(this, arguments); };
 
 	/**
 	 * Call `callback` as soon as this constraint's value is invalidated. Note that if the constraint's value

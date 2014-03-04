@@ -18,6 +18,7 @@ var slice         = ArrayProto.slice,
 // are declared here.
 var nativeSome    = ArrayProto.some,
 	nativeIndexOf = ArrayProto.indexOf,
+	nativeLastIndexOf = ArrayProto.lastIndexOf,
 	nativeEvery   = ArrayProto.every,
 	nativeForEach = ArrayProto.forEach,
 	nativeKeys    = Object.keys,
@@ -324,25 +325,39 @@ var extend = function (obj) {
 	
 // Return the first item in arr where test is true
 var indexWhere = function (arr, test, start_index) {
-	var i, len = arr.length;
-	for (i = start_index || 0; i < len; i++) {
-		if (test(arr[i], i)) { return i; }
-	}
-	return -1;
-};
+		var i, len = arr.length;
+		for (i = start_index || 0; i < len; i++) {
+			if (test(arr[i], i)) { return i; }
+		}
+		return -1;
+	},
+	lastIndexWhere = function(arr, test) {
+		var i, len = arr.length;
+		for (i = len-1; i >= 0; i--) {
+			if (test(arr[i], i)) { return i; }
+		}
+		return -1;
+	};
 
 // The default equality check function
 var eqeqeq = function (a, b) { return a === b; };
 
 // Return the first item in arr equal to item (where equality is defined in equality_check)
 var indexOf = function (arr, item, start_index, equality_check) {
-	if(!equality_check && !start_index && nativeIndexOf && arr.indexOf === nativeIndexOf) {
-		return arr.indexOf(item);
-	} else {
-		equality_check = equality_check || eqeqeq;
-		return indexWhere(arr, function (x) { return equality_check(item, x); }, start_index);
-	}
-};
+		if(!equality_check && !start_index && nativeIndexOf && arr.indexOf === nativeIndexOf) {
+			return arr.indexOf(item);
+		} else {
+			equality_check = equality_check || eqeqeq;
+			return indexWhere(arr, function (x) { return equality_check(item, x); }, start_index);
+		}
+	}, lastIndexOf = function(arr, item, equality_check) {
+		if(nativeLastIndexOf && arr.lastIndexOf === nativeLastIndexOf) {
+			return arr.lastIndexOf(item);
+		} else {
+			equality_check = equality_check || eqeqeq;
+			return lastIndexWhere(arr, function (x) { return equality_check(item, x); });
+		}
+	};
 	
 // Remove an item in an array
 var remove = function (arr, obj) {
