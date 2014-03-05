@@ -364,6 +364,9 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 									x.is_obj = IS_OBJ;
 								});
 							} else {
+								if(is_constraint(arr_val)) {
+									arr_val = arr_val.get();
+								}
 								// IS_OBJ provides a way to ensure the user didn't happen to pass in a similarly formatted array
 								arr_val = map(arr_val, function(v, k) { return { key: k, value: v, is_obj: IS_OBJ }; });
 							}
@@ -457,7 +460,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					},
 					getNodes: function() {
 						var len = template.sub_conditions.length,
-							cond = !!get_node_value(template.condition, context, lineage),
+							cond = !!cjs.get(get_node_value(template.condition, context, lineage)),
 							i, children = false, memo_index, rv;
 
 						if(template.reverse) {
