@@ -6162,7 +6162,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					bindings.push((context[value] = getInputValueConstraint(element)));
 				} else if((on_regex_match = name.match(on_regex))) {
 					var event_name = on_regex_match[2];
-					aEL(element, event_name, context[value]);
+					aEL(element, event_name, bind(context[value], cjs.get(last(lineage).this_exp)));
 				} else {
 					var constraint = get_constraint(value, context, lineage);
 					if(is_constraint(constraint)) {
