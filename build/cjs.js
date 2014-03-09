@@ -6167,9 +6167,13 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 					var constraint = get_constraint(value, context, lineage);
 					if(is_constraint(constraint)) {
 						if(attr.name === "class") {
-							bindings.push(class_binding(element, constraint));
+							var class_constraint = cjs(function() {
+								var cval = constraint.get();
+								return cval.split(" ");
+							});
+							bindings.push(constraint, class_constraint, class_binding(element, class_constraint));
 						} else {
-							bindings.push(attr_binding(element, name, constraint));
+							bindings.push(constraint, attr_binding(element, name, constraint));
 						}
 					} else {
 						element.setAttribute(attr.name, constraint);

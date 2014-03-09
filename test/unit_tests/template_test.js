@@ -99,7 +99,7 @@ dt("Attributes", 4, function() {
 	var t2 = cjs.createTemplate("<span class='{{x}} {{y}} another_class'>yo</span>", {x: the_class, y: second_class});
 	equal(t2.className, "classX class2 another_class");
 	second_class.set("classY");
-	equal(t2.className, "classX classY another_class");
+	equal(t2.className, "classX another_class classY");
 
 	cjs.destroyTemplate(t1);
 	cjs.destroyTemplate(t2);
@@ -565,16 +565,17 @@ dt("Templateducken", 19, function() {
 
 dt("Dyn Class", 5, function() {
 	var is_active = cjs(false);
-	var tlate = cjs.createTemplate("<div class='class1 {class2 {{is_active ? \"active\" : \"inactive\"}}'>hi!</div>", {
+	var tlate = cjs.createTemplate("<div class='class1 {class2 {{is_active ? \"active\" : \"\"}}'>hi!</div>", {
 		is_active: is_active
 	});
 	equal(getTextContent(tlate), "hi!");
-	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
+	equal(tlate.className || tlate['class'], "class1 {class2");
 	is_active.set(true);
 	equal(tlate.className || tlate['class'], "class1 {class2 active");
 	is_active.set(false);
-	equal(tlate.className || tlate['class'], "class1 {class2 inactive");
+	equal(tlate.className || tlate['class'], "class1 {class2");
 	equal(getTextContent(tlate), "hi!");
+	console.log(tlate.className);
 
 	cjs.destroyTemplate(tlate);
 	is_active.destroy();
