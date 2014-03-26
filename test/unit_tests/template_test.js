@@ -575,7 +575,6 @@ dt("Dyn Class", 5, function() {
 	is_active.set(false);
 	equal(tlate.className || tlate['class'], "class1 {class2");
 	equal(getTextContent(tlate), "hi!");
-	console.log(tlate.className);
 
 	cjs.destroyTemplate(tlate);
 	is_active.destroy();

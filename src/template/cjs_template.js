@@ -381,6 +381,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						var diff = get_array_diff(old_arr_val, arr_val, map_aware_array_eq),
 							rv = [],
 							added_nodes = [], removed_nodes = [];
+						old_arr_val = arr_val;
 						each(diff.index_changed, function(ic_info) {
 							var lastLineageItem = lastLineages[ic_info.from];
 							if(lastLineageItem && lastLineageItem.at && lastLineageItem.at.index) {
@@ -428,9 +429,6 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 							removeIndex(lastLineages, from_index);
 							lastLineages.splice(to_index, 0, lastLineageItem);
 						});
-
-
-						old_arr_val = arr_val;
 
 						onremove_each(removed_nodes);
 						destroy_each(removed_nodes);
