@@ -895,7 +895,7 @@ var constraint_solver = {
 		// (as in while running `nullify`). The variable is_root will prevent another call to `run_nullification_listeners` at
 		// the bottom of this function
 		var i, outgoingEdges, toNodeID, invalid, curr_node, equals, old_value, new_value, changeListeners,
-			to_nullify = toArray(arguments),
+			to_nullify = slice.call(arguments),
 			to_nullify_len = to_nullify.length,
 			is_root = !this._is_nullifying,curr_node_id;
 
@@ -4121,7 +4121,7 @@ extend(cjs, {
 
 		// When getting a value either create a constraint or return the existing value
 		var rv = function () {
-			var args = toArray(arguments),
+			var args = slice.call(arguments),
 				constraint = args_map.getOrPut(args, function() {
 					return new Constraint(function () {
 						return getter_fn.apply(options.context, args);

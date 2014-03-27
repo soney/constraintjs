@@ -74,7 +74,7 @@ extend(cjs, {
 
 		// When getting a value either create a constraint or return the existing value
 		var rv = function () {
-			var args = toArray(arguments),
+			var args = slice.call(arguments),
 				constraint = args_map.getOrPut(args, function() {
 					return new Constraint(function () {
 						return getter_fn.apply(options.context, args);
