@@ -10,7 +10,8 @@
 
 	"content_scripts": [
 		{
-			"matches": ["*://*/*", "file://*/*", "http://localhost:8000/test/unit_tests/unit_tests.ejs.html*"],
+			"matches": ["*://*/*", "file://*/*", "http://localhost:8000/test/unit_tests/unit_tests.ejs.html*",
+				"http://localhost:8000/test/performance_tests.ejs.html*"],
 			"js": ["content_script.js"],
 			"run_at": "document_start"
 		}
@@ -20,6 +21,7 @@
 		"tabs",
 		"*://*/*",
 		"http://localhost:8000/test/unit_tests/unit_tests.ejs.html*",
+		"http://localhost:8000/test/performance_tests.ejs.html",
 		"debugger"
 	]
 }

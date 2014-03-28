@@ -112,7 +112,25 @@ chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
 					});
 				});
 			});
+		} else if(command === "start_profiler") {
+			var debuggerId = {tabId: sender.tab.id};
+			console.log("Attached to tab with id " + sender.tab.id);
+			chrome.debugger.attach(debuggerId, "1.0", function() {
+				if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError); return; }
+				var listener = function(source, method, params) {
+				};
+				chrome.debugger.onEvent.addListener(listener);
+				chrome.debugger.sendCommand(debuggerId, "CpuProfiler.startProfiling", { title: request.name }, function() {
+					console.log(arguments);
+					chrome.debugger.onEvent.removeListener(listener);
+					chrome.debugger.detach(debuggerId, function() {
+						if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);}
+						sendResponse({});
+					});
+				});
+			});
 		} else if(command === "ping") {
+			console.log(command);
 			var debuggerId = {tabId: sender.tab.id};
 
 			chrome.debugger.attach(debuggerId, "1.0", function() {
