@@ -3324,7 +3324,7 @@ MapConstraint = function (options) {
 	 *     map.remove("x");
 	 *     map.keys(); // ['y']
 	 */
-	proto.remove = function (key) {
+	proto.remove = function (key, silent) {
 		// Find out if there's an actual key set
 		var ki = _find_key.call(this, key, false, false),
 			key_index = ki.i,
@@ -3362,16 +3362,18 @@ MapConstraint = function (options) {
 				}
 			}
 
-			_remove_index.call(this, ordered_index); // remove ordered_index (splices the ordered array)
+			_remove_index.call(this, ordered_index, silent); // remove ordered_index (splices the ordered array)
 			for (i = ordered_index; i < this._ordered_values.length; i += 1) {
 				_set_index(this._ordered_values[i], i); // and update the index for every item
 			}
 
 			// And now all of these constraint variables are invalid.
-			this.$size.invalidate();
-			this.$keys.invalidate();
-			this.$values.invalidate();
-			this.$entries.invalidate();
+			if(!silent) {
+				this.$size.invalidate();
+				this.$keys.invalidate();
+				this.$values.invalidate();
+				this.$entries.invalidate();
+			}
 
 			// OK, now you can run any nullified listeners
 			cjs.signal();
