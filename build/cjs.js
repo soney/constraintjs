@@ -4115,7 +4115,7 @@ extend(cjs, {
 		}, options);
 
 		// Map from args to value
-		var args_map = new MapConstraint({
+		options.args_map = new MapConstraint({
 			hash: options.hash,
 			equals: options.equals,
 			literal_values: options.literal_values
@@ -4124,7 +4124,7 @@ extend(cjs, {
 		// When getting a value either create a constraint or return the existing value
 		var rv = function () {
 			var args = slice.call(arguments),
-				constraint = args_map.getOrPut(args, function() {
+				constraint = options.args_map.getOrPut(args, function() {
 					return new Constraint(function () {
 						return getter_fn.apply(options.context, args);
 					});
@@ -4134,16 +4134,17 @@ extend(cjs, {
 
 		// Clean up memory after self
 		rv.destroy = function (silent) {
-			args_map.forEach(function (constraint) {
+			options.args_map.forEach(function (constraint) {
 				constraint.destroy(silent);
 			});
-			args_map.destroy(silent);
+			options.args_map.destroy(silent);
 		};
 
 		// Run through every argument and call fn on it
 		rv.each = function (fn) {
-			args_map.forEach(fn);
+			options.args_map.forEach(fn);
 		};
+		rv.options = options;
 		return rv;
 	}
 });
