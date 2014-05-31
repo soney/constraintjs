@@ -50,6 +50,10 @@ extend(cjs, {
 				var paused = false;
 				var do_get;
 
+				var invalidate = function() {
+					node.invalidate();
+				};
+
 				// Destroy the node and make sure no memory is allocated
 				var destroy = function (silent) {
 					if(options.on_destroy) {
@@ -100,6 +104,7 @@ extend(cjs, {
 						do_get(arg0);
 						return this;
 					},
+					invalidate: invalidate,
 					_constraint: node // for debugging purposes
 				};
 				return rv;
