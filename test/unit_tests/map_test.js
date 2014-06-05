@@ -122,3 +122,19 @@ dt("Item values are constraints", 5, function() {
 	ma.destroy();
 	m = ma = null;
 });
+
+dt("Maps and maps and maps", 2, function() {
+	var m = cjs({})
+		sub_m = cjs({}),
+		sub_m_2 = {};
+	m.put("sub", sub_m);
+	m.put("sub2", sub_m_2);
+	equal(m.get("sub"), sub_m);
+	equal(m.get("sub2"), sub_m_2);
+
+	sub_m.put("x", 1);
+
+	m.destroy();
+	sub_m.destroy();
+	m = sub_m = null;
+});
