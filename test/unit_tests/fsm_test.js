@@ -144,3 +144,13 @@ dt("FSM on", 42, function() {
 
 	fsm.destroy();
 });
+
+dt("FSM startsAt bug", 2, function() {
+	var fsm = cjs	.fsm()
+					.addState("state_1");
+	ok(fsm.is("state_1"));
+	fsm.startsAt("state_2");
+	ok(fsm.is("state_2"));
+
+	fsm.destroy();
+});

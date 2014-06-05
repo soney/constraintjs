@@ -470,8 +470,8 @@ var FSM = function() {
 	 * @return {FSM} - `this`
 	 * @example
 	 *
-	 *     var x = cjs.fsm("a", "b");
-	 *     x.addTransition("a", "b", cjs.on("click"));
+	 *     var my_fsm = cjs.fsm("state_a", "state_b");
+	 *     my_fsm.startsAt("state_b");
 	 */
 	proto.startsAt = function(state_name) {
 		var state = getStateWithName(this, state_name); // Get existing state
@@ -482,6 +482,7 @@ var FSM = function() {
 		if(!this.did_transition) {
 			// If no transitions have occurred, set the current state to the one they specified
 			this._curr_state = state;
+			this.state.invalidate();
 		}
 		this._chain_state = state;
 		return this;
@@ -495,8 +496,8 @@ var FSM = function() {
 	 * @return {boolean} - `true` if the name of the active state is `state_name`. `false` otherwise
 	 * @example
 	 *
-	 *     var x = cjs.fsm("a", "b");
-	 *     fsm.is("a"); // true, because a is the starting state
+	 *     var my_fsm = cjs.fsm("a", "b");
+	 *     my_fsm.is("a"); // true, because a is the starting state
 	 */
 	proto.is = function(state_name) {
 		// get the current state name & compare
