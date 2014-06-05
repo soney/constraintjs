@@ -99,6 +99,9 @@ var Constraint, // Declare here, will be defined later
 		} else {
 			return new Constraint(arg0, arg1);
 		}
+	},
+	get_constraint_val = function(x) {
+		return is_constraint(x) ? x.get() : x;
 	};
 
 // Constraint Solver
@@ -166,7 +169,7 @@ var constraint_solver = {
 				// set this to the node's cached value, which will be returned
 				node._cached_value = node._options.literal ? node._value :
 											(isFunction(node._value) ? node._value.call(node._options.context || node, node) :
-																		cjs.get(node._value));
+																		get_constraint_val(node._value));
 
 				// The node paused as if this was going to be an asyncronous value but it ended up being syncronous.
 				// Use that to set the value
@@ -546,7 +549,7 @@ Constraint = function (value, options) {
 		this._value = value;
 
 		// If it's a value
-		if (this._options.literal || !isFunction(value)) {
+		if (this._options.literal || (!isFunction(value) && !is_constraint(value))) {
 			// Then use the specified equality check
 			var equality_check = this._options.equal || eqeqeq;
 			if(!equality_check(old_value, value)) {

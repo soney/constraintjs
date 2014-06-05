@@ -744,6 +744,9 @@ var Constraint, // Declare here, will be defined later
 		} else {
 			return new Constraint(arg0, arg1);
 		}
+	},
+	get_constraint_val = function(x) {
+		return is_constraint(x) ? x.get() : x;
 	};
 
 // Constraint Solver
@@ -811,7 +814,7 @@ var constraint_solver = {
 				// set this to the node's cached value, which will be returned
 				node._cached_value = node._options.literal ? node._value :
 											(isFunction(node._value) ? node._value.call(node._options.context || node, node) :
-																		cjs.get(node._value));
+																		get_constraint_val(node._value));
 
 				// The node paused as if this was going to be an asyncronous value but it ended up being syncronous.
 				// Use that to set the value
@@ -1191,7 +1194,7 @@ Constraint = function (value, options) {
 		this._value = value;
 
 		// If it's a value
-		if (this._options.literal || !isFunction(value)) {
+		if (this._options.literal || (!isFunction(value) && !is_constraint(value))) {
 			// Then use the specified equality check
 			var equality_check = this._options.equal || eqeqeq;
 			if(!equality_check(old_value, value)) {
@@ -3004,7 +3007,7 @@ MapConstraint = function (options) {
 	/** @lends cjs.MapConstraint.prototype */
 
 	// Utility function to return information about a key
-	var _find_key = function (key, fetch_unsubstantiated, create_unsubstantiated) {
+	var _find_key = function (key, fetch_unsubstantiated, create_unsubstantiated, literal) {
 		// Get the hash
 		var hash = this._hash(key),
 			rv = {
@@ -3032,8 +3035,9 @@ MapConstraint = function (options) {
 		// Haven't returned yet, so we didn't find the entry. Look for an unsubstantiated
 		// value instead.
 		if (fetch_unsubstantiated !== false) { //Not found
-			var unsubstantiated_values = this._unsubstantiated_values[hash];
-			var unsubstantiated_index = -1;
+			var unsubstantiated_values = this._unsubstantiated_values[hash],
+				unsubstantiated_index = -1;
+
 			if (unsubstantiated_values) {
 				rv.uhv = unsubstantiated_values;
 				unsubstantiated_index = indexWhere(unsubstantiated_values, index_where_fn);
@@ -3046,12 +3050,12 @@ MapConstraint = function (options) {
 			// We haven't returned yet, so we didn't find an unsubstantiated value either
 			// Check to see if we should create one.
 			if(create_unsubstantiated === true) {
-				var is_literal = this._default_literal_values;
-				var unsubstantiated_info = {
-					key: new Constraint(key, {literal: true}),
-					value: new Constraint(undefined, {literal: is_literal}), // will be undefined
-					index: new Constraint(-1, {literal: true}) // with a negative index
-				};
+				var is_literal = this._default_literal_values,
+					unsubstantiated_info = {
+						key: new Constraint(key, {literal: true}),
+						value: new Constraint(undefined,  {literal: literal === undefined ? this._default_literal_values : !!literal}), // will be undefined
+						index: new Constraint(-1, {literal: true}) // with a negative index
+					};
 
 				if(unsubstantiated_values) { // The hash was found but not the particular value
 					// Add it onto the end
@@ -3302,7 +3306,7 @@ MapConstraint = function (options) {
 	proto.put = function (key, value, index, literal) {
 		cjs.wait();
 		// Find out if there's a key or unsubstantiated info but don't create it
-		var ki = _find_key.call(this, key, true, false);
+		var ki = _find_key.call(this, key, true, false, literal);
 		// And do the work of putting
 		_do_set_item_ki.call(this, ki, key, value, index, literal);
 		cjs.signal();
@@ -3715,7 +3719,7 @@ MapConstraint = function (options) {
 	 *     // 3
 	 */
 	proto.getOrPut = function (key, create_fn, create_fn_context, index, literal) {
-		var ki = _find_key.call(this, key, true, false),
+		var ki = _find_key.call(this, key, true, false, literal),
 			key_index = ki.i, // index within hash array
 			hash_values = ki.hv, // hash array
 			hash = ki.h, // hash value

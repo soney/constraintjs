@@ -123,18 +123,39 @@ dt("Item values are constraints", 5, function() {
 	m = ma = null;
 });
 
-dt("Maps and maps and maps", 2, function() {
+dt("Maps and maps and maps", 4, function() {
 	var m = cjs({})
 		sub_m = cjs({}),
-		sub_m_2 = {};
+		sub_m_2 = cjs({}),
+		sub_m_3 = {};
+
+	ok(!m.has("sub"));
 	m.put("sub", sub_m);
 	m.put("sub2", sub_m_2);
+	m.put("sub3", sub_m_3);
 	equal(m.get("sub"), sub_m);
 	equal(m.get("sub2"), sub_m_2);
+	equal(m.get("sub3"), sub_m_3);
 
 	sub_m.put("x", 1);
 
 	m.destroy();
 	sub_m.destroy();
-	m = sub_m = null;
+	sub_m_2.destroy();
+	m = sub_m = sub_m_2 = sub_m_3 = null;
+});
+
+dt("Constraints whose value is a map", 1, function() {
+	var m = cjs({}),
+		//x = new cjs.Constraint(m),
+		y = new cjs.Constraint();
+	
+	//equal(x.get(), m);
+	y.set(m);
+	equal(y.get(), m);
+
+	m.destroy();
+	//x.destroy();
+	y.destroy();
+	m = /*x =*/ y = null;
 });
