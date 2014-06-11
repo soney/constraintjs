@@ -60,7 +60,7 @@ asyncTest("cjs.on", function() {
 			ok(fsm.is("state_1"));
 			fsm.destroy();
 			fsm = null;
-			take_snapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
+			memoryTester.takeSnapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
 				ok(!response.illegal_strs, "Make sure nothing was allocated");
 				start();
 			});
