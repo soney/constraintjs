@@ -40,7 +40,7 @@ dt("addTransition Types", 5, function() {
 });
 
 asyncTest("cjs.on", function() {
-	expect(4);
+	expect(8);
 	var fsm = cjs	.fsm()
 					.addState("state_1")
 					.addState("state_2")
@@ -53,17 +53,31 @@ asyncTest("cjs.on", function() {
 					.addTransition("state_1", cjs.on("timeout", 50).guard(function() {
 						return true;
 					}));
+	var transition_count = 0;
+	fsm.on("state_1 -> state_2", function() {
+		transition_count++;
+	});
+	fsm.on("state_2 -> state_1", function() {
+		transition_count++;
+	});
+
 	ok(fsm.is("state_1"));
+	equal(transition_count, 0);
 	setTimeout(function() {
 		ok(fsm.is("state_2"));
+		equal(transition_count, 1);
 		setTimeout(function() {
 			ok(fsm.is("state_1"));
+			equal(transition_count, 2);
 			fsm.destroy();
 			fsm = null;
-			memoryTester.takeSnapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
-				ok(!response.illegal_strs, "Make sure nothing was allocated");
-				start();
-			});
+			setTimeout(function() {
+				equal(transition_count, 2);
+				memoryTester.takeSnapshot(["Constraint", "MapConstraint", "ArrayConstraint", "FSM", "Binding", "CJSEvent"], function(response) {
+					ok(!response.illegal_strs, "Make sure nothing was allocated");
+					start();
+				});
+			}, 150);
 		}, 50);
 	}, 75);
 });
