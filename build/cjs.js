@@ -4733,7 +4733,7 @@ var Transition = function(fsm, from_state, to_state, name) {
 	proto.run = function() {
 		var fsm = this.getFSM();
 		// do_transition should be called by the user's code
-		if(fsm.is(this.getFrom())) {
+		if(fsm && fsm.is(this.getFrom())) {
 			var args = toArray(arguments);
 			args.unshift(this.getTo(), this);
 			fsm._setState.apply(fsm, args);
