@@ -1239,15 +1239,23 @@ Constraint = function (value, options) {
 	 *     x.setOption("literal", true);
 	 *     x.get(); // (function)
 	 */
+	var invalidation_arguments = ["context", "literal"];
 	proto.setOption = function(arg0, arg1) {
+		var to_invalidate;
 		if(isString(arg0)) {
 			this._options[arg0] = arg1;
+			to_invalidate = indexOf(invalidation_arguments, arg0) >= 0;
 		} else {
+			var keys = keys(arg0);
 			extend(this._options, arg0);
+			to_invalidate = any(invalidation_arguments, function(ia) {
+				return keys.indexOf(ia) >= 0;
+			});
 		}
+
 		// Nullify my value regardless of what changed
 		// changing context, literal, etc. might change my value
-		return this.invalidate();
+		return to_invalidate ? this.invalidate() : this;
 	};
 
 	/**
