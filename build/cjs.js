@@ -2902,11 +2902,22 @@ MapConstraint = function (options) {
 		create_unsubstantiated: true // Create a value when a key isn't found
 	}, options);
 
+	options.keys = clone(options.keys);
+	options.values = clone(options.values);
+	var set_keys = {};
+
+	//ensure no duplicate keys
+	each(options.keys, function(key) { set_keys[key] = true; });
+
 	// Append all of the keys and values passed to the keys and values arrays
 	each(options.value, function (v, k) {
-		options.keys.push(k);
-		options.values.push(v);
+		if(!set_keys[k]) {
+			options.keys.push(k);
+			options.values.push(v);
+		}
 	}, this);
+
+	set_keys = false;
 
 	// Convert to boolean
 	this._default_literal_values = !!options.literal_values;
