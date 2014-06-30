@@ -118,7 +118,7 @@ var constraint_solver = {
 
 	// node is the Constraint whose value we are fetching and auto_add_outgoing specifies whether dependencies FROM node should
 	// be automatically added
-	getValue: function (auto_add_outgoing) {
+	getValue: function (auto_add_outgoing, getter_arg) {
 		var node = this,
 			stack = constraint_solver.stack,
 			stack_len = stack.length,
@@ -168,7 +168,7 @@ var constraint_solver = {
 				// Check if dynamic value. If it is, then call it. If not, just fetch it
 				// set this to the node's cached value, which will be returned
 				node._cached_value = node._options.literal ? node._value :
-											(isFunction(node._value) ? node._value.call(node._options.context || node, node) :
+											(isFunction(node._value) ? node._value.call(node._options.context || node, node, getter_arg) :
 																		get_constraint_val(node._value));
 
 				// The node paused as if this was going to be an asyncronous value but it ended up being syncronous.
@@ -298,7 +298,7 @@ var constraint_solver = {
 					// Only mark as invalid if the old value is different from the current value.
 					equals = curr_node._options.equals || eqeqeq;
 					old_value = curr_node._cached_value;
-					new_value = curr_node.get();
+					new_value = curr_node.get(undefined, true);
 
 					if (equals(old_value, new_value)) {
 						invalid = false;
