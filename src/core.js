@@ -245,8 +245,26 @@ var constraint_solver = {
 	
 	// Utility function to mark a listener as being in the call stack. `this` refers to the constraint node here
 	add_in_call_stack: function(nl) {
+		var nl_priority = nl.priority;
+
 		nl.in_call_stack++;
 		nl.node._num_listeners_in_call_stack++;
+
+		if(isNumber(nl_priority)) {
+			var i = 0, len = this.nullified_call_stack.length, item, item_priority;
+			while(i < len) {
+				item = this.nullified_call_stack[i];
+				if(item) {
+					item_priority = item.priority;
+					if(item_priority === false || item_priority < nl_priority) {
+						this.nullified_call_stack.splice(i, 0, nl);
+						return;
+					}
+				}
+				i++;
+			}
+		}
+		this.nullified_call_stack.push(nl);
 	},
 	nullify: function() {
 		// Unfortunately, running nullification listeners can, in some cases cause nullify to be indirectly called by itself
@@ -292,8 +310,7 @@ var constraint_solver = {
 					// Add all of the change listeners to the call stack, and mark each change listener
 					// as being in the call stack
 					changeListeners = curr_node._changeListeners;
-					each(changeListeners, this.add_in_call_stack);
-					this.nullified_call_stack.push.apply(this.nullified_call_stack, changeListeners);
+					each(changeListeners, this.add_in_call_stack, this);
 
 					// Then, get every outgoing edge and add it to the nullify queue
 					outgoingEdges = curr_node._outEdges;
@@ -747,13 +764,20 @@ Constraint = function (value, options) {
 	 *     x.set(2); // x is 2
 	 */
 	proto.onChange = function(callback, thisArg) {
-		var args = slice.call(arguments, 2); // Additional arguments
+		return this.onChangeWithPriority.apply(this, ([false]).concat(toArray(arguments)));
+	};
+	proto.onChangeWithPriority = function(priority, callback, thisArg) {
+		var args = slice.call(arguments, 3); // Additional arguments
+		if(!isNumber(priority)) {
+			priority = false;
+		}
 		this._changeListeners.push({
 			callback: callback, // function
 			context: thisArg, // 'this' when called
-			args: slice.call(arguments, 2), // arguments to pass into the callback
+			args: args, // arguments to pass into the callback
 			in_call_stack: 0, // internally keeps track of if this function will be called in the near future
-			node: this
+			node: this,
+			priority: priority
 		});
 		if(this._options.run_on_add_listener !== false) {
 			// Make sure my current value is up to date but don't add outgoing constraints.
@@ -1449,7 +1473,7 @@ extend(cjs, {
 	toString: function() { return "ConstraintJS v" + cjs.version; },
 
 	/** @private */
-	__debug: false,
+	__debug: true,
 
 	/**
 	 * Restore the previous value of `cjs`

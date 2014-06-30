@@ -35,6 +35,7 @@ extend(cjs, {
 					context: root, // what to equate `this` to
 					run_on_create: true, // whether it should run immediately
 					pause_while_running: false, // whether to allow the function to be called recursively (indirectly)
+					priority: false,
 					on_destroy: false // a function to call when this liven function is destroyed
 				}, options);
 
@@ -94,7 +95,7 @@ extend(cjs, {
 				};
 
 				// When the value changes, call do_get
-				node.onChange(do_get);
+				node.onChangeWithPriority(options.priority, do_get);
 
 				var rv = {
 					destroy: destroy,
