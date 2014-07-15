@@ -4034,7 +4034,7 @@ extend(cjs, {
 					context: options.context,
 					cache_value: false,
 					auto_add_outgoing_dependencies: false,
-					run_on_add_listener: !!options.run_on_create
+					run_on_add_listener: false
 				});
 
 				// check if running
@@ -4067,7 +4067,14 @@ extend(cjs, {
 				var resume = function () {
 					if(paused === true) {
 						paused = false;
-						node.onChange(do_get);
+						node.onChangeWithPriority(options.priority, do_get);
+						if(options.run_on_create !== false) {
+							if (constraint_solver.semaphore >= 0) {
+								node.get(false);
+							} else {
+								each(node._changeListeners, constraint_solver.add_in_call_stack, constraint_solver);
+							}
+						}
 						return true; // successfully resumed
 					}
 					return false;
@@ -4098,6 +4105,15 @@ extend(cjs, {
 					invalidate: invalidate,
 					_constraint: node // for debugging purposes
 				};
+
+				if(options.run_on_create !== false) {
+					if (constraint_solver.semaphore >= 0) {
+						node.get(false);
+					} else {
+						each(node._changeListeners, constraint_solver.add_in_call_stack, constraint_solver);
+					}
+				}
+
 				return rv;
 			}
 });
