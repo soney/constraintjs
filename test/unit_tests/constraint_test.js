@@ -230,3 +230,38 @@ dtAsync("Pause Asyncronous Getter", 25, function(ready_callback) {
 		ready_callback();
 	}, 200);
 });
+
+dt("Check on nullify", 9, function() {
+	var computed_z_times = 0;
+	var x = cjs(1);
+	var y = cjs(function() { return x.get() % 2; }, {check_on_nullify: true});
+	var z = cjs(function() {
+		computed_z_times++;
+		return y.get() + 1;
+	});
+
+	equal(computed_z_times, 0);
+	equal(z.get(), 2);
+	equal(computed_z_times, 1);
+	equal(z.get(), 2);
+	equal(computed_z_times, 1);
+	x.set(3);
+	equal(z.get(), 2);
+	equal(computed_z_times, 1);
+	x.set(2);
+	equal(z.get(), 1);
+	equal(computed_z_times, 2);
+});
+
+dt("Nullify check infinite loop", 4, function() {
+	var x = cjs(0, {check_on_nullify: true}); 
+	equal(x.get(), 0);
+	x.set(function(){return x.get()+1});
+	equal(x.get(), 1);
+
+	var y = cjs(0, {check_on_nullify: true}); 
+	var z = cjs(function() { return y.get(); }, {check_on_nullify: false}); 
+	equal(y.get(), 0);
+	y.set(function(){return z.get()+1});
+	equal(z.get(), 1);
+});

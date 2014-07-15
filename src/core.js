@@ -116,6 +116,8 @@ var constraint_solver = {
 	// then A is added to the top of the stack and B is marked as dependent on A
 	stack: [],
 
+	check_on_nullified_ids: {},
+
 	// node is the Constraint whose value we are fetching and auto_add_outgoing specifies whether dependencies FROM node should
 	// be automatically added
 	getValue: function (auto_add_outgoing, getter_arg) {
@@ -137,7 +139,7 @@ var constraint_solver = {
 			if(dependency_edge) {
 				// Update timestamp
 				dependency_edge.tstamp = tstamp;
-			} else {
+			} else if(node !== demanding_var) {
 				// Make sure that the dependency should be added
 				if (node._options.auto_add_outgoing_dependencies !== false &&
 						demanding_var._options.auto_add_incoming_dependencies !== false &&
@@ -294,12 +296,16 @@ var constraint_solver = {
 				// The user can also optionally check if the node should be nullified. This is useful if a large number of nodes
 				// depend on this node, and the potential cost of nullifying/re-evaluating them is higher than the cost of
 				// re-evaluating this node
-				if (curr_node._options.cache_value !== false && curr_node._options.check_on_nullify === true) {
+				if (curr_node._options.cache_value !== false && curr_node._options.check_on_nullify === true &&
+							// check to make sure we aren't already getting this node to avoid an infinite loop
+							!this.check_on_nullified_ids[curr_node._id])  {
+					this.check_on_nullified_ids[curr_node._id] = true;
+
 					// Only mark as invalid if the old value is different from the current value.
 					equals = curr_node._options.equals || eqeqeq;
 					old_value = curr_node._cached_value;
-					new_value = curr_node.get(undefined, true);
 
+					new_value = curr_node.get(undefined, true);
 					if (equals(old_value, new_value)) {
 						invalid = false;
 					}
@@ -339,6 +345,7 @@ var constraint_solver = {
 
 		// If I'm the first one, then run the nullification listeners and remove the is_nullifying flag
 		if (is_root) {
+			this.check_on_nullified_ids = {};
 			// If nobody told us to wait, then run the nullification listeners
 			if (this.semaphore >= 0 && this.nullified_call_stack.length > 0) {
 				this.run_nullified_listeners();
