@@ -125,9 +125,15 @@ chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
 			});
 		} else if(command === "collect_garbage") {
 			var debuggerId = {tabId: sender.tab.id};
-			chrome.debugger.sendCommand(debuggerId, "HeapProfiler.collectGarbage", { }, function() {
-				if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);}
-				sendResponse();
+			chrome.debugger.attach(debuggerId, "1.0", function() {
+				if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);  return;}
+				chrome.debugger.sendCommand(debuggerId, "HeapProfiler.collectGarbage", { }, function() {
+					if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);}
+					chrome.debugger.detach(debuggerId, function() {
+						if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);}
+						sendResponse();
+					});
+				});
 			});
 		}
     }
