@@ -6,7 +6,23 @@
 /* jshint -W093 */
 /* global document */
 /** @expose cjs */
-var cjs = (function (root) {
+(function(root, factory) {
+    "use strict";
+
+    /* CommonJS */
+    if (typeof exports == 'object') module.exports = factory(root);
+
+    /* AMD module */
+    else if (typeof define == 'function' && define.amd)
+        define(function() {
+            // wrap the factory to pass root
+            return factory(root);
+        });
+
+    /* Browser global */
+    else root.cjs = factory(root);
+
+}(this, function(root) {
 "use strict";
 
 // Utility functions
@@ -7567,10 +7583,4 @@ var COMPOUND = 'Compound',
 }());
 
 return cjs;
-}(this));
-
-// Export for node
-if (typeof module !== 'undefined' && module.exports) {
-	/** @exports cjs */
-	module.exports = cjs;
-}
+}));
