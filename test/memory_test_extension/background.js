@@ -3,7 +3,7 @@ chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
 		var command = request.command;
 		if(command === "take_snapshot") {
 			var debuggerId = {tabId: sender.tab.id};
-			console.log("Attached to tab with id " + sender.tab.id);
+			//console.log("Attached to tab with id " + sender.tab.id);
 			chrome.debugger.attach(debuggerId, "1.0", function() {
 				if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError); return; }
 				var snapshot_str = "";
@@ -83,6 +83,7 @@ chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
 									if(name.substring(0, cfs.length) === cfs) {
 										illegal_strs = cfs;
 										bad_nodes.push(node);
+										console.log(node);
 										break outer;
 									}
 								}
@@ -113,7 +114,6 @@ chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
 				});
 			});
 		} else if(command === "ping") {
-			console.log(command);
 			var debuggerId = {tabId: sender.tab.id};
 
 			chrome.debugger.attach(debuggerId, "1.0", function() {
@@ -121,6 +121,18 @@ chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
 				chrome.debugger.detach(debuggerId, function() {
 					if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);  return;}
 					sendResponse("ack");
+				});
+			});
+		} else if(command === "collect_garbage") {
+			var debuggerId = {tabId: sender.tab.id};
+			chrome.debugger.attach(debuggerId, "1.0", function() {
+				if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);  return;}
+				chrome.debugger.sendCommand(debuggerId, "HeapProfiler.collectGarbage", { }, function() {
+					if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);}
+					chrome.debugger.detach(debuggerId, function() {
+						if(chrome.runtime.lastError) { console.error(chrome.runtime.lastError);}
+						sendResponse();
+					});
 				});
 			});
 		}

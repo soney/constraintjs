@@ -1233,8 +1233,10 @@ Constraint = function (value, options) {
 		var old_value = this._value;
 		this._value = value;
 
-		// If it's a value
-		if (this._options.literal || (!isFunction(value) && !is_constraint(value))) {
+		if(options && options.silent === true) {
+			return this;
+		} else if (this._options.literal || (!isFunction(value) && !is_constraint(value))) {
+ // If it's a value
 			// Then use the specified equality check
 			var equality_check = this._options.equal || eqeqeq;
 			if(!equality_check(old_value, value)) {
@@ -2276,15 +2278,15 @@ ArrayConstraint = function (options) {
 				$val.destroy(silent); // Clear memory for every element
 			}
 		}
-		_update_len(arr);
+		_update_len(arr, silent);
 
 		cjs.signal();
 		return this;
 	};
 
-	var _update_len = function (arr) {
+	var _update_len = function (arr, silent) {
 		// The setter will automatically not update if the value is the same
-		arr.$len.set(arr._value.length);
+		arr.$len.set(arr._value.length, silent ? {silent:true} : false);
 	};
 
 

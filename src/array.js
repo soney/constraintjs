@@ -105,15 +105,15 @@ ArrayConstraint = function (options) {
 				$val.destroy(silent); // Clear memory for every element
 			}
 		}
-		_update_len(arr);
+		_update_len(arr, silent);
 
 		cjs.signal();
 		return this;
 	};
 
-	var _update_len = function (arr) {
+	var _update_len = function (arr, silent) {
 		// The setter will automatically not update if the value is the same
-		arr.$len.set(arr._value.length);
+		arr.$len.set(arr._value.length, silent ? {silent:true} : false);
 	};
 
 

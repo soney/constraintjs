@@ -572,8 +572,10 @@ Constraint = function (value, options) {
 		var old_value = this._value;
 		this._value = value;
 
-		// If it's a value
-		if (this._options.literal || (!isFunction(value) && !is_constraint(value))) {
+		if(options && options.silent === true) {
+			return this;
+		} else if (this._options.literal || (!isFunction(value) && !is_constraint(value))) {
+ // If it's a value
 			// Then use the specified equality check
 			var equality_check = this._options.equal || eqeqeq;
 			if(!equality_check(old_value, value)) {
