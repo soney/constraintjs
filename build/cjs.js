@@ -1272,10 +1272,10 @@ Constraint = function (value, options) {
 			this._options[arg0] = arg1;
 			to_invalidate = indexOf(invalidation_arguments, arg0) >= 0;
 		} else {
-			var keys = keys(arg0);
+			var arg0_keys = keys(arg0);
 			extend(this._options, arg0);
 			to_invalidate = any(invalidation_arguments, function(ia) {
-				return keys.indexOf(ia) >= 0;
+				return arg0_keys.indexOf(ia) >= 0;
 			});
 		}
 
