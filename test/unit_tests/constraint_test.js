@@ -265,3 +265,21 @@ dt("Nullify check infinite loop", 4, function() {
 	y.set(function(){return z.get()+1});
 	equal(z.get(), 1);
 });
+
+dt("Set Option", 3, function() {
+    var f = function(){
+        return 1;
+    }
+    var x = cjs(f);
+
+    equal(x.get(), 1);
+
+    x.setOption({ literal: true });
+    equal(x.get(), f);
+
+    x.setOption({ literal: false });
+    equal(x.get(), 1);
+
+    x.destroy();
+    x = null;
+});
