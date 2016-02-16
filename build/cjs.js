@@ -6350,7 +6350,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 							arr_val = arr_val.toArray();
 						}
 
-						if(!isArray(arr_val)) { 
+						if(!isArray(arr_val)) {
 							if(is_map(arr_val)) { // map constraint
 								arr_val = arr_val.entries();
 								each(arr_val, function(x) {
@@ -6485,7 +6485,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 									return create_template_instance(child, context, lineage);
 								});
 							}
-							
+
 							rv = flatten(map(active_children, get_instance_nodes), true);
 						}
 
@@ -6659,7 +6659,7 @@ extend(cjs, {
 	 *
 	 * ConstraintJS templates use a (Handlebars)[http://handlebarsjs.com/]. A template can be created with
 	 * `cjs.createTemplate`. The format is described below.
-	 * 
+	 *
 	 * ## Basics
 	 * ConstraintJS templates take standard HTML and add some features
 	 *
@@ -6696,11 +6696,11 @@ extend(cjs, {
 	 * To call `my_func` on event `(event-name)`, give any targets the attribute:
 	 *
 	 *     data-cjs-on-(event-name)=my_func
-	 * 
+	 *
 	 * For example:
 	 *
 	 *     <div data-cjs-on-click=update_obj />
-	 * 
+	 *
 	 * Will call `update_obj` (a property of the template's context when this div is clicked.
 	 *
 	 * To add the value of an input element to the template's context, use the property `data-cjs-out`:
@@ -6724,8 +6724,8 @@ extend(cjs, {
 	 *         {{@index}}: {{this}}
 	 *     {{/each}}
 	 *
-	 * If the length of the array is zero (or the object has no keys) then an `{{#else}}` block can be used: 
-	 *     
+	 * If the length of the array is zero (or the object has no keys) then an `{{#else}}` block can be used:
+	 *
 	 *     {{#each arr_name}}
 	 *         {{@index}}: {{this}
 	 *         {{#else}}
@@ -6781,14 +6781,14 @@ extend(cjs, {
 	 * Then, in any other template,
 	 *
 	 *     {{>my_template context}}
-	 * 
+	 *
 	 * Nests a copy of `my_template` in `context`
 	 *
 	 * @method cjs.createTemplate
 	 * @param {string|dom} template - the template as either a string or a `script` tag whose contents are the template
 	 * @param {object} [context] - Any number of target objects to listen to
 	 * @param {dom} [parent] - The parent DOM node for the template
-	 * @return {function|dom} - An event that can be attached to 
+	 * @return {function|dom} - An event that can be attached to
 	 *
 	 * @see cjs.destroyTemplate
 	 * @see cjs.pauseTemplate
@@ -6870,7 +6870,7 @@ extend(cjs, {
 	 * Then, in any other template,
 	 *
 	 *     {{>my_template context}}
-	 * 
+	 *
 	 * Nests a copy of `my_template` in `context`
 	 */
 	registerCustomPartial: function(name, options) {
@@ -6904,7 +6904,7 @@ extend(cjs, {
 	 * Then, in any other template,
 	 *
 	 *     {{>my_template context}}
-	 * 
+	 *
 	 * Nests a copy of `my_template` in `context`
 	 */
 	registerPartial:	function(name, value) {
@@ -6997,13 +6997,18 @@ extend(cjs, {
 	 *     x.get(); // 4
 	 */
 	createParsedConstraint: function(str, context) {
-		var node = jsep(str);
-		if(node.type === LITERAL) {
-			return node.value;
-		}
 
 		return cjs(function() {
-			return get_node_value(node, context, [context]);
+			try {
+				var node = jsep(cjs.get(str));
+				if(node.type === LITERAL) {
+					return node.value;
+				} else {
+					return get_node_value(node, context, [context]);
+				}
+			} catch(e) {
+				console.error(e);
+			}
 		});
 	}
 });
