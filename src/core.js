@@ -873,7 +873,7 @@ Constraint = function (value, options) {
 	 *
 	 * @method and
 	 * @param {*} ...args - Any number of constraints or values to pass the "and" test
-	 * @return {cjs.Constraitnboolean|*} - A constraint whose value is `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
+	 * @return {cjs.Constraint|*} - A constraint whose value is `false` if this or any passed in value is falsy. Otherwise, the last value passed in.
 	 *
 	 * @example
 	 *
@@ -998,7 +998,7 @@ Constraint = function (value, options) {
 	 * Addition constraint modifier
 	 * @method add
 	 * @param {number} ...args - Any number of constraints or numbers
-	 * @return {number} - A constraint whose value is `this.get() + args[0].get() + args[1].get() + ...`
+	 * @return {cjs.Constraint} - A constraint whose value is `this.get() + args[0].get() + args[1].get() + ...`
 	 * @example
 	 *
 	 *     x = y.add(1,2,z); // x <- y + 1 + 2 + z
@@ -1011,7 +1011,7 @@ Constraint = function (value, options) {
 	 * Subtraction constraint modifier
 	 * @method sub
 	 * @param {number} ...args - Any number of constraints or numbers
-	 * @return {number} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
+	 * @return {cjs.Constraint} - A constraint whose value is `this.get() - args[0].get() - args[1].get() - ...`
 	 * @example
 	 *
 	 *     x = y.sub(1,2,z); // x <- y - 1 - 2 - z
@@ -1349,7 +1349,6 @@ Constraint = function (value, options) {
 	/**
 	 * Object type modifier
 	 * @method typeOf
-	 * @param {*} other - a constraint or value to compare against
 	 * @return {*} - a constraint whose value is `typeof this.get()`
 	 * @example
 	 *

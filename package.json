@@ -13,6 +13,7 @@
 		"url": "https://github.com/soney/constraintjs/blob/master/LICENSE"
 	}],
 	"main": "build/cjs.js",
+	"types": "./types/index.d.ts",
 	"private": false,
 	"dependencies": { },
 	"devDependencies": {

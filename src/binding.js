@@ -430,6 +430,7 @@ var text_binding = create_textual_binding(function(element, value) { // set the 
 	 * Constrain a DOM node's attribute value
 	 *
 	 * @method cjs.bindAttr^2
+	 * @param {dom} element - The DOM element
 	 * @param {string} key - The name of the attribute to constraint
 	 * @param {cjs.Constraint|string} value - The value of this attribute
 	 * @return {Binding} - A binding object representing the link from constraints to elements
