@@ -176,7 +176,7 @@ declare namespace constraintjs {
         create_unsubstantiated?:boolean
     }
     export class MapConstraint {
-        constructor(options: any);
+        constructor(options?: any);
         clear(silent?: boolean): this;
         destroy(silent: any): void;
         entries(): any;
@@ -205,7 +205,7 @@ declare namespace constraintjs {
     }
 
     const version: string;
-    export function array(options: ArrayConstraintOptions): ArrayConstraint;
+    export function array(options?: ArrayConstraintOptions): ArrayConstraint;
     export function arrayDiff(from_val: any[], to_val: any[], equality_check?: (a:any,b:any)=>boolean): { added:{item:any,to:number,to_item:any}[], removed:{from:number,from_item:any}[], moved:{item:any, from:number, insert_at:number, move_from:number, to:number}[], index_changed:{from:number, from_item:any, item:any, to:number, to_item:any}[] };
     export function bindAttr(element: Node, values: {[key:string]:any}): Binding;
     export function bindAttr(element: Node, key:string, value:Constraint|string): Binding;
@@ -216,7 +216,7 @@ declare namespace constraintjs {
     export function bindHTML(element: Node, ...args: any[]): Binding;
     export function bindText(element: Node, ...values: any[]): Binding;
     export function bindValue(element: Node, ...args: any[]): Binding;
-    export function constraint(value: any, options: ConstraintOptions): any;
+    export function constraint(value: any, options?: ConstraintOptions): any;
     export function createParsedConstraint(str: string, context: {[key:string]:any}): Constraint;
     export function createTemplate(template_str: string|Node):Function;
     export function createTemplate(template_str: string|Node, context:{[key:string]:any}, parent?:Node):Node;
@@ -230,12 +230,12 @@ declare namespace constraintjs {
     export function isFSM(obj: any): boolean;
     export function isMapConstraint(obj: any): boolean;
     export function liven(func: Function, options?: {context?:any,run_on_create?:boolean,pause_while_running?:boolean,on_destroy?:Function}): {pause:()=>void,resume:()=>void,run:Function};
-    export function map(options: MapConstraintOptions): MapConstraint;
+    export function map(options?: MapConstraintOptions): MapConstraint;
     export function memoize(getter_fn: Function, options?: {hash?:Function,equals?:(a:any,b:any)=>boolean,context?:any,literal_values?:boolean}): {destroy:(silent?:boolean)=>void,each:(fn:Function)=>void};
     export function noConflict(): typeof constraintjs;
     export function on(event_type: any, ...args: any[]): any;
     export function pauseTemplate(dom_node: Node): typeof constraintjs;
-    export function registerCustomPartial(name: string, options: {createNode:Function, onAdd:(n:Node)=>any, onRemove:(n:Node)=>any, pause:(n:Node)=>any, resume:(n:Node)=>any, destroyNode:(n:Node)=>any}) :typeof constraintjs;
+    export function registerCustomPartial(name: string, options?: {createNode:Function, onAdd:(n:Node)=>any, onRemove:(n:Node)=>any, pause:(n:Node)=>any, resume:(n:Node)=>any, destroyNode:(n:Node)=>any}) :typeof constraintjs;
     export function registerPartial(name: string, value: string): typeof constraintjs;
     export function removeDependency(fromNode: Constraint, toNode: Constraint): void;
     export function resumeTemplate(dom_node: Node): typeof constraintjs;
