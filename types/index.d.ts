@@ -4,15 +4,15 @@ export = constraintjs;
 
 declare function constraintjs(value:any[], options?:constraintjs.ArrayConstraintOptions): constraintjs.ArrayConstraint;
 declare function constraintjs(node:Node): constraintjs.Binding;
-declare function constraintjs(value:{[any,any]}, options?:constraintjs.MapConstraintOptions): constraintjs.MapConstraint;
+declare function constraintjs(value:{[key:string]:any}, options?:constraintjs.MapConstraintOptions): constraintjs.MapConstraint;
 declare function constraintjs(value:any, options?:constraintjs.ConstraintOptions): constraintjs.Constraint;
 
 declare namespace constraintjs {
-    interface ArrayConstraintOptions {
-        equals:(any,any)=>boolean,
+    export interface ArrayConstraintOptions {
+        equals:(a:any,b:any)=>boolean,
         value:any[]
     }
-    class ArrayConstraint {
+    export class ArrayConstraint {
         constructor(options?: ArrayConstraintOptions);
         concat(...args: any[]): any[];
         destroy(silent: boolean): void;
@@ -47,13 +47,13 @@ declare namespace constraintjs {
         static BREAK: {};
     }
 
-    interface BindingOptions {
+    export interface BindingOptions {
         getter?:Function,
         setter?:Function,
         init_val?:any,
         targets?:Node[]
     }
-    class Binding {
+    export class Binding {
         constructor(options?: BindingOptions);
 
         destroy(): void;
@@ -62,12 +62,12 @@ declare namespace constraintjs {
         throttle(min_delay?: number): this;
     }
 
-    class CJSEvent {
+    export class CJSEvent {
         constructor(parent: any, filter: any, onAddTransition: any, onRemoveTransition: any);
         guard(filter: any, filter_eq: any): any;
     }
 
-    interface ConstraintOptions {
+    export interface ConstraintOptions {
         literal?:boolean,
         auto_add_outgoing_dependencies?:boolean,
         auto_add_incoming_dependencies?:boolean,
@@ -77,7 +77,7 @@ declare namespace constraintjs {
         equals?:(a:any,b:any)=>boolean,
         run_on_add_listener?:boolean
     }
-    class Constraint {
+    export class Constraint {
         constructor(value: any, options?: ConstraintOptions);
         abs(): number;
         acos(): number;
@@ -150,7 +150,7 @@ declare namespace constraintjs {
         xor(arg:any): Constraint;
     }
 
-    class FSM {
+    export class FSM {
         constructor(...args: any[]);
         addEventListener(spec_str: any, callback: any, context: any): any;
         addState(...args: any[]): any;
@@ -164,18 +164,18 @@ declare namespace constraintjs {
         startsAt(state_name: string): this;
     }
 
-    interface MapConstraintOptions {
+    export interface MapConstraintOptions {
         hash?: (x:any)=>any,
         valuehash: false|Function,
         equals?: (a:any, b:any) => boolean,
         valueequals?: (a:any, b:any) => boolean,
-        value?: {[any,any]},
+        value?: {[key:string]:any},
         keys?: any[],
         values?: any[],
         literal_values?:boolean,
         create_unsubstantiated?:boolean
     }
-    class MapConstraint {
+    export class MapConstraint {
         constructor(options: any);
         clear(silent?: boolean): this;
         destroy(silent: any): void;
@@ -199,48 +199,48 @@ declare namespace constraintjs {
         setValueEqualityCheck(vequality_check: (a:any,b:any)=>boolean): this;
         setValueHash(vhash: (a:any)=>any): any;
         size(): number;
-        toObject(key_map_fn?: Function): {[any,any]};
+        toObject(key_map_fn?: Function): {[key:string]:any};
         values(): any[];
         static BREAK: { };
     }
 
     const version: string;
-    function array(options: ArrayConstraintOptions): ArrayConstraint;
-    function arrayDiff(from_val: any[], to_val: any[], equality_check?: (a:any,b:any)=>boolean): { added:{item:any,to:number,to_item:any}[], removed:{from:number,from_item:any}[], moved:{item:any, from:number, insert_at:number, move_from:number, to:number}[], index_changed:{from:number, from_item:any, item:any, to:number, to_item:any}[] };
-    function bindAttr(element: Node, values: {[string,any]}): Binding;
-    function bindAttr(element: Node, key:string, value:Constraint|string): Binding;
-    function bindCSS(element: Node, values: {[string,any]}): Binding;
-    function bindCSS(element: Node, value:Constraint|string): Binding;
-    function bindChildren(element: Node, ...args: any[]): Binding;
-    function bindClass(element: Node, ...args: any[]): Binding;
-    function bindHTML(element: Node, ...args: any[]): Binding;
-    function bindText(element: Node, ...values: any[]): Binding;
-    function bindValue(element: Node, ...args: any[]): Binding;
-    function constraint(value: any, options: ConstraintOptions): any;
-    function createParsedConstraint(str: string, context: {[string,any]}): Constraint;
-    function createTemplate(template_str: string|Node):Function;
-    function createTemplate(template_str: string|Node, context:{[string, any]}, parent?:Node):Node;
-    function destroyTemplate(dom_node: Node): constraintjs;
-    function fsm(...args: any[]): any;
-    function get(obj: any, autoAddOutgoing?: boolean): any;
-    function inFSM(fsm: FSM, values: any): Constraint;
-    function inputValue(inp: Node): Constraint;
-    function isArrayConstraint(obj: any): boolean;
-    function isConstraint(obj: any): boolean;
-    function isFSM(obj: any): boolean;
-    function isMapConstraint(obj: any): boolean;
-    function liven(func: Function, options?: {context?:any,run_on_create?:boolean,pause_while_running?:boolean,on_destroy?:Function}): {pause:()=>void,resume:()=>void,run:Function};
-    function map(options: MapConstraintOptions): MapConstraint;
-    function memoize(getter_fn: Function, options?: {hash?:Function,equals?:(a:any,b:any)=>boolean,context?:any,literal_values?:boolean}): {destroy:(silent?:boolean)=>void,each:(fn:Function)=>void};
-    function noConflict(): constraintjs;
-    function on(event_type: any, ...args: any[]): any;
-    function pauseTemplate(dom_node: Node): constraintjs;
-    function registerCustomPartial(name: string, options: {createNode:Function, onAdd:(n:Node)=>any, onRemove:(n:Node)=>any, pause:(n:Node)=>any, resume:(n:Node)=>any, destroyNode:(n:Node)=>any}) :constraintjs;
-    function registerPartial(name: string, value: string): constraintjs;
-    function removeDependency(fromNode: Constraint, toNode: Constraint): void;
-    function resumeTemplate(dom_node: Node): constraintjs;
-    function signal(): void;
-    function toString(): string;
-    function unregisterPartial(name: string): constraintjs;
-    function wait(): void;
+    export function array(options: ArrayConstraintOptions): ArrayConstraint;
+    export function arrayDiff(from_val: any[], to_val: any[], equality_check?: (a:any,b:any)=>boolean): { added:{item:any,to:number,to_item:any}[], removed:{from:number,from_item:any}[], moved:{item:any, from:number, insert_at:number, move_from:number, to:number}[], index_changed:{from:number, from_item:any, item:any, to:number, to_item:any}[] };
+    export function bindAttr(element: Node, values: {[key:string]:any}): Binding;
+    export function bindAttr(element: Node, key:string, value:Constraint|string): Binding;
+    export function bindCSS(element: Node, values: {[key:string]:any}): Binding;
+    export function bindCSS(element: Node, value:Constraint|string): Binding;
+    export function bindChildren(element: Node, ...args: any[]): Binding;
+    export function bindClass(element: Node, ...args: any[]): Binding;
+    export function bindHTML(element: Node, ...args: any[]): Binding;
+    export function bindText(element: Node, ...values: any[]): Binding;
+    export function bindValue(element: Node, ...args: any[]): Binding;
+    export function constraint(value: any, options: ConstraintOptions): any;
+    export function createParsedConstraint(str: string, context: {[key:string]:any}): Constraint;
+    export function createTemplate(template_str: string|Node):Function;
+    export function createTemplate(template_str: string|Node, context:{[key:string]:any}, parent?:Node):Node;
+    export function destroyTemplate(dom_node: Node): typeof constraintjs;
+    export function fsm(...args: any[]): any;
+    export function get(obj: any, autoAddOutgoing?: boolean): any;
+    export function inFSM(fsm: FSM, values: any): Constraint;
+    export function inputValue(inp: Node): Constraint;
+    export function isArrayConstraint(obj: any): boolean;
+    export function isConstraint(obj: any): boolean;
+    export function isFSM(obj: any): boolean;
+    export function isMapConstraint(obj: any): boolean;
+    export function liven(func: Function, options?: {context?:any,run_on_create?:boolean,pause_while_running?:boolean,on_destroy?:Function}): {pause:()=>void,resume:()=>void,run:Function};
+    export function map(options: MapConstraintOptions): MapConstraint;
+    export function memoize(getter_fn: Function, options?: {hash?:Function,equals?:(a:any,b:any)=>boolean,context?:any,literal_values?:boolean}): {destroy:(silent?:boolean)=>void,each:(fn:Function)=>void};
+    export function noConflict(): typeof constraintjs;
+    export function on(event_type: any, ...args: any[]): any;
+    export function pauseTemplate(dom_node: Node): typeof constraintjs;
+    export function registerCustomPartial(name: string, options: {createNode:Function, onAdd:(n:Node)=>any, onRemove:(n:Node)=>any, pause:(n:Node)=>any, resume:(n:Node)=>any, destroyNode:(n:Node)=>any}) :typeof constraintjs;
+    export function registerPartial(name: string, value: string): typeof constraintjs;
+    export function removeDependency(fromNode: Constraint, toNode: Constraint): void;
+    export function resumeTemplate(dom_node: Node): typeof constraintjs;
+    export function signal(): void;
+    export function toString(): string;
+    export function unregisterPartial(name: string): typeof constraintjs;
+    export function wait(): void;
 } 
