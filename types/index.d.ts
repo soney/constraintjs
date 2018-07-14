@@ -5,6 +5,7 @@ export = constraintjs;
 declare function constraintjs(value:any[], options?:constraintjs.ArrayConstraintOptions): constraintjs.ArrayConstraint;
 declare function constraintjs(node:Node): constraintjs.Binding;
 declare function constraintjs(value:{[key:string]:any}, options?:constraintjs.MapConstraintOptions): constraintjs.MapConstraint;
+declare function constraintjs(value:Function, options?:constraintjs.ConstraintOptions): constraintjs.Constraint;
 declare function constraintjs(value:any, options?:constraintjs.ConstraintOptions): constraintjs.Constraint;
 
 declare namespace constraintjs {
