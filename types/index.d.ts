@@ -2,10 +2,10 @@
 
 export = constraintjs;
 
-declare function constraintjs(value:any[], options?:constraintjs.ArrayConstraintOptions): constraintjs.ArrayConstraint;
 declare function constraintjs(node:Node): constraintjs.Binding;
-declare function constraintjs(value:{[key:string]:any}, options?:constraintjs.MapConstraintOptions): constraintjs.MapConstraint;
 declare function constraintjs(value:Function, options?:constraintjs.ConstraintOptions): constraintjs.Constraint;
+declare function constraintjs(value:any[], options?:constraintjs.ArrayConstraintOptions): constraintjs.ArrayConstraint;
+declare function constraintjs(value:{[key:string]:any}, options?:constraintjs.MapConstraintOptions): constraintjs.MapConstraint;
 declare function constraintjs(value:any, options?:constraintjs.ConstraintOptions): constraintjs.Constraint;
 
 declare namespace constraintjs {
@@ -190,7 +190,7 @@ declare namespace constraintjs {
         item(arg0: any, arg1: any, arg2: any, ...args: any[]): any;
         itemConstraint(key: any): any;
         keyForValue(value: any, eq_check?: (a:any,b:any)=>boolean): any;
-        keys(): {key:any, value:any}[];
+        keys(): any[];
         move(key: any, to_index: number): this;
         moveIndex(old_index: number, new_index: number): this;
         put(key: any, value: any, index?: number, literal?: boolean): this;
