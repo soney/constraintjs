@@ -1,6 +1,6 @@
 {
 	"name": "constraintjs",
-	"version": "0.9.7",
+	"version": "0.9.8-beta",
 	"description": "Constraint library for JavaScript",
 	"author": "Stephen Oney <swloney@gmail.com> (http://from.so/)",
 	"homepage": "http://cjs.from.so/",
