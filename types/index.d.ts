@@ -16,7 +16,7 @@ declare namespace constraintjs {
     export class ArrayConstraint {
         constructor(options?: ArrayConstraintOptions);
         concat(...args: any[]): any[];
-        destroy(silent: boolean): void;
+        destroy(silent?: boolean): void;
         every(filter: Function, thisArg?: any): boolean;
         filter(callback:Function, thisArg?:any): any[];
         forEach(callback: Function, thisArg?: any): this;
@@ -179,7 +179,7 @@ declare namespace constraintjs {
     export class MapConstraint {
         constructor(options?: any);
         clear(silent?: boolean): this;
-        destroy(silent: any): void;
+        destroy(silent?: boolean): void;
         entries(): any;
         forEach(func: Function, thisArg?: any): this;
         get(key: any): any;
