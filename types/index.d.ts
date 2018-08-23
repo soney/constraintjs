@@ -230,7 +230,7 @@ declare namespace constraintjs {
     export function isConstraint(obj: any): boolean;
     export function isFSM(obj: any): boolean;
     export function isMapConstraint(obj: any): boolean;
-    export function liven(func: Function, options?: {context?:any,run_on_create?:boolean,pause_while_running?:boolean,on_destroy?:Function}): {pause:()=>void,resume:()=>void,run:Function};
+    export function liven(func: Function, options?: {context?:any,run_on_create?:boolean,pause_while_running?:boolean,on_destroy?:Function}): { pause:()=>void, resume:()=>void, run:()=>void, destroy: ()=>void };
     export function map(options?: MapConstraintOptions): MapConstraint;
     export function memoize(getter_fn: Function, options?: {hash?:Function,equals?:(a:any,b:any)=>boolean,context?:any,literal_values?:boolean}): {destroy:(silent?:boolean)=>void,each:(fn:Function)=>void};
     export function noConflict(): typeof constraintjs;

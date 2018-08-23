@@ -65,7 +65,11 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						}
 					}
 				} else {
-					val = context[node.name];
+					if(cjs.isMapConstraint(context)) {
+						val = context.get(node.name);
+					} else {
+						val = context[node.name];
+					}
 				}
 
 				return is_constraint(val) ? val.get() : val;

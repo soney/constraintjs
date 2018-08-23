@@ -1,4 +1,4 @@
-//     ConstraintJS (CJS) 0.9.7
+//     ConstraintJS (CJS) 0.9.8-beta
 //     ConstraintJS may be freely distributed under the MIT License
 //     http://cjs.from.so/
 
@@ -2114,7 +2114,7 @@ extend(cjs, {
 	 * @property {string} cjs.version
 	 * @see cjs.toString
 	 */
-	version: "0.9.7", // This template will be filled in by the builder
+	version: "0.9.8-beta", // This template will be filled in by the builder
 
 	/**
 	 * Print out the name and version of ConstraintJS
@@ -6054,7 +6054,11 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						}
 					}
 				} else {
-					val = context[node.name];
+					if(cjs.isMapConstraint(context)) {
+						val = context.get(node.name);
+					} else {
+						val = context[node.name];
+					}
 				}
 
 				return is_constraint(val) ? val.get() : val;
