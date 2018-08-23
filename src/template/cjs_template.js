@@ -28,7 +28,7 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 	},
 	compute_object_property = function(object, prop_node, context, lineage) {
 		if(object) {
-			var nodeName = [prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name];
+			var nodeName = prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name;
 			if(cjs.isMapConstraint(object)) {
 				return object.get(nodeName);
 			} else {
