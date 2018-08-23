@@ -27,8 +27,16 @@ var child_is_dynamic_html		= function(child)	{ return child.type === UNARY_HB_TY
 						.replace(/'/g, "&#039;");
 	},
 	compute_object_property = function(object, prop_node, context, lineage) {
-		return object ? object[prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name] :
-						undefined;
+		if(object) {
+			var nodeName = [prop_node.computed ? get_node_value(prop_node, context, lineage) : prop_node.name];
+			if(cjs.isMapConstraint(object)) {
+				return object.get(nodeName);
+			} else {
+				return object[nodeName];
+			}
+		} else {
+			return undefined;
+		}
 	},
 	ELSE_COND = {},
 	first_body = function(node) {
