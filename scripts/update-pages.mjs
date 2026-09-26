@@ -9,7 +9,7 @@
 // Usage: npm run pages -- <path to a gh-pages checkout>
 // (`npm run pages` builds dist/ and docs/ first.) Review the changes, then commit and push the checkout.
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
 const site = process.argv[2];
@@ -48,6 +48,16 @@ execFileSync("zip", ["-q", "-r", "-X", `${name}.zip`, name], { cwd: join(site, "
 const api = join(site, "api");
 rmSync(api, { recursive: true, force: true });
 cpSync(join(root, "docs"), api, { recursive: true, filter: (path) => basename(path) !== ".nojekyll" });
+// TypeDoc puts a permalink inside the <summary> that expands each section, which nests one control
+// inside another (a WCAG failure). The sections' headings keep their ids, so drop those links.
+for (const file of readdirSync(api, { recursive: true })) {
+	if (!file.endsWith(".html")) continue;
+	const page = readFileSync(join(api, file), "utf8");
+	const fixed = page.replace(/<summary\b[^>]*>[\s\S]*?<\/summary>/g, (summary) =>
+		summary.replace(/<a [^>]*class="tsd-anchor-icon"[^>]*>[\s\S]*?<\/a>/g, ""),
+	);
+	if (fixed !== page) writeFileSync(join(api, file), fixed);
+}
 const redirect = `<script>
 (function () {
 	var classes = ["ArrayConstraint", "Binding", "CJSEvent", "Constraint", "FSM", "MapConstraint"];
