@@ -366,9 +366,10 @@ export class FSM {
 	}
 
 	/**
-	 * @internal Changes the current state. Transitions call this; it shouldn't be called directly.
+	 * @internal Changes the current state. Transitions call this. Without a `transition`, it jumps
+	 * straight to the state `to`, and only listeners for entering that state are called.
 	 */
-	_setState(to: string, transition: Transition, ...eventArgs: unknown[]): void {
+	_setState(to: string, transition?: Transition, ...eventArgs: unknown[]): void {
 		const toState = this._states.get(to);
 		if (!toState) throw new Error(`Could not find state '${to}'`);
 		const fromName = this._currentState?.getName() ?? null;
@@ -376,14 +377,14 @@ export class FSM {
 		this._didTransition = true;
 
 		for (const listener of [...this._listeners]) {
-			if (listener.selector.matchesTransition(transition, true)) {
+			if (transition && listener.selector.matchesTransition(transition, true)) {
 				listener.callback.apply(listener.context ?? globalThis, listenerArgs as Parameters<StateListenerCallback>);
 			}
 		}
 		this._setCurrentState(toState);
 		for (const listener of [...this._listeners]) {
 			const { selector } = listener;
-			if (selector.matchesTransition(transition, false) || selector.matchesState(to)) {
+			if ((transition && selector.matchesTransition(transition, false)) || selector.matchesState(to)) {
 				listener.callback.apply(listener.context ?? globalThis, listenerArgs as Parameters<StateListenerCallback>);
 			}
 		}

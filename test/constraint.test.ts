@@ -455,6 +455,32 @@ describe("Constraints: regression tests", () => {
 		expect(checked.get()).toBe(false);
 	});
 
+	test("check_on_nullify doesn't re-enter a getter that changes what it depends on", () => {
+		const source = cjs(0);
+		let calls = 0;
+		const derived = cjs(
+			() => {
+				calls++;
+				if (source.get() === 0) source.set(1);
+				return source.get() * 10;
+			},
+			{ check_on_nullify: true },
+		);
+		expect(derived.get()).toBe(10);
+		expect(calls).toBe(1);
+		// It read a value that changed while it was computing, so it recomputes the next time it's read
+		expect(derived.isValid()).toBe(false);
+		expect(derived.get()).toBe(10);
+		expect(calls).toBe(2);
+
+		const listener = vi.fn();
+		derived.onChange(listener);
+		source.set(2);
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(derived.get()).toBe(20);
+		expect(calls).toBe(3);
+	});
+
 	test("a getter that pauses and then throws doesn't leave the constraint paused", () => {
 		const key = cjs("a");
 		const cache: Record<string, string> = { b: "cached b" };

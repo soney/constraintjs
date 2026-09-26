@@ -401,6 +401,18 @@ describe("Finite State Machines: regression tests", () => {
 		fsm.destroy();
 		expect(attached.size).toBe(0);
 	});
+
+	test("_setState without a transition jumps to a state (as older code does)", () => {
+		const fsm = cjs.fsm("a", "b");
+		const onTransition = vi.fn();
+		const onEnter = vi.fn();
+		fsm.on("a -> b", onTransition);
+		fsm.on("b", onEnter);
+		fsm._setState("b");
+		expect(fsm.getState()).toBe("b");
+		expect(onEnter).toHaveBeenCalledTimes(1);
+		expect(onTransition).not.toHaveBeenCalled();
+	});
 });
 
 describe("FSM API", () => {

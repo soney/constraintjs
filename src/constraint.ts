@@ -922,6 +922,9 @@ export class Constraint<T = any> {
 	_unchangedAfterRecheck(): boolean {
 		const { cache_value, check_on_nullify, equals = defaultEquals } = this._options;
 		if (cache_value === false || check_on_nullify !== true || rechecked.has(this)) return false;
+		// If my getter is still running (it changed something it depends on), don't run it again from
+		// inside itself: I stay invalid, and recompute the next time I'm read
+		if (evaluationStack.includes(this)) return false;
 		rechecked.add(this);
 		const oldValue = this._cachedValue as T;
 		try {
