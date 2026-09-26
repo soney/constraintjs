@@ -12,12 +12,13 @@
 		<div class="container">
 			<header class="keystone row">
 				<div class="col-md-3">
-					<img id="cjs_logo" src="resources/cjs_logo_256.png" title="ConstraintJS"/>
+					<img id="cjs_logo" src="resources/cjs_logo_256.png" alt="ConstraintJS" title="ConstraintJS"/>
 				</div>
 				<div class="col-md-9">
-					<h2 class='hidden-sm hidden-xs'><span class='cjs_name'>ConstraintJS</span> is a library for creating dynamic web apps</h2>
+					<h1 class='tagline'><span class='cjs_name'>ConstraintJS</span> is a library for creating dynamic web apps</h1>
 				</div>
 			</header>
+			<main>
 			<div class="biginfo row">
 				<div class="col-md-3 mainlinks">
 					<div class="row">
@@ -149,10 +150,11 @@ $(window).on("mousemove", function(event) {
 					</tbody>
 				</table>
 			</div>
+			</main>
 			<footer class="row">
 				<div class="col-md-12">
-					<iframe class='pull-left' src="https://ghbtns.com/github-btn.html?user=soney&repo=constraintjs&type=watch" allowtransparency="true" frameborder="0" scrolling="0" width="62" height="20"></iframe>
-					<iframe class='pull-left' src="https://ghbtns.com/github-btn.html?user=soney&repo=constraintjs&type=fork" allowtransparency="true" frameborder="0" scrolling="0" width="62" height="20"></iframe>
+					<iframe class='pull-left' title="Watch ConstraintJS on GitHub" src="https://ghbtns.com/github-btn.html?user=soney&repo=constraintjs&type=watch" allowtransparency="true" frameborder="0" scrolling="0" width="62" height="20"></iframe>
+					<iframe class='pull-left' title="Fork ConstraintJS on GitHub" src="https://ghbtns.com/github-btn.html?user=soney&repo=constraintjs&type=fork" allowtransparency="true" frameborder="0" scrolling="0" width="62" height="20"></iframe>
 					<p class="pull-right">Created by <a href="https://from.so">Stephen Oney</a> as part of the <a href="http://www.cs.cmu.edu/~NatProg/">CMU Natural Programming Group</a>. Code licensed under the <a target="license" href="https://github.com/soney/constraintjs/blob/master/LICENSE">MIT License</a>.</p>
 				</div>
 			</footer>
@@ -162,20 +164,20 @@ $(window).on("mousemove", function(event) {
 		<script src="resources/jquery-1.10.2.min.js"></script>
 		<script src="resources/bootstrap-3.1.0/js/bootstrap.min.js"></script>
 		<script type="cjs/template" id="ex1code">
-<label>Name:</label>
-<input class='form-control' type='text' cjs-out='name'
+<label for='ex1_name'>Name:</label>
+<input id='ex1_name' class='form-control' type='text' cjs-out='name'
 		placeholder='Enter your name' />
 
 <h3>Hello, {{name||'friend'}}!</h3>
 <h4>I am {{libName}}</h4>
 		</script>
 		<script type="cjs/template" id="ex2code">
-<label>Title:</label>
-<input class='form-control' type='text' cjs-out='demonym'
+<label for='ex2_title'>Title:</label>
+<input id='ex2_title' class='form-control' type='text' cjs-out='demonym'
 		placeholder='Demonym' value='Commander' />
 
-<label>Members (comma-separated):</label>
-<input class='form-control' type='text' cjs-out='items'
+<label for='ex2_members'>Members (comma-separated):</label>
+<input id='ex2_members' class='form-control' type='text' cjs-out='items'
 		placeholder='Comma-separated items'
 		value='Kirk, Spock, Sulu, Uhura' />
 
@@ -254,8 +256,10 @@ $(window).on("mousemove", function(event) {
 					mouse_x.set(event.originalEvent.touches[0].pageX); mouse_y.set(event.originalEvent.touches[0].pageY);
 			});
 
-				$("#ex3")	.append("<label style='text-align:right;width:100%'>Eye radius: </label>", $("<div style='text-align: right' />").append(eradius_slider))
-				.append("<label style='text-align:right;width:100%'>Pupil radius: </label>", $("<div style='text-align: right' />").append(pradius_slider))
+				$(eradius_slider).attr("id", "ex3_eye_radius");
+				$(pradius_slider).attr("id", "ex3_pupil_radius");
+				$("#ex3")	.append("<label for='ex3_eye_radius' style='text-align:right;width:100%'>Eye radius: </label>", $("<div style='text-align: right' />").append(eradius_slider))
+				.append("<label for='ex3_pupil_radius' style='text-align:right;width:100%'>Pupil radius: </label>", $("<div style='text-align: right' />").append(pradius_slider))
 						//.append(pupil)
 						.append(eyes).css("overflow-x", "none");
 			} catch(e){}

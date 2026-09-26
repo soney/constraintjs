@@ -6,12 +6,12 @@ body {
 	color: #AAA;
 }
 a .version {
-	opacity: 0.6;
+	color: #e1ecf6;
 }
 .filesize {
 	font-size: 0.9em;
 	text-align: right;
-	color: #999;
+	color: #595959;
 	margin-bottom: 5px;
 }
 .mainlinks {
@@ -43,4 +43,24 @@ img#cjs_logo {
 	top: -60px;
 	z-index:4;
 	width: 200px;
+}
+
+/* Colors with enough contrast for WCAG AA */
+a, .btn-link {
+	color: #2a6496;
+}
+a:hover, a:focus, .btn-link:hover, .btn-link:focus {
+	color: #1b4263;
+}
+.mainlinks .btn-primary {
+	background-color: #2a6496;
+	border-color: #245682;
+}
+.mainlinks .btn-primary:hover, .mainlinks .btn-primary:focus {
+	background-color: #1f4b70;
+	border-color: #1b4263;
+}
+/* Links in text are underlined, so they don't rely on color alone */
+p a {
+	text-decoration: underline;
 }

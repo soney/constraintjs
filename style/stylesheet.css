@@ -17,19 +17,20 @@ body {
 	border-bottom: 5px solid #ffdc00;
 	min-height: 60px;
 }
-.keystone h2 {
+.keystone h1, .keystone h2 {
+	font-size: 30px;
 	color: #AAA;
 	font-weight: 100;
 	text-shadow: 0px 0px 5px #222;
 }
-h2 span.cjs_name {
+h1 span.cjs_name, h2 span.cjs_name {
 	font-weight: 500;
 }
 
 footer {
 	border-top: 1px solid #AAA;
 	background-color: #C8C8C8;
-	color: #888;
+	color: #333;
 	text-shadow: 0px 1px 0px #DDD;
 	padding-top: 10px;
 	border-bottom-left-radius: 3px;
@@ -49,7 +50,20 @@ footer {
 	);
 }
 footer a {
-	color: #888;
+	color: #333;
+	text-decoration: underline;
+}
+/* The tagline is hidden on small screens, but stays available to screen readers */
+@media (max-width: 991px) {
+	.keystone h1.tagline {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		border: 0;
+	}
 }
 
 @media all and (-webkit-min-device-pixel-ratio : 1.5) {

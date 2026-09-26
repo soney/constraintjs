@@ -1,9 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8">
 	<title>QUnit Tests</title>
 	<link rel="stylesheet" href="resources/qunit-1.12.0.css">
+	<style>
+		/* QUnit's colors, darkened for enough contrast (WCAG AA) */
+		#qunit-tests .pass { color: #1f4f8a; }
+		#qunit-tests b.passed { color: #3d4c07; }
+		#qunit-tests > li a { color: #3e4a51; text-decoration: underline; }
+		#qunit-testresult { color: #1d5a7b; }
+		#qunit-userAgent { background-color: #1d5a7b; }
+	</style>
 	<script src="../builds/constraintjs-beta/cjs.js"></script>
 	<script src="resources/qunit-1.12.0.js"></script>
 	<script src="memory_tests.js"></script>
