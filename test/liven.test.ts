@@ -187,6 +187,49 @@ describe("Liven options", () => {
 		}
 	});
 
+	test("a live function doesn't queue itself again when nothing changed, even in a batch that's left open", () => {
+		const x = cjs(1);
+		let runs = 0;
+		// (Starts a batch that it doesn't end, like a listener that throws between wait() and signal())
+		const leaky = cjs.liven(
+			() => {
+				if (x.get() === 2) cjs.wait();
+			},
+			{ priority: 1 },
+		);
+		const live = cjs.liven(
+			() => {
+				x.get();
+				runs++;
+			},
+			{ pause_while_running: true },
+		);
+		expect(runs).toBe(1);
+		x.set(2); // (This used to never return: the live function kept queueing itself)
+		expect(runs).toBe(2);
+		cjs.signal();
+		leaky.destroy();
+		live.destroy();
+	});
+
+	test("a live function that throws while paused runs again when what it read changes", () => {
+		const x = cjs(1);
+		let runs = 0;
+		const live = cjs.liven(
+			() => {
+				runs++;
+				if (x.get() === 2) throw new Error("two");
+			},
+			{ pause_while_running: true },
+		);
+		expect(runs).toBe(1);
+		expect(() => x.set(2)).toThrow("two");
+		expect(runs).toBe(2);
+		x.set(3);
+		expect(runs).toBe(3);
+		live.destroy();
+	});
+
 	test("a live function created during a batch runs when the batch ends", () => {
 		let runs = 0;
 		cjs.wait();

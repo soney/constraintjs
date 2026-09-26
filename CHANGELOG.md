@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- A live function with `pause_while_running: true` queued itself to run again each time it ran inside a
+  `cjs.wait()` batch, even when nothing had changed. If a batch was left open (say, a listener threw between
+  `cjs.wait()` and `cjs.signal()`), listeners ran in an endless loop. It now only queues itself when something
+  it read has changed.
+- A live function with `pause_while_running: true` that threw stayed paused for good. It now runs again the
+  next time something it read changes.
+
 ## 0.10.1 (2026-09-26)
 
 ### Fixes

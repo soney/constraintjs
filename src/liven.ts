@@ -65,17 +65,35 @@ export function liven(func: (this: any) => void, options?: LivenOptions): LiveFu
 	let paused = false;
 
 	const runIfInvalid = (): void => {
-		if (pause_while_running) pause();
-		node.get();
-		if (pause_while_running) resume();
+		if (!pause_while_running) {
+			node.get();
+			return;
+		}
+		pause();
+		try {
+			node.get();
+		} catch (error) {
+			// Keep listening (without running again right away): the next change to anything the
+			// function read runs it again
+			listen();
+			throw error;
+		}
+		resume();
 	};
 
-	// Run now, or at the end of the current `cjs.wait()` batch
+	// Run now, or at the end of the current `cjs.wait()` batch, if anything the function read has
+	// changed. (Queueing it when nothing has changed would do nothing but, inside a batch that
+	// never ends, queue it again, forever.)
 	const runSoon = (): void => {
-		if (!run_on_create) return;
+		if (!run_on_create || node.isValid()) return;
 		if (isBatching()) node._enqueueListeners();
 		else node.get(false);
 	};
+
+	function listen(): void {
+		paused = false;
+		node.onChangeWithPriority(priority, runIfInvalid);
+	}
 
 	function pause(): boolean {
 		if (paused) return false;
@@ -86,13 +104,12 @@ export function liven(func: (this: any) => void, options?: LivenOptions): LiveFu
 
 	function resume(): boolean {
 		if (!paused) return false;
-		paused = false;
-		node.onChangeWithPriority(priority, runIfInvalid);
+		listen();
 		runSoon();
 		return true;
 	}
 
-	node.onChangeWithPriority(priority, runIfInvalid);
+	listen();
 
 	const liveFunction: LiveFunction = {
 		destroy(silent) {
