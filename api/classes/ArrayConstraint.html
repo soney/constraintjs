@@ -1,0 +1,705 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>ArrayConstraint | ConstraintJS - v0.10.0</title><meta name="description" content="Documentation for ConstraintJS"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ConstraintJS - v0.10.0</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb" aria-label="Breadcrumb">
+<li><a href="" aria-current="page">ArrayConstraint</a></li></ul>
+<h1>Class ArrayConstraint&lt;T&gt;</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p><em><strong>Note:</strong></em> the preferred way to create an array constraint is with <code>cjs([...])</code> or <code>cjs.array(options)</code>.</p>
+<p>Emulates a standard array, but with constraints: its methods (<code>push</code>, <code>pop</code>, <code>slice</code>, ...) keep
+track of dependencies, so that a constraint that reads an item is only updated when that item
+(or, for methods like <code>forEach</code>, the length) changes.</p>
+<pre><code>x[1] = y[2] + z[3]  ===  x.item(1, y.item(2) + z.item(3))
+</code></pre>
+</div>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example">Example<a href="#example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-7">1</span><span class="hl-1">, </span><span class="hl-7">2</span><span class="hl-1">, </span><span class="hl-7">3</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">sum</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">() {</span><br/><span class="hl-1">        </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">().</span><span class="hl-6">reduce</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">(</span><span class="hl-2">a</span><span class="hl-1">, </span><span class="hl-2">b</span><span class="hl-1">) { </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">a</span><span class="hl-1"> + </span><span class="hl-2">b</span><span class="hl-1">; }, </span><span class="hl-7">0</span><span class="hl-1">);</span><br/><span class="hl-1">    });</span><br/><span class="hl-1">    </span><span class="hl-2">sum</span><span class="hl-1">.</span><span class="hl-6">get</span><span class="hl-1">(); </span><span class="hl-8">// 6</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">push</span><span class="hl-1">(</span><span class="hl-7">4</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-2">sum</span><span class="hl-1">.</span><span class="hl-6">get</span><span class="hl-1">(); </span><span class="hl-8">// 10</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div></section>
+<section class="tsd-panel">
+<h4>Type Parameters</h4>
+<ul class="tsd-type-parameter-list">
+<li><span id="t"><span class="tsd-kind-type-parameter">T</span> = <span class="tsd-signature-type">any</span></span></li></ul></section><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L35">array-constraint.ts:35</a></li></ul></aside>
+<section class="tsd-panel-group tsd-index-group">
+<section class="tsd-panel tsd-index-panel">
+<details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h5 class="tsd-index-heading uppercase">Index</h5></summary>
+<div class="tsd-accordion-details">
+<section class="tsd-index-section">
+<h3 class="tsd-index-heading tsd-anchor-link" id="constructors">Constructors<a href="#constructors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-index-list"><a href="#constructor" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a>
+</div></section>
+<section class="tsd-index-section">
+<h3 class="tsd-index-heading tsd-anchor-link" id="properties">Properties<a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-index-list"><a href="#break" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>BREAK</span></a>
+</div></section>
+<section class="tsd-index-section">
+<h3 class="tsd-index-heading tsd-anchor-link" id="methods">Methods<a href="#methods" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-index-list"><a href="#concat" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>concat</span></a>
+<a href="#destroy" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>destroy</span></a>
+<a href="#every" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>every</span></a>
+<a href="#filter" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>filter</span></a>
+<a href="#foreach" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>for<wbr/>Each</span></a>
+<a href="#indexof" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>index<wbr/>Of</span></a>
+<a href="#indexwhere" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>index<wbr/>Where</span></a>
+<a href="#item" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>item</span></a>
+<a href="#itemconstraint" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>item<wbr/>Constraint</span></a>
+<a href="#join" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>join</span></a>
+<a href="#lastindexof" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>last<wbr/>Index<wbr/>Of</span></a>
+<a href="#lastindexwhere" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>last<wbr/>Index<wbr/>Where</span></a>
+<a href="#length" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>length</span></a>
+<a href="#map" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>map</span></a>
+<a href="#pop" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>pop</span></a>
+<a href="#push" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>push</span></a>
+<a href="#reverse" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>reverse</span></a>
+<a href="#setequalitycheck" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Equality<wbr/>Check</span></a>
+<a href="#setvalue" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Value</span></a>
+<a href="#shift" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>shift</span></a>
+<a href="#slice" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>slice</span></a>
+<a href="#some" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>some</span></a>
+<a href="#sort" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>sort</span></a>
+<a href="#splice" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>splice</span></a>
+<a href="#toarray" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>to<wbr/>Array</span></a>
+<a href="#tostring" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>to<wbr/>String</span></a>
+<a href="#unshift" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>unshift</span></a>
+</div></section></div></details></section></section>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="constructors-1">Constructors<a href="#constructors-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
+<section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="constructor"><span>constructor</span><a href="#constructor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="constructorarrayconstraint"><span class="tsd-signature-keyword">new</span> <span class="tsd-kind-constructor-signature">ArrayConstraint</span><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#constructorarrayconstraintt">T</a> <span class="tsd-signature-symbol">=</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">options</span><span class="tsd-signature-symbol">?:</span> <a href="../interfaces/ArrayConstraintOptions.html" class="tsd-signature-type tsd-kind-interface">ArrayConstraintOptions</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="" class="tsd-signature-type tsd-kind-class">ArrayConstraint</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><a href="#constructorarrayconstraint" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<section class="tsd-panel">
+<h4>Type Parameters</h4>
+<ul class="tsd-type-parameter-list">
+<li><span id="constructorarrayconstraintt"><span class="tsd-kind-type-parameter">T</span> = <span class="tsd-signature-type">any</span></span></li></ul></section>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">options</span>: <a href="../interfaces/ArrayConstraintOptions.html" class="tsd-signature-type tsd-kind-interface">ArrayConstraintOptions</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="" class="tsd-signature-type tsd-kind-class">ArrayConstraint</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L50">array-constraint.ts:50</a></li></ul></aside></div></li></ul></section></section></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="properties-1">Properties<a href="#properties-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
+<section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="break"><code class="tsd-tag">Static</code> <code class="tsd-tag">Readonly</code><span>BREAK</span><a href="#break" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">BREAK</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span><span class="tsd-signature-symbol"> = BREAK</span></div>
+<div class="tsd-comment tsd-typography"><p>Return this from a <code>forEach</code> callback to stop iterating.</p>
+</div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L37">array-constraint.ts:37</a></li></ul></aside></section></section></details>
+<details class="tsd-panel-group tsd-member-group tsd-accordion" open><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h2 class="tsd-anchor-link" id="methods-1">Methods<a href="#methods-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2></summary>
+<section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="concat"><span>concat</span><a href="#concat" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="concat-1"><span class="tsd-kind-call-signature">concat</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">values</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">[]</span><a href="#concat-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A new (plain) array of these items followed by <code>values</code>. Array (and array constraint)
+arguments are spread into the result.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">values</span>: <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">[]</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">[]</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-1">Example<a href="#example-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr1</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]),</span><br/><span class="hl-1">        </span><span class="hl-2">arr2</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;x&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr1</span><span class="hl-1">.</span><span class="hl-6">concat</span><span class="hl-1">(</span><span class="hl-2">arr2</span><span class="hl-1">); </span><span class="hl-8">// [&#39;a&#39;,&#39;b&#39;,&#39;c&#39;,&#39;x&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L375">array-constraint.ts:375</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="destroy"><span>destroy</span><a href="#destroy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="destroy-1"><span class="tsd-kind-call-signature">destroy</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">silent</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">void</span><a href="#destroy-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Clears this array and cleans up its constraints.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">silent</span>: <span class="tsd-signature-type">boolean</span></span>
+<div class="tsd-comment tsd-typography"><p>If <code>true</code>, don't invalidate the constraints that depended on it</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L150">array-constraint.ts:150</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="every"><span>every</span><a href="#every" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="every-1"><span class="tsd-kind-call-signature">every</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">filter</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">thisArg</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><a href="#every-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Whether <code>filter</code> returns a truthy value for every item.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">filter</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">thisArg</span>: <span class="tsd-signature-type">unknown</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-2">Example<a href="#example-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-7">2</span><span class="hl-1">,</span><span class="hl-7">4</span><span class="hl-1">,</span><span class="hl-7">6</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">every</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">(</span><span class="hl-2">x</span><span class="hl-1">) { </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">x</span><span class="hl-1">%</span><span class="hl-7">2</span><span class="hl-1">===</span><span class="hl-7">0</span><span class="hl-1">; }); </span><span class="hl-8">// true</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L299">array-constraint.ts:299</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="filter"><span>filter</span><a href="#filter" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="filter-1"><span class="tsd-kind-call-signature">filter</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">filter</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">array</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">thisArg</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><a href="#filter-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A (plain) array of the items that pass <code>filter</code>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">filter</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">array</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">thisArg</span>: <span class="tsd-signature-type">unknown</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L409">array-constraint.ts:409</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="foreach"><span>for<wbr/>Each</span><a href="#foreach" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="foreach-1"><span class="tsd-kind-call-signature">forEach</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">callback</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">thisArg</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">this</span><a href="#foreach-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Calls <code>callback</code> once per item. Return <code>cjs.ArrayConstraint.BREAK</code> from it to stop.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">callback</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span></span></li>
+<li><span><span class="tsd-kind-parameter">thisArg</span>: <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol"> = globalThis</span></span>
+<div class="tsd-comment tsd-typography"><p>The <code>this</code> for <code>callback</code> (default: the global object)</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-3">Example<a href="#example-3" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">forEach</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">(</span><span class="hl-2">val</span><span class="hl-1">, </span><span class="hl-2">i</span><span class="hl-1">) {</span><br/><span class="hl-1">        </span><span class="hl-2">console</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1">(</span><span class="hl-2">val</span><span class="hl-1">);</span><br/><span class="hl-1">        </span><span class="hl-0">if</span><span class="hl-1">(</span><span class="hl-2">i</span><span class="hl-1"> === </span><span class="hl-7">1</span><span class="hl-1">) {</span><br/><span class="hl-1">            </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">cjs</span><span class="hl-1">.</span><span class="hl-2">ArrayConstraint</span><span class="hl-1">.</span><span class="hl-5">BREAK</span><span class="hl-1">;</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">    }); </span><span class="hl-8">// &#39;a&#39; ... &#39;b&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L79">array-constraint.ts:79</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="indexof"><span>index<wbr/>Of</span><a href="#indexof" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="indexof-1"><span class="tsd-kind-call-signature">indexOf</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">item</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">equalityCheck</span><span class="tsd-signature-symbol">?:</span> <a href="../types/EqualityCheck.html" class="tsd-signature-type tsd-kind-type-alias">EqualityCheck</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><a href="#indexof-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The index of the first item equal to <code>item</code>, or <code>-1</code>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">item</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">equalityCheck</span>: <a href="../types/EqualityCheck.html" class="tsd-signature-type tsd-kind-type-alias">EqualityCheck</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></span>
+<div class="tsd-comment tsd-typography"><p>How to compare items (default: this array's equality check)</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-4">Example<a href="#example-4" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">indexOf</span><span class="hl-1">(</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">); </span><span class="hl-8">// 0</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L262">array-constraint.ts:262</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="indexwhere"><span>index<wbr/>Where</span><a href="#indexwhere" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="indexwhere-1"><span class="tsd-kind-call-signature">indexWhere</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">filter</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">thisArg</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><a href="#indexwhere-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The index of the first item for which <code>filter</code> returns a truthy value, or <code>-1</code>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">filter</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span></span></li>
+<li><span><span class="tsd-kind-parameter">thisArg</span>: <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol"> = ...</span></span>
+<div class="tsd-comment tsd-typography"><p>The <code>this</code> for <code>filter</code> (default: this array constraint)</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-5">Example<a href="#example-5" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">indexWhere</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">(</span><span class="hl-2">val</span><span class="hl-1">, </span><span class="hl-2">i</span><span class="hl-1">) {</span><br/><span class="hl-1">        </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">val</span><span class="hl-1"> === </span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">;</span><br/><span class="hl-1">    }); </span><span class="hl-8">// 1</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L227">array-constraint.ts:227</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="item"><span>item</span><a href="#item" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="item-1"><span class="tsd-kind-call-signature">item</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><a href="#item-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>With no arguments: a plain array of the items (see <code>toArray</code>). With <code>index</code>: the item at
+<code>index</code>. With <code>index</code> and <code>value</code>: sets the item at <code>index</code> and returns <code>value</code>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-6">Example<a href="#example-6" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">();        </span><span class="hl-8">// [&#39;a&#39;,&#39;b&#39;]</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">);       </span><span class="hl-8">// &#39;a&#39;</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">, </span><span class="hl-3">&#39;x&#39;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">();     </span><span class="hl-8">// [&#39;x&#39;,&#39;b&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L129">array-constraint.ts:129</a></li></ul></aside></div></li>
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="item-2"><span class="tsd-kind-call-signature">item</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#item-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>With no arguments: a plain array of the items (see <code>toArray</code>). With <code>index</code>: the item at
+<code>index</code>. With <code>index</code> and <code>value</code>: sets the item at <code>index</code> and returns <code>value</code>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">index</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-7">Example<a href="#example-7" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">();        </span><span class="hl-8">// [&#39;a&#39;,&#39;b&#39;]</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">);       </span><span class="hl-8">// &#39;a&#39;</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">, </span><span class="hl-3">&#39;x&#39;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">();     </span><span class="hl-8">// [&#39;x&#39;,&#39;b&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L130">array-constraint.ts:130</a></li></ul></aside></div></li>
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="item-3"><span class="tsd-kind-call-signature">item</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><a href="#item-3" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>With no arguments: a plain array of the items (see <code>toArray</code>). With <code>index</code>: the item at
+<code>index</code>. With <code>index</code> and <code>value</code>: sets the item at <code>index</code> and returns <code>value</code>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">index</span>: <span class="tsd-signature-type">number</span></span></li>
+<li><span><span class="tsd-kind-parameter">value</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-8">Example<a href="#example-8" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">();        </span><span class="hl-8">// [&#39;a&#39;,&#39;b&#39;]</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">);       </span><span class="hl-8">// &#39;a&#39;</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">, </span><span class="hl-3">&#39;x&#39;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">();     </span><span class="hl-8">// [&#39;x&#39;,&#39;b&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L131">array-constraint.ts:131</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="itemconstraint"><span>item<wbr/>Constraint</span><a href="#itemconstraint" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="itemconstraint-1"><span class="tsd-kind-call-signature">itemConstraint</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="Constraint.html" class="tsd-signature-type tsd-kind-class">Constraint</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a href="Constraint.html" class="tsd-signature-type tsd-kind-class">Constraint</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span><a href="#itemconstraint-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A constraint whose value is the item at <code>index</code> (which can itself be a constraint).</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">index</span>: <span class="tsd-signature-type">number</span> <span class="tsd-signature-symbol">|</span> <a href="Constraint.html" class="tsd-signature-type tsd-kind-class">Constraint</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a href="Constraint.html" class="tsd-signature-type tsd-kind-class">Constraint</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol">&gt;</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-9">Example<a href="#example-9" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">first_item</span><span class="hl-1"> = </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">itemConstraint</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-2">first_item</span><span class="hl-1">.</span><span class="hl-6">get</span><span class="hl-1">(); </span><span class="hl-8">// &#39;a&#39;</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">item</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">,</span><span class="hl-3">&#39;x&#39;</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-2">first_item</span><span class="hl-1">.</span><span class="hl-6">get</span><span class="hl-1">(); </span><span class="hl-8">// &#39;x&#39;</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L404">array-constraint.ts:404</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="join"><span>join</span><a href="#join" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="join-1"><span class="tsd-kind-call-signature">join</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">separator</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><a href="#join-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The items joined into a string, separated by <code>separator</code> (default: <code>&quot;,&quot;</code>).</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">separator</span>: <span class="tsd-signature-type">string</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L414">array-constraint.ts:414</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="lastindexof"><span>last<wbr/>Index<wbr/>Of</span><a href="#lastindexof" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="lastindexof-1"><span class="tsd-kind-call-signature">lastIndexOf</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">item</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">equalityCheck</span><span class="tsd-signature-symbol">?:</span> <a href="../types/EqualityCheck.html" class="tsd-signature-type tsd-kind-type-alias">EqualityCheck</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><a href="#lastindexof-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The index of the last item equal to <code>item</code>, or <code>-1</code>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">item</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">equalityCheck</span>: <a href="../types/EqualityCheck.html" class="tsd-signature-type tsd-kind-type-alias">EqualityCheck</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></span>
+<div class="tsd-comment tsd-typography"><p>How to compare items (default: this array's equality check)</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-10">Example<a href="#example-10" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">lastIndexOf</span><span class="hl-1">(</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">); </span><span class="hl-8">// 2</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L276">array-constraint.ts:276</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="lastindexwhere"><span>last<wbr/>Index<wbr/>Where</span><a href="#lastindexwhere" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="lastindexwhere-1"><span class="tsd-kind-call-signature">lastIndexWhere</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">filter</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">thisArg</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><a href="#lastindexwhere-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The index of the last item for which <code>filter</code> returns a truthy value, or <code>-1</code>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">filter</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span></span></li>
+<li><span><span class="tsd-kind-parameter">thisArg</span>: <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol"> = ...</span></span>
+<div class="tsd-comment tsd-typography"><p>The <code>this</code> for <code>filter</code> (default: this array constraint)</p>
+</div></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-11">Example<a href="#example-11" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">lastIndexWhere</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">(</span><span class="hl-2">val</span><span class="hl-1">, </span><span class="hl-2">i</span><span class="hl-1">) {</span><br/><span class="hl-1">        </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">val</span><span class="hl-1"> === </span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">;</span><br/><span class="hl-1">    }); </span><span class="hl-8">// 2</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L246">array-constraint.ts:246</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="length"><span>length</span><a href="#length" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="length-1"><span class="tsd-kind-call-signature">length</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><a href="#length-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The number of items.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-12">Example<a href="#example-12" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">length</span><span class="hl-1">(); </span><span class="hl-8">// 2</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L168">array-constraint.ts:168</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="map"><span>map</span><a href="#map" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="map-1"><span class="tsd-kind-call-signature">map</span><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#mapr">R</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">callback</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#mapr">R</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">thisArg</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#mapr">R</a><span class="tsd-signature-symbol">[]</span><a href="#map-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A new (plain) array with the results of calling <code>callback</code> on every item.</p>
+</div>
+<section class="tsd-panel">
+<h4>Type Parameters</h4>
+<ul class="tsd-type-parameter-list">
+<li><span id="mapr"><span class="tsd-kind-type-parameter">R</span></span></li></ul></section>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">callback</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#mapr">R</a></span></li>
+<li><span><span class="tsd-kind-parameter">thisArg</span>: <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol"> = globalThis</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#mapr">R</a><span class="tsd-signature-symbol">[]</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-13">Example<a href="#example-13" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-7">1</span><span class="hl-1">,</span><span class="hl-7">2</span><span class="hl-1">,</span><span class="hl-7">3</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">map</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">(</span><span class="hl-2">x</span><span class="hl-1">) { </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">x</span><span class="hl-1">+</span><span class="hl-7">1</span><span class="hl-1">; }); </span><span class="hl-8">// [2,3,4]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L94">array-constraint.ts:94</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="pop"><span>pop</span><a href="#pop" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="pop-1"><span class="tsd-kind-call-signature">pop</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#pop-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Removes the last item and returns it (or <code>undefined</code> if the array is empty).</p>
+</div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-14">Example<a href="#example-14" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">pop</span><span class="hl-1">(); </span><span class="hl-8">// &#39;b&#39;</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">(); </span><span class="hl-8">// [&#39;a&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L197">array-constraint.ts:197</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="push"><span>push</span><a href="#push" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="push-1"><span class="tsd-kind-call-signature">push</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">values</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><a href="#push-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Appends items to the end and returns the new length.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">values</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-15">Example<a href="#example-15" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">push</span><span class="hl-1">(</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;d&#39;</span><span class="hl-1">); </span><span class="hl-8">// 4</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">(); </span><span class="hl-8">// [&#39;a&#39;,&#39;b&#39;,&#39;c&#39;,&#39;d&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L180">array-constraint.ts:180</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="reverse"><span>reverse</span><a href="#reverse" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="reverse-1"><span class="tsd-kind-call-signature">reverse</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><a href="#reverse-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A reversed (plain) copy of the items. This array constraint is not modified.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L424">array-constraint.ts:424</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="setequalitycheck"><span>set<wbr/>Equality<wbr/>Check</span><a href="#setequalitycheck" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="setequalitycheck-1"><span class="tsd-kind-call-signature">setEqualityCheck</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">equalityCheck</span><span class="tsd-signature-symbol">:</span> <a href="../types/EqualityCheck.html" class="tsd-signature-type tsd-kind-type-alias">EqualityCheck</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">this</span><a href="#setequalitycheck-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Change how items are compared (for <code>indexOf</code> and friends).</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">equalityCheck</span>: <a href="../types/EqualityCheck.html" class="tsd-signature-type tsd-kind-type-alias">EqualityCheck</a><span class="tsd-signature-symbol">&lt;</span><a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">&gt;</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L60">array-constraint.ts:60</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="setvalue"><span>set<wbr/>Value</span><a href="#setvalue" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="setvalue-1"><span class="tsd-kind-call-signature">setValue</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">values</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-keyword">readonly</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">this</span><a href="#setvalue-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Replaces every item.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">values</span>: <span class="tsd-signature-keyword">readonly</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-16">Example<a href="#example-16" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-7">1</span><span class="hl-1">,</span><span class="hl-7">2</span><span class="hl-1">,</span><span class="hl-7">3</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">setValue</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">(); </span><span class="hl-8">//[&#39;a&#39;,&#39;b&#39;,&#39;c&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L110">array-constraint.ts:110</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="shift"><span>shift</span><a href="#shift" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="shift-1"><span class="tsd-kind-call-signature">shift</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span><a href="#shift-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Removes the first item and returns it.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">undefined</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-17">Example<a href="#example-17" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">shift</span><span class="hl-1">(); </span><span class="hl-8">// &#39;a&#39;</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">(); </span><span class="hl-8">//[&#39;b&#39;,&#39;c&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L349">array-constraint.ts:349</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="slice"><span>slice</span><a href="#slice" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="slice-1"><span class="tsd-kind-call-signature">slice</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">begin</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">end</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><a href="#slice-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A (plain) array of the items from <code>begin</code> up to (but not including) <code>end</code>. Like
+<code>Array.prototype.slice</code>, negative indices count back from the end.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">begin</span>: <span class="tsd-signature-type">number</span></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">end</span>: <span class="tsd-signature-type">number</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-18">Example<a href="#example-18" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">slice</span><span class="hl-1">(</span><span class="hl-7">1</span><span class="hl-1">); </span><span class="hl-8">// [&#39;b&#39;,&#39;c&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L388">array-constraint.ts:388</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="some"><span>some</span><a href="#some" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="some-1"><span class="tsd-kind-call-signature">some</span><span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">filter</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">thisArg</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><a href="#some-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Whether <code>filter</code> returns a truthy value for any item.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">filter</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">unknown</span></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">thisArg</span>: <span class="tsd-signature-type">unknown</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-19">Example<a href="#example-19" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-7">1</span><span class="hl-1">,</span><span class="hl-7">3</span><span class="hl-1">,</span><span class="hl-7">5</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">some</span><span class="hl-1">(</span><span class="hl-4">function</span><span class="hl-1">(</span><span class="hl-2">x</span><span class="hl-1">) { </span><span class="hl-0">return</span><span class="hl-1"> </span><span class="hl-2">x</span><span class="hl-1">%</span><span class="hl-7">2</span><span class="hl-1">===</span><span class="hl-7">0</span><span class="hl-1">; }); </span><span class="hl-8">// false</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L288">array-constraint.ts:288</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="sort"><span>sort</span><a href="#sort" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="sort-1"><span class="tsd-kind-call-signature">sort</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">compareFunction</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">a</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">b</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><a href="#sort-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A sorted (plain) copy of the items. This array constraint is not modified.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">compareFunction</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">a</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">b</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">number</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L419">array-constraint.ts:419</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="splice"><span>splice</span><a href="#splice" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="splice-1"><span class="tsd-kind-call-signature">splice</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">howMany</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">items</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><a href="#splice-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Removes <code>howMany</code> items starting at <code>index</code>, inserts <code>items</code> in their place, and returns the
+removed items. If <code>index</code> is past the end, <code>items</code> are appended.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-kind-parameter">index</span>: <span class="tsd-signature-type">number</span></span></li>
+<li><span><code class="tsd-tag">Optional</code><span class="tsd-kind-parameter">howMany</span>: <span class="tsd-signature-type">number</span></span>
+<div class="tsd-comment tsd-typography"><p>The number of items to remove (default: <code>0</code>)</p>
+</div></li>
+<li><span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">items</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-20">Example<a href="#example-20" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">splice</span><span class="hl-1">(</span><span class="hl-7">0</span><span class="hl-1">, </span><span class="hl-7">2</span><span class="hl-1">, </span><span class="hl-3">&#39;x&#39;</span><span class="hl-1">, </span><span class="hl-3">&#39;y&#39;</span><span class="hl-1">); </span><span class="hl-8">// [&#39;a&#39;,&#39;b&#39;]</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">(); </span><span class="hl-8">// [&#39;x&#39;,&#39;y&#39;,&#39;c&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L322">array-constraint.ts:322</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="toarray"><span>to<wbr/>Array</span><a href="#toarray" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="toarray-1"><span class="tsd-kind-call-signature">toArray</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><a href="#toarray-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>A plain array of the items.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-21">Example<a href="#example-21" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">(); </span><span class="hl-8">// [&#39;a&#39;, &#39;b&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L212">array-constraint.ts:212</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="tostring"><span>to<wbr/>String</span><a href="#tostring" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="tostring-1"><span class="tsd-kind-call-signature">toString</span><span class="tsd-signature-symbol">()</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><a href="#tostring-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The items as a string, like <code>Array.prototype.toString</code>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L429">array-constraint.ts:429</a></li></ul></aside></div></li></ul></section>
+<section class="tsd-panel tsd-member">
+<h3 class="tsd-anchor-link" id="unshift"><span>unshift</span><a href="#unshift" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures">
+<li class="">
+<div class="tsd-signature tsd-anchor-link" id="unshift-1"><span class="tsd-kind-call-signature">unshift</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">items</span><span class="tsd-signature-symbol">:</span> <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><a href="#unshift-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></div>
+<div class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Adds items to the beginning and returns the new length.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li><span><span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">items</span>: <a class="tsd-signature-type tsd-kind-type-parameter" href="#t">T</a><span class="tsd-signature-symbol">[]</span></span></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+<div class="tsd-comment tsd-typography">
+<div class="tsd-tag-example">
+<h4 class="tsd-anchor-link" id="example-22">Example<a href="#example-22" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h4><pre><code class="ts"><span class="hl-4">var</span><span class="hl-1"> </span><span class="hl-2">arr</span><span class="hl-1"> = </span><span class="hl-6">cjs</span><span class="hl-1">([</span><span class="hl-3">&#39;a&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;b&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;c&#39;</span><span class="hl-1">]);</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">unshift</span><span class="hl-1">(</span><span class="hl-3">&#39;x&#39;</span><span class="hl-1">,</span><span class="hl-3">&#39;y&#39;</span><span class="hl-1">); </span><span class="hl-8">// 5</span><br/><span class="hl-1">    </span><span class="hl-2">arr</span><span class="hl-1">.</span><span class="hl-6">toArray</span><span class="hl-1">(); </span><span class="hl-8">//[&#39;x&#39;,&#39;y&#39;,&#39;a&#39;,&#39;b&#39;,&#39;c&#39;]</span>
+</code><button type="button">Copy</button></pre>
+
+</div></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/soney/constraintjs/blob/5fd07ac0a50f7d4a09d15e88690376073fef3753/src/array-constraint.ts#L361">array-constraint.ts:361</a></li></ul></aside></div></li></ul></section></section></details></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details">
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Constructors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Constructors</summary>
+<div><a href="#constructor"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Constructor"><use href="../assets/icons.svg#icon-512"></use></svg><span>constructor</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Properties"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Properties</summary>
+<div><a href="#break"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Property"><use href="../assets/icons.svg#icon-1024"></use></svg><span>BREAK</span></a></div></details>
+<details open class="tsd-accordion tsd-page-navigation-section"><summary class="tsd-accordion-summary" data-key="section-Methods"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>Methods</summary>
+<div><a href="#concat"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>concat</span></a><a href="#destroy"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>destroy</span></a><a href="#every"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>every</span></a><a href="#filter"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>filter</span></a><a href="#foreach"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>for<wbr/>Each</span></a><a href="#indexof"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>index<wbr/>Of</span></a><a href="#indexwhere"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>index<wbr/>Where</span></a><a href="#item"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>item</span></a><a href="#itemconstraint"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>item<wbr/>Constraint</span></a><a href="#join"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>join</span></a><a href="#lastindexof"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>last<wbr/>Index<wbr/>Of</span></a><a href="#lastindexwhere"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>last<wbr/>Index<wbr/>Where</span></a><a href="#length"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>length</span></a><a href="#map"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>map</span></a><a href="#pop"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>pop</span></a><a href="#push"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>push</span></a><a href="#reverse"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>reverse</span></a><a href="#setequalitycheck"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Equality<wbr/>Check</span></a><a href="#setvalue"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>set<wbr/>Value</span></a><a href="#shift"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>shift</span></a><a href="#slice"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>slice</span></a><a href="#some"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>some</span></a><a href="#sort"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>sort</span></a><a href="#splice"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>splice</span></a><a href="#toarray"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>to<wbr/>Array</span></a><a href="#tostring"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>to<wbr/>String</span></a><a href="#unshift"><svg class="tsd-kind-icon" viewBox="0 0 24 24" aria-label="Method"><use href="../assets/icons.svg#icon-2048"></use></svg><span>unshift</span></a></div></details></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="../modules.html">ConstraintJS - v0.10.0</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>
