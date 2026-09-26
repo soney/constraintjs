@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.2 (2026-09-26)
 
 ### Fixes
 
