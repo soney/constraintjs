@@ -10,7 +10,7 @@
 		"state machine"
 	],
 	"author": "Stephen Oney <swloney@gmail.com> (http://from.so/)",
-	"homepage": "https://soney.github.io/constraintjs/",
+	"homepage": "https://cjs.from.so/",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/soney/constraintjs.git"

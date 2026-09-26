@@ -1,6 +1,6 @@
 //     ConstraintJS
 //     ConstraintJS may be freely distributed under the MIT License
-//     https://soney.github.io/constraintjs/
+//     https://cjs.from.so/
 
 import { ArrayConstraint, type ArrayConstraintOptions, isArrayConstraint } from "./array-constraint";
 import { type ArrayDiff, arrayDiff } from "./array-diff";

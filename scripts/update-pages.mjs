@@ -1,4 +1,4 @@
-// Updates a checkout of the gh-pages branch (the website, https://soney.github.io/constraintjs/) for the
+// Updates a checkout of the gh-pages branch (the website, https://cjs.from.so/) for the
 // current version:
 //
 // - adds builds/constraintjs-<version>/ (cjs.js and cjs.min.js, with source maps) and a .zip of it,

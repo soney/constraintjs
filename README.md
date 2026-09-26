@@ -25,7 +25,7 @@ const box = cjs.createTemplate("<div>{{width}} × {{height}} = {{area}}</div>", 
 document.body.append(box);
 ```
 
-For documentation and the full API, visit the [ConstraintJS website](https://soney.github.io/constraintjs/) and its [API reference](https://soney.github.io/constraintjs/api/).
+For documentation and the full API, visit the [ConstraintJS website](https://cjs.from.so/) and its [API reference](https://cjs.from.so/api/).
 
 ## Installation
 
