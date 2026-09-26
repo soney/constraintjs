@@ -4,6 +4,7 @@
 	"out": "docs",
 	"name": "ConstraintJS",
 	"readme": "README.md",
+	"favicon": "resources/images/cjs_logo_64.png",
 	"excludeInternal": true,
 	"excludePrivate": true,
 	"includeVersion": true,
