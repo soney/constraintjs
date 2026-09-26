@@ -2,44 +2,83 @@
 	"name": "constraintjs",
 	"version": "0.9.8-beta3",
 	"description": "Constraint library for JavaScript",
+	"keywords": [
+		"constraints",
+		"reactive",
+		"dataflow",
+		"templates",
+		"state machine"
+	],
 	"author": "Stephen Oney <swloney@gmail.com> (http://from.so/)",
-	"homepage": "http://cjs.from.so/",
+	"homepage": "https://soney.github.io/constraintjs/",
 	"repository": {
-		"type" : "git",
-		"url" : "https://github.com/soney/constraintjs.git"
+		"type": "git",
+		"url": "git+https://github.com/soney/constraintjs.git"
 	},
-	"licenses": [{
-		"type": "MIT",
-		"url": "https://github.com/soney/constraintjs/blob/master/LICENSE"
-	}],
-	"main": "build/cjs.js",
-	"types": "./types/index.d.ts",
-	"private": false,
-	"dependencies": { },
-	"devDependencies": {
-		"grunt": "~0.4.2",
-		"grunt-contrib-jshint": "~0.7",
-		"grunt-contrib-qunit": "~0.3",
-		"grunt-contrib-uglify": "~0.2",
-		"grunt-contrib-concat": "~0.3",
-		"grunt-contrib-watch": "~0.5",
-		"grunt-contrib-clean": "~0.5",
-		"grunt-contrib-compress": "~0.5",
-		"grunt-concat-sourcemap": "~0.4",
-		"underscore": "*",
-		"commander": "~1.2.0",
-		"jade": "*",
-		"mkdirp": "*",
-		"walkdir": "~0.0.7",
-		"stylus": "~0.33.1",
-		"rimraf": "2.x",
-		"marked": ">= 0.2.10",
-		"commander": "0.6.1",
-		"mocha": "*",
-		"should": "*"
+	"bugs": "https://github.com/soney/constraintjs/issues",
+	"license": "MIT",
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.cts",
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			},
+			"require": {
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
+			}
+		},
+		"./package.json": "./package.json"
 	},
+	"unpkg": "./dist/constraintjs.global.min.js",
+	"jsdelivr": "./dist/constraintjs.global.min.js",
+	"files": [
+		"dist"
+	],
+	"sideEffects": false,
 	"engines": {
-		"node": ">= 0.4.7"
+		"node": ">=18"
 	},
-	"scripts": {"test": "grunt test"}
+	"devEngines": {
+		"runtime": {
+			"name": "node",
+			"version": ">=22.18",
+			"onFail": "warn"
+		}
+	},
+	"scripts": {
+		"build": "tsdown",
+		"dev": "tsdown --watch",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"coverage": "vitest run --coverage",
+		"typecheck": "tsc --noEmit",
+		"lint": "eslint .",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"docs": "typedoc",
+		"pages": "npm run build && npm run docs && node scripts/update-pages.mjs",
+		"check": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm test",
+		"prepublishOnly": "npm run check && npm run build"
+	},
+	"devDependencies": {
+		"@arethetypeswrong/cli": "^0.18.5",
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^24.19.0",
+		"@vitest/coverage-v8": "^5.0.2",
+		"eslint": "^10.11.0",
+		"globals": "^17.12.0",
+		"jsdom": "^30.1.1",
+		"prettier": "^3.9.9",
+		"publint": "^0.3.24",
+		"tsdown": "^0.23.0",
+		"typedoc": "^0.28.20",
+		"typescript": "~6.0.3",
+		"typescript-eslint": "^8.70.1",
+		"vitest": "^5.0.2"
+	}
 }

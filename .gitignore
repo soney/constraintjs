@@ -1,4 +1,8 @@
+node_modules/
+dist/
+coverage/
+docs/
+*.tsbuildinfo
+*.tgz
 *.swp
-node_modules
-*.DS_Store
-*.zip
+.DS_Store

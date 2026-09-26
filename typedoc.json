@@ -1,0 +1,13 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"entryPoints": ["src/index.ts"],
+	"out": "docs",
+	"name": "ConstraintJS",
+	"readme": "README.md",
+	"excludeInternal": true,
+	"excludePrivate": true,
+	"includeVersion": true,
+	"treatWarningsAsErrors": false,
+	"skipErrorChecking": true,
+	"intentionallyNotExported": ["AnyOnly"]
+}
