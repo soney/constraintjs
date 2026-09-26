@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 (2026-09-26)
 
 ConstraintJS has been rewritten in TypeScript with modern tooling. The API is the same, apart from the
 behavior changes listed below; most of them are bug fixes.
