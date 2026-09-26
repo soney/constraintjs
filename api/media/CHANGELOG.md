@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.1 (2026-09-26)
+
+### Fixes
+
+- A constraint with `check_on_nullify: true` whose getter changed something the getter depends on ran the
+  getter again from inside itself, and could be left with an out-of-date value. It now recomputes the next
+  time it's read.
+- An FSM's `_setState(state)` threw when called without a transition, which 0.9 allowed (to jump straight
+  to a state).
+
 ## 0.10.0 (2026-09-26)
 
 ConstraintJS has been rewritten in TypeScript with modern tooling. The API is the same, apart from the
